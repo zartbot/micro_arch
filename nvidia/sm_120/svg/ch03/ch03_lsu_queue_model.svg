@@ -1,0 +1,287 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 920" role="img"
+     aria-label="SM_120 LSU Queue Model: MSHR-based memory-level parallelism per warp with generational scaling">
+  <defs>
+    <marker id="ar" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto">
+      <path d="M0,0 L7,3.5 L0,7 Z" fill="#5b6679"/>
+    </marker>
+    <marker id="ar-green" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto">
+      <path d="M0,0 L7,3.5 L0,7 Z" fill="#16a34a"/>
+    </marker>
+    <marker id="ar-red" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto">
+      <path d="M0,0 L7,3.5 L0,7 Z" fill="#dc2626"/>
+    </marker>
+    <marker id="ar-purple" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto">
+      <path d="M0,0 L7,3.5 L0,7 Z" fill="#6d28d9"/>
+    </marker>
+    <linearGradient id="issueG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#DCFCE7"/><stop offset="1" stop-color="#F0FDF4"/>
+    </linearGradient>
+    <linearGradient id="transG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FEF9C3"/><stop offset="1" stop-color="#FEFCE8"/>
+    </linearGradient>
+    <linearGradient id="stallG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FEE2E2"/><stop offset="1" stop-color="#FEF2F2"/>
+    </linearGradient>
+    <linearGradient id="archG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#E0E7FF"/><stop offset="1" stop-color="#EEF2FF"/>
+    </linearGradient>
+    <linearGradient id="pipeG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#F3E8FF"/><stop offset="1" stop-color="#FAF5FF"/>
+    </linearGradient>
+    <linearGradient id="mshrG" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#2563eb" stop-opacity="0.15"/><stop offset="1" stop-color="#2563eb" stop-opacity="0.04"/>
+    </linearGradient>
+    <style><![CDATA[
+      .ttl{font:600 15px "Fraunces",serif;fill:#0b1220}
+      .sub{font:italic 11.5px "Fraunces",serif;fill:#5b6679}
+      .sect{font:600 13px "Fraunces",serif}
+      .lbl{font:600 11.5px "JetBrains Mono",monospace}
+      .lbl-sm{font:500 10px "JetBrains Mono",monospace;fill:#5b6679}
+      .desc{font:500 10px "JetBrains Mono",monospace;fill:#5b6679}
+      .desc2{font:500 10px "JetBrains Mono",monospace;fill:#1966ed}
+      .badge{font:600 9.5px "JetBrains Mono",monospace}
+      .big-num{font:700 22px "JetBrains Mono",monospace}
+      .med-num{font:700 16px "JetBrains Mono",monospace}
+      .note{font:500 9.5px "JetBrains Mono",monospace;fill:#8e97a5}
+      .warn{font:600 10px "JetBrains Mono",monospace;fill:#dc2626}
+      .safe{font:600 10px "JetBrains Mono",monospace;fill:#16a34a}
+      .zone-t{font:600 12px "Fraunces",serif}
+    ]]></style>
+  </defs>
+
+  <rect width="1080" height="920" fill="#ffffff"/>
+
+  <!-- Title -->
+  <text x="36" y="32" class="ttl">SM_120 LSU Queue Model &amp; Dispatch Architecture (Per-Warp View)</text>
+  <text x="36" y="52" class="sub">MSHR-based memory-level parallelism with 12–13 entry queue depth — 2× generational scaling [S11/case_97]</text>
+
+  <!-- ═══════ LEFT PANEL: Dispatch Pipeline ═══════ -->
+  <g transform="translate(30, 76)">
+    <rect x="0" y="0" width="380" height="340" rx="12" fill="url(#pipeG)" stroke="#6d28d9" stroke-width="1" opacity="0.6"/>
+    <text x="16" y="24" class="sect" fill="#6d28d9">Warp Scheduler → LSU Dispatch Path</text>
+
+    <!-- Scheduler box -->
+    <rect x="110" y="44" width="180" height="38" rx="8" fill="#ffffff" stroke="#6d28d9" stroke-width="1"/>
+    <text x="200" y="60" class="lbl" fill="#6d28d9" text-anchor="middle">Warp Scheduler</text>
+    <text x="200" y="74" class="note" text-anchor="middle">single-issue · CGGTY</text>
+
+    <!-- Arrow down -->
+    <line x1="200" y1="82" x2="200" y2="104" stroke="#6d28d9" stroke-width="1.2" marker-end="url(#ar-purple)"/>
+
+    <!-- Decode + operand collect -->
+    <rect x="110" y="108" width="180" height="32" rx="8" fill="#ffffff" stroke="#5b6679" stroke-width="0.8"/>
+    <text x="200" y="128" class="lbl" fill="#334155" text-anchor="middle">Decode + Operand Collect</text>
+
+    <!-- Arrow down -->
+    <line x1="200" y1="140" x2="200" y2="162" stroke="#5b6679" stroke-width="1.2" marker-end="url(#ar)"/>
+
+    <!-- LSU Pipe -->
+    <rect x="80" y="166" width="240" height="48" rx="8" fill="#ffffff" stroke="#2563eb" stroke-width="1.2"/>
+    <text x="200" y="185" class="lbl" fill="#2563eb" text-anchor="middle">LSU Pipe (pipe_lsu)</text>
+    <text x="200" y="200" class="desc" text-anchor="middle">LDG · STG · LDS · STS · ATOM</text>
+
+    <!-- Arrow down to MSHR -->
+    <line x1="200" y1="214" x2="200" y2="238" stroke="#2563eb" stroke-width="1.2" marker-end="url(#ar)"/>
+
+    <!-- MSHR Box -->
+    <rect x="50" y="242" width="300" height="76" rx="10" fill="url(#mshrG)" stroke="#2563eb" stroke-width="1.5"/>
+    <text x="200" y="262" class="lbl" fill="#2563eb" text-anchor="middle">MSHR (Miss Status Holding Register)</text>
+    <text x="200" y="280" class="med-num" fill="#2563eb" text-anchor="middle">12–13 entries/warp</text>
+    <text x="200" y="298" class="desc" text-anchor="middle">tracks outstanding cache misses</text>
+    <text x="200" y="312" class="note" text-anchor="middle">SB counter decremented on completion</text>
+
+    <!-- Arrow down to memory -->
+    <line x1="200" y1="318" x2="200" y2="332" stroke="#5b6679" stroke-width="1" stroke-dasharray="4,3"/>
+  </g>
+
+  <!-- ═══════ RIGHT PANEL: Three Regimes ═══════ -->
+  <g transform="translate(440, 76)">
+    <text x="0" y="4" class="sect" fill="#334155">Outstanding Load Count → Behavior Regimes</text>
+
+    <!-- Regime 1: Green zone (N=1..12) -->
+    <rect x="0" y="16" width="610" height="100" rx="10" fill="url(#issueG)" stroke="#16a34a" stroke-width="1"/>
+    <rect x="12" y="26" width="62" height="22" rx="10" fill="#16a34a" opacity="0.15"/>
+    <text x="43" y="41" class="badge" fill="#16a34a" text-anchor="middle">N ≤ 12</text>
+    <text x="88" y="41" class="zone-t" fill="#16a34a">Full Parallelism — Issue-Cost Only</text>
+
+    <text x="24" y="62" class="lbl-sm">• All loads dispatched in 1–2 cycles (fire-and-forget)</text>
+    <text x="24" y="78" class="lbl-sm">• Loads complete asynchronously; SB counter notifies consumer</text>
+    <text x="24" y="94" class="lbl-sm">• Measured cycle ≈ issue_cost (NOT load_latency)</text>
+    <text x="24" y="108" class="safe">Effective MLP = N loads in parallel</text>
+
+    <!-- Regime 2: Yellow zone (N=13) -->
+    <rect x="0" y="126" width="610" height="74" rx="10" fill="url(#transG)" stroke="#ca8a04" stroke-width="1"/>
+    <rect x="12" y="136" width="62" height="22" rx="10" fill="#ca8a04" opacity="0.15"/>
+    <text x="43" y="151" class="badge" fill="#ca8a04" text-anchor="middle">N = 13</text>
+    <text x="88" y="151" class="zone-t" fill="#ca8a04">Transition Zone</text>
+
+    <text x="24" y="172" class="lbl-sm">• Some earlier L2 loads may complete before 13th issues, freeing a slot</text>
+    <text x="24" y="188" class="lbl-sm">• Depends on load latency vs issue rate: race between completion and dispatch</text>
+
+    <!-- Regime 3: Red zone (N=14+) -->
+    <rect x="0" y="210" width="610" height="130" rx="10" fill="url(#stallG)" stroke="#dc2626" stroke-width="1"/>
+    <rect x="12" y="220" width="62" height="22" rx="10" fill="#dc2626" opacity="0.15"/>
+    <text x="43" y="235" class="badge" fill="#dc2626" text-anchor="middle">N ≥ 14</text>
+    <text x="88" y="235" class="zone-t" fill="#dc2626">MSHR Full — Catastrophic Stall</text>
+
+    <text x="24" y="258" class="lbl-sm">• MSHR saturated → warp blocks until oldest load completes</text>
+    <text x="24" y="274" class="lbl-sm">• Measured cycle ≈ L2_latency × (N − queue_depth + 1)</text>
+    <text x="24" y="298" class="warn">N=14:  984 cyc  (≈ 2 serialized × 354 cyc/L2 + overhead)</text>
+    <text x="24" y="314" class="warn">N=16: 1065 cyc  (≈ 4 serialized × 266 cyc avg)</text>
+    <text x="24" y="332" class="lbl-sm">• 492× increase from N=12 → N=14 — the "MSHR cliff"</text>
+  </g>
+
+  <!-- ═══════ BOTTOM LEFT: Architecture Detail ═══════ -->
+  <g transform="translate(30, 440)">
+    <rect x="0" y="0" width="500" height="230" rx="12" fill="url(#archG)" stroke="#4f46e5" stroke-width="1" opacity="0.7"/>
+    <text x="16" y="24" class="sect" fill="#4f46e5">LSU Internal Architecture — Dispatch &amp; Tracking</text>
+
+    <!-- Pipeline stages -->
+    <g transform="translate(20, 44)">
+      <!-- Stage boxes -->
+      <rect x="0" y="0" width="88" height="36" rx="6" fill="#ffffff" stroke="#5b6679" stroke-width="0.8"/>
+      <text x="44" y="15" class="badge" fill="#5b6679" text-anchor="middle">STAGE 1</text>
+      <text x="44" y="29" class="lbl" fill="#334155" text-anchor="middle" style="font-size:10px">Addr Gen</text>
+
+      <line x1="88" y1="18" x2="108" y2="18" stroke="#5b6679" stroke-width="1" marker-end="url(#ar)"/>
+
+      <rect x="112" y="0" width="88" height="36" rx="6" fill="#ffffff" stroke="#5b6679" stroke-width="0.8"/>
+      <text x="156" y="15" class="badge" fill="#5b6679" text-anchor="middle">STAGE 2</text>
+      <text x="156" y="29" class="lbl" fill="#334155" text-anchor="middle" style="font-size:10px">Tag Lookup</text>
+
+      <line x1="200" y1="18" x2="220" y2="18" stroke="#5b6679" stroke-width="1" marker-end="url(#ar)"/>
+
+      <rect x="224" y="0" width="88" height="36" rx="6" fill="#ffffff" stroke="#2563eb" stroke-width="1.2"/>
+      <text x="268" y="15" class="badge" fill="#2563eb" text-anchor="middle">STAGE 3</text>
+      <text x="268" y="29" class="lbl" fill="#2563eb" text-anchor="middle" style="font-size:10px">MSHR Alloc</text>
+
+      <line x1="312" y1="18" x2="332" y2="18" stroke="#5b6679" stroke-width="1" marker-end="url(#ar)"/>
+
+      <rect x="336" y="0" width="120" height="36" rx="6" fill="#ffffff" stroke="#5b6679" stroke-width="0.8"/>
+      <text x="396" y="15" class="badge" fill="#5b6679" text-anchor="middle">STAGE 4</text>
+      <text x="396" y="29" class="lbl" fill="#334155" text-anchor="middle" style="font-size:10px">L1/L2 Request</text>
+    </g>
+
+    <!-- SB tracking detail -->
+    <g transform="translate(20, 96)">
+      <text x="0" y="20" class="lbl" fill="#4f46e5">Scoreboard (SB) Tracking per Warp:</text>
+      <text x="0" y="38" class="desc">6 HW counters (SB0–SB5) · LDG uses SB3–4 · LDS uses SB0–1</text>
+
+      <!-- SB counter visualization -->
+      <g transform="translate(0, 28)">
+        <rect x="0" y="20" width="36" height="20" rx="4" fill="#2563eb" opacity="0.12" stroke="#2563eb" stroke-width="0.6"/>
+        <text x="18" y="34" class="badge" fill="#2563eb" text-anchor="middle">SB0</text>
+        <rect x="42" y="20" width="36" height="20" rx="4" fill="#2563eb" opacity="0.12" stroke="#2563eb" stroke-width="0.6"/>
+        <text x="60" y="34" class="badge" fill="#2563eb" text-anchor="middle">SB1</text>
+        <rect x="84" y="20" width="36" height="20" rx="4" fill="#2563eb" opacity="0.12" stroke="#2563eb" stroke-width="0.6"/>
+        <text x="102" y="34" class="badge" fill="#2563eb" text-anchor="middle">SB2</text>
+        <rect x="126" y="20" width="36" height="20" rx="4" fill="#2563eb" opacity="0.12" stroke="#2563eb" stroke-width="0.6"/>
+        <text x="144" y="34" class="badge" fill="#2563eb" text-anchor="middle">SB3</text>
+        <rect x="168" y="20" width="36" height="20" rx="4" fill="#2563eb" opacity="0.12" stroke="#2563eb" stroke-width="0.6"/>
+        <text x="186" y="34" class="badge" fill="#2563eb" text-anchor="middle">SB4</text>
+        <rect x="210" y="20" width="36" height="20" rx="4" fill="#2563eb" opacity="0.12" stroke="#2563eb" stroke-width="0.6"/>
+        <text x="228" y="34" class="badge" fill="#2563eb" text-anchor="middle">SB5</text>
+
+        <text x="260" y="30" class="desc2">← incremented on dispatch</text>
+        <text x="260" y="40" class="desc2">← decremented on completion</text>
+      </g>
+
+      <text x="0" y="96" class="desc">SB exhaustion cliff: N=5→6 causes 44.8× stall (17→761 cyc, L1-cached)</text>
+      <text x="0" y="112" class="desc">Under L2-forced latency: cliff shifts to N=10–12 (ptxas co-shares SB)</text>
+    </g>
+  </g>
+
+  <!-- ═══════ BOTTOM RIGHT: Generational Comparison ═══════ -->
+  <g transform="translate(560, 440)">
+    <rect x="0" y="0" width="490" height="230" rx="12" fill="#f8fafc" stroke="#334155" stroke-width="1"/>
+    <text x="16" y="24" class="sect" fill="#334155">Generational MSHR Queue Depth Scaling</text>
+    <text x="16" y="42" class="desc">Approximately 2× per generation — enabling higher MLP at lower occupancy</text>
+
+    <!-- Bar chart visualization -->
+    <g transform="translate(40, 64)">
+      <!-- SM_89 bar -->
+      <rect x="0" y="8" width="80" height="28" rx="6" fill="#94a3b8" opacity="0.3" stroke="#64748b" stroke-width="0.8"/>
+      <text x="40" y="26" class="badge" fill="#334155" text-anchor="middle">5–6</text>
+      <text x="92" y="20" class="lbl" fill="#64748b">SM_89 (Ada)</text>
+      <text x="92" y="34" class="note">Volkov 2023</text>
+
+      <!-- SM_90 bar -->
+      <rect x="0" y="52" width="130" height="28" rx="6" fill="#a78bfa" opacity="0.25" stroke="#7c3aed" stroke-width="0.8"/>
+      <text x="65" y="70" class="badge" fill="#6d28d9" text-anchor="middle">~8</text>
+      <text x="142" y="64" class="lbl" fill="#6d28d9">SM_90 (Hopper)</text>
+      <text x="142" y="78" class="note">NVIDIA US11768686</text>
+
+      <!-- SM_120 bar (highlighted) -->
+      <rect x="0" y="96" width="210" height="28" rx="6" fill="#2563eb" opacity="0.15" stroke="#2563eb" stroke-width="1.5"/>
+      <text x="105" y="117" class="med-num" fill="#2563eb" text-anchor="middle">12–13</text>
+      <text x="222" y="108" class="lbl" fill="#2563eb">SM_120 (Blackwell)</text>
+      <text x="222" y="124" class="safe">THIS MEASUREMENT</text>
+    </g>
+
+    <!-- MLP bandwidth calc -->
+    <g transform="translate(20, 186)">
+      <text x="0" y="20" class="desc">Theoretical MLP BW/warp: (12.5 × 128B) / 354 cyc = 4.5 B/cyc</text>
+      <text x="0" y="36" class="note">Already exceeds per-SM L2 bandwidth allocation</text>
+    </g>
+  </g>
+
+  <!-- ═══════ BOTTOM: Effective MLP Formula ═══════ -->
+  <g transform="translate(30, 690)">
+    <rect x="0" y="0" width="1020" height="210" rx="12" fill="#f8fafc" stroke="#334155" stroke-width="1"/>
+    <text x="20" y="26" class="sect" fill="#334155">Dispatch Algorithm: Issue → Track → Complete → Release</text>
+
+    <!-- Flow diagram -->
+    <g transform="translate(30, 48)">
+      <!-- Step 1 -->
+      <rect x="0" y="0" width="160" height="56" rx="8" fill="url(#issueG)" stroke="#16a34a" stroke-width="1"/>
+      <text x="80" y="20" class="lbl" fill="#16a34a" text-anchor="middle">1. Issue Load</text>
+      <text x="80" y="36" class="desc" text-anchor="middle">LDG dispatched</text>
+      <text x="80" y="50" class="note" text-anchor="middle">stall=1 (fire&amp;forget)</text>
+
+      <line x1="160" y1="28" x2="190" y2="28" stroke="#5b6679" stroke-width="1.2" marker-end="url(#ar)"/>
+
+      <!-- Step 2 -->
+      <rect x="194" y="0" width="160" height="56" rx="8" fill="#ffffff" stroke="#2563eb" stroke-width="1"/>
+      <text x="274" y="20" class="lbl" fill="#2563eb" text-anchor="middle">2. MSHR Allocate</text>
+      <text x="274" y="36" class="desc" text-anchor="middle">slot assigned</text>
+      <text x="274" y="50" class="note" text-anchor="middle">WrBarrier → SBn++</text>
+
+      <line x1="354" y1="28" x2="384" y2="28" stroke="#5b6679" stroke-width="1.2" marker-end="url(#ar)"/>
+
+      <!-- Step 3 -->
+      <rect x="388" y="0" width="180" height="56" rx="8" fill="#ffffff" stroke="#5b6679" stroke-width="0.8"/>
+      <text x="478" y="20" class="lbl" fill="#334155" text-anchor="middle">3. Memory Access</text>
+      <text x="478" y="36" class="desc" text-anchor="middle">L1 miss → L2 (354 cyc)</text>
+      <text x="478" y="50" class="note" text-anchor="middle">warp continues issuing</text>
+
+      <line x1="568" y1="28" x2="598" y2="28" stroke="#5b6679" stroke-width="1.2" marker-end="url(#ar)"/>
+
+      <!-- Step 4 -->
+      <rect x="602" y="0" width="170" height="56" rx="8" fill="#ffffff" stroke="#16a34a" stroke-width="1"/>
+      <text x="687" y="20" class="lbl" fill="#16a34a" text-anchor="middle">4. Complete</text>
+      <text x="687" y="36" class="desc" text-anchor="middle">data → RF, SBn--</text>
+      <text x="687" y="50" class="note" text-anchor="middle">MSHR slot freed</text>
+
+      <line x1="772" y1="28" x2="802" y2="28" stroke="#5b6679" stroke-width="1.2" marker-end="url(#ar)"/>
+
+      <!-- Step 5 -->
+      <rect x="806" y="0" width="160" height="56" rx="8" fill="#ffffff" stroke="#6d28d9" stroke-width="1"/>
+      <text x="886" y="20" class="lbl" fill="#6d28d9" text-anchor="middle">5. Consumer Wakes</text>
+      <text x="886" y="36" class="desc" text-anchor="middle">WaitBarrier met</text>
+      <text x="886" y="50" class="note" text-anchor="middle">dep chain resumes</text>
+    </g>
+
+    <!-- Key insight box -->
+    <g transform="translate(30, 120)">
+      <rect x="0" y="0" width="940" height="79" rx="8" fill="#EDE7FB" stroke="#6d28d9" stroke-width="0.8"/>
+      <text x="20" y="20" class="lbl" fill="#6d28d9">Key Insight — Why SM_120 Needs Fewer Warps for Memory Saturation:</text>
+      <text x="20" y="40" class="desc">With 12–13 MSHR entries, a single warp can sustain 12 parallel loads → each covering 354 cyc of L2 latency.</text>
+      <text x="20" y="56" class="desc">Effective formula:  warps_needed = ceil(L2_latency / (queue_depth × issue_rate)) = ceil(354 / (12 × 2)) ≈ 15 warps for full BW.</text>
+      <text x="20" y="70" class="note">Compare SM_89 (queue=5): needs ~36 warps for same saturation. SM_120 cuts occupancy requirement by 2.4×.</text>
+    </g>
+  </g>
+
+  <!-- Source citation -->
+  <text x="36" y="910" class="note">[source: S11/case_97, S11/case_44, S12/case_24, NVIDIA patent US11768686]</text>
+</svg>

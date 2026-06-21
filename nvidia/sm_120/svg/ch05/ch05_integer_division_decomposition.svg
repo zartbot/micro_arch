@@ -1,0 +1,204 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 820" role="img" aria-label="SM_120 div.u32 Software Decomposition — 9-instruction critical path through 4 execution pipes">
+  <defs>
+    <marker id="arr" markerWidth="7" markerHeight="5" refX="7" refY="2.5" orient="auto">
+      <path d="M0,0 L7,2.5 L0,5 Z" fill="#475569"/>
+    </marker>
+    <marker id="arr-red" markerWidth="7" markerHeight="5" refX="7" refY="2.5" orient="auto">
+      <path d="M0,0 L7,2.5 L0,5 Z" fill="#dc2626"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1080" height="820" fill="#fafbfc"/>
+
+  <!-- Title -->
+  <text x="540" y="32" text-anchor="middle" style="font:700 15px 'Inter','Segoe UI',sans-serif;fill:#0f172a">SM_120 Integer Division (div.u32) — Software Decomposition</text>
+  <text x="540" y="52" text-anchor="middle" style="font:italic 11px 'Inter','Segoe UI',sans-serif;fill:#64748b">No native hardware divider — ptxas decomposes to 9-instruction sequence across 3 execution pipes</text>
+
+  <!-- ═══════ Legend ═══════ -->
+  <g transform="translate(30,68)">
+    <text x="0" y="0" style="font:600 9.5px 'Inter',sans-serif;fill:#374151">Pipe Legend:</text>
+    <rect x="0" y="6" width="10" height="10" rx="2" fill="#fef3c7" stroke="#d97706" stroke-width="0.8"/>
+    <text x="14" y="15" style="font:500 9px 'JetBrains Mono',monospace;fill:#92400e">pipe_xu (SFU)</text>
+    <rect x="120" y="6" width="10" height="10" rx="2" fill="#fef9c3" stroke="#ca8a04" stroke-width="0.8"/>
+    <text x="134" y="15" style="font:500 9px 'JetBrains Mono',monospace;fill:#854d0e">pipe_fmaheavy</text>
+    <rect x="260" y="6" width="10" height="10" rx="2" fill="#f0fdf4" stroke="#16a34a" stroke-width="0.8"/>
+    <text x="274" y="15" style="font:500 9px 'JetBrains Mono',monospace;fill:#166534">pipe_fmalite</text>
+    <rect x="400" y="6" width="10" height="10" rx="2" fill="#fef2f2" stroke="#dc2626" stroke-width="0.8"/>
+    <text x="414" y="15" style="font:500 9px 'Inter',sans-serif;fill:#991b1b">Critical path (red border)</text>
+  </g>
+
+  <!-- ═══════ Pipeline Steps (Main Column) ═══════ -->
+  <!-- Step 1: MUFU.RCP -->
+  <g transform="translate(200,100)">
+    <rect x="0" y="0" width="440" height="44" rx="6" fill="#fef3c7" stroke="#dc2626" stroke-width="2"/>
+    <text x="14" y="17" style="font:700 10px 'JetBrains Mono',monospace;fill:#475569">[1]</text>
+    <text x="42" y="17" style="font:700 11px 'JetBrains Mono',monospace;fill:#92400e">MUFU.RCP</text>
+    <text x="150" y="17" style="font:400 10px 'Inter',sans-serif;fill:#4b5563">Reciprocal approximation (SFU)</text>
+    <text x="370" y="17" style="font:700 11px 'JetBrains Mono',monospace;fill:#dc2626">~18 cyc</text>
+    <text x="14" y="36" style="font:italic 9px 'Inter',sans-serif;fill:#6b7280">pipe_xu — dominates critical path; skipped for constant divisors</text>
+  </g>
+
+  <!-- Arrow 1→2 -->
+  <line x1="420" y1="144" x2="420" y2="158" stroke="#475569" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- Step 2: IMAD Newton-Raphson -->
+  <g transform="translate(200,160)">
+    <rect x="0" y="0" width="440" height="44" rx="6" fill="#fef9c3" stroke="#dc2626" stroke-width="2"/>
+    <text x="14" y="17" style="font:700 10px 'JetBrains Mono',monospace;fill:#475569">[2]</text>
+    <text x="42" y="17" style="font:700 11px 'JetBrains Mono',monospace;fill:#854d0e">IMAD</text>
+    <text x="150" y="17" style="font:400 10px 'Inter',sans-serif;fill:#4b5563">Newton-Raphson refinement</text>
+    <text x="380" y="17" style="font:700 11px 'JetBrains Mono',monospace;fill:#dc2626">4 cyc</text>
+    <text x="14" y="36" style="font:italic 9px 'Inter',sans-serif;fill:#6b7280">pipe_fmaheavy — refines reciprocal estimate for quotient convergence</text>
+  </g>
+
+  <!-- Arrow 2→3 -->
+  <line x1="420" y1="204" x2="420" y2="218" stroke="#475569" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- Step 3: IMAD.HI.U32 -->
+  <g transform="translate(200,220)">
+    <rect x="0" y="0" width="440" height="44" rx="6" fill="#fef9c3" stroke="#dc2626" stroke-width="2"/>
+    <text x="14" y="17" style="font:700 10px 'JetBrains Mono',monospace;fill:#475569">[3]</text>
+    <text x="42" y="17" style="font:700 11px 'JetBrains Mono',monospace;fill:#854d0e">IMAD.HI.U32</text>
+    <text x="130" y="17" style="font:400 10px 'Inter',sans-serif;fill:#4b5563">Quotient estimate (upper 32-bit of 64-bit product)</text>
+    <text x="380" y="17" style="font:700 11px 'JetBrains Mono',monospace;fill:#dc2626">9 cyc</text>
+    <text x="14" y="36" style="font:italic 9px 'Inter',sans-serif;fill:#6b7280">pipe_fmaheavy — 2nd most expensive step; extracts q = (n × rcp) &gt;&gt; 32</text>
+  </g>
+
+  <!-- Arrow 3→4 -->
+  <line x1="420" y1="264" x2="420" y2="278" stroke="#475569" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- Step 4: IADD remainder -->
+  <g transform="translate(200,280)">
+    <rect x="0" y="0" width="440" height="44" rx="6" fill="#f0fdf4" stroke="#dc2626" stroke-width="2"/>
+    <text x="14" y="17" style="font:700 10px 'JetBrains Mono',monospace;fill:#475569">[4]</text>
+    <text x="42" y="17" style="font:700 11px 'JetBrains Mono',monospace;fill:#166534">IADD</text>
+    <text x="150" y="17" style="font:400 10px 'Inter',sans-serif;fill:#4b5563">Remainder computation: r = n - q × d</text>
+    <text x="380" y="17" style="font:700 11px 'JetBrains Mono',monospace;fill:#dc2626">2 cyc</text>
+    <text x="14" y="36" style="font:italic 9px 'Inter',sans-serif;fill:#6b7280">pipe_fmalite — fast subtract to get initial remainder</text>
+  </g>
+
+  <!-- Arrow 4→5 -->
+  <line x1="420" y1="324" x2="420" y2="338" stroke="#475569" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- Step 5: IMAD remainder refinement -->
+  <g transform="translate(200,340)">
+    <rect x="0" y="0" width="440" height="44" rx="6" fill="#fef9c3" stroke="#dc2626" stroke-width="2"/>
+    <text x="14" y="17" style="font:700 10px 'JetBrains Mono',monospace;fill:#475569">[5]</text>
+    <text x="42" y="17" style="font:700 11px 'JetBrains Mono',monospace;fill:#854d0e">IMAD</text>
+    <text x="150" y="17" style="font:400 10px 'Inter',sans-serif;fill:#4b5563">Remainder refinement (multiply-subtract)</text>
+    <text x="380" y="17" style="font:700 11px 'JetBrains Mono',monospace;fill:#dc2626">4 cyc</text>
+    <text x="14" y="36" style="font:italic 9px 'Inter',sans-serif;fill:#6b7280">pipe_fmaheavy — precise remainder for correction stage</text>
+  </g>
+
+  <!-- Arrow 5→6 -->
+  <line x1="420" y1="384" x2="420" y2="398" stroke="#475569" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- Step 6: ISETP 1st correction -->
+  <g transform="translate(200,400)">
+    <rect x="0" y="0" width="440" height="44" rx="6" fill="#f0fdf4" stroke="#dc2626" stroke-width="2"/>
+    <text x="14" y="17" style="font:700 10px 'JetBrains Mono',monospace;fill:#475569">[6]</text>
+    <text x="42" y="17" style="font:700 11px 'JetBrains Mono',monospace;fill:#166534">ISETP.GE.U32.AND</text>
+    <text x="210" y="17" style="font:400 10px 'Inter',sans-serif;fill:#4b5563">1st correction check (r &gt;= d?)</text>
+    <text x="380" y="17" style="font:700 11px 'JetBrains Mono',monospace;fill:#dc2626">5 cyc</text>
+    <text x="14" y="36" style="font:italic 9px 'Inter',sans-serif;fill:#6b7280">pipe_fmalite — writes predicate P0 for conditional correction</text>
+  </g>
+
+  <!-- Arrow 6→7 -->
+  <line x1="420" y1="444" x2="420" y2="458" stroke="#475569" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- Step 7: Predicated IADD -->
+  <g transform="translate(200,460)">
+    <rect x="0" y="0" width="440" height="44" rx="6" fill="#f0fdf4" stroke="#dc2626" stroke-width="2"/>
+    <text x="14" y="17" style="font:700 10px 'JetBrains Mono',monospace;fill:#475569">[7]</text>
+    <text x="42" y="17" style="font:700 11px 'JetBrains Mono',monospace;fill:#166534">@P0 IADD</text>
+    <text x="150" y="17" style="font:400 10px 'Inter',sans-serif;fill:#4b5563">Conditional correction (q += 1)</text>
+    <text x="380" y="17" style="font:700 11px 'JetBrains Mono',monospace;fill:#dc2626">2 cyc</text>
+    <text x="14" y="36" style="font:italic 9px 'Inter',sans-serif;fill:#6b7280">pipe_fmalite — predicated: only executes if remainder &gt;= divisor</text>
+  </g>
+
+  <!-- Arrow 7→8 -->
+  <line x1="420" y1="504" x2="420" y2="518" stroke="#475569" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- Step 8: ISETP 2nd correction -->
+  <g transform="translate(200,520)">
+    <rect x="0" y="0" width="440" height="44" rx="6" fill="#f0fdf4" stroke="#dc2626" stroke-width="2"/>
+    <text x="14" y="17" style="font:700 10px 'JetBrains Mono',monospace;fill:#475569">[8]</text>
+    <text x="42" y="17" style="font:700 11px 'JetBrains Mono',monospace;fill:#166534">ISETP.GE.U32.AND</text>
+    <text x="210" y="17" style="font:400 10px 'Inter',sans-serif;fill:#4b5563">2nd correction check</text>
+    <text x="380" y="17" style="font:700 11px 'JetBrains Mono',monospace;fill:#dc2626">5 cyc</text>
+    <text x="14" y="36" style="font:italic 9px 'Inter',sans-serif;fill:#6b7280">pipe_fmalite — handles off-by-two errors from reciprocal approximation</text>
+  </g>
+
+  <!-- Arrow 8→9 -->
+  <line x1="420" y1="564" x2="420" y2="578" stroke="#475569" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- Step 9: Final SEL -->
+  <g transform="translate(200,580)">
+    <rect x="0" y="0" width="440" height="44" rx="6" fill="#f0fdf4" stroke="#dc2626" stroke-width="2"/>
+    <text x="14" y="17" style="font:700 10px 'JetBrains Mono',monospace;fill:#475569">[9]</text>
+    <text x="42" y="17" style="font:700 11px 'JetBrains Mono',monospace;fill:#166534">@P1 IADD + SEL</text>
+    <text x="210" y="17" style="font:400 10px 'Inter',sans-serif;fill:#4b5563">Final quotient selection</text>
+    <text x="380" y="17" style="font:700 11px 'JetBrains Mono',monospace;fill:#dc2626">5 cyc</text>
+    <text x="14" y="36" style="font:italic 9px 'Inter',sans-serif;fill:#6b7280">pipe_fmalite — selects corrected quotient as final result</text>
+  </g>
+
+  <!-- ═══════ Critical Path Summary ═══════ -->
+  <rect x="200" y="640" width="440" height="52" rx="6" fill="#fef2f2" stroke="#dc2626" stroke-width="1.2"/>
+  <text x="420" y="660" text-anchor="middle" style="font:700 11.5px 'JetBrains Mono',monospace;fill:#991b1b">Critical Path: 18+4+9+2+4+5+2+5+5 = 54 cyc (theoretical)</text>
+  <text x="420" y="680" text-anchor="middle" style="font:500 10.5px 'JetBrains Mono',monospace;fill:#7f1d1d">Measured: 60 cyc (includes stall/scheduler overhead of ~6 cyc)</text>
+
+  <!-- ═══════ Constant Divisor Optimization (right side) ═══════ -->
+  <g transform="translate(700,100)">
+    <rect x="0" y="0" width="340" height="180" rx="8" fill="#f0f9ff" stroke="#0284c7" stroke-width="1.2"/>
+    <text x="170" y="22" text-anchor="middle" style="font:700 11px 'Inter',sans-serif;fill:#0c4a6e">Constant-Divisor Optimization</text>
+    <line x1="20" y1="32" x2="320" y2="32" stroke="#bae6fd" stroke-width="0.8"/>
+    <text x="20" y="52" style="font:500 10px 'Inter',sans-serif;fill:#374151">When divisor is compile-time constant:</text>
+    <text x="20" y="74" style="font:600 10px 'JetBrains Mono',monospace;fill:#0369a1">Step [1] MUFU.RCP → ELIMINATED</text>
+    <text x="20" y="94" style="font:400 9.5px 'Inter',sans-serif;fill:#475569">ptxas precomputes magic-number reciprocal</text>
+    <text x="20" y="114" style="font:400 9.5px 'Inter',sans-serif;fill:#475569">and embeds it as an immediate constant.</text>
+    <rect x="20" y="126" width="300" height="24" rx="4" fill="#e0f2fe" stroke="#0284c7" stroke-width="0.6"/>
+    <text x="170" y="142" text-anchor="middle" style="font:700 10px 'JetBrains Mono',monospace;fill:#0c4a6e">Savings: ~13 cyc → Measured: 47 cyc</text>
+    <text x="20" y="168" style="font:italic 9px 'Inter',sans-serif;fill:#64748b">All constant divisors (power-of-2 or not) use same path.</text>
+  </g>
+
+  <!-- ═══════ Pipe Distribution (right side, below) ═══════ -->
+  <g transform="translate(700,300)">
+    <rect x="0" y="0" width="340" height="150" rx="8" fill="#f8fafc" stroke="#94a3b8" stroke-width="0.8"/>
+    <text x="170" y="22" text-anchor="middle" style="font:700 11px 'Inter',sans-serif;fill:#334155">Pipe Utilization Breakdown</text>
+    <line x1="20" y1="32" x2="320" y2="32" stroke="#e2e8f0" stroke-width="0.8"/>
+
+    <!-- pipe_xu bar -->
+    <rect x="20" y="44" width="143" height="18" rx="3" fill="#fef3c7" stroke="#d97706" stroke-width="0.6"/>
+    <text x="26" y="57" style="font:600 9px 'JetBrains Mono',monospace;fill:#92400e">xu: 18 cyc (33%)</text>
+
+    <!-- pipe_fmaheavy bar -->
+    <rect x="20" y="68" width="132" height="18" rx="3" fill="#fef9c3" stroke="#ca8a04" stroke-width="0.6"/>
+    <text x="26" y="81" style="font:600 9px 'JetBrains Mono',monospace;fill:#854d0e">heavy: 17 cyc (31%)</text>
+
+    <!-- pipe_fmalite bar -->
+    <rect x="20" y="92" width="154" height="18" rx="3" fill="#f0fdf4" stroke="#16a34a" stroke-width="0.6"/>
+    <text x="26" y="105" style="font:600 9px 'JetBrains Mono',monospace;fill:#166534">lite: 19 cyc (35%)</text>
+
+    <text x="20" y="130" style="font:italic 9.5px 'Inter',sans-serif;fill:#64748b">Bottleneck: Step [1] MUFU.RCP alone</text>
+    <text x="20" y="144" style="font:italic 9.5px 'Inter',sans-serif;fill:#64748b">consumes 33% of the entire critical path.</text>
+  </g>
+
+  <!-- ═══════ ILP annotation (right side, below) ═══════ -->
+  <g transform="translate(700,470)">
+    <rect x="0" y="0" width="340" height="89" rx="8" fill="#faf5ff" stroke="#7c3aed" stroke-width="0.8"/>
+    <text x="170" y="20" text-anchor="middle" style="font:700 11px 'Inter',sans-serif;fill:#5b21b6">ILP Behavior</text>
+    <line x1="20" y1="30" x2="320" y2="30" stroke="#e9d5ff" stroke-width="0.8"/>
+    <text x="20" y="48" style="font:500 9.5px 'Inter',sans-serif;fill:#4b5563">ILP=4 throughput: 0.028 ops/cyc (35.7 cyc/op)</text>
+    <text x="20" y="66" style="font:500 9.5px 'Inter',sans-serif;fill:#4b5563">Limited ILP benefit: serial dependency chain</text>
+    <text x="20" y="78" style="font:500 9.5px 'Inter',sans-serif;fill:#4b5563">prevents significant pipeline overlap.</text>
+  </g>
+
+  <!-- ═══════ Bottom summary ═══════ -->
+  <rect x="100" y="710" width="880" height="90" rx="8" fill="#f8fafc" stroke="#94a3b8" stroke-width="0.8"/>
+  <text x="540" y="732" text-anchor="middle" style="font:700 11px 'Inter',sans-serif;fill:#1e293b">Key Architectural Insight</text>
+  <text x="120" y="754" style="font:400 10px 'Inter',sans-serif;fill:#374151">SM_120 has no native integer division hardware. The compiler (ptxas) synthesizes division via a reciprocal-multiply-correct algorithm</text>
+  <text x="120" y="772" style="font:400 10px 'Inter',sans-serif;fill:#374151">spanning 3 distinct execution pipes. The 60-cycle cost (30x IADD3) makes division the single most expensive scalar ALU operation,</text>
+  <text x="120" y="790" style="font:400 10px 'Inter',sans-serif;fill:#374151">strongly favoring strength-reduction (bitwise AND for power-of-2, magic-number multiply for constants) in performance-critical loops.</text>
+</svg>

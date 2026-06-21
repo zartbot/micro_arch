@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 620" role="img"
+     aria-label="GB202 die topology: 11 GPCs × 10 SMs/GPC = 110 SMs, 12 memory controllers, 96 MB L2">
+  <defs>
+    <linearGradient id="gpcG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#EDE7FB"/>
+      <stop offset="1" stop-color="#F5F1FF"/>
+    </linearGradient>
+    <linearGradient id="smG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#E9F3D2"/>
+      <stop offset="1" stop-color="#F4FAE2"/>
+    </linearGradient>
+    <linearGradient id="l2G" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#E0E7FF"/>
+      <stop offset="1" stop-color="#EEF2FF"/>
+    </linearGradient>
+    <linearGradient id="dramG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFEDD5"/>
+      <stop offset="1" stop-color="#FFF7ED"/>
+    </linearGradient>
+    <style><![CDATA[
+      .lbl  { font: 600 11px "JetBrains Mono", monospace; fill: #2a3548; }
+      .lbl-sm { font: 500 9.5px "JetBrains Mono", monospace; fill: #5b6679; }
+      .ttl  { font: 600 14px "Fraunces", "IBM Plex Sans", serif; fill: #0b1220; }
+      .sub  { font: italic 11px "Fraunces", serif; fill: #5b6679; }
+      .gpcL { font: 600 11.5px "IBM Plex Sans", sans-serif; fill: #6d28d9; }
+      .smL  { font: 500 9px "JetBrains Mono", monospace; fill: #2a3548; }
+      .pill { font: 600 10px "JetBrains Mono", monospace; fill: #5a8e00; }
+    ]]></style>
+  </defs>
+
+  <rect width="1080" height="620" fill="#ffffff"/>
+  <text x="36" y="36" class="ttl">GB202 Die · 110 active SMs across 11 GPCs (with 1 harvested for 120-slot full die hypothesis)</text>
+  <text x="36" y="56" class="sub">5 TPCs × 2 SMs per GPC · 12 memory controllers · 96 MB L2 unified crossbar (no GPC affinity)</text>
+
+  <!-- Top half: GPCs (11 columns × 10 SMs each) -->
+  <g transform="translate(36,80)">
+    <!-- 11 GPCs in 2 rows: 6 + 5 -->
+    <g id="gpcRow1" transform="translate(0,0)">
+      <!-- 6 GPCs -->
+      <g transform="translate(0,0)"><use href="#gpcCard"/><text x="80" y="14" class="gpcL" text-anchor="middle">GPC 0</text><g class="sm-list" transform="translate(8,22)"></g></g>
+      <g transform="translate(166,0)"><use href="#gpcCard"/><text x="80" y="14" class="gpcL" text-anchor="middle">GPC 1</text></g>
+      <g transform="translate(332,0)"><use href="#gpcCard"/><text x="80" y="14" class="gpcL" text-anchor="middle">GPC 2</text></g>
+      <g transform="translate(498,0)"><use href="#gpcCard"/><text x="80" y="14" class="gpcL" text-anchor="middle">GPC 3</text></g>
+      <g transform="translate(664,0)"><use href="#gpcCard"/><text x="80" y="14" class="gpcL" text-anchor="middle">GPC 4</text></g>
+      <g transform="translate(830,0)"><use href="#gpcCard"/><text x="80" y="14" class="gpcL" text-anchor="middle">GPC 5</text></g>
+    </g>
+  </g>
+
+  <!-- GPC card template -->
+  <defs>
+    <g id="gpcCard">
+      <rect x="0" y="0" width="160" height="148" rx="10" fill="url(#gpcG)" stroke="#6d28d9" stroke-width="0.8"/>
+      <!-- 5 TPCs × 2 SMs in 5x2 grid -->
+      <g transform="translate(8,22)">
+        <rect x="0"  y="0"  width="68" height="20" rx="4" fill="url(#smG)" stroke="#76b900" stroke-width="0.6"/>
+        <rect x="76" y="0"  width="68" height="20" rx="4" fill="url(#smG)" stroke="#76b900" stroke-width="0.6"/>
+        <rect x="0"  y="26" width="68" height="20" rx="4" fill="url(#smG)" stroke="#76b900" stroke-width="0.6"/>
+        <rect x="76" y="26" width="68" height="20" rx="4" fill="url(#smG)" stroke="#76b900" stroke-width="0.6"/>
+        <rect x="0"  y="52" width="68" height="20" rx="4" fill="url(#smG)" stroke="#76b900" stroke-width="0.6"/>
+        <rect x="76" y="52" width="68" height="20" rx="4" fill="url(#smG)" stroke="#76b900" stroke-width="0.6"/>
+        <rect x="0"  y="78" width="68" height="20" rx="4" fill="url(#smG)" stroke="#76b900" stroke-width="0.6"/>
+        <rect x="76" y="78" width="68" height="20" rx="4" fill="url(#smG)" stroke="#76b900" stroke-width="0.6"/>
+        <rect x="0"  y="104" width="68" height="20" rx="4" fill="url(#smG)" stroke="#76b900" stroke-width="0.6"/>
+        <rect x="76" y="104" width="68" height="20" rx="4" fill="url(#smG)" stroke="#76b900" stroke-width="0.6"/>
+        <text x="34" y="13"  class="smL" text-anchor="middle">SM</text>
+        <text x="110" y="13" class="smL" text-anchor="middle">SM</text>
+        <text x="34" y="39"  class="smL" text-anchor="middle">SM</text>
+        <text x="110" y="39" class="smL" text-anchor="middle">SM</text>
+        <text x="34" y="65"  class="smL" text-anchor="middle">SM</text>
+        <text x="110" y="65" class="smL" text-anchor="middle">SM</text>
+        <text x="34" y="91"  class="smL" text-anchor="middle">SM</text>
+        <text x="110" y="91" class="smL" text-anchor="middle">SM</text>
+        <text x="34" y="117"  class="smL" text-anchor="middle">SM</text>
+        <text x="110" y="117" class="smL" text-anchor="middle">SM</text>
+      </g>
+    </g>
+  </defs>
+
+  <!-- Row 2: GPC 6-10 (5 GPCs) -->
+  <g transform="translate(36,242)">
+    <g transform="translate(0,0)"><use href="#gpcCard"/><text x="80" y="14" class="gpcL" text-anchor="middle">GPC 6</text></g>
+    <g transform="translate(166,0)"><use href="#gpcCard"/><text x="80" y="14" class="gpcL" text-anchor="middle">GPC 7</text></g>
+    <g transform="translate(332,0)"><use href="#gpcCard"/><text x="80" y="14" class="gpcL" text-anchor="middle">GPC 8</text></g>
+    <g transform="translate(498,0)"><use href="#gpcCard"/><text x="80" y="14" class="gpcL" text-anchor="middle">GPC 9</text></g>
+    <g transform="translate(664,0)"><use href="#gpcCard"/><text x="80" y="14" class="gpcL" text-anchor="middle">GPC 10</text></g>
+
+    <!-- harvested slot indicator -->
+    <g transform="translate(830,0)">
+      <rect x="0" y="0" width="160" height="148" rx="10" fill="#fff5f7" stroke="#e11d48" stroke-width="0.8" stroke-dasharray="4 3"/>
+      <text x="80" y="14" class="gpcL" text-anchor="middle" fill="#e11d48">≈ harvested</text>
+      <text x="80" y="68" class="lbl" text-anchor="middle" fill="#e11d48">10 SM disabled</text>
+      <text x="80" y="86" class="lbl-sm" text-anchor="middle" fill="#e11d48">8.3% harvest rate</text>
+      <text x="80" y="104" class="lbl-sm" text-anchor="middle" fill="#e11d48">[SPECULATIVE conf:M]</text>
+    </g>
+  </g>
+
+  <!-- L2 strip -->
+  <g transform="translate(36,402)">
+    <rect x="0" y="0" width="954" height="46" rx="8" fill="url(#l2G)" stroke="#1e40af" stroke-width="1"/>
+    <text x="20" y="24" class="lbl" fill="#1e40af">L2 Cache · 96 MB · unified crossbar (XOR-hash, no partition camping)</text>
+    <text x="20" y="38" class="lbl-sm" fill="#1e40af">latency 354 cyc · aggregate BW 13.77 TB/s · 12 partitions × 8 MB</text>
+    <text x="700" y="24" class="lbl" fill="#1e40af">memory wall L1→L2 = 8.0×</text>
+    <text x="700" y="38" class="lbl-sm" fill="#1e40af">L2→DRAM only 1.02× (transparent)</text>
+  </g>
+
+  <!-- 12 MCs -->
+  <g transform="translate(36,470)">
+    <text x="0" y="0" class="lbl" fill="#5b6679">12 × 32-bit Memory Controllers (384-bit aggregate bus)</text>
+  </g>
+  <g transform="translate(36,484)" font-family="JetBrains Mono" font-size="10">
+    <!-- 12 small MC blocks -->
+    <g>
+      <rect x="0"   y="0" width="74" height="32" rx="6" fill="url(#dramG)" stroke="#ea580c" stroke-width="0.8"/>
+      <text x="37"  y="14" text-anchor="middle" fill="#9a3412" font-weight="600">MC0</text>
+      <text x="37"  y="26" text-anchor="middle" fill="#9a3412">GDDR7</text>
+    </g>
+    <g transform="translate(80,0)"><rect x="0" y="0" width="74" height="32" rx="6" fill="url(#dramG)" stroke="#ea580c" stroke-width="0.8"/><text x="37" y="14" text-anchor="middle" fill="#9a3412" font-weight="600">MC1</text><text x="37" y="26" text-anchor="middle" fill="#9a3412">GDDR7</text></g>
+    <g transform="translate(160,0)"><rect x="0" y="0" width="74" height="32" rx="6" fill="url(#dramG)" stroke="#ea580c" stroke-width="0.8"/><text x="37" y="14" text-anchor="middle" fill="#9a3412" font-weight="600">MC2</text><text x="37" y="26" text-anchor="middle" fill="#9a3412">GDDR7</text></g>
+    <g transform="translate(240,0)"><rect x="0" y="0" width="74" height="32" rx="6" fill="url(#dramG)" stroke="#ea580c" stroke-width="0.8"/><text x="37" y="14" text-anchor="middle" fill="#9a3412" font-weight="600">MC3</text><text x="37" y="26" text-anchor="middle" fill="#9a3412">GDDR7</text></g>
+    <g transform="translate(320,0)"><rect x="0" y="0" width="74" height="32" rx="6" fill="url(#dramG)" stroke="#ea580c" stroke-width="0.8"/><text x="37" y="14" text-anchor="middle" fill="#9a3412" font-weight="600">MC4</text><text x="37" y="26" text-anchor="middle" fill="#9a3412">GDDR7</text></g>
+    <g transform="translate(400,0)"><rect x="0" y="0" width="74" height="32" rx="6" fill="url(#dramG)" stroke="#ea580c" stroke-width="0.8"/><text x="37" y="14" text-anchor="middle" fill="#9a3412" font-weight="600">MC5</text><text x="37" y="26" text-anchor="middle" fill="#9a3412">GDDR7</text></g>
+    <g transform="translate(480,0)"><rect x="0" y="0" width="74" height="32" rx="6" fill="url(#dramG)" stroke="#ea580c" stroke-width="0.8"/><text x="37" y="14" text-anchor="middle" fill="#9a3412" font-weight="600">MC6</text><text x="37" y="26" text-anchor="middle" fill="#9a3412">GDDR7</text></g>
+    <g transform="translate(560,0)"><rect x="0" y="0" width="74" height="32" rx="6" fill="url(#dramG)" stroke="#ea580c" stroke-width="0.8"/><text x="37" y="14" text-anchor="middle" fill="#9a3412" font-weight="600">MC7</text><text x="37" y="26" text-anchor="middle" fill="#9a3412">GDDR7</text></g>
+    <g transform="translate(640,0)"><rect x="0" y="0" width="74" height="32" rx="6" fill="url(#dramG)" stroke="#ea580c" stroke-width="0.8"/><text x="37" y="14" text-anchor="middle" fill="#9a3412" font-weight="600">MC8</text><text x="37" y="26" text-anchor="middle" fill="#9a3412">GDDR7</text></g>
+    <g transform="translate(720,0)"><rect x="0" y="0" width="74" height="32" rx="6" fill="url(#dramG)" stroke="#ea580c" stroke-width="0.8"/><text x="37" y="14" text-anchor="middle" fill="#9a3412" font-weight="600">MC9</text><text x="37" y="26" text-anchor="middle" fill="#9a3412">GDDR7</text></g>
+    <g transform="translate(800,0)"><rect x="0" y="0" width="74" height="32" rx="6" fill="url(#dramG)" stroke="#ea580c" stroke-width="0.8"/><text x="37" y="14" text-anchor="middle" fill="#9a3412" font-weight="600">MC10</text><text x="37" y="26" text-anchor="middle" fill="#9a3412">GDDR7</text></g>
+    <g transform="translate(880,0)"><rect x="0" y="0" width="74" height="32" rx="6" fill="url(#dramG)" stroke="#ea580c" stroke-width="0.8"/><text x="37" y="14" text-anchor="middle" fill="#9a3412" font-weight="600">MC11</text><text x="37" y="26" text-anchor="middle" fill="#9a3412">GDDR7</text></g>
+  </g>
+
+  <!-- Stats footer -->
+  <g transform="translate(36,538)">
+    <rect x="0"   y="0" width="226" height="58" rx="8" fill="#fcfbf6" stroke="#e6e4da"/>
+    <text x="14" y="20" class="lbl-sm">SMs total</text>
+    <text x="14" y="42" font-family="Fraunces, serif" font-size="22" font-weight="600" fill="#0b1220">110<tspan font-size="11" dx="6" fill="#5b6679">smid [0,109]</tspan></text>
+
+    <g transform="translate(244,0)">
+      <rect x="0"   y="0" width="226" height="58" rx="8" fill="#fcfbf6" stroke="#e6e4da"/>
+      <text x="14" y="20" class="lbl-sm">Boost clock</text>
+      <text x="14" y="42" font-family="Fraunces, serif" font-size="22" font-weight="600" fill="#0b1220">2.572<tspan font-size="11" dx="6" fill="#5b6679">GHz · -lgc 2572,2572</tspan></text>
+    </g>
+    <g transform="translate(488,0)">
+      <rect x="0"   y="0" width="226" height="58" rx="8" fill="#fcfbf6" stroke="#e6e4da"/>
+      <text x="14" y="20" class="lbl-sm">DRAM theoretical</text>
+      <text x="14" y="42" font-family="Fraunces, serif" font-size="22" font-weight="600" fill="#0b1220">1344<tspan font-size="11" dx="6" fill="#5b6679">GB/s · 28 Gbps/pin</tspan></text>
+    </g>
+    <g transform="translate(732,0)">
+      <rect x="0"   y="0" width="226" height="58" rx="8" fill="#fcfbf6" stroke="#e6e4da"/>
+      <text x="14" y="20" class="lbl-sm">DRAM measured (read)</text>
+      <text x="14" y="42" font-family="Fraunces, serif" font-size="22" font-weight="600" fill="#5a8e00">1231<tspan font-size="11" dx="6" fill="#5b6679">GB/s · 91.6%</tspan></text>
+    </g>
+  </g>
+</svg>

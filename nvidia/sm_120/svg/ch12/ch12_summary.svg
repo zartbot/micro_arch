@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 560" role="img"
+     aria-label="Chapter 12 summary: ptxas Compiler Behavior">
+  <defs>
+    <style><![CDATA[
+      .eyebrow{font:600 11px "JetBrains Mono",monospace;letter-spacing:0.16em;text-transform:uppercase}
+      .title  {font:500 26px "Fraunces",serif;fill:#0b1220;letter-spacing:-0.02em}
+      .sub    {font:italic 13px "Fraunces",serif;fill:#5b6679}
+      .ttl    {font:600 13px "JetBrains Mono",monospace;letter-spacing:0.06em}
+      .lbl-sm {font:500 10px "JetBrains Mono",monospace;fill:#5b6679;letter-spacing:0.06em;text-transform:uppercase}
+      .kpi-val{font:600 22px "Fraunces",serif;fill:#0b1220;letter-spacing:-0.01em}
+      .insight{font:500 13px "IBM Plex Sans",sans-serif;fill:#2a3548}
+    ]]></style>
+  </defs>
+  <rect width="1080" height="560" fill="#fcfbf6"/>
+  <g transform="translate(36,32)">
+    <rect x="0" y="0" width="3" height="68" fill="#1e40af"/>
+    <text x="16" y="20" class="eyebrow" fill="#1e40af">CHAPTER 12 · SM_120 / GB202</text>
+    <text x="16" y="50" class="title">ptxas Compiler Behavior</text>
+    <text x="16" y="76" class="sub">Stall counter HW model · 6-pass pipeline · CuAssembler surface</text>
+  </g>
+  
+    <g transform="translate(36,138)">
+      <rect x="0" y="0" width="316" height="78" rx="10" fill="#ffffff" stroke="#e6e4da"/>
+      <rect x="0" y="0" width="316" height="3" rx="10" fill="#1e40af" opacity="0.7"/>
+      <text x="16" y="24" class="lbl-sm">MMA opt headroom</text>
+      <text x="16" y="54" class="kpi-val">+6.1%</text>
+      <text x="16" y="70" class="lbl-sm" fill="#5b6679">stall 11→12</text>
+    </g>
+    <g transform="translate(368,138)">
+      <rect x="0" y="0" width="316" height="78" rx="10" fill="#ffffff" stroke="#e6e4da"/>
+      <rect x="0" y="0" width="316" height="3" rx="10" fill="#1e40af" opacity="0.7"/>
+      <text x="16" y="24" class="lbl-sm">Reorder window</text>
+      <text x="16" y="54" class="kpi-val">20</text>
+      <text x="16" y="70" class="lbl-sm" fill="#5b6679">instructions</text>
+    </g>
+    <g transform="translate(700,138)">
+      <rect x="0" y="0" width="316" height="78" rx="10" fill="#ffffff" stroke="#e6e4da"/>
+      <rect x="0" y="0" width="316" height="3" rx="10" fill="#1e40af" opacity="0.7"/>
+      <text x="16" y="24" class="lbl-sm">Loop unroll</text>
+      <text x="16" y="54" class="kpi-val">≤8192</text>
+      <text x="16" y="70" class="lbl-sm" fill="#5b6679">iters tested</text>
+    </g>
+    <g transform="translate(36,234)">
+      <rect x="0" y="0" width="316" height="78" rx="10" fill="#ffffff" stroke="#e6e4da"/>
+      <rect x="0" y="0" width="316" height="3" rx="10" fill="#1e40af" opacity="0.7"/>
+      <text x="16" y="24" class="lbl-sm">Reg floor</text>
+      <text x="16" y="54" class="kpi-val">24</text>
+      <text x="16" y="70" class="lbl-sm" fill="#5b6679">ptxas enforced</text>
+    </g>
+    <g transform="translate(368,234)">
+      <rect x="0" y="0" width="316" height="78" rx="10" fill="#ffffff" stroke="#e6e4da"/>
+      <rect x="0" y="0" width="316" height="3" rx="10" fill="#1e40af" opacity="0.7"/>
+      <text x="16" y="24" class="lbl-sm">Net CuAsm headroom</text>
+      <text x="16" y="54" class="kpi-val">6-7%</text>
+      <text x="16" y="70" class="lbl-sm" fill="#5b6679">TC-dominated</text>
+    </g>
+    <g transform="translate(700,234)">
+      <rect x="0" y="0" width="316" height="78" rx="10" fill="#ffffff" stroke="#e6e4da"/>
+      <rect x="0" y="0" width="316" height="3" rx="10" fill="#1e40af" opacity="0.7"/>
+      <text x="16" y="24" class="lbl-sm">DCE</text>
+      <text x="16" y="54" class="kpi-val">asm vol</text>
+      <text x="16" y="70" class="lbl-sm" fill="#5b6679">CLOBBERED→eliminated</text>
+    </g>
+  <g transform="translate(36,348)">
+    <rect x="0" y="0" width="1008" height="186" rx="12" fill="#E0E7FF" stroke="#3b82f6" stroke-width="0.8"/>
+    <text x="20" y="32" class="ttl" fill="#1e40af">Key Insights</text>
+    <g transform="translate(20,52)">
+      
+    <g transform="translate(0,18)">
+      <circle cx="6" cy="-4" r="3" fill="#1e40af"/>
+      <text x="18" y="0" class="insight">Stall counter HW: 3 modes (stall=0, normal, sentinels)</text>
+    </g>
+    <g transform="translate(0,40)">
+      <circle cx="6" cy="-4" r="3" fill="#1e40af"/>
+      <text x="18" y="0" class="insight">ptxas 6-pass pipeline: parse → schedule → SB</text>
+    </g>
+    <g transform="translate(0,62)">
+      <circle cx="6" cy="-4" r="3" fill="#1e40af"/>
+      <text x="18" y="0" class="insight">CuAssembler optimization: +6.1% MMA via stall=12</text>
+    </g>
+    <g transform="translate(0,84)">
+      <circle cx="6" cy="-4" r="3" fill="#1e40af"/>
+      <text x="18" y="0" class="insight">Two-wave pattern: 20-inst reorder window</text>
+    </g>
+    <g transform="translate(0,106)">
+      <circle cx="6" cy="-4" r="3" fill="#1e40af"/>
+      <text x="18" y="0" class="insight">asm volatile clobber DCE'd unless paired with global store</text>
+    </g>
+    </g>
+  </g>
+</svg>

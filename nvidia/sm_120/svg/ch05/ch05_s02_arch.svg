@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 434" role="img" aria-label="True FP64 EU Architecture (4 per-SMSP)">
+  <rect width="1080" height="434" fill="#ffffff"/>
+  <text x="36" y="32" style="font:600 14px 'Fraunces',serif;fill:#0b1220">True FP64 EU Architecture (4 per-SMSP)</text>
+  <text x="36" y="52" style="font:italic 11px 'Fraunces',serif;fill:#5b6679">Measured microarchitectural parameters and structure</text>
+
+    <g transform="translate(40,86)">
+      <rect x="0" y="0" width="480" height="90" rx="10" fill="#F5F1FF" stroke="#6d28d9" stroke-width="0.8"/>
+      <text x="16" y="22" style="font:600 11.5px 'JetBrains Mono',monospace;fill:#6d28d9">SM_120 FP64 EU Architecture (4 per-SMSP, all-lane regime)</text>
+      <text x="16" y="44" style="font:500 10px 'JetBrains Mono',monospace;fill:#5b6679">===========================================================</text>
+      <text x="16" y="62" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#8e97a5"></text>
+    </g>
+    <g transform="translate(540,86)">
+      <rect x="0" y="0" width="480" height="90" rx="10" fill="#F5F1FF" stroke="#6d28d9" stroke-width="0.8"/>
+      <text x="16" y="22" style="font:600 11.5px 'JetBrains Mono',monospace;fill:#6d28d9">SM (4 SMSPs, each independent):</text>
+      <text x="16" y="44" style="font:500 10px 'JetBrains Mono',monospace;fill:#5b6679">+-- SMSP 0 ---------+   +-- SMSP 1 ---------+ · warp scheduler   |   |  warp scheduler</text>
+      <text x="16" y="62" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#8e97a5">v          |   |        v · | FP64 EU #0   | |   |  | FP64 EU #1   |</text>
+    </g>
+    <g transform="translate(40,192)">
+      <rect x="0" y="0" width="480" height="90" rx="10" fill="#F5F1FF" stroke="#6d28d9" stroke-width="0.8"/>
+      <text x="16" y="22" style="font:600 11.5px 'JetBrains Mono',monospace;fill:#6d28d9">Aggregate SM throughput (4W, all-32-lanes-active, kE/kF/kG/k</text>
+      <text x="16" y="44" style="font:500 10px 'JetBrains Mono',monospace;fill:#5b6679">4 warps x 1 DFMA / 64 cyc = 0.0625 DFMA/cyc/SM = 4/64 · -&gt; 0% contention, perfect 4x scali</text>
+      <text x="16" y="62" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#8e97a5"></text>
+    </g>
+    <g transform="translate(540,192)">
+      <rect x="0" y="0" width="480" height="90" rx="10" fill="#F5F1FF" stroke="#6d28d9" stroke-width="0.8"/>
+      <text x="16" y="22" style="font:600 11.5px 'JetBrains Mono',monospace;fill:#6d28d9">At 8W (over-subscribed, kE/kF):</text>
+      <text x="16" y="44" style="font:500 10px 'JetBrains Mono',monospace;fill:#5b6679"></text>
+      <text x="16" y="62" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#8e97a5"></text>
+    </g>
+    <g transform="translate(40,298)">
+      <rect x="0" y="0" width="480" height="90" rx="10" fill="#F5F1FF" stroke="#6d28d9" stroke-width="0.8"/>
+      <text x="16" y="22" style="font:600 11.5px 'JetBrains Mono',monospace;fill:#6d28d9">Each EU serves 2 warps in time-share -&gt; 128 cyc per warp</text>
+      <text x="16" y="44" style="font:500 10px 'JetBrains Mono',monospace;fill:#5b6679"></text>
+      <text x="16" y="62" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#8e97a5"></text>
+    </g>
+    <g transform="translate(540,298)">
+      <rect x="0" y="0" width="480" height="90" rx="10" fill="#F5F1FF" stroke="#6d28d9" stroke-width="0.8"/>
+      <text x="16" y="22" style="font:600 11.5px 'JetBrains Mono',monospace;fill:#6d28d9">Aggregate stays at 0.0625 DFMA/cyc/SM (saturated)</text>
+      <text x="16" y="44" style="font:500 10px 'JetBrains Mono',monospace;fill:#5b6679"></text>
+      <text x="16" y="62" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#8e97a5"></text>
+    </g>
+</svg>

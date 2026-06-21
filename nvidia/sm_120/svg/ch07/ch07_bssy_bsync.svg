@@ -1,0 +1,327 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 920" role="img"
+     aria-label="§ 7.4.6 ITS Reconvergence Architecture — BSSY/BSYNC mechanism, reconvergence stack depth, ptxas compilation strategy, key metrics">
+  <defs>
+    <style><![CDATA[
+      .eyebrow { font: 600 11px "JetBrains Mono", monospace; letter-spacing: 0.16em; text-transform: uppercase }
+      .title   { font: 500 24px "Fraunces", serif; fill: #0b1220; letter-spacing: -0.02em }
+      .sub     { font: italic 12px "Fraunces", serif; fill: #5b6679 }
+      .panel-h { font: 600 13px "JetBrains Mono", monospace; letter-spacing: 0.06em; fill: #0b1220 }
+      .panel-sub { font: italic 11px "Fraunces", serif; fill: #5b6679 }
+      .lbl-sm  { font: 500 9px "JetBrains Mono", monospace; fill: #5b6679; letter-spacing: 0.05em; text-transform: uppercase }
+      .lbl     { font: 500 11px "IBM Plex Sans", sans-serif; fill: #2a3548 }
+      .lbl-mono{ font: 500 10px "JetBrains Mono", monospace; fill: #2a3548 }
+      .lbl-mono-em { font: 700 10px "JetBrains Mono", monospace; fill: #0b1220 }
+      .lbl-w   { font: 600 10px "IBM Plex Sans", sans-serif; fill: #fcf5f5 }
+      .lbl-w-mono { font: 500 9px "JetBrains Mono", monospace; fill: #ffffff }
+      .lbl-w-mono2 { font: 500 9px "JetBrains Mono", monospace; fill: #333131 }
+      .big-num { font: 700 28px "Fraunces", serif; fill: #0b1220 }
+      .code    { font: 500 10px "JetBrains Mono", monospace; fill: #2a3548 }
+    ]]></style>
+    <marker id="arr-r" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M0,0 L8,4 L0,8 z" fill="#b45309"/>
+    </marker>
+    <marker id="arr-g" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M0,0 L8,4 L0,8 z" fill="#16a34a"/>
+    </marker>
+    <marker id="arr-d" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M0,0 L8,4 L0,8 z" fill="#5b6679"/>
+    </marker>
+    <marker id="arr-b" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M0,0 L8,4 L0,8 z" fill="#2563eb"/>
+    </marker>
+  </defs>
+
+  <rect width="1280" height="920" fill="#fcfbf6"/>
+
+  <!-- ============ Header ============ -->
+  <g transform="translate(40,32)">
+    <text x="0" y="0" class="eyebrow" fill="#b45309">SECTION 7.4.6 · BSSY/BSYNC RECONVERGENCE ARCHITECTURE</text>
+    <text x="0" y="28" class="title">ITS Reconvergence: BSSY/BSYNC on SM_120</text>
+    <text x="0" y="50" class="sub">Independent Thread Scheduling · per-warp reconvergence stack (≥8 levels) · BSSY push / BSYNC rendezvous · ptxas compilation strategy</text>
+    <text x="0" y="68" class="lbl-sm">Source: [S13/case_20] · [S7/case_10,24] · Section 7.4.6</text>
+  </g>
+
+  <!-- ============ Panel A: Reconvergence Mechanism Timeline ============ -->
+  <g transform="translate(40,110)">
+    <rect x="0" y="0" width="1200" height="290" rx="6" fill="#ffffff" stroke="#e2d8c8" stroke-width="0.8"/>
+    <text x="14" y="22" class="panel-h">A · RECONVERGENCE MECHANISM — BSSY PUSH → DIVERGENT BRANCH → BSYNC RENDEZVOUS</text>
+    <text x="14" y="38" class="panel-sub">Per-warp timeline showing stack operations, divergent thread groups, and cycle costs</text>
+
+    <!-- Timeline axis -->
+    <line x1="14" y1="210" x2="1186" y2="210" stroke="#cbd5e1" stroke-width="1"/>
+    <text x="14" y="228" class="lbl-sm">PC →</text>
+
+    <!-- Phase 1: BSSY.RECONVERGENT (push) -->
+    <g transform="translate(30,55)">
+      <rect x="0" y="0" width="180" height="140" rx="4" fill="#eff6ff" stroke="#2563eb" stroke-width="1"/>
+      <text x="90" y="18" class="lbl-w-mono2" text-anchor="middle" fill="#2563eb" font-weight="700">① BSSY.RECONVERGENT</text>
+      <line x1="10" y1="26" x2="170" y2="26" stroke="#2563eb" stroke-width="0.5" opacity="0.3"/>
+      <text x="10" y="44" class="code">BSSY.RECONVERGENT</text>
+      <text x="10" y="58" class="code">  target_PC</text>
+      <text x="10" y="78" class="lbl-sm" fill="#2563eb">PUSH reconvergence point</text>
+      <text x="10" y="94" class="lbl-mono">onto per-warp stack</text>
+      <text x="10" y="116" class="lbl-mono-em" fill="#2563eb">~2 cyc (push only)</text>
+      <text x="10" y="130" class="lbl-sm">Barrier slot: B0</text>
+    </g>
+
+    <!-- Arrow from BSSY to branch -->
+    <path d="M214,125 L250,125" stroke="#2563eb" stroke-width="1.5" fill="none" marker-end="url(#arr-b)"/>
+
+    <!-- Phase 2: @P BRA (divergent branch) -->
+    <g transform="translate(255,55)">
+      <rect x="0" y="0" width="170" height="140" rx="4" fill="#fef3c7" stroke="#d97706" stroke-width="1"/>
+      <text x="85" y="18" class="lbl-w-mono2" text-anchor="middle" fill="#d97706" font-weight="700">② @P BRA (divergence)</text>
+      <line x1="10" y1="26" x2="160" y2="26" stroke="#d97706" stroke-width="0.5" opacity="0.3"/>
+      <text x="10" y="44" class="code">@P  BRA  taken_path</text>
+      <text x="10" y="64" class="lbl-sm" fill="#d97706">Predicated branch splits</text>
+      <text x="10" y="78" class="lbl-mono">warp into thread groups</text>
+      <text x="10" y="100" class="lbl-mono-em" fill="#d97706">Groups execute</text>
+      <text x="10" y="114" class="lbl-mono-em" fill="#d97706">INDEPENDENTLY (ITS)</text>
+      <text x="10" y="132" class="lbl-sm">Each group has own PC</text>
+    </g>
+
+    <!-- Arrow from branch to paths -->
+    <path d="M429,95 L465,75" stroke="#d97706" stroke-width="1.5" fill="none" marker-end="url(#arr-r)"/>
+    <path d="M429,155 L465,175" stroke="#d97706" stroke-width="1.5" fill="none" marker-end="url(#arr-r)"/>
+
+    <!-- Phase 3: Divergent paths -->
+    <g transform="translate(470,55)">
+      <!-- Path A (taken) -->
+      <rect x="0" y="0" width="200" height="60" rx="4" fill="#dcfce7" stroke="#16a34a" stroke-width="0.8"/>
+      <text x="10" y="16" class="lbl-mono-em" fill="#15803d">GROUP A (P=true)</text>
+      <text x="10" y="32" class="code">  ... path A body ...</text>
+      <text x="10" y="48" class="lbl-sm" fill="#15803d">Executes independently</text>
+
+      <!-- Path B (not taken) -->
+      <rect x="0" y="80" width="200" height="60" rx="4" fill="#fee2e2" stroke="#dc2626" stroke-width="0.8"/>
+      <text x="10" y="96" class="lbl-mono-em" fill="#dc2626">GROUP B (P=false)</text>
+      <text x="10" y="112" class="code">  ... path B body ...</text>
+      <text x="10" y="128" class="lbl-sm" fill="#dc2626">Executes independently</text>
+    </g>
+
+    <!-- Arrow from paths to BSYNC -->
+    <path d="M674,85 L710,105" stroke="#5b6679" stroke-width="1.5" fill="none" marker-end="url(#arr-d)" stroke-dasharray="3,3"/>
+    <path d="M674,165 L710,145" stroke="#5b6679" stroke-width="1.5" fill="none" marker-end="url(#arr-d)" stroke-dasharray="3,3"/>
+
+    <!-- Phase 4: BSYNC.RECONVERGENT (rendezvous) -->
+    <g transform="translate(715,55)">
+      <rect x="0" y="0" width="190" height="140" rx="4" fill="#f3e8ff" stroke="#7c3aed" stroke-width="1"/>
+      <text x="95" y="18" class="lbl-w-mono2" text-anchor="middle" fill="#7c3aed" font-weight="700">③ BSYNC.RECONVERGENT</text>
+      <line x1="10" y1="26" x2="180" y2="26" stroke="#7c3aed" stroke-width="0.5" opacity="0.3"/>
+      <text x="10" y="44" class="code">BSYNC.RECONVERGENT</text>
+      <text x="10" y="64" class="lbl-sm" fill="#7c3aed">RENDEZVOUS: ALL groups</text>
+      <text x="10" y="78" class="lbl-mono">must reach this point</text>
+      <text x="10" y="98" class="lbl-mono-em" fill="#7c3aed">Wait = max(group_times)</text>
+      <text x="10" y="112" class="lbl-mono">− avg(group_times)</text>
+      <text x="10" y="130" class="lbl-sm">POP reconvergence point</text>
+    </g>
+
+    <!-- Arrow from BSYNC to continuation -->
+    <path d="M909,125 L945,125" stroke="#7c3aed" stroke-width="1.5" fill="none" marker-end="url(#arr-d)"/>
+
+    <!-- Phase 5: Unified continuation -->
+    <g transform="translate(950,55)">
+      <rect x="0" y="0" width="180" height="140" rx="4" fill="#f8fafc" stroke="#cbd5e1" stroke-width="0.8"/>
+      <text x="90" y="18" class="lbl-mono-em" text-anchor="middle" fill="#0b1220">④ UNIFIED EXECUTION</text>
+      <line x1="10" y1="26" x2="170" y2="26" stroke="#cbd5e1" stroke-width="0.5"/>
+      <text x="10" y="44" class="code">  ... post-divergence ...</text>
+      <text x="10" y="58" class="code">  ... code ...</text>
+      <text x="10" y="80" class="lbl-sm">All lanes reconverged</text>
+      <text x="10" y="94" class="lbl-mono">Single active PC again</text>
+      <text x="10" y="116" class="lbl-mono-em" fill="#15803d">Normal execution resumes</text>
+    </g>
+
+    <!-- Cycle cost annotations -->
+    <g transform="translate(30,252)">
+      <text x="0" y="0" class="lbl-sm">CYCLE COSTS:</text>
+      <text x="80" y="0" class="lbl-mono-em" fill="#2563eb">BSSY push: ~2 cyc</text>
+      <text x="240" y="0" class="lbl-mono-em" fill="#d97706">Branch resolution: ~6-8 cyc/level</text>
+      <text x="460" y="0" class="lbl-mono-em" fill="#7c3aed">BSYNC rendezvous: ~2 cyc + wait</text>
+      <text x="700" y="0" class="lbl-mono-em" fill="#0b1220">Total BSSY+BSYNC pair: ~4 cyc (no actual divergence)</text>
+    </g>
+  </g>
+
+  <!-- ============ Panel B: Reconvergence Stack Depth ============ -->
+  <g transform="translate(40,420)">
+    <rect x="0" y="0" width="580" height="250" rx="6" fill="#ffffff" stroke="#e2d8c8" stroke-width="0.8"/>
+    <text x="14" y="22" class="panel-h">B · RECONVERGENCE STACK — ≥8 LEVELS DEEP, B0 SLOT REUSE</text>
+    <text x="14" y="38" class="panel-sub">Per-warp hardware stack supports up to 8 nested divergent regions; compiler reuses barrier slot B0</text>
+
+    <!-- Stack visualization -->
+    <g transform="translate(14,52)">
+      <!-- Stack frame boxes (bottom = level 0, top = level 7) -->
+      <text x="0" y="10" class="lbl-sm">TOP →</text>
+
+      <!-- Level 7 (top) -->
+      <rect x="50" y="0" width="300" height="18" rx="2" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="0.5"/>
+      <text x="58" y="13" class="lbl-mono">L7: [B0] reconvergence_PC_7</text>
+
+      <!-- Level 6 -->
+      <rect x="50" y="20" width="300" height="18" rx="2" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="0.5"/>
+      <text x="58" y="33" class="lbl-mono">L6: [B0] reconvergence_PC_6</text>
+
+      <!-- Level 5 -->
+      <rect x="50" y="40" width="300" height="18" rx="2" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="0.5"/>
+      <text x="58" y="53" class="lbl-mono">L5: [B0] reconvergence_PC_5</text>
+
+      <!-- Level 4 -->
+      <rect x="50" y="60" width="300" height="18" rx="2" fill="#eff6ff" stroke="#2563eb" stroke-width="0.5"/>
+      <text x="58" y="73" class="lbl-mono">L4: [B0] reconvergence_PC_4</text>
+
+      <!-- Level 3 -->
+      <rect x="50" y="80" width="300" height="18" rx="2" fill="#eff6ff" stroke="#2563eb" stroke-width="0.5"/>
+      <text x="58" y="93" class="lbl-mono">L3: [B0] reconvergence_PC_3</text>
+
+      <!-- Level 2 (active nesting example) -->
+      <rect x="50" y="100" width="300" height="18" rx="2" fill="#dcfce7" stroke="#16a34a" stroke-width="0.8"/>
+      <text x="58" y="113" class="lbl-mono-em" fill="#15803d">L2: [B0] reconvergence_PC_2 ← ACTIVE</text>
+
+      <!-- Level 1 (active nesting example) -->
+      <rect x="50" y="120" width="300" height="18" rx="2" fill="#dcfce7" stroke="#16a34a" stroke-width="0.8"/>
+      <text x="58" y="133" class="lbl-mono-em" fill="#15803d">L1: [B0] reconvergence_PC_1 ← ACTIVE</text>
+
+      <!-- Level 0 (bottom) -->
+      <rect x="50" y="140" width="300" height="18" rx="2" fill="#fef3c7" stroke="#d97706" stroke-width="0.8"/>
+      <text x="58" y="153" class="lbl-mono-em" fill="#b45309">L0: [B0] reconvergence_PC_0 ← CURRENT</text>
+
+      <text x="0" y="153" class="lbl-sm">BOT →</text>
+    </g>
+
+    <!-- Key properties -->
+    <g transform="translate(380,52)">
+      <rect x="0" y="0" width="186" height="178" rx="4" fill="#f8fafc" stroke="#cbd5e1" stroke-width="0.6"/>
+      <text x="10" y="18" class="panel-h" font-size="11">STACK PROPERTIES</text>
+      <line x1="10" y1="24" x2="176" y2="24" stroke="#cbd5e1" stroke-width="0.5"/>
+      <text x="10" y="40" class="lbl-mono-em">Depth: ≥8 levels</text>
+      <text x="10" y="56" class="lbl-mono">Max nesting: 8 levels</text>
+      <text x="10" y="72" class="lbl-mono">of divergent branches</text>
+      <text x="10" y="94" class="lbl-mono-em">Slot: B0 (reused)</text>
+      <text x="10" y="110" class="lbl-mono">All nesting levels share</text>
+      <text x="10" y="124" class="lbl-mono">barrier slot B0</text>
+      <text x="10" y="146" class="lbl-mono-em">Mgmt: HW implicit</text>
+      <text x="10" y="162" class="lbl-mono">Hardware manages stack</text>
+      <text x="10" y="176" class="lbl-mono">implicitly per-warp</text>
+    </g>
+  </g>
+
+  <!-- ============ Panel C: ptxas Compilation Strategy ============ -->
+  <g transform="translate(640,420)">
+    <rect x="0" y="0" width="600" height="250" rx="6" fill="#ffffff" stroke="#e2d8c8" stroke-width="0.8"/>
+    <text x="14" y="22" class="panel-h">C · PTXAS COMPILATION STRATEGY — PREDICATION VS BSSY/BSYNC</text>
+    <text x="14" y="38" class="panel-sub">ptxas aggressively converts control flow to predication; BSSY/BSYNC reserved for warp-level collectives</text>
+
+    <!-- Left: Predication (common case) -->
+    <g transform="translate(14,52)">
+      <rect x="0" y="0" width="275" height="180" rx="4" fill="#dcfce7" stroke="#16a34a" stroke-width="0.8"/>
+      <rect x="0" y="0" width="275" height="24" rx="4" fill="#16a34a"/>
+      <rect x="0" y="20" width="275" height="4" fill="#16a34a"/>
+      <text x="10" y="16" class="lbl-w" font-size="11">PREDICATION (DEFAULT — ~95% of cases)</text>
+
+      <text x="10" y="42" class="code">  // PTX input:</text>
+      <text x="10" y="56" class="code">  if (cond) { ... }</text>
+      <text x="10" y="70" class="code">  else { ... }</text>
+      <text x="10" y="88" class="code">  // SASS output:</text>
+      <text x="10" y="102" class="code">  @P  FADD R1, R2, R3</text>
+      <text x="10" y="116" class="code">  @!P FADD R1, R4, R5</text>
+      <text x="10" y="138" class="lbl-mono-em" fill="#15803d">→ NO BSSY/BSYNC emitted</text>
+      <text x="10" y="154" class="lbl-mono">Both paths execute through</text>
+      <text x="10" y="168" class="lbl-mono">same pipeline, masked by P</text>
+    </g>
+
+    <!-- Right: BSSY/BSYNC (rare case) -->
+    <g transform="translate(300,52)">
+      <rect x="0" y="0" width="275" height="180" rx="4" fill="#fef3c7" stroke="#d97706" stroke-width="0.8"/>
+      <rect x="0" y="0" width="275" height="24" rx="4" fill="#d97706"/>
+      <rect x="0" y="20" width="275" height="4" fill="#d97706"/>
+      <text x="10" y="16" class="lbl-w" font-size="11">BSSY/BSYNC (WARP COLLECTIVES ONLY)</text>
+
+      <text x="10" y="42" class="code">  // Requires full convergence:</text>
+      <text x="10" y="56" class="code">  shfl.sync.bfly ...</text>
+      <text x="10" y="70" class="code">  redux.sync.add ...</text>
+      <text x="10" y="84" class="code">  vote.ballot.sync ...</text>
+      <text x="10" y="102" class="code">  // SASS output:</text>
+      <text x="10" y="116" class="code">  BSSY.RECONVERGENT L_</text>
+      <text x="10" y="130" class="code">  ... divergent code ...</text>
+      <text x="10" y="144" class="code">  BSYNC.RECONVERGENT</text>
+      <text x="10" y="166" class="lbl-mono-em" fill="#b45309">→ Emitted ONLY when</text>
+      <text x="10" y="178" class="lbl-sm" fill="#b45309">full warp convergence required</text>
+    </g>
+  </g>
+
+  <!-- ============ Panel D: Key Metrics & Divergent Loop Model ============ -->
+  <g transform="translate(40,690)">
+    <rect x="0" y="0" width="1200" height="215" rx="6" fill="#ffffff" stroke="#e2d8c8" stroke-width="0.8"/>
+    <text x="14" y="22" class="panel-h">D · KEY METRICS &amp; DIVERGENT LOOP MODEL</text>
+
+    <!-- Metrics table -->
+    <g transform="translate(14,38)">
+      <rect x="0" y="0" width="560" height="165" rx="4" fill="#f8fafc" stroke="#cbd5e1" stroke-width="0.6"/>
+      <text x="12" y="18" class="panel-h" font-size="11">RECONVERGENCE METRICS</text>
+      <line x1="12" y1="24" x2="548" y2="24" stroke="#cbd5e1" stroke-width="0.5"/>
+
+      <text x="12" y="42" class="lbl-mono-em">Stack depth</text>
+      <text x="180" y="42" class="lbl-mono">≥8 levels per warp</text>
+      <text x="400" y="42" class="lbl-sm">[S13/case_20]</text>
+
+      <text x="12" y="60" class="lbl-mono-em">BSSY+BSYNC pair overhead</text>
+      <text x="180" y="60" class="lbl-mono">~4 cyc (no actual divergence)</text>
+      <text x="400" y="60" class="lbl-sm">[S7/case_10]</text>
+
+      <text x="12" y="78" class="lbl-mono-em">BSYNC wait time</text>
+      <text x="180" y="78" class="lbl-mono">max(group_times) − avg</text>
+      <text x="400" y="78" class="lbl-sm">Path-length variance</text>
+
+      <text x="12" y="96" class="lbl-mono-em">Barrier slot reuse</text>
+      <text x="180" y="96" class="lbl-mono">B0 for ALL nesting levels</text>
+      <text x="400" y="96" class="lbl-sm">HW implicit mgmt</text>
+
+      <text x="12" y="114" class="lbl-mono-em">ptxas default strategy</text>
+      <text x="180" y="114" class="lbl-mono">@P/@!P predication (~95%)</text>
+      <text x="400" y="114" class="lbl-sm">No BSSY/BSYNC</text>
+
+      <text x="12" y="132" class="lbl-mono-em">BSSY/BSYNC trigger</text>
+      <text x="180" y="132" class="lbl-mono">Warp-level collectives only</text>
+      <text x="400" y="132" class="lbl-sm">shfl/redux/vote.sync</text>
+
+      <text x="12" y="150" class="lbl-mono-em">ITS model</text>
+      <text x="180" y="150" class="lbl-mono">Independent Thread Scheduling</text>
+      <text x="400" y="150" class="lbl-sm">Volta-onward</text>
+    </g>
+
+    <!-- Divergent loop model -->
+    <g transform="translate(590,38)">
+      <rect x="0" y="0" width="596" height="165" rx="4" fill="#fffbeb" stroke="#d97706" stroke-width="0.6"/>
+      <text x="12" y="18" class="panel-h" font-size="11" fill="#b45309">DIVERGENT LOOP MODEL — max(iter) COST</text>
+      <line x1="12" y1="24" x2="584" y2="24" stroke="#d97706" stroke-width="0.5" opacity="0.4"/>
+
+      <text x="12" y="44" class="lbl">When lanes iterate different counts, total cost follows the</text>
+      <text x="12" y="60" class="lbl-mono-em" fill="#b45309">max(iter)</text>
+      <text x="80" y="60" class="lbl">model with 2.0–2.7× overhead.</text>
+
+      <!-- Visualization -->
+      <g transform="translate(12,72)">
+        <!-- Lane bars -->
+        <text x="0" y="10" class="lbl-sm">Lane 0:</text>
+        <rect x="55" y="2" width="120" height="10" rx="1" fill="#d97706" opacity="0.6"/>
+        <text x="180" y="10" class="lbl-mono">3 iters</text>
+
+        <text x="0" y="26" class="lbl-sm">Lane 1:</text>
+        <rect x="55" y="18" width="80" height="10" rx="1" fill="#d97706" opacity="0.6"/>
+        <text x="180" y="26" class="lbl-mono">2 iters</text>
+
+        <text x="0" y="42" class="lbl-sm">Lane 2:</text>
+        <rect x="55" y="34" width="40" height="10" rx="1" fill="#d97706" opacity="0.6"/>
+        <text x="180" y="42" class="lbl-mono">1 iter</text>
+
+        <text x="0" y="58" class="lbl-sm">Lane 3:</text>
+        <rect x="55" y="50" width="160" height="10" rx="1" fill="#dc2626" opacity="0.7"/>
+        <text x="220" y="58" class="lbl-mono-em" fill="#dc2626">4 iters ← MAX</text>
+      </g>
+
+      <text x="12" y="146" class="lbl-mono-em" fill="#b45309">Cost = max(iter) × 2.0–2.7×</text>
+      <text x="250" y="146" class="lbl-sm">Minimize max(iter), not total work</text>
+    </g>
+  </g>
+
+</svg>

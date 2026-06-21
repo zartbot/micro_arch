@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 520" role="img"
+     aria-label="SM_120 128-bit instruction encoding: opcode word + ext opcode + 17-bit control code + reuse + reserved">
+  <defs>
+    <style><![CDATA[
+      .ttl{font:600 14px "Fraunces",serif;fill:#0b1220}
+      .sub{font:italic 11px "Fraunces",serif;fill:#5b6679}
+      .lbl{font:600 12px "JetBrains Mono",monospace;fill:#2a3548}
+      .lbl-sm{font:500 10px "JetBrains Mono",monospace;fill:#5b6679}
+      .bit{font:600 9.5px "JetBrains Mono",monospace;fill:#8e97a5}
+      .field{font:600 11px "JetBrains Mono",monospace}
+      .desc{font:500 9.5px "JetBrains Mono",monospace;fill:#5b6679}
+    ]]></style>
+  </defs>
+  <rect width="1080" height="520" fill="#ffffff"/>
+  <text x="36" y="32" class="ttl">SM_120 128-bit Instruction Encoding · PC step = 0x10 (16 bytes)</text>
+  <text x="36" y="52" class="sub">Every instruction is exactly 128 bits: 64-bit primary opcode + 41-bit extended opcode + 17-bit control + 4-bit reuse + 2-bit reserved</text>
+
+  <!-- Full 128-bit layout bar -->
+  <g transform="translate(40,76)">
+    <text x="0" y="0" class="bit">bit 127</text>
+    <text x="990" y="0" class="bit" text-anchor="end">bit 0</text>
+
+    <g transform="translate(0,10)">
+      <!-- reserved [2 bits] → 16px -->
+      <rect x="0" y="0" width="20" height="48" fill="#EFEEE6" stroke="#8e97a5" stroke-width="0.8"/>
+      <text x="10" y="30" class="bit" text-anchor="middle">2b</text>
+
+      <!-- reuse [4 bits] → 32px -->
+      <rect x="20" y="0" width="40" height="48" fill="#D1FAE5" stroke="#047857" stroke-width="0.8"/>
+      <text x="40" y="20" class="field" fill="#047857" text-anchor="middle" font-size="9">reuse</text>
+      <text x="40" y="36" class="bit" text-anchor="middle">[4]</text>
+
+      <!-- 17-bit control code → 134px -->
+      <rect x="60" y="0" width="140" height="48" fill="#FEF3C7" stroke="#b45309" stroke-width="1.2"/>
+      <text x="130" y="20" class="field" fill="#92400e" text-anchor="middle">17-bit Control</text>
+      <text x="130" y="36" class="desc" text-anchor="middle" fill="#92400e">[121:105]</text>
+
+      <!-- ext opcode [41 bits] → 320px -->
+      <rect x="200" y="0" width="320" height="48" fill="#E0E7FF" stroke="#1e40af" stroke-width="0.8"/>
+      <text x="360" y="20" class="field" fill="#1e40af" text-anchor="middle">Extended Opcode [41 bits]</text>
+      <text x="360" y="36" class="desc" text-anchor="middle" fill="#1e40af">instruction-specific fields</text>
+
+      <!-- primary opcode word [64 bits] → 480px -->
+      <rect x="520" y="0" width="480" height="48" fill="#EDE7FB" stroke="#6d28d9" stroke-width="0.8"/>
+      <text x="760" y="20" class="field" fill="#6d28d9" text-anchor="middle">Primary Opcode Word [64 bits]</text>
+      <text x="760" y="36" class="desc" text-anchor="middle" fill="#6d28d9">opcode[16] + pred[4] + dst[8] + src0[8] + src1[32] + mod</text>
+    </g>
+  </g>
+
+  <!-- 17-bit control code decomposition -->
+  <g transform="translate(40,166)">
+    <rect x="0" y="0" width="1000" height="180" rx="12" fill="#FFFBEB" stroke="#b45309" stroke-width="0.8"/>
+    <text x="24" y="26" class="lbl" fill="#92400e">17-bit Control Code Decomposition [bits 121:105]</text>
+
+    <!-- Sub-fields in a single row with adequate spacing -->
+    <g transform="translate(24,46)">
+      <!-- stall[4]: most important, leftmost -->
+      <rect x="0" y="0" width="160" height="42" rx="8" fill="#FEF3C7" stroke="#b45309" stroke-width="0.9"/>
+      <text x="80" y="16" class="field" fill="#92400e" text-anchor="middle">stall [4 bits]</text>
+      <text x="80" y="34" class="desc" text-anchor="middle" fill="#92400e">0-15 cyc (1:1 linear)</text>
+
+      <!-- yield[1] -->
+      <rect x="172" y="0" width="100" height="42" rx="8" fill="#D1FAE5" stroke="#047857" stroke-width="0.7"/>
+      <text x="222" y="16" class="field" fill="#047857" text-anchor="middle">yield [1]</text>
+      <text x="222" y="34" class="desc" text-anchor="middle" fill="#047857">0=yield 1=hold</text>
+
+      <!-- WrBarrier[3] -->
+      <rect x="284" y="0" width="160" height="42" rx="8" fill="#E0E7FF" stroke="#1e40af" stroke-width="0.7"/>
+      <text x="364" y="16" class="field" fill="#1e40af" text-anchor="middle">WrBarrier [3]</text>
+      <text x="364" y="34" class="desc" text-anchor="middle" fill="#1e40af">producer SB (0-5, 7=none)</text>
+
+      <!-- RdBarrier[3] -->
+      <rect x="456" y="0" width="160" height="42" rx="8" fill="#E0E7FF" stroke="#1e40af" stroke-width="0.7"/>
+      <text x="536" y="16" class="field" fill="#1e40af" text-anchor="middle">RdBarrier [3]</text>
+      <text x="536" y="34" class="desc" text-anchor="middle" fill="#1e40af">consumer SB (0-5, 7=none)</text>
+
+      <!-- WaitBarrier[6] -->
+      <rect x="628" y="0" width="200" height="42" rx="8" fill="#FFE4E6" stroke="#e11d48" stroke-width="0.7"/>
+      <text x="728" y="16" class="field" fill="#9f1239" text-anchor="middle">WaitBarrier [6]</text>
+      <text x="728" y="34" class="desc" text-anchor="middle" fill="#9f1239">one-hot mask for 6 SB counters</text>
+    </g>
+
+    <!-- Stall semantics -->
+    <g transform="translate(24,104)">
+      <text x="0" y="14" class="lbl-sm" fill="#92400e">Stall semantics:</text>
+      <text x="130" y="14" class="lbl-sm">0 = HW scoreboard fallback (31-34 cyc/inst)</text>
+      <text x="130" y="32" class="lbl-sm">1-13 = exact N-cycle inter-issue delay</text>
+      <text x="130" y="50" class="lbl-sm">14, 15 = sentinel values (force full SB resolution)</text>
+      <text x="550" y="14" class="lbl-sm" fill="#9f1239">6 scoreboard counters/warp</text>
+      <text x="550" y="32" class="lbl-sm" fill="#9f1239">effective depth 10-11 (cliff at 5→6: 17→761 cyc)</text>
+      <text x="550" y="50" class="lbl-sm" fill="#9f1239">stall &lt; wb_latency = silent corruption (no trap!)</text>
+    </g>
+  </g>
+
+  <!-- Reuse bits -->
+  <g transform="translate(40,368)">
+    <rect x="0" y="0" width="480" height="130" rx="12" fill="#ECFDF5" stroke="#047857" stroke-width="0.8"/>
+    <text x="24" y="26" class="lbl" fill="#047857">Reuse Flags [bits 125:122] · 4 bits</text>
+    <text x="24" y="48" class="lbl-sm" fill="#047857">Per-operand hint to cache in Register File Cache (RFC)</text>
+
+    <!-- 4 boxes -->
+    <g transform="translate(24,60)">
+      <rect x="0" y="0" width="80" height="32" rx="6" fill="#fff" stroke="#047857"/>
+      <text x="40" y="20" class="field" fill="#047857" text-anchor="middle">src3</text>
+      <rect x="90" y="0" width="80" height="32" rx="6" fill="#fff" stroke="#047857"/>
+      <text x="130" y="20" class="field" fill="#047857" text-anchor="middle">src2</text>
+      <rect x="180" y="0" width="80" height="32" rx="6" fill="#fff" stroke="#047857"/>
+      <text x="220" y="20" class="field" fill="#047857" text-anchor="middle">src1</text>
+      <rect x="270" y="0" width="80" height="32" rx="6" fill="#fff" stroke="#047857"/>
+      <text x="310" y="20" class="field" fill="#047857" text-anchor="middle">src0</text>
+    </g>
+    <text x="24" y="108" class="lbl-sm" fill="#047857">ALU (FFMA): functionally active (+85% ILP throughput) </text>
+    <text x="24" y="123" class="lbl-sm" fill="#047857">TC (HMMA/QMMA/OMMA): true no-op</text>
+  </g>
+
+  <!-- Key facts -->
+  <g transform="translate(540,368)">
+    <rect x="0" y="0" width="500" height="130" rx="12" fill="#fcfbf6" stroke="#e6e4da"/>
+    <text x="24" y="26" class="lbl">Key Encoding Facts</text>
+    <text x="24" y="52" class="lbl-sm">PC step = 0x10 (16 bytes) — all instructions same width</text>
+    <text x="24" y="72" class="lbl-sm">Prefetch distance: ≥ 256 instructions ahead</text>
+    <text x="24" y="92" class="lbl-sm">L0 I-cache: ~4 KB/SMSP · L1 I-cache: 64 KB/SM</text>
+    <text x="24" y="112" class="lbl-sm">I-cache cliff at 8-16 KB → 45% throughput loss</text>
+  </g>
+</svg>

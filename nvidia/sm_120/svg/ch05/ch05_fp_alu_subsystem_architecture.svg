@@ -1,0 +1,182 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 780" role="img" aria-label="SM_120 Floating-Point ALU Subsystem — Three Independent Co-Issuing Execution Pipes per SMSP">
+  <defs>
+    <marker id="arr" markerWidth="7" markerHeight="5" refX="7" refY="2.5" orient="auto">
+      <path d="M0,0 L7,2.5 L0,5 Z" fill="#475569"/>
+    </marker>
+    <linearGradient id="hdrGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#1e293b"/><stop offset="100%" style="stop-color:#334155"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1100" height="780" fill="#fafbfc"/>
+
+  <!-- Title -->
+  <text x="550" y="30" text-anchor="middle" style="font:700 15px 'Inter','Segoe UI',sans-serif;fill:#0f172a">SM_120 Floating-Point ALU Subsystem (per SMSP)</text>
+  <text x="550" y="50" text-anchor="middle" style="font:italic 11px 'Inter','Segoe UI',sans-serif;fill:#64748b">Three independent execution pipes — full co-issue with each other and with the INT pipe (P0-lite/P0-heavy)</text>
+
+  <!-- ═══════ SMSP Scheduler ═══════ -->
+  <rect x="320" y="66" width="460" height="36" rx="5" fill="url(#hdrGrad)"/>
+  <text x="550" y="89" text-anchor="middle" style="font:600 11.5px 'JetBrains Mono',monospace;fill:#f1f5f9">SMSP Warp Scheduler — issues to all pipes simultaneously</text>
+
+  <!-- Arrows from scheduler to 3 pipes -->
+  <line x1="400" y1="102" x2="200" y2="134" stroke="#475569" stroke-width="1.5" marker-end="url(#arr)"/>
+  <line x1="550" y1="102" x2="550" y2="134" stroke="#475569" stroke-width="1.5" marker-end="url(#arr)"/>
+  <line x1="700" y1="102" x2="900" y2="134" stroke="#475569" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <!-- P0 / FMA Pipe (left) -->
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <rect x="40" y="136" width="360" height="440" rx="10" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.6"/>
+  <rect x="40" y="136" width="360" height="36" rx="10" fill="#dcfce7" stroke="#16a34a" stroke-width="1.6"/>
+  <rect x="40" y="162" width="360" height="10" fill="#dcfce7"/>
+  <text x="220" y="160" text-anchor="middle" style="font:700 13px 'JetBrains Mono',monospace;fill:#15803d">P0 / FMA Pipe</text>
+
+  <!-- FP32 section -->
+  <rect x="60" y="186" width="320" height="110" rx="6" fill="#ffffff" stroke="#86efac" stroke-width="1"/>
+  <text x="72" y="204" style="font:700 10.5px 'Inter',sans-serif;fill:#166534">FP32 (FFMA / FADD)</text>
+  <g transform="translate(72,212)">
+    <text x="0" y="14" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#374151">Latency:       4 cycles</text>
+    <text x="0" y="30" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#374151">Pipeline depth: 4 stages</text>
+    <text x="0" y="46" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#374151">Saturation:    ILP=4</text>
+    <text x="0" y="62" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#374151">Peak:          1.0 FFMA/cyc</text>
+    <text x="0" y="78" style="font:italic 9px 'Inter',sans-serif;fill:#6b7280">Subnormals handled at full speed (zero penalty)</text>
+  </g>
+
+  <!-- FP16/BF16 section -->
+  <rect x="60" y="306" width="320" height="110" rx="6" fill="#ffffff" stroke="#86efac" stroke-width="1"/>
+  <text x="72" y="324" style="font:700 10.5px 'Inter',sans-serif;fill:#166534">FP16x2 / BF16x2 (HFMA2)</text>
+  <g transform="translate(72,332)">
+    <text x="0" y="14" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#374151">Latency:       4 cycles (same as FP32)</text>
+    <text x="0" y="30" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#374151">Issue interval: 2 cycles (time-muxed)</text>
+    <text x="0" y="46" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#374151">Saturation:    ILP=2</text>
+    <text x="0" y="62" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#374151">Per-element:   = FP32 throughput (no 2x)</text>
+    <text x="0" y="78" style="font:italic 9px 'Inter',sans-serif;fill:#6b7280">Shares same 32-bit datapath; processes 2 halves sequentially</text>
+  </g>
+
+  <!-- f32x2 note -->
+  <rect x="60" y="426" width="320" height="50" rx="6" fill="#ffffff" stroke="#86efac" stroke-width="1"/>
+  <text x="72" y="444" style="font:700 10.5px 'Inter',sans-serif;fill:#166534">f32x2 (lowered by ptxas)</text>
+  <text x="72" y="462" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#374151">Lowered to 2x independent FFMA → no native HW</text>
+
+  <!-- P0 throughput summary -->
+  <rect x="60" y="490" width="320" height="32" rx="5" fill="#065f46" opacity="0.9"/>
+  <text x="220" y="511" text-anchor="middle" style="font:700 11px 'JetBrains Mono',monospace;fill:#ffffff">Aggregate: 1.0 FFMA/cyc per SMSP</text>
+
+  <!-- ILP curve mini-chart -->
+  <rect x="60" y="534" width="320" height="32" rx="4" fill="#f0fdf4" stroke="#bbf7d0" stroke-width="0.8"/>
+  <text x="220" y="554" text-anchor="middle" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#166534">ILP curve: 4→2→1.09 cyc/op (ILP 1→2→4) — textbook 4-stage</text>
+
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <!-- P1 / FP64 Pipe (center) -->
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <rect x="420" y="136" width="270" height="440" rx="10" fill="#ede9fe" stroke="#7c3aed" stroke-width="1.6"/>
+  <rect x="420" y="136" width="270" height="36" rx="10" fill="#ddd6fe" stroke="#7c3aed" stroke-width="1.6"/>
+  <rect x="420" y="162" width="270" height="10" fill="#ddd6fe"/>
+  <text x="550" y="160" text-anchor="middle" style="font:700 13px 'JetBrains Mono',monospace;fill:#5b21b6">P1 / FP64 Pipe</text>
+
+  <!-- DFMA box -->
+  <rect x="440" y="186" width="230" height="170" rx="6" fill="#ffffff" stroke="#c4b5fd" stroke-width="1"/>
+  <text x="452" y="204" style="font:700 10.5px 'Inter',sans-serif;fill:#5b21b6">DFMA (Double-Precision FMA)</text>
+  <g transform="translate(452,212)">
+    <text x="0" y="14" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#374151">Latency:     63.99 cycles</text>
+    <text x="0" y="30" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#374151">Pipelining:  NON-PIPELINED</text>
+    <text x="0" y="46" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#374151">EUs per SM:  4 (one per SMSP)</text>
+    <text x="0" y="62" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#374151">Agg (4W):    0.0625 DFMA/cyc/SM</text>
+    <text x="0" y="78" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#374151">FP64:FP32:   1:32 (real workloads)</text>
+    <text x="0" y="98" style="font:italic 9px 'Inter',sans-serif;fill:#6b7280">ILP=2 yields 0 speedup (truly non-pipelined)</text>
+    <text x="0" y="114" style="font:italic 9px 'Inter',sans-serif;fill:#6b7280">Native DFMA hardware confirmed (not emulated)</text>
+    <text x="0" y="130" style="font:italic 9px 'Inter',sans-serif;fill:#6b7280">F2F.F64 conversions also use this pipe (~64 cyc)</text>
+  </g>
+
+  <!-- FP64 saturation -->
+  <rect x="440" y="370" width="230" height="56" rx="6" fill="#ffffff" stroke="#c4b5fd" stroke-width="1"/>
+  <text x="452" y="388" style="font:700 10.5px 'Inter',sans-serif;fill:#5b21b6">Saturation Model</text>
+  <text x="452" y="406" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#374151">4W: each warp → own EU (0% contention)</text>
+  <text x="452" y="418" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#374151">8W: time-share → 128 cyc/warp</text>
+
+  <!-- P1 throughput summary -->
+  <rect x="440" y="434" width="230" height="32" rx="5" fill="#4c1d95" opacity="0.9"/>
+  <text x="550" y="455" text-anchor="middle" style="font:700 10.5px 'JetBrains Mono',monospace;fill:#ffffff">Peak: 0.0625 DFMA/cyc/SM</text>
+
+  <!-- Co-issue note -->
+  <rect x="440" y="480" width="230" height="48" rx="4" fill="#ede9fe" stroke="#c4b5fd" stroke-width="0.8"/>
+  <text x="550" y="498" text-anchor="middle" style="font:600 9.5px 'Inter',sans-serif;fill:#5b21b6">100% co-issue with P0</text>
+  <text x="550" y="516" text-anchor="middle" style="font:400 9px 'JetBrains Mono',monospace;fill:#6b7280">FFMA hidden under DFMA shadow (4 &lt;&lt; 64)</text>
+
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <!-- P2 / SFU Pipe (right) -->
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <rect x="700" y="136" width="360" height="440" rx="10" fill="#fef3c7" stroke="#d97706" stroke-width="1.6"/>
+  <rect x="700" y="136" width="360" height="36" rx="10" fill="#fde68a" stroke="#d97706" stroke-width="1.6"/>
+  <rect x="700" y="162" width="360" height="10" fill="#fde68a"/>
+  <text x="880" y="160" text-anchor="middle" style="font:700 13px 'JetBrains Mono',monospace;fill:#92400e">P2 / SFU Pipe (XU)</text>
+
+  <!-- MUFU box -->
+  <rect x="720" y="186" width="320" height="64" rx="6" fill="#ffffff" stroke="#fde68a" stroke-width="1"/>
+  <text x="732" y="204" style="font:700 10.5px 'Inter',sans-serif;fill:#92400e">MUFU.* (Transcendental Unit)</text>
+  <text x="732" y="222" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#374151">Bare MUFU latency: ~18-20 cycles (all opcodes)</text>
+  <text x="732" y="238" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#374151">EUs per SM: 4 (one per SMSP)</text>
+
+  <!-- Latency tiers -->
+  <rect x="720" y="260" width="320" height="140" rx="6" fill="#ffffff" stroke="#fde68a" stroke-width="1"/>
+  <text x="732" y="278" style="font:700 10px 'Inter',sans-serif;fill:#92400e">Effective Latency Tiers (PTX-level, incl. wrappers)</text>
+
+  <!-- Tier 1 -->
+  <rect x="732" y="286" width="296" height="24" rx="3" fill="#fef2f2" stroke="#fecaca" stroke-width="0.6"/>
+  <text x="740" y="302" style="font:600 9px 'JetBrains Mono',monospace;fill:#991b1b">Tier 1 (40-44c): rcp, rsqrt, lg2</text>
+  <text x="990" y="302" style="font:400 8.5px 'Inter',sans-serif;fill:#6b7280">7 insns</text>
+
+  <!-- Tier 2 -->
+  <rect x="732" y="316" width="296" height="24" rx="3" fill="#fffbeb" stroke="#fde68a" stroke-width="0.6"/>
+  <text x="740" y="332" style="font:600 9px 'JetBrains Mono',monospace;fill:#854d0e">Tier 2 (18-22c): sin, cos</text>
+  <text x="990" y="332" style="font:400 8.5px 'Inter',sans-serif;fill:#6b7280">trig rr</text>
+
+  <!-- Tier 3 -->
+  <rect x="732" y="346" width="296" height="24" rx="3" fill="#f0fdf4" stroke="#bbf7d0" stroke-width="0.6"/>
+  <text x="740" y="362" style="font:600 9px 'JetBrains Mono',monospace;fill:#166534">Tier 3 (18c): tanh, ex2</text>
+  <text x="990" y="362" style="font:400 8.5px 'Inter',sans-serif;fill:#6b7280">minimal</text>
+
+  <text x="732" y="390" style="font:italic 9px 'Inter',sans-serif;fill:#6b7280">Tier difference = wrapper instruction count, not MUFU unit itself</text>
+
+  <!-- SFU throughput -->
+  <rect x="720" y="410" width="320" height="79" rx="6" fill="#ffffff" stroke="#fde68a" stroke-width="1"/>
+  <text x="732" y="428" style="font:700 10px 'Inter',sans-serif;fill:#92400e">Multi-Warp Scaling (4 SFU units/SM)</text>
+  <text x="732" y="446" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#374151">1-4 warps: 13.85 cyc/op (per-SMSP linear)</text>
+  <text x="732" y="462" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#374151">32 warps:  29.64 cyc/op (agg ~1.08 op/cyc)</text>
+  <text x="732" y="478" style="font:italic 9px 'Inter',sans-serif;fill:#6b7280">Saturates at ~1 SFU op/cyc aggregate per SM</text>
+
+  <!-- P2 throughput summary -->
+  <rect x="720" y="494" width="320" height="32" rx="5" fill="#78350f" opacity="0.9"/>
+  <text x="880" y="515" text-anchor="middle" style="font:700 10.5px 'JetBrains Mono',monospace;fill:#ffffff">Issue: ~8-9 cyc/op (bare MUFU saturated)</text>
+
+  <!-- SFU co-issue note -->
+  <rect x="720" y="540" width="320" height="28" rx="4" fill="#fef3c7" stroke="#fde68a" stroke-width="0.8"/>
+  <text x="880" y="559" text-anchor="middle" style="font:600 9.5px 'Inter',sans-serif;fill:#92400e">100% co-issue with P0 and P1</text>
+
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <!-- Co-Issue Zone (bottom) -->
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <rect x="40" y="594" width="1020" height="56" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="1.2" stroke-dasharray="5,2"/>
+  <text x="550" y="616" text-anchor="middle" style="font:700 12px 'Inter',sans-serif;fill:#1d4ed8">ALL THREE PIPES CO-ISSUE SIMULTANEOUSLY</text>
+  <text x="550" y="636" text-anchor="middle" style="font:500 10px 'JetBrains Mono',monospace;fill:#1e40af">P0(FP32/FP16) + P1(FP64) + P2(SFU) + INT(fmalite/fmaheavy) — all in same cycle, zero contention</text>
+
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <!-- Throughput Comparison Bar (bottom) -->
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <rect x="40" y="664" width="1020" height="110" rx="8" fill="#f8fafc" stroke="#94a3b8" stroke-width="0.8"/>
+  <text x="550" y="686" text-anchor="middle" style="font:700 11px 'Inter',sans-serif;fill:#1e293b">Per-SM Throughput Comparison (normalized to FP32 = 1.0)</text>
+
+  <!-- FP32 bar -->
+  <rect x="80" y="700" width="580" height="18" rx="3" fill="#16a34a" opacity="0.8"/>
+  <text x="88" y="714" style="font:700 9.5px 'JetBrains Mono',monospace;fill:#ffffff">FP32 (4×FFMA/cyc): 1.00x ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</text>
+
+  <!-- FP16x2 bar (same effective throughput per element) -->
+  <rect x="80" y="722" width="580" height="18" rx="3" fill="#059669" opacity="0.7"/>
+  <text x="88" y="736" style="font:700 9.5px 'JetBrains Mono',monospace;fill:#ffffff">FP16 per-element:  1.00x ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ (no 2x advantage)</text>
+
+  <!-- FP64 bar -->
+  <rect x="80" y="744" width="15" height="18" rx="3" fill="#7c3aed" opacity="0.8"/>
+  <text x="100" y="758" style="font:700 9.5px 'JetBrains Mono',monospace;fill:#5b21b6">FP64: 1/32x ▎ (0.0625 DFMA/cyc/SM × 4 SMSPs ÷ 4 FFMA/cyc/SM)</text>
+
+</svg>

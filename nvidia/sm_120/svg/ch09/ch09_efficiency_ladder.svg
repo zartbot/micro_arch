@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 520" font-family="'Inter','Segoe UI',system-ui,sans-serif">
+<defs>
+  <style>
+    .bg{fill:#fcfbf6}
+    .panel{fill:#fff;stroke:#e2dfd8;stroke-width:1.2;rx:10}
+    .eyebrow{font-size:9px;font-weight:700;letter-spacing:1.2px;fill:#8b7e6a;text-transform:uppercase}
+    .title{font-size:13px;font-weight:700;fill:#1a1a1a}
+    .lbl{font-size:10.5px;fill:#444}
+    .lbl-bold{font-size:10.5px;font-weight:700;fill:#1a1a1a}
+    .lbl-mono{font-size:10px;font-family:'JetBrains Mono','Fira Code',monospace;fill:#333}
+    .lbl-sm{font-size:9px;fill:#6b7280}
+    .divider{stroke:#e2dfd8;stroke-width:0.8}
+    .band-ultra{fill:#ecfdf5;stroke:#6ee7b7;stroke-width:0.8;rx:4}
+    .band-high{fill:#dbeafe;stroke:#93c5fd;stroke-width:0.8;rx:4}
+    .band-med{fill:#fef3c7;stroke:#fcd34d;stroke-width:0.8;rx:4}
+    .band-low{fill:#fee2e2;stroke:#fca5a5;stroke-width:0.8;rx:4}
+  </style>
+</defs>
+<rect width="1280" height="520" class="bg"/>
+<text x="640" y="28" text-anchor="middle" class="eyebrow">SM_120 · TFLOPS/W EFFICIENCY HIERARCHY — 864× SPAN FROM FP64 TO SPARSE INT8</text>
+
+<!-- Main panel -->
+<rect x="30" y="42" width="1220" height="460" class="panel"/>
+
+<!-- Band labels on left -->
+<rect x="42" y="60" width="90" height="68" class="band-ultra"/>
+<text x="87" y="82" text-anchor="middle" class="lbl-bold" style="fill:#065f46;font-size:9px">ULTRA-HIGH</text>
+<text x="87" y="96" text-anchor="middle" class="lbl-sm" style="fill:#065f46">5.0–9.5</text>
+<text x="87" y="108" text-anchor="middle" class="lbl-sm" style="fill:#065f46">TOPS/W</text>
+<text x="87" y="122" text-anchor="middle" class="lbl-sm" style="fill:#065f46">92–98 W</text>
+
+<rect x="42" y="136" width="90" height="100" class="band-high"/>
+<text x="87" y="158" text-anchor="middle" class="lbl-bold" style="fill:#1e40af;font-size:9px">HIGH</text>
+<text x="87" y="172" text-anchor="middle" class="lbl-sm" style="fill:#1e40af">1.18–2.36</text>
+<text x="87" y="186" text-anchor="middle" class="lbl-sm" style="fill:#1e40af">TFLOPS/W</text>
+<text x="87" y="200" text-anchor="middle" class="lbl-sm" style="fill:#1e40af">89–113 W</text>
+
+<rect x="42" y="244" width="90" height="68" class="band-med"/>
+<text x="87" y="266" text-anchor="middle" class="lbl-bold" style="fill:#92400e;font-size:9px">MEDIUM</text>
+<text x="87" y="280" text-anchor="middle" class="lbl-sm" style="fill:#92400e">0.54–0.96</text>
+<text x="87" y="294" text-anchor="middle" class="lbl-sm" style="fill:#92400e">89–123 W</text>
+
+<rect x="42" y="320" width="90" height="100" class="band-low"/>
+<text x="87" y="342" text-anchor="middle" class="lbl-bold" style="fill:#991b1b;font-size:9px">LOW</text>
+<text x="87" y="356" text-anchor="middle" class="lbl-sm" style="fill:#991b1b">0.011–0.48</text>
+<text x="87" y="370" text-anchor="middle" class="lbl-sm" style="fill:#991b1b">TFLOPS/W</text>
+<text x="87" y="384" text-anchor="middle" class="lbl-sm" style="fill:#991b1b">71–164 W</text>
+
+<!-- Horizontal bars (log-proportional) for each precision -->
+<!-- max = 9.49, log scale width: log(val/0.01)/log(9.49/0.01) * 1040 + 150 -->
+
+<!-- Ultra-high band -->
+<rect x="150" y="64" width="1000" height="24" rx="4" fill="#059669" opacity="0.85"/>
+<text x="160" y="80" class="lbl-mono" style="fill:#fff;font-size:10px">Sparse INT8 (IMMA.SP m16n8k64)</text>
+<text x="1020" y="80" class="lbl-bold" style="fill:#fff">9.49 TOPS/W</text>
+<text x="1158" y="80" class="lbl-mono" style="font-size:9px;fill:#065f46">929T @ 98W</text>
+
+<rect x="150" y="96" width="785" height="24" rx="4" fill="#059669" opacity="0.65"/>
+<text x="160" y="112" class="lbl-mono" style="fill:#fff;font-size:10px">Dense INT8 (IMMA m16n8k32)</text>
+<text x="800" y="112" class="lbl-bold" style="fill:#fff">5.04 TOPS/W</text>
+<text x="943" y="112" class="lbl-mono" style="font-size:9px;fill:#065f46">465T @ 92W</text>
+
+<!-- High band -->
+<rect x="150" y="140" width="545" height="22" rx="4" fill="#2563eb" opacity="0.75"/>
+<text x="160" y="155" class="lbl-mono" style="fill:#fff;font-size:9.5px">NVFP4 (OMMA.SF m16n8k64)</text>
+<text x="580" y="155" class="lbl-bold" style="fill:#fff">2.36</text>
+<text x="700" y="155" class="lbl-mono" style="font-size:9px">210T @ 89W</text>
+
+<rect x="150" y="166" width="530" height="22" rx="4" fill="#2563eb" opacity="0.65"/>
+<text x="160" y="181" class="lbl-mono" style="fill:#fff;font-size:9.5px">INT8 TC (mma.sync m16n8k32)</text>
+<text x="565" y="181" class="lbl-bold" style="fill:#fff">2.24</text>
+<text x="688" y="181" class="lbl-mono" style="font-size:9px">233T @ 104W</text>
+
+<rect x="150" y="192" width="510" height="22" rx="4" fill="#3b82f6" opacity="0.6"/>
+<text x="160" y="207" class="lbl-mono" style="fill:#fff;font-size:9.5px">FP16/BF16 TC (mma.sync m16n8k16)</text>
+<text x="545" y="207" class="lbl-bold" style="fill:#fff">2.08</text>
+<text x="668" y="207" class="lbl-mono" style="font-size:9px">235T @ 113W</text>
+
+<rect x="150" y="218" width="380" height="22" rx="4" fill="#6366f1" opacity="0.55"/>
+<text x="160" y="233" class="lbl-mono" style="fill:#fff;font-size:9.5px">MXFP4 (QMMA.SF m16n8k32)</text>
+<text x="415" y="233" class="lbl-bold" style="fill:#fff">1.18</text>
+<text x="538" y="233" class="lbl-mono" style="font-size:9px">105T @ 89W</text>
+
+<!-- Medium band -->
+<rect x="150" y="250" width="315" height="22" rx="4" fill="#d97706" opacity="0.6"/>
+<text x="160" y="265" class="lbl-mono" style="fill:#fff;font-size:9.5px">INT8 CUDA (DP4A)</text>
+<text x="360" y="265" class="lbl-bold" style="fill:#fff">0.95</text>
+<text x="473" y="265" class="lbl-mono" style="font-size:9px">115T @ 122W</text>
+
+<rect x="150" y="276" width="250" height="22" rx="4" fill="#d97706" opacity="0.45"/>
+<text x="160" y="291" class="lbl-mono" style="fill:#fff;font-size:9.5px">TF32 TC (mma.sync)</text>
+<text x="310" y="291" class="lbl-bold" style="fill:#fff">0.54</text>
+<text x="408" y="291" class="lbl-mono" style="font-size:9px">58T @ 108W</text>
+
+<!-- Low band -->
+<rect x="150" y="324" width="215" height="22" rx="4" fill="#dc2626" opacity="0.5"/>
+<text x="160" y="339" class="lbl-mono" style="fill:#fff;font-size:9.5px">FP16/BF16 CUDA (HFMA2)</text>
+<text x="275" y="339" class="lbl-bold" style="fill:#fff">0.46</text>
+<text x="373" y="339" class="lbl-mono" style="font-size:9px">59T @ 128W</text>
+
+<rect x="150" y="350" width="200" height="22" rx="4" fill="#dc2626" opacity="0.45"/>
+<text x="160" y="365" class="lbl-mono" style="fill:#fff;font-size:9.5px">FP32 CUDA (FFMA)</text>
+<text x="265" y="365" class="lbl-bold" style="fill:#fff">0.39</text>
+<text x="358" y="365" class="lbl-mono" style="font-size:9px">58T @ 146W</text>
+
+<rect x="150" y="376" width="180" height="22" rx="4" fill="#dc2626" opacity="0.35"/>
+<text x="160" y="391" class="lbl-mono" style="fill:#fff;font-size:9.5px">INT32 CUDA (IMAD)</text>
+<text x="258" y="391" class="lbl-bold" style="fill:#fff">0.19</text>
+<text x="338" y="391" class="lbl-mono" style="font-size:9px">29.5T @ 162W</text>
+
+<rect x="150" y="402" width="50" height="22" rx="4" fill="#dc2626" opacity="0.25"/>
+<text x="208" y="417" class="lbl-mono" style="font-size:9.5px">FP64 (DFMA)</text>
+<text x="330" y="417" class="lbl-bold" style="fill:#dc2626">0.011</text>
+<text x="395" y="417" class="lbl-mono" style="font-size:9px">0.85T @ 79W</text>
+
+<!-- Annotations -->
+<line x1="150" y1="438" x2="1220" y2="438" class="divider"/>
+
+<!-- Bottom insight row -->
+<text x="160" y="460" class="lbl-bold">Key Pattern:</text>
+<text x="247" y="460" class="lbl">TC formats draw constant power (89–113 W) — efficiency scales with OPs/instruction.</text>
+<text x="160" y="478" class="lbl-bold">Implication:</text>
+<text x="247" y="478" class="lbl">Each precision step down ≈ doubles TFLOPS/W at zero additional power cost. CUDA→TC transition = 5.3× gain.</text>
+<text x="160" y="496" class="lbl-sm">Source: Section 20 Cases 1-17, Section 9 Case 128-137 · All measurements at pinned 2092 MHz unless noted</text>
+</svg>

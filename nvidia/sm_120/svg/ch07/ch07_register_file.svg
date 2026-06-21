@@ -1,0 +1,317 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 880" role="img"
+     aria-label="§ 7.6.1 SM_120 Register File Architecture — 256 KB / 4 SMSP / 2-bank / operand collector / occupancy model">
+  <defs>
+    <style><![CDATA[
+      .eyebrow { font: 600 11px "JetBrains Mono", monospace; letter-spacing: 0.16em; text-transform: uppercase }
+      .title   { font: 500 24px "Fraunces", serif; fill: #0b1220; letter-spacing: -0.02em }
+      .sub     { font: italic 12px "Fraunces", serif; fill: #5b6679 }
+      .panel-n { font: 700 11px "JetBrains Mono", monospace; letter-spacing: 0.08em }
+      .panel-sub { font: italic 11px "Fraunces", serif; fill: #5b6679 }
+      .lbl-sm  { font: 500 9px "JetBrains Mono", monospace; fill: #5b6679; letter-spacing: 0.05em; text-transform: uppercase }
+      .lbl     { font: 500 11px "IBM Plex Sans", sans-serif; fill: #2a3548 }
+      .lbl-mono{ font: 500 10px "JetBrains Mono", monospace; fill: #2a3548 }
+      .lbl-mono-em { font: 700 10px "JetBrains Mono", monospace; fill: #0b1220 }
+      .lbl-w   { font: 600 10px "IBM Plex Sans", sans-serif; fill: #ffffff }
+      .lbl-w-mono { font: 500 9px "JetBrains Mono", monospace; fill: #ffffff }
+      .big-num { font: 700 22px "Fraunces", serif; letter-spacing: -0.02em }
+      .step-num { font: 700 13px "Fraunces", serif; fill: #ffffff }
+    ]]></style>
+    <marker id="arr-d" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M0,0 L8,4 L0,8 z" fill="#5b6679"/>
+    </marker>
+  </defs>
+
+  <rect width="1280" height="880" fill="#fcfbf6"/>
+
+  <!-- ============ Header ============ -->
+  <g transform="translate(40,32)">
+    <rect x="0" y="0" width="3" height="80" fill="#0369a1"/>
+    <text x="16" y="30" class="title">SM_120 Register File — 256 KB / 4 SMSP / 2-Bank / OC Bypass</text>
+    <text x="16" y="54" class="sub">65,536 × 32-bit entries · 8-reg granularity · 0-cycle bank-conflict · RFC ≥24 entries/warp</text>
+    <text x="16" y="72" class="lbl-sm">Source: [S3/case_3] [S12/case_1-9] [S21/case_111-114]</text>
+  </g>
+
+  <!-- ============ A: SM-level overview ============ -->
+  <g transform="translate(40,134)">
+    <rect x="0" y="0" width="1200" height="100" rx="10" fill="#ffffff" stroke="#e6e4da"/>
+    <rect x="0" y="0" width="1200" height="3" rx="10" fill="#0369a1"/>
+    <text x="14" y="22" class="panel-n" fill="#0369a1">A · SM-LEVEL OVERVIEW</text>
+    <text x="14" y="38" class="panel-sub">Total capacity: 65,536 × 32-bit = 256 KB, partitioned equally across 4 SMSPs</text>
+
+    <!-- 4 SMSP chips -->
+    <g transform="translate(30,54)">
+      <rect x="0"   y="0" width="260" height="36" rx="4" fill="#0369a1"/>
+      <text x="130" y="22" class="lbl-w" text-anchor="middle" font-weight="700">SMSP 0 · 64 KB</text>
+      <rect x="270" y="0" width="260" height="36" rx="4" fill="#0369a1"/>
+      <text x="400" y="22" class="lbl-w" text-anchor="middle" font-weight="700">SMSP 1 · 64 KB</text>
+      <rect x="540" y="0" width="260" height="36" rx="4" fill="#0369a1"/>
+      <text x="670" y="22" class="lbl-w" text-anchor="middle" font-weight="700">SMSP 2 · 64 KB</text>
+      <rect x="810" y="0" width="260" height="36" rx="4" fill="#0369a1"/>
+      <text x="940" y="22" class="lbl-w" text-anchor="middle" font-weight="700">SMSP 3 · 64 KB</text>
+
+      <!-- Total bar -->
+      <rect x="1090" y="2" width="70" height="32" rx="4" fill="#dbeafe" stroke="#0369a1"/>
+      <text x="1125" y="15" class="lbl-sm" fill="#0369a1" text-anchor="middle">TOTAL</text>
+      <text x="1125" y="28" class="lbl-mono-em" fill="#0369a1" text-anchor="middle">256 KB</text>
+    </g>
+  </g>
+
+  <!-- ============ B: SMSP detail (one representative) ============ -->
+  <g transform="translate(40,254)">
+    <rect x="0" y="0" width="760" height="430" rx="10" fill="#ffffff" stroke="#e6e4da"/>
+    <rect x="0" y="0" width="760" height="3" rx="10" fill="#16a34a"/>
+    <text x="14" y="22" class="panel-n" fill="#16a34a">B · PER-SMSP REGISTER FILE DETAIL (×4 identical)</text>
+    <text x="14" y="38" class="panel-sub">16,384 entries (64 KB) · 2 banks · 12 warp slots · ≥3 read ports · operand collector</text>
+
+    <!-- Bank structure -->
+    <g transform="translate(30,58)">
+      <text x="0" y="0" class="lbl-sm" fill="#16a34a">REGISTER BANK STRUCTURE (R%2 parity)</text>
+      <line x1="0" y1="6" x2="700" y2="6" stroke="#dcfce7"/>
+
+      <!-- Bank 0 -->
+      <g transform="translate(0,16)">
+        <rect x="0" y="0" width="340" height="130" rx="8" fill="#dcfce7" stroke="#16a34a"/>
+        <text x="14" y="20" class="lbl-mono-em" fill="#15803d">BANK 0 — Even Registers</text>
+        <text x="14" y="38" class="lbl-mono" fill="#5b6679">R0, R2, R4, R6, ... R16382</text>
+        <text x="14" y="56" class="lbl-mono" fill="#5b6679">8,192 entries (32 KB)</text>
+
+        <!-- Entries viz -->
+        <g transform="translate(14,68)">
+          <rect x="0"  y="0" width="24" height="18" rx="2" fill="#16a34a"/><text x="12" y="13" class="lbl-w-mono" text-anchor="middle">R0</text>
+          <rect x="28" y="0" width="24" height="18" rx="2" fill="#16a34a"/><text x="40" y="13" class="lbl-w-mono" text-anchor="middle">R2</text>
+          <rect x="56" y="0" width="24" height="18" rx="2" fill="#16a34a"/><text x="68" y="13" class="lbl-w-mono" text-anchor="middle">R4</text>
+          <rect x="84" y="0" width="24" height="18" rx="2" fill="#16a34a"/><text x="96" y="13" class="lbl-w-mono" text-anchor="middle">R6</text>
+          <text x="116" y="13" class="lbl-mono" fill="#5b6679">. . .</text>
+          <rect x="152" y="0" width="42" height="18" rx="2" fill="#16a34a"/><text x="173" y="13" class="lbl-w-mono" text-anchor="middle">R254</text>
+        </g>
+
+        <text x="14" y="106" class="lbl-mono" fill="#15803d">Access: port A, port B (simultaneous)</text>
+        <text x="14" y="120" class="lbl-mono" fill="#15803d">→ 2 reads/cyc from bank 0</text>
+      </g>
+
+      <!-- Bank 1 -->
+      <g transform="translate(360,16)">
+        <rect x="0" y="0" width="340" height="130" rx="8" fill="#fef3c7" stroke="#d97706"/>
+        <text x="14" y="20" class="lbl-mono-em" fill="#b45309">BANK 1 — Odd Registers</text>
+        <text x="14" y="38" class="lbl-mono" fill="#5b6679">R1, R3, R5, R7, ... R16383</text>
+        <text x="14" y="56" class="lbl-mono" fill="#5b6679">8,192 entries (32 KB)</text>
+
+        <!-- Entries viz -->
+        <g transform="translate(14,68)">
+          <rect x="0"  y="0" width="24" height="18" rx="2" fill="#d97706"/><text x="12" y="13" class="lbl-w-mono" text-anchor="middle">R1</text>
+          <rect x="28" y="0" width="24" height="18" rx="2" fill="#d97706"/><text x="40" y="13" class="lbl-w-mono" text-anchor="middle">R3</text>
+          <rect x="56" y="0" width="24" height="18" rx="2" fill="#d97706"/><text x="68" y="13" class="lbl-w-mono" text-anchor="middle">R5</text>
+          <rect x="84" y="0" width="24" height="18" rx="2" fill="#d97706"/><text x="96" y="13" class="lbl-w-mono" text-anchor="middle">R7</text>
+          <text x="116" y="13" class="lbl-mono" fill="#5b6679">. . .</text>
+          <rect x="152" y="0" width="42" height="18" rx="2" fill="#d97706"/><text x="173" y="13" class="lbl-w-mono" text-anchor="middle">R255</text>
+        </g>
+
+        <text x="14" y="106" class="lbl-mono" fill="#b45309">Access: port C (+ shared read)</text>
+        <text x="14" y="120" class="lbl-mono" fill="#b45309">→ 1+ reads/cyc from bank 1</text>
+      </g>
+    </g>
+
+    <!-- Arrows down to OC -->
+    <g transform="translate(30,212)">
+      <line x1="170" y1="0" x2="170" y2="20" stroke="#5b6679" stroke-width="1.2" marker-end="url(#arr-d)"/>
+      <line x1="530" y1="0" x2="530" y2="20" stroke="#5b6679" stroke-width="1.2" marker-end="url(#arr-d)"/>
+      <line x1="350" y1="0" x2="350" y2="20" stroke="#5b6679" stroke-width="1.2" marker-end="url(#arr-d)"/>
+    </g>
+
+    <!-- Operand Collector -->
+    <g transform="translate(30,234)">
+      <text x="0" y="0" class="lbl-sm" fill="#16a34a">OPERAND COLLECTOR (OC)</text>
+      <line x1="0" y1="6" x2="700" y2="6" stroke="#dcfce7"/>
+
+      <rect x="0" y="14" width="700" height="100" rx="8" fill="#f0fdf4" stroke="#16a34a"/>
+      <text x="14" y="34" class="lbl-mono-em" fill="#15803d">≥ 3 Read Ports · 0-cycle Bank Conflict · Bypass d=0..2</text>
+      <text x="14" y="54" class="lbl-mono" fill="#5b6679">Collects operands A, B, C from banks 0/1 → forwarding network</text>
+      <text x="14" y="74" class="lbl-mono" fill="#5b6679">RFC (Register File Cache): ≥24 entries/warp · LRU eviction · eliminates re-reads</text>
+      <text x="14" y="94" class="lbl-mono" fill="#5b6679">WAR hazard: 0 extra cyc (OC decouples consumer read from producer write-back)</text>
+
+      <!-- Port labels -->
+      <g transform="translate(500,20)">
+        <rect x="0"  y="0" width="56" height="22" rx="11" fill="#16a34a"/><text x="28" y="15" class="lbl-w-mono" text-anchor="middle">Port A</text>
+        <rect x="62" y="0" width="56" height="22" rx="11" fill="#16a34a"/><text x="90" y="15" class="lbl-w-mono" text-anchor="middle">Port B</text>
+        <rect x="124" y="0" width="56" height="22" rx="11" fill="#d97706"/><text x="152" y="15" class="lbl-w-mono" text-anchor="middle">Port C</text>
+      </g>
+    </g>
+
+    <!-- Arrow to execute -->
+    <g transform="translate(350,354)">
+      <line x1="0" y1="0" x2="0" y2="20" stroke="#5b6679" stroke-width="1.2" marker-end="url(#arr-d)"/>
+    </g>
+
+    <!-- Execute backend -->
+    <g transform="translate(30,376)">
+      <rect x="0" y="0" width="700" height="36" rx="6" fill="#0b1220"/>
+      <text x="14" y="22" class="lbl-w" font-weight="700">EXECUTE BACKENDS</text>
+      <text x="190" y="22" class="lbl-w-mono">FMA · ALU · SFU · LSU · TC · FP64  (per SMSP)</text>
+    </g>
+  </g>
+
+  <!-- ============ C: Allocation / Occupancy ============ -->
+  <g transform="translate(820,254)">
+    <rect x="0" y="0" width="420" height="430" rx="10" fill="#ffffff" stroke="#e6e4da"/>
+    <rect x="0" y="0" width="420" height="3" rx="10" fill="#7c3aed"/>
+    <text x="14" y="22" class="panel-n" fill="#7c3aed">C · ALLOCATION AND OCCUPANCY</text>
+    <text x="14" y="38" class="panel-sub">Granularity, pressure, and warp capacity</text>
+
+    <!-- Allocation rules -->
+    <g transform="translate(14,58)">
+      <text x="0" y="0" class="lbl-sm" fill="#7c3aed">ALLOCATION RULES</text>
+      <line x1="0" y1="6" x2="392" y2="6" stroke="#f3e8ff"/>
+
+      <g transform="translate(0,14)">
+        <circle cx="6" cy="8" r="3" fill="#7c3aed"/>
+        <text x="16" y="12" class="lbl-mono">Granularity: 8 regs/thread</text>
+      </g>
+      <g transform="translate(0,34)">
+        <circle cx="6" cy="8" r="3" fill="#7c3aed"/>
+        <text x="16" y="12" class="lbl-mono">Floor: 24 regs/thread (ptxas enforced)</text>
+      </g>
+      <g transform="translate(0,54)">
+        <circle cx="6" cy="8" r="3" fill="#7c3aed"/>
+        <text x="16" y="12" class="lbl-mono">Max: 255 regs/thread</text>
+      </g>
+      <g transform="translate(0,74)">
+        <circle cx="6" cy="8" r="3" fill="#7c3aed"/>
+        <text x="16" y="12" class="lbl-mono">Formula: warps/SM =</text>
+        <text x="16" y="28" class="lbl-mono-em" fill="#7c3aed">min(48, floor(65536 / (regs × 32)))</text>
+      </g>
+    </g>
+
+    <!-- Occupancy table -->
+    <g transform="translate(14,176)">
+      <text x="0" y="0" class="lbl-sm" fill="#7c3aed">REGISTER PRESSURE → OCCUPANCY</text>
+      <line x1="0" y1="6" x2="392" y2="6" stroke="#f3e8ff"/>
+
+      <!-- Table header -->
+      <g transform="translate(0,14)">
+        <text x="0" y="12" class="lbl-mono-em" fill="#7c3aed">Regs/T</text>
+        <text x="72" y="12" class="lbl-mono-em" fill="#7c3aed">Warps</text>
+        <text x="128" y="12" class="lbl-mono-em" fill="#7c3aed">Occ%</text>
+        <text x="190" y="12" class="lbl-mono-em" fill="#5b6679">Bar</text>
+      </g>
+
+      <!-- Row 24 -->
+      <g transform="translate(0,30)">
+        <text x="0" y="12" class="lbl-mono">24-40</text>
+        <text x="72" y="12" class="lbl-mono">48</text>
+        <text x="128" y="12" class="lbl-mono" fill="#16a34a" font-weight="700">100%</text>
+        <rect x="190" y="2" width="192" height="14" rx="2" fill="#16a34a"/>
+      </g>
+      <!-- Row 48 -->
+      <g transform="translate(0,48)">
+        <text x="0" y="12" class="lbl-mono">48</text>
+        <text x="72" y="12" class="lbl-mono">42</text>
+        <text x="128" y="12" class="lbl-mono">87%</text>
+        <rect x="190" y="2" width="168" height="14" rx="2" fill="#22c55e"/>
+      </g>
+      <!-- Row 64 -->
+      <g transform="translate(0,66)">
+        <text x="0" y="12" class="lbl-mono">64</text>
+        <text x="72" y="12" class="lbl-mono">32</text>
+        <text x="128" y="12" class="lbl-mono">67%</text>
+        <rect x="190" y="2" width="128" height="14" rx="2" fill="#86efac"/>
+      </g>
+      <!-- Row 80 -->
+      <g transform="translate(0,84)">
+        <text x="0" y="12" class="lbl-mono">80</text>
+        <text x="72" y="12" class="lbl-mono">24</text>
+        <text x="128" y="12" class="lbl-mono">50%</text>
+        <rect x="190" y="2" width="96" height="14" rx="2" fill="#fef3c7" stroke="#d97706"/>
+      </g>
+      <!-- Row 96 -->
+      <g transform="translate(0,102)">
+        <text x="0" y="12" class="lbl-mono">96</text>
+        <text x="72" y="12" class="lbl-mono">20</text>
+        <text x="128" y="12" class="lbl-mono">42%</text>
+        <rect x="190" y="2" width="80" height="14" rx="2" fill="#fed7aa" stroke="#d97706"/>
+      </g>
+      <!-- Row 128 -->
+      <g transform="translate(0,120)">
+        <text x="0" y="12" class="lbl-mono">128</text>
+        <text x="72" y="12" class="lbl-mono">16</text>
+        <text x="128" y="12" class="lbl-mono">33%</text>
+        <rect x="190" y="2" width="64" height="14" rx="2" fill="#fecaca" stroke="#dc2626"/>
+      </g>
+      <!-- Row 255 -->
+      <g transform="translate(0,138)">
+        <text x="0" y="12" class="lbl-mono">255</text>
+        <text x="72" y="12" class="lbl-mono">8</text>
+        <text x="128" y="12" class="lbl-mono" fill="#dc2626" font-weight="700">17%</text>
+        <rect x="190" y="2" width="32" height="14" rx="2" fill="#dc2626"/>
+      </g>
+    </g>
+
+    <!-- Key metrics -->
+    <g transform="translate(14,346)">
+      <text x="0" y="0" class="lbl-sm" fill="#7c3aed">KEY METRICS</text>
+      <line x1="0" y1="6" x2="392" y2="6" stroke="#f3e8ff"/>
+
+      <rect x="0"   y="14" width="186" height="54" rx="5" fill="#dbeafe" stroke="#0369a1"/>
+      <text x="8"   y="30" class="lbl-sm" fill="#0369a1">SPILL CLIFF</text>
+      <text x="8"   y="48" class="lbl-mono-em" fill="#0369a1" font-size="12">5-7× penalty</text>
+      <text x="8"   y="62" class="lbl-mono" fill="#5b6679" font-size="9">~17 cyc/spill-op</text>
+
+      <rect x="196" y="14" width="196" height="54" rx="5" fill="#dcfce7" stroke="#16a34a"/>
+      <text x="204" y="30" class="lbl-sm" fill="#15803d">SWEET SPOT (GEMM)</text>
+      <text x="204" y="48" class="lbl-mono-em" fill="#15803d" font-size="12">64-96 regs/thread</text>
+      <text x="204" y="62" class="lbl-mono" fill="#5b6679" font-size="9">32-20 warps/SM</text>
+    </g>
+  </g>
+
+  <!-- ============ D: Bottom KPI strip ============ -->
+  <g transform="translate(40,704)">
+    <rect x="0" y="0" width="1200" height="156" rx="10" fill="#ffffff" stroke="#e6e4da"/>
+    <rect x="0" y="0" width="1200" height="3" rx="10" fill="#0b1220"/>
+    <text x="14" y="22" class="panel-n" fill="#0b1220">D · MICROARCHITECTURAL SUMMARY</text>
+
+    <!-- 6 KPI boxes -->
+    <g transform="translate(14,42)">
+      <rect x="0"   y="0" width="186" height="100" rx="6" fill="#dbeafe" stroke="#0369a1"/>
+      <text x="14"  y="18" class="lbl-sm" fill="#0369a1">CAPACITY/SMSP</text>
+      <text x="14"  y="44" class="big-num" fill="#0369a1">64 KB</text>
+      <text x="14"  y="64" class="lbl-mono" fill="#5b6679">16,384 × 32-bit</text>
+      <text x="14"  y="80" class="lbl-mono" fill="#5b6679">12 warp slots</text>
+      <text x="14"  y="94" class="lbl-mono" fill="#5b6679" font-size="9">[S3/case_3]</text>
+
+      <rect x="196" y="0" width="186" height="100" rx="6" fill="#dcfce7" stroke="#16a34a"/>
+      <text x="210" y="18" class="lbl-sm" fill="#15803d">BANK CONFLICT</text>
+      <text x="210" y="44" class="big-num" fill="#16a34a">0 cyc</text>
+      <text x="210" y="64" class="lbl-mono" fill="#5b6679">OC fully absorbs</text>
+      <text x="210" y="80" class="lbl-mono" fill="#5b6679">R%2 parity banking</text>
+      <text x="210" y="94" class="lbl-mono" fill="#5b6679" font-size="9">[S12/case_2]</text>
+
+      <rect x="392" y="0" width="186" height="100" rx="6" fill="#fef3c7" stroke="#d97706"/>
+      <text x="406" y="18" class="lbl-sm" fill="#b45309">RFC ENTRIES</text>
+      <text x="406" y="44" class="big-num" fill="#b45309">≥ 24</text>
+      <text x="406" y="64" class="lbl-mono" fill="#5b6679">per warp, LRU evict</text>
+      <text x="406" y="80" class="lbl-mono" fill="#5b6679">bypass d=0..2</text>
+      <text x="406" y="94" class="lbl-mono" fill="#5b6679" font-size="9">[S12/case_6-7]</text>
+
+      <rect x="588" y="0" width="186" height="100" rx="6" fill="#f3e8ff" stroke="#7c3aed"/>
+      <text x="602" y="18" class="lbl-sm" fill="#7c3aed">READ PORTS</text>
+      <text x="602" y="44" class="big-num" fill="#7c3aed">≥ 3</text>
+      <text x="602" y="64" class="lbl-mono" fill="#5b6679">A + B + C minimum</text>
+      <text x="602" y="80" class="lbl-mono" fill="#5b6679">conflict-free</text>
+      <text x="602" y="94" class="lbl-mono" fill="#5b6679" font-size="9">[S12/case_3]</text>
+
+      <rect x="784" y="0" width="186" height="100" rx="6" fill="#fee2e2" stroke="#dc2626"/>
+      <text x="798" y="18" class="lbl-sm" fill="#dc2626">WAR HAZARD</text>
+      <text x="798" y="44" class="big-num" fill="#dc2626">0 cyc</text>
+      <text x="798" y="64" class="lbl-mono" fill="#5b6679">OC decouples R/W</text>
+      <text x="798" y="80" class="lbl-mono" fill="#5b6679">RAW fwd: 2 cyc IADD</text>
+      <text x="798" y="94" class="lbl-mono" fill="#5b6679" font-size="9">[S12/case_8-9]</text>
+
+      <rect x="980" y="0" width="186" height="100" rx="6" fill="#f1f5f9" stroke="#94a3b8"/>
+      <text x="994" y="18" class="lbl-sm" fill="#5b6679">ALLOC GRAIN</text>
+      <text x="994" y="44" class="big-num" fill="#0b1220">8 reg</text>
+      <text x="994" y="64" class="lbl-mono" fill="#5b6679">per thread</text>
+      <text x="994" y="80" class="lbl-mono" fill="#5b6679">floor = 24 regs</text>
+      <text x="994" y="94" class="lbl-mono" fill="#5b6679" font-size="9">[S21/case_111-112]</text>
+    </g>
+  </g>
+</svg>

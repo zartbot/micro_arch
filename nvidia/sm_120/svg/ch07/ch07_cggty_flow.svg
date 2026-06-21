@@ -1,0 +1,445 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 920" role="img"
+     aria-label="§ 7.1.1 CGGTY Scheduler Decision Flow — warp-pool snapshot, 4-step pipeline, strategy comparison, cycle timeline">
+  <defs>
+    <style><![CDATA[
+      .eyebrow { font: 600 11px "JetBrains Mono", monospace; letter-spacing: 0.16em; text-transform: uppercase }
+      .title   { font: 500 24px "Fraunces", serif; fill: #0b1220; letter-spacing: -0.02em }
+      .sub     { font: italic 12px "Fraunces", serif; fill: #5b6679 }
+      .panel-h { font: 600 13px "JetBrains Mono", monospace; letter-spacing: 0.06em; fill: #0b1220 }
+      .panel-n { font: 700 11px "JetBrains Mono", monospace; letter-spacing: 0.08em }
+      .panel-sub { font: italic 11px "Fraunces", serif; fill: #5b6679 }
+      .lbl-sm  { font: 500 9px "JetBrains Mono", monospace; fill: #5b6679; letter-spacing: 0.05em; text-transform: uppercase }
+      .lbl     { font: 500 11px "IBM Plex Sans", sans-serif; fill: #2a3548 }
+      .lbl-mono{ font: 500 10px "JetBrains Mono", monospace; fill: #2a3548 }
+      .lbl-mono-em { font: 700 10px "JetBrains Mono", monospace; fill: #0b1220 }
+      .lbl-w   { font: 600 10px "IBM Plex Sans", sans-serif; fill: #ffffff }
+      .lbl-w-mono { font: 500 9px "JetBrains Mono", monospace; fill: #ffffff }
+      .step-num { font: 700 14px "Fraunces", serif; fill: #ffffff }
+      .arrow-r { stroke: #b45309; stroke-width: 1.6; fill: none }
+      .arrow-g { stroke: #16a34a; stroke-width: 1.6; fill: none }
+      .arrow-d { stroke: #5b6679; stroke-width: 1.2; fill: none; stroke-dasharray: 3,3 }
+      .ok-cell { fill: #dcfce7; stroke: #16a34a; stroke-width: 0.6 }
+      .ng-cell { fill: #fee2e2; stroke: #dc2626; stroke-width: 0.6 }
+      .neu-cell{ fill: #f1f5f9; stroke: #cbd5e1; stroke-width: 0.6 }
+    ]]></style>
+    <marker id="arr-r" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M0,0 L8,4 L0,8 z" fill="#b45309"/>
+    </marker>
+    <marker id="arr-g" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M0,0 L8,4 L0,8 z" fill="#16a34a"/>
+    </marker>
+    <marker id="arr-d" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M0,0 L8,4 L0,8 z" fill="#5b6679"/>
+    </marker>
+  </defs>
+
+  <rect width="1280" height="920" fill="#fcfbf6"/>
+
+  <!-- ============ Header ============ -->
+  <g transform="translate(40,32)">
+    <rect x="0" y="0" width="3" height="80" fill="#b45309"/>
+    <text x="16" y="30" class="title">CGGTY — Compiler-Guided Greedy-Then-Youngest</text>
+    <text x="16" y="54" class="sub">1 insn/cyc · 0-cyc context switch · 41 bits/warp software state · W3/W0 ratio = 3.96 (expected 4.0)</text>
+    <text x="16" y="72" class="lbl-sm">Source: [S11/c24-28,33-35,47-49] · Patent US11442795</text>
+  </g>
+
+  <!-- ============ LEFT: Warp pool snapshot ============ -->
+  <g transform="translate(40,134)">
+    <rect x="0" y="0" width="320" height="600" rx="10" fill="#ffffff" stroke="#e6e4da"/>
+    <rect x="0" y="0" width="320" height="3" rx="10" fill="#0369a1"/>
+    <text x="14" y="22" class="panel-n" fill="#0369a1">A · WARP POOL SNAPSHOT</text>
+    <text x="14" y="38" class="panel-sub">Cycle T input — 6 representative warps</text>
+
+    <!-- Column headers -->
+    <g transform="translate(14,58)">
+      <text x="80" y="0" class="lbl-sm" fill="#0369a1">PER-WARP STATE MATRIX</text>
+      <line x1="0" y1="6" x2="290" y2="6" stroke="#dbeafe"/>
+    </g>
+
+    <!-- Warp ID column header row -->
+    <g transform="translate(14,76)" font-size="10">
+      <text x="0" y="0" class="lbl-mono" fill="#5b6679">cond \ wid</text>
+      <text x="78"  y="0" class="lbl-mono-em" fill="#0369a1" text-anchor="middle">W0</text>
+      <text x="120" y="0" class="lbl-mono-em" fill="#0369a1" text-anchor="middle">W1</text>
+      <text x="162" y="0" class="lbl-mono-em" fill="#0369a1" text-anchor="middle">W2</text>
+      <text x="204" y="0" class="lbl-mono-em" fill="#0369a1" text-anchor="middle">W3</text>
+      <text x="246" y="0" class="lbl-mono-em" fill="#0369a1" text-anchor="middle">W4</text>
+      <text x="288" y="0" class="lbl-mono-em" fill="#0369a1" text-anchor="middle">W5</text>
+    </g>
+
+    <!-- Row 1: stall counter -->
+    <g transform="translate(14,86)">
+      <text x="0"  y="14" class="lbl-mono" fill="#5b6679">stall[3:0]</text>
+      <rect class="ok-cell"  x="62"  y="2" width="32" height="20" rx="3"/><text x="78"  y="16" class="lbl-mono-em" text-anchor="middle">0</text>
+      <rect class="ng-cell"  x="104" y="2" width="32" height="20" rx="3"/><text x="120" y="16" class="lbl-mono-em" text-anchor="middle" fill="#dc2626">2</text>
+      <rect class="ok-cell"  x="146" y="2" width="32" height="20" rx="3"/><text x="162" y="16" class="lbl-mono-em" text-anchor="middle">0</text>
+      <rect class="ok-cell"  x="188" y="2" width="32" height="20" rx="3"/><text x="204" y="16" class="lbl-mono-em" text-anchor="middle">0</text>
+      <rect class="ok-cell"  x="230" y="2" width="32" height="20" rx="3"/><text x="246" y="16" class="lbl-mono-em" text-anchor="middle">0</text>
+      <rect class="ok-cell"  x="272" y="2" width="32" height="20" rx="3"/><text x="288" y="16" class="lbl-mono-em" text-anchor="middle">0</text>
+    </g>
+
+    <!-- Row 2: SB wait -->
+    <g transform="translate(14,114)">
+      <text x="0"  y="14" class="lbl-mono" fill="#5b6679">SB wait</text>
+      <rect class="ok-cell"  x="62"  y="2" width="32" height="20" rx="3"/><text x="78"  y="16" class="lbl-mono" text-anchor="middle">--</text>
+      <rect class="ok-cell"  x="104" y="2" width="32" height="20" rx="3"/><text x="120" y="16" class="lbl-mono" text-anchor="middle">--</text>
+      <rect class="ng-cell"  x="146" y="2" width="32" height="20" rx="3"/><text x="162" y="16" class="lbl-mono-em" text-anchor="middle" fill="#dc2626">SB1</text>
+      <rect class="ok-cell"  x="188" y="2" width="32" height="20" rx="3"/><text x="204" y="16" class="lbl-mono" text-anchor="middle">--</text>
+      <rect class="ok-cell"  x="230" y="2" width="32" height="20" rx="3"/><text x="246" y="16" class="lbl-mono" text-anchor="middle">--</text>
+      <rect class="ok-cell"  x="272" y="2" width="32" height="20" rx="3"/><text x="288" y="16" class="lbl-mono" text-anchor="middle">--</text>
+    </g>
+
+    <!-- Row 3: yield -->
+    <g transform="translate(14,142)">
+      <text x="0"  y="14" class="lbl-mono" fill="#5b6679">yield bit</text>
+      <rect class="ok-cell"  x="62"  y="2" width="32" height="20" rx="3"/><text x="78"  y="16" class="lbl-mono" text-anchor="middle">0</text>
+      <rect class="ok-cell"  x="104" y="2" width="32" height="20" rx="3"/><text x="120" y="16" class="lbl-mono" text-anchor="middle">0</text>
+      <rect class="ok-cell"  x="146" y="2" width="32" height="20" rx="3"/><text x="162" y="16" class="lbl-mono" text-anchor="middle">0</text>
+      <rect class="ng-cell"  x="188" y="2" width="32" height="20" rx="3"/><text x="204" y="16" class="lbl-mono-em" text-anchor="middle" fill="#dc2626">1</text>
+      <rect class="ok-cell"  x="230" y="2" width="32" height="20" rx="3"/><text x="246" y="16" class="lbl-mono" text-anchor="middle">0</text>
+      <rect class="ok-cell"  x="272" y="2" width="32" height="20" rx="3"/><text x="288" y="16" class="lbl-mono" text-anchor="middle">0</text>
+    </g>
+
+    <!-- Row 4: barrier -->
+    <g transform="translate(14,170)">
+      <text x="0"  y="14" class="lbl-mono" fill="#5b6679">barrier</text>
+      <rect class="ok-cell"  x="62"  y="2" width="32" height="20" rx="3"/><text x="78"  y="16" class="lbl-mono" text-anchor="middle">0</text>
+      <rect class="ok-cell"  x="104" y="2" width="32" height="20" rx="3"/><text x="120" y="16" class="lbl-mono" text-anchor="middle">0</text>
+      <rect class="ok-cell"  x="146" y="2" width="32" height="20" rx="3"/><text x="162" y="16" class="lbl-mono" text-anchor="middle">0</text>
+      <rect class="ok-cell"  x="188" y="2" width="32" height="20" rx="3"/><text x="204" y="16" class="lbl-mono" text-anchor="middle">0</text>
+      <rect class="ok-cell"  x="230" y="2" width="32" height="20" rx="3"/><text x="246" y="16" class="lbl-mono" text-anchor="middle">0</text>
+      <rect class="ng-cell"  x="272" y="2" width="32" height="20" rx="3"/><text x="288" y="16" class="lbl-mono-em" text-anchor="middle" fill="#dc2626">1</text>
+    </g>
+
+    <!-- Separator -->
+    <line x1="14" y1="200" x2="304" y2="200" stroke="#b45309" stroke-width="1" stroke-dasharray="3,2"/>
+
+    <!-- Row 5: ELIGIBLE = AND -->
+    <g transform="translate(14,206)">
+      <text x="0"  y="16" class="lbl-mono-em" fill="#b45309">ELIGIBLE?</text>
+      <rect x="62"  y="2" width="32" height="22" rx="3" fill="#16a34a"/><text x="78"  y="18" class="lbl-w" text-anchor="middle">✓</text>
+      <rect x="104" y="2" width="32" height="22" rx="3" fill="#dc2626"/><text x="120" y="18" class="lbl-w" text-anchor="middle">✗</text>
+      <rect x="146" y="2" width="32" height="22" rx="3" fill="#dc2626"/><text x="162" y="18" class="lbl-w" text-anchor="middle">✗</text>
+      <rect x="188" y="2" width="32" height="22" rx="3" fill="#dc2626"/><text x="204" y="18" class="lbl-w" text-anchor="middle">✗</text>
+      <rect x="230" y="2" width="32" height="22" rx="3" fill="#16a34a"/><text x="246" y="18" class="lbl-w" text-anchor="middle">✓</text>
+      <rect x="272" y="2" width="32" height="22" rx="3" fill="#dc2626"/><text x="288" y="18" class="lbl-w" text-anchor="middle">✗</text>
+    </g>
+
+    <!-- Last issued indicator -->
+    <g transform="translate(14,250)">
+      <rect x="0" y="0" width="290" height="34" rx="5" fill="#fef3c7" stroke="#d97706"/>
+      <text x="8" y="15" class="lbl-sm" fill="#b45309">LAST ISSUED (cycle T-1)</text>
+      <text x="8" y="29" class="lbl-mono-em" fill="#b45309">last_issued = W4</text>
+      <text x="160" y="29" class="lbl-mono" fill="#5b6679">→ greedy candidate</text>
+    </g>
+
+    <!-- Eligible set summary -->
+    <g transform="translate(14,294)">
+      <rect x="0" y="0" width="290" height="34" rx="5" fill="#dcfce7" stroke="#16a34a"/>
+      <text x="8" y="15" class="lbl-sm" fill="#15803d">ELIGIBLE SET (cycle T)</text>
+      <text x="8" y="29" class="lbl-mono-em" fill="#15803d">{ W0, W4 }  |set| = 2</text>
+    </g>
+
+    <!-- Reasons table for non-eligible -->
+    <g transform="translate(14,344)">
+      <text x="0" y="0" class="lbl-sm" fill="#dc2626">REJECTION REASONS</text>
+      <line x1="0" y1="6" x2="290" y2="6" stroke="#fee2e2"/>
+      <text x="0"  y="22" class="lbl-mono">W1:</text>
+      <text x="44" y="22" class="lbl-mono" fill="#dc2626">stall=2 → not yet 0</text>
+      <text x="0"  y="40" class="lbl-mono">W2:</text>
+      <text x="44" y="40" class="lbl-mono" fill="#dc2626">SB1 wait (variable-lat)</text>
+      <text x="0"  y="58" class="lbl-mono">W3:</text>
+      <text x="44" y="58" class="lbl-mono" fill="#dc2626">yield=1 → deprio'd</text>
+      <text x="0"  y="76" class="lbl-mono">W5:</text>
+      <text x="44" y="76" class="lbl-mono" fill="#dc2626">barrier blocked</text>
+    </g>
+
+    <!-- Static SC binding note -->
+    <g transform="translate(14,442)">
+      <rect x="0" y="0" width="290" height="64" rx="5" fill="#dbeafe" stroke="#0369a1"/>
+      <text x="8" y="14" class="lbl-sm" fill="#0369a1">STATIC SUB-CORE BINDING</text>
+      <text x="8" y="30" class="lbl-mono">SC = ⌊warpid / 4⌋</text>
+      <text x="8" y="46" class="lbl-mono" fill="#5b6679">→ W0..W3 on SMSP0</text>
+      <text x="8" y="60" class="lbl-mono" fill="#5b6679">→ W4..W7 on SMSP1 ...</text>
+    </g>
+
+    <!-- 4 conditions summary -->
+    <g transform="translate(14,520)">
+      <text x="0" y="0" class="lbl-sm" fill="#b45309">eligible = stall==0</text>
+      <text x="0" y="14" class="lbl-sm" fill="#b45309">         ∧ SB-wait clear</text>
+      <text x="0" y="28" class="lbl-sm" fill="#b45309">         ∧ ¬yield</text>
+      <text x="0" y="42" class="lbl-sm" fill="#b45309">         ∧ ¬barrier-blocked</text>
+      <text x="0" y="62" class="lbl-mono" fill="#5b6679">→ AND of 4 boolean</text>
+      <text x="0" y="76" class="lbl-mono" fill="#5b6679">  conditions per warp</text>
+    </g>
+  </g>
+
+  <!-- ============ CENTER: 4-step decision pipeline ============ -->
+  <g transform="translate(380,134)">
+    <rect x="0" y="0" width="540" height="600" rx="10" fill="#ffffff" stroke="#e6e4da"/>
+    <rect x="0" y="0" width="540" height="3" rx="10" fill="#b45309"/>
+    <text x="14" y="22" class="panel-n" fill="#b45309">B · 4-STEP DECISION PIPELINE</text>
+    <text x="14" y="38" class="panel-sub">Per-cycle hardware logic — applied by each SMSP scheduler in parallel</text>
+
+    <!-- Step 1: Decrement stall -->
+    <g transform="translate(50,60)">
+      <circle cx="14" cy="14" r="14" fill="#b45309"/>
+      <text x="14" y="19" class="step-num" text-anchor="middle">1</text>
+      <rect x="40" y="0" width="430" height="60" rx="6" fill="#fef3c7" stroke="#d97706"/>
+      <text x="50" y="18" class="lbl-mono-em" fill="#b45309">DECREMENT STALL COUNTERS</text>
+      <text x="50" y="36" class="lbl">For every warp w:  stall[w] = max(0, stall[w] − 1)</text>
+      <text x="50" y="52" class="lbl-mono" fill="#5b6679">Effect: W1: 2→1 (other warps unchanged)</text>
+    </g>
+    <line x1="64" y1="120" x2="64" y2="138" class="arrow-r" marker-end="url(#arr-r)"/>
+
+    <!-- Step 2: Build eligible set -->
+    <g transform="translate(50,144)">
+      <circle cx="14" cy="14" r="14" fill="#b45309"/>
+      <text x="14" y="19" class="step-num" text-anchor="middle">2</text>
+      <rect x="40" y="0" width="430" height="78" rx="6" fill="#fef3c7" stroke="#d97706"/>
+      <text x="50" y="18" class="lbl-mono-em" fill="#b45309">BUILD ELIGIBLE SET (4-CONDITION AND)</text>
+      <text x="50" y="36" class="lbl-mono" fill="#5b6679">eligible_set = { w : stall==0 ∧ SB clear ∧ ¬yield ∧ ¬bar }</text>
+
+      <!-- 4 condition pills -->
+      <g transform="translate(50,44)" font-size="9">
+        <rect x="0"   y="0" width="92" height="22" rx="11" fill="#dcfce7" stroke="#16a34a"/>
+        <text x="46" y="14" class="lbl-mono-em" fill="#15803d" text-anchor="middle">stall == 0</text>
+        <rect x="100" y="0" width="92" height="22" rx="11" fill="#dcfce7" stroke="#16a34a"/>
+        <text x="146" y="14" class="lbl-mono-em" fill="#15803d" text-anchor="middle">SB-wait = 0</text>
+        <rect x="200" y="0" width="92" height="22" rx="11" fill="#dcfce7" stroke="#16a34a"/>
+        <text x="246" y="14" class="lbl-mono-em" fill="#15803d" text-anchor="middle">¬yield</text>
+        <rect x="300" y="0" width="92" height="22" rx="11" fill="#dcfce7" stroke="#16a34a"/>
+        <text x="346" y="14" class="lbl-mono-em" fill="#15803d" text-anchor="middle">¬barrier</text>
+      </g>
+    </g>
+    <line x1="64" y1="226" x2="64" y2="244" class="arrow-r" marker-end="url(#arr-r)"/>
+
+    <!-- Step 3: Empty? diamond + Greedy -->
+    <g transform="translate(50,250)">
+      <circle cx="14" cy="14" r="14" fill="#b45309"/>
+      <text x="14" y="19" class="step-num" text-anchor="middle">3</text>
+      <rect x="40" y="0" width="430" height="100" rx="6" fill="#fed7aa" stroke="#b45309"/>
+      <text x="50" y="18" class="lbl-mono-em" fill="#b45309">GREEDY: continue last warp if eligible</text>
+      <text x="50" y="36" class="lbl-mono" fill="#5b6679">if (eligible_set == ∅) → issue NOP / idle cycle</text>
+      <text x="50" y="52" class="lbl-mono" fill="#5b6679">else if (last_issued ∈ eligible_set) → choose last_issued</text>
+
+      <!-- Decision branches inside step -->
+      <g transform="translate(50,60)">
+        <rect x="0" y="0" width="200" height="32" rx="4" fill="#dcfce7" stroke="#16a34a"/>
+        <text x="8" y="14" class="lbl-mono" fill="#15803d">W4 ∈ {W0,W4} ?</text>
+        <text x="8" y="28" class="lbl-mono-em" fill="#15803d">YES → choose W4 (greedy)</text>
+
+        <rect x="216" y="0" width="200" height="32" rx="4" fill="#fef3c7" stroke="#d97706"/>
+        <text x="224" y="14" class="lbl-mono" fill="#b45309">W4 ∉ eligible ?</text>
+        <text x="224" y="28" class="lbl-mono" fill="#b45309">NO → fall to step ④</text>
+      </g>
+    </g>
+    <line x1="64" y1="354" x2="64" y2="372" class="arrow-r" marker-end="url(#arr-r)"/>
+
+    <!-- Step 4: Youngest fallback -->
+    <g transform="translate(50,378)">
+      <circle cx="14" cy="14" r="14" fill="#b45309"/>
+      <text x="14" y="19" class="step-num" text-anchor="middle">4</text>
+      <rect x="40" y="0" width="430" height="68" rx="6" fill="#fed7aa" stroke="#b45309"/>
+      <text x="50" y="18" class="lbl-mono-em" fill="#b45309">YOUNGEST: pick min warpID among eligible</text>
+      <text x="50" y="36" class="lbl-mono" fill="#5b6679">picked = min(eligible_set)  // smallest warpID</text>
+      <text x="50" y="52" class="lbl-mono" fill="#5b6679">In our example: would pick W0 (if step 3 missed)</text>
+    </g>
+    <line x1="64" y1="450" x2="64" y2="468" class="arrow-g" marker-end="url(#arr-g)"/>
+
+    <!-- Dispatch box -->
+    <g transform="translate(50,474)">
+      <rect x="0" y="0" width="470" height="48" rx="6" fill="#0b1220"/>
+      <text x="14" y="20" class="lbl-w" font-weight="700">DISPATCH</text>
+      <text x="14" y="36" class="lbl-w-mono" font-size="10">issue insn → SMSP backend (FMA/ALU/SFU/LSU/TC) · update i-buffer · set new stall</text>
+    </g>
+
+    <!-- Bottom metric chips -->
+    <g transform="translate(50,532)">
+      <rect x="0"   y="0" width="148" height="46" rx="5" fill="#dbeafe" stroke="#0369a1"/>
+      <text x="8"   y="14" class="lbl-sm" fill="#0369a1">GREEDY HIT-RATE</text>
+      <text x="8"   y="32" class="lbl-mono-em" fill="#0369a1" font-size="14">3.96 / 4.0</text>
+      <text x="8"   y="42" class="lbl-mono" fill="#5b6679" font-size="9">W3/W0 measured</text>
+
+      <rect x="156" y="0" width="148" height="46" rx="5" fill="#dcfce7" stroke="#16a34a"/>
+      <text x="164" y="14" class="lbl-sm" fill="#15803d">CTX SWITCH</text>
+      <text x="164" y="32" class="lbl-mono-em" fill="#15803d" font-size="14">0 cyc</text>
+      <text x="164" y="42" class="lbl-mono" fill="#5b6679" font-size="9">RF-resident state</text>
+
+      <rect x="312" y="0" width="148" height="46" rx="5" fill="#fef3c7" stroke="#d97706"/>
+      <text x="320" y="14" class="lbl-sm" fill="#b45309">ISSUE RATE</text>
+      <text x="320" y="32" class="lbl-mono-em" fill="#b45309" font-size="14">1 insn/cyc</text>
+      <text x="320" y="42" class="lbl-mono" fill="#5b6679" font-size="9">per SMSP, 4/SM</text>
+    </g>
+  </g>
+
+  <!-- ============ RIGHT: Strategy comparison ============ -->
+  <g transform="translate(940,134)">
+    <rect x="0" y="0" width="300" height="600" rx="10" fill="#ffffff" stroke="#e6e4da"/>
+    <rect x="0" y="0" width="300" height="3" rx="10" fill="#7c3aed"/>
+    <text x="14" y="22" class="panel-n" fill="#7c3aed">C · STRATEGY COMPARISON</text>
+    <text x="14" y="38" class="panel-sub">CGGTY vs other warp schedulers</text>
+
+    <!-- Strategy table -->
+    <g transform="translate(14,58)">
+      <text x="0" y="0" class="lbl-sm" fill="#7c3aed">SCHEDULING POLICIES</text>
+      <line x1="0" y1="6" x2="272" y2="6" stroke="#f3e8ff"/>
+
+      <!-- RR -->
+      <g transform="translate(0,14)">
+        <rect x="0" y="0" width="272" height="40" rx="4" fill="#f1f5f9" stroke="#cbd5e1"/>
+        <text x="8"  y="14" class="lbl-mono-em">RR</text>
+        <text x="44" y="14" class="lbl-mono" fill="#5b6679">Round-Robin</text>
+        <text x="8"  y="32" class="lbl-mono" fill="#5b6679" font-size="9">cyclic W0→W1→...→Wn (no greedy)</text>
+      </g>
+
+      <!-- LRR -->
+      <g transform="translate(0,60)">
+        <rect x="0" y="0" width="272" height="40" rx="4" fill="#f1f5f9" stroke="#cbd5e1"/>
+        <text x="8"  y="14" class="lbl-mono-em">LRR</text>
+        <text x="44" y="14" class="lbl-mono" fill="#5b6679">Loose RR</text>
+        <text x="8"  y="32" class="lbl-mono" fill="#5b6679" font-size="9">Fermi/Kepler · skip stalled, no greedy</text>
+      </g>
+
+      <!-- GTO -->
+      <g transform="translate(0,106)">
+        <rect x="0" y="0" width="272" height="40" rx="4" fill="#dbeafe" stroke="#0369a1"/>
+        <text x="8"  y="14" class="lbl-mono-em" fill="#0369a1">GTO</text>
+        <text x="44" y="14" class="lbl-mono" fill="#0369a1">Greedy + Oldest</text>
+        <text x="8"  y="32" class="lbl-mono" fill="#1e3a8a" font-size="9">Volta/Ampere · oldest tiebreak</text>
+      </g>
+
+      <!-- CGGTY (highlighted) -->
+      <g transform="translate(0,152)">
+        <rect x="0" y="0" width="272" height="46" rx="4" fill="#fef3c7" stroke="#b45309" stroke-width="1.4"/>
+        <text x="8"  y="14" class="lbl-mono-em" fill="#b45309">CGGTY ★</text>
+        <text x="86" y="14" class="lbl-mono" fill="#b45309">Greedy + Youngest</text>
+        <text x="8"  y="30" class="lbl-mono" fill="#b45309" font-size="9">SM_120 Blackwell · this work</text>
+        <text x="8"  y="42" class="lbl-mono-em" fill="#b45309" font-size="9">+ compiler-guided eligibility</text>
+      </g>
+
+      <!-- TLS -->
+      <g transform="translate(0,204)">
+        <rect x="0" y="0" width="272" height="40" rx="4" fill="#f1f5f9" stroke="#cbd5e1"/>
+        <text x="8"  y="14" class="lbl-mono-em">TLS</text>
+        <text x="44" y="14" class="lbl-mono" fill="#5b6679">Two-Level Sched</text>
+        <text x="8"  y="32" class="lbl-mono" fill="#5b6679" font-size="9">research · partition warps A/B</text>
+      </g>
+    </g>
+
+    <!-- CGGTY differentiators -->
+    <g transform="translate(14,316)">
+      <text x="0" y="0" class="lbl-sm" fill="#b45309">CGGTY KEY DIFFERENTIATORS</text>
+      <line x1="0" y1="6" x2="272" y2="6" stroke="#fef3c7"/>
+
+      <g transform="translate(0,16)">
+        <circle cx="6" cy="6" r="3" fill="#b45309"/>
+        <text x="16" y="10" class="lbl">Compiler-guided eligibility</text>
+        <text x="16" y="24" class="lbl-mono" fill="#5b6679" font-size="9">stall/yield/SB embedded in SASS</text>
+      </g>
+
+      <g transform="translate(0,46)">
+        <circle cx="6" cy="6" r="3" fill="#b45309"/>
+        <text x="16" y="10" class="lbl">No oldest-tracking HW</text>
+        <text x="16" y="24" class="lbl-mono" fill="#5b6679" font-size="9">youngest = simply min(wid)</text>
+      </g>
+
+      <g transform="translate(0,76)">
+        <circle cx="6" cy="6" r="3" fill="#b45309"/>
+        <text x="16" y="10" class="lbl">41 bits/warp soft state</text>
+        <text x="16" y="24" class="lbl-mono" fill="#5b6679" font-size="9">vs 256+ bits HW scoreboard</text>
+      </g>
+
+      <g transform="translate(0,106)">
+        <circle cx="6" cy="6" r="3" fill="#b45309"/>
+        <text x="16" y="10" class="lbl">Hot-warp bias 1.0×→2.0×</text>
+        <text x="16" y="24" class="lbl-mono" fill="#5b6679" font-size="9">@4W → @32W [S11/c25]</text>
+      </g>
+    </g>
+
+    <!-- Why youngest? -->
+    <g transform="translate(14,478)">
+      <rect x="0" y="0" width="272" height="106" rx="6" fill="#f3e8ff" stroke="#7c3aed"/>
+      <text x="8" y="16" class="lbl-sm" fill="#7c3aed">WHY YOUNGEST?</text>
+      <text x="8" y="34" class="lbl-mono" fill="#4c1d95" font-size="10">• Newly eligible warps run first</text>
+      <text x="8" y="50" class="lbl-mono" fill="#4c1d95" font-size="10">• Coalesced GMEM access early</text>
+      <text x="8" y="66" class="lbl-mono" fill="#4c1d95" font-size="10">• Anti-starvation (10× warp gets</text>
+      <text x="8" y="80" class="lbl-mono" fill="#4c1d95" font-size="10">  6.7× time, [S11/c24])</text>
+      <text x="8" y="96" class="lbl-mono" fill="#4c1d95" font-size="10">• Patent: US11442795</text>
+    </g>
+  </g>
+
+  <!-- ============ BOTTOM: Cycle-by-cycle execution timeline ============ -->
+  <g transform="translate(40,754)">
+    <rect x="0" y="0" width="1200" height="146" rx="10" fill="#ffffff" stroke="#e6e4da"/>
+    <rect x="0" y="0" width="1200" height="3" rx="10" fill="#16a34a"/>
+    <text x="14" y="22" class="panel-n" fill="#16a34a">D · CYCLE-BY-CYCLE EXAMPLE — GREEDY DOMINATES (3.96 / 4.0)</text>
+    <text x="14" y="38" class="panel-sub">8-cycle dispatch trace — green = greedy continuation, orange = youngest tiebreak</text>
+
+    <!-- Header row: cycle numbers -->
+    <g transform="translate(80,56)" font-size="10">
+      <text x="0"   y="0" class="lbl-sm" fill="#5b6679">cycle</text>
+      <text x="60"  y="0" class="lbl-mono-em" text-anchor="middle">T0</text>
+      <text x="180" y="0" class="lbl-mono-em" text-anchor="middle">T1</text>
+      <text x="300" y="0" class="lbl-mono-em" text-anchor="middle">T2</text>
+      <text x="420" y="0" class="lbl-mono-em" text-anchor="middle">T3</text>
+      <text x="540" y="0" class="lbl-mono-em" text-anchor="middle">T4</text>
+      <text x="660" y="0" class="lbl-mono-em" text-anchor="middle">T5</text>
+      <text x="780" y="0" class="lbl-mono-em" text-anchor="middle">T6</text>
+      <text x="900" y="0" class="lbl-mono-em" text-anchor="middle">T7</text>
+      <text x="1020" y="0" class="lbl-mono-em" fill="#7c3aed" text-anchor="middle">decision</text>
+    </g>
+
+    <!-- Issued warp row -->
+    <g transform="translate(80,68)">
+      <text x="0" y="14" class="lbl-sm" fill="#5b6679">issued</text>
+
+      <!-- T0: W0 (initial youngest) -->
+      <rect x="38"  y="0" width="44" height="22" rx="3" fill="#fef3c7" stroke="#d97706"/>
+      <text x="60"  y="15" class="lbl-mono-em" fill="#b45309" text-anchor="middle">W0</text>
+      <!-- T1: W0 (greedy) -->
+      <rect x="158" y="0" width="44" height="22" rx="3" fill="#dcfce7" stroke="#16a34a"/>
+      <text x="180" y="15" class="lbl-mono-em" fill="#15803d" text-anchor="middle">W0</text>
+      <!-- T2: W0 stall, switch to youngest = W2 -->
+      <rect x="278" y="0" width="44" height="22" rx="3" fill="#fef3c7" stroke="#d97706"/>
+      <text x="300" y="15" class="lbl-mono-em" fill="#b45309" text-anchor="middle">W2</text>
+      <!-- T3: W2 (greedy) -->
+      <rect x="398" y="0" width="44" height="22" rx="3" fill="#dcfce7" stroke="#16a34a"/>
+      <text x="420" y="15" class="lbl-mono-em" fill="#15803d" text-anchor="middle">W2</text>
+      <!-- T4: W2 stall, switch to W0 (back eligible) -->
+      <rect x="518" y="0" width="44" height="22" rx="3" fill="#fef3c7" stroke="#d97706"/>
+      <text x="540" y="15" class="lbl-mono-em" fill="#b45309" text-anchor="middle">W0</text>
+      <!-- T5: W0 (greedy) -->
+      <rect x="638" y="0" width="44" height="22" rx="3" fill="#dcfce7" stroke="#16a34a"/>
+      <text x="660" y="15" class="lbl-mono-em" fill="#15803d" text-anchor="middle">W0</text>
+      <!-- T6: W0 (greedy) -->
+      <rect x="758" y="0" width="44" height="22" rx="3" fill="#dcfce7" stroke="#16a34a"/>
+      <text x="780" y="15" class="lbl-mono-em" fill="#15803d" text-anchor="middle">W0</text>
+      <!-- T7: W0 stall, W3 youngest -->
+      <rect x="878" y="0" width="44" height="22" rx="3" fill="#fef3c7" stroke="#d97706"/>
+      <text x="900" y="15" class="lbl-mono-em" fill="#b45309" text-anchor="middle">W3</text>
+
+      <!-- Stat in last column -->
+      <text x="980" y="15" class="lbl-mono-em" fill="#15803d">greedy 4 / 8 = 50%</text>
+    </g>
+
+    <!-- Decision label row -->
+    <g transform="translate(80,98)" font-size="9">
+      <text x="0"   y="0" class="lbl-sm" fill="#5b6679">decision</text>
+      <text x="60"  y="0" class="lbl-mono" fill="#b45309" text-anchor="middle">init</text>
+      <text x="180" y="0" class="lbl-mono" fill="#15803d" text-anchor="middle">greedy</text>
+      <text x="300" y="0" class="lbl-mono" fill="#b45309" text-anchor="middle">young</text>
+      <text x="420" y="0" class="lbl-mono" fill="#15803d" text-anchor="middle">greedy</text>
+      <text x="540" y="0" class="lbl-mono" fill="#b45309" text-anchor="middle">young</text>
+      <text x="660" y="0" class="lbl-mono" fill="#15803d" text-anchor="middle">greedy</text>
+      <text x="780" y="0" class="lbl-mono" fill="#15803d" text-anchor="middle">greedy</text>
+      <text x="900" y="0" class="lbl-mono" fill="#b45309" text-anchor="middle">young</text>
+    </g>
+
+    <!-- Footer note -->
+    <g transform="translate(14,124)">
+      <text x="0" y="0" class="lbl-mono" fill="#5b6679" font-size="10">In long-running production kernels (1000+ cyc), greedy continuation dominates: every 4 issues, 3.96 stay on the same warp [S11/c28].</text>
+    </g>
+  </g>
+</svg>

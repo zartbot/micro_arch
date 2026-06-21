@@ -1,0 +1,293 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 1070" role="img"
+     aria-label="Chapter 2 summary — SM_120 Memory Subsystem: L1/SMEM/L2/GDDR7 hierarchy, pipelined bank conflicts, XOR hash, memory wall analysis">
+  <defs>
+    <linearGradient id="rfGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#F3E8FF"/><stop offset="1" stop-color="#FAF5FF"/>
+    </linearGradient>
+    <linearGradient id="smemGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#D1FAE5"/><stop offset="1" stop-color="#ECFDF5"/>
+    </linearGradient>
+    <linearGradient id="l1Grad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#DBEAFE"/><stop offset="1" stop-color="#EFF6FF"/>
+    </linearGradient>
+    <linearGradient id="l2Grad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#E0E7FF"/><stop offset="1" stop-color="#EEF2FF"/>
+    </linearGradient>
+    <linearGradient id="dramGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FEF3C7"/><stop offset="1" stop-color="#FFFBEB"/>
+    </linearGradient>
+    <marker id="arr" markerWidth="7" markerHeight="5" refX="7" refY="2.5" orient="auto">
+      <polygon points="0 0, 7 2.5, 0 5" fill="#374151"/>
+    </marker>
+    <style><![CDATA[
+      .eyebrow{font:600 11px "JetBrains Mono",monospace;letter-spacing:0.14em;text-transform:uppercase}
+      .title{font:500 22px "Fraunces",serif;fill:#0b1220;letter-spacing:-0.02em}
+      .sub{font:italic 11px "Fraunces",serif;fill:#5b6679}
+      .sect{font:600 11px "JetBrains Mono",monospace;letter-spacing:0.05em;text-transform:uppercase;fill:#374151}
+      .lbl{font:600 11px "JetBrains Mono",monospace;fill:#2a3548}
+      .lbl-sm{font:500 10px "JetBrains Mono",monospace;fill:#5b6679}
+      .kpi-val{font:700 18px "JetBrains Mono",monospace}
+      .kpi-sm{font:700 14px "JetBrains Mono",monospace}
+      .kpi-unit{font:500 10px "JetBrains Mono",monospace;fill:#5b6679}
+      .stage{font:600 10px "JetBrains Mono",monospace;fill:#fff}
+      .num{font:700 13px "JetBrains Mono",monospace}
+      .cliff-txt{font:700 11px "JetBrains Mono",monospace}
+      .disc-title{font:600 11px "JetBrains Mono",monospace}
+      .disc-body{font:500 10px "IBM Plex Sans",sans-serif;fill:#374151}
+      .opt-txt{font:500 10.5px "IBM Plex Sans",sans-serif;fill:#1f2937}
+      .insight{font:600 10px "IBM Plex Sans",sans-serif;fill:#9f1239}
+    ]]></style>
+  </defs>
+  <rect width="1080" height="1070" fill="#fcfbf6"/>
+
+  <!-- ═══════════ HEADER ═══════════ -->
+  <g transform="translate(36,28)">
+    <rect x="0" y="0" width="4" height="48" fill="#1e40af"/>
+    <text x="16" y="16" class="eyebrow" fill="#1e40af">Chapter 02 · SM_120 / GB202 Blackwell</text>
+    <text x="16" y="42" class="title">Memory Subsystem — Complete Characterization</text>
+  </g>
+  <text x="52" y="90" class="sub">L1 / SMEM / L2 / GDDR7 hierarchy · pipelined bank conflicts · XOR hash · memory wall · coherence · DSMEM</text>
+
+  <!-- Decorative separator -->
+  <line x1="36" y1="102" x2="1044" y2="102" stroke="#E5E7EB" stroke-width="1"/>
+
+  <!-- ═══════════ SECTION 1: MEMORY HIERARCHY TOWER (single column, full width) ═══════════ -->
+  <text x="36" y="122" class="sect">Memory Hierarchy — Latency · Bandwidth · Capacity</text>
+
+  <!-- RF Layer -->
+  <g transform="translate(36,134)">
+    <rect width="1008" height="52" rx="10" fill="url(#rfGrad)" stroke="#7C3AED" stroke-width="1.2"/>
+    <text x="20" y="20" class="lbl" fill="#6D28D9">Register File</text>
+    <text x="20" y="40" class="kpi-val" fill="#7C3AED">0 cyc</text>
+    <text x="90" y="40" class="kpi-unit">latency</text>
+    <text x="200" y="20" class="lbl-sm">256 KB / SM</text>
+    <text x="200" y="40" class="lbl-sm">255 regs/thread</text>
+    <text x="400" y="20" class="lbl-sm">80.3 B/cyc → TensorCore</text>
+    <text x="400" y="40" class="lbl-sm">per-thread private storage</text>
+    <!-- Icon: register stack -->
+    <rect x="920" y="10" width="70" height="32" rx="4" fill="#7C3AED" opacity="0.15"/>
+    <text x="955" y="30" class="lbl-sm" fill="#6D28D9" text-anchor="middle">RF↔TC</text>
+  </g>
+
+  <!-- Arrow: RF → SMEM -->
+  <g transform="translate(504,188)">
+    <line x1="0" y1="0" x2="0" y2="16" stroke="#374151" stroke-width="1.5" marker-end="url(#arr)"/>
+  </g>
+
+  <!-- SMEM Layer -->
+  <g transform="translate(36,208)">
+    <rect width="1008" height="52" rx="10" fill="url(#smemGrad)" stroke="#059669" stroke-width="1.2"/>
+    <text x="20" y="20" class="lbl" fill="#065F46">Shared Memory</text>
+    <text x="20" y="40" class="kpi-val" fill="#059669">34 cyc</text>
+    <text x="90" y="40" class="kpi-unit">latency</text>
+    <text x="200" y="20" class="lbl-sm">100 KB total · 99 KB max opt-in</text>
+    <text x="200" y="40" class="lbl-sm">32 banks × 4B · software-managed</text>
+    <text x="480" y="20" class="lbl-sm">30.2 B/cyc/warp (b128)</text>
+    <text x="480" y="40" class="lbl-sm">No tag lookup · No coherence overhead</text>
+    <!-- Icon: 32 banks -->
+    <rect x="870" y="8" width="120" height="36" rx="4" fill="#059669" opacity="0.12"/>
+    <text x="930" y="24" class="lbl-sm" fill="#065F46" text-anchor="middle">32 banks</text>
+    <text x="930" y="38" class="lbl-sm" fill="#065F46" text-anchor="middle">1.43× max conflict</text>
+  </g>
+
+  <!-- Arrow: SMEM → L1 with +10 cyc annotation -->
+  <g transform="translate(504,262)">
+    <line x1="0" y1="0" x2="0" y2="16" stroke="#D97706" stroke-width="1.5" marker-end="url(#arr)"/>
+    <text x="12" y="12" class="cliff-txt" fill="#D97706">+10 cyc coherence tax</text>
+  </g>
+
+  <!-- L1 Layer -->
+  <g transform="translate(36,282)">
+    <rect width="1008" height="52" rx="10" fill="url(#l1Grad)" stroke="#2563EB" stroke-width="1.2"/>
+    <text x="20" y="20" class="lbl" fill="#1D4ED8">L1 Data Cache</text>
+    <text x="20" y="40" class="kpi-val" fill="#2563EB">44 cyc</text>
+    <text x="90" y="40" class="kpi-unit">latency</text>
+    <text x="200" y="20" class="lbl-sm">89 KB effective · 128B line size</text>
+    <text x="200" y="40" class="lbl-sm">~712-way fully associative (NUM_SETS=1)</text>
+    <text x="480" y="20" class="lbl-sm">116.5 B/cyc (single-warp peak)</text>
+    <text x="480" y="40" class="lbl-sm">Unified with texture/NC · shares 100 KB SRAM</text>
+    <!-- Icon: fully assoc -->
+    <rect x="870" y="8" width="120" height="36" rx="4" fill="#2563EB" opacity="0.12"/>
+    <text x="930" y="24" class="lbl-sm" fill="#1D4ED8" text-anchor="middle">712-way</text>
+    <text x="930" y="38" class="lbl-sm" fill="#1D4ED8" text-anchor="middle">0 conflict miss</text>
+  </g>
+
+  <!-- ▼▼▼ MEMORY WALL ▼▼▼ -->
+  <g transform="translate(36,340)">
+    <rect width="1008" height="26" rx="5" fill="#DC2626"/>
+    <text x="504" y="17" class="stage" text-anchor="middle" style="font-size:11px;letter-spacing:0.08em">▼ THE MEMORY WALL: 8.0× LATENCY CLIFF (44 cyc → 354 cyc) — Dominant Performance Boundary ▼</text>
+  </g>
+
+  <!-- L2 Layer -->
+  <g transform="translate(36,374)">
+    <rect width="1008" height="56" rx="10" fill="url(#l2Grad)" stroke="#4338CA" stroke-width="1.2"/>
+    <text x="20" y="20" class="lbl" fill="#4338CA">L2 Cache</text>
+    <text x="20" y="42" class="kpi-val" fill="#4338CA">354 cyc</text>
+    <text x="100" y="42" class="kpi-unit">latency</text>
+    <text x="200" y="20" class="lbl-sm">96 MB · 12 partitions (1 per MC) · ~16-way</text>
+    <text x="200" y="38" class="lbl-sm">XOR-hash set indexing · pseudo-LRU · 128B tag / 32B sector</text>
+    <text x="200" y="52" class="lbl-sm">~372 cyc contention-invariant (0–109 CTAs)</text>
+    <text x="600" y="20" class="lbl-sm">13,768 GB/s aggregate</text>
+    <text x="600" y="38" class="lbl-sm">4.17× bandwidth amplification over DRAM</text>
+    <!-- Icon: 12 partitions -->
+    <rect x="870" y="8" width="120" height="40" rx="4" fill="#4338CA" opacity="0.12"/>
+    <text x="930" y="24" class="lbl-sm" fill="#4338CA" text-anchor="middle">12 partitions</text>
+    <text x="930" y="38" class="lbl-sm" fill="#4338CA" text-anchor="middle">XOR hash</text>
+  </g>
+
+  <!-- Arrow: L2 → DRAM with 1.02x annotation -->
+  <g transform="translate(504,432)">
+    <line x1="0" y1="0" x2="0" y2="16" stroke="#059669" stroke-width="1.5" marker-end="url(#arr)"/>
+    <text x="12" y="12" class="cliff-txt" fill="#059669">1.02× (near-transparent for random access!)</text>
+  </g>
+
+  <!-- DRAM Layer -->
+  <g transform="translate(36,452)">
+    <rect width="1008" height="52" rx="10" fill="url(#dramGrad)" stroke="#D97706" stroke-width="1.2"/>
+    <text x="20" y="20" class="lbl" fill="#92400E">GDDR7 DRAM</text>
+    <text x="20" y="40" class="kpi-val" fill="#D97706">362 cyc</text>
+    <text x="100" y="40" class="kpi-unit">latency</text>
+    <text x="200" y="20" class="lbl-sm">72 GB · 384-bit bus (12×32b PAM3) · 28 Gbps/pin</text>
+    <text x="200" y="40" class="lbl-sm">Closed-page (auto-precharge) · 4-way bank group @ 128B</text>
+    <text x="560" y="20" class="lbl-sm">1231 GB/s read (91.6% of 1344 theoretical)</text>
+    <text x="560" y="40" class="lbl-sm">Near-symmetric R/W (ratio 1.02–1.07)</text>
+    <!-- Icon -->
+    <rect x="870" y="8" width="120" height="36" rx="4" fill="#D97706" opacity="0.12"/>
+    <text x="930" y="24" class="lbl-sm" fill="#92400E" text-anchor="middle">12 channels</text>
+    <text x="930" y="38" class="lbl-sm" fill="#92400E" text-anchor="middle">closed-page</text>
+  </g>
+
+  <!-- Decorative separator -->
+  <line x1="36" y1="520" x2="1044" y2="520" stroke="#E5E7EB" stroke-width="1"/>
+
+  <!-- ═══════════ SECTION 2: TOP 5 DISCOVERIES (single column cards) ═══════════ -->
+  <text x="36" y="540" class="sect">Top 5 Architectural Discoveries</text>
+
+  <!-- Discovery 1 -->
+  <g transform="translate(36,556)">
+    <rect width="1008" height="62" rx="8" fill="#F0FDF4" stroke="#059669" stroke-width="1"/>
+    <rect x="0" y="0" width="6" height="62" rx="3" fill="#059669"/>
+    <text x="18" y="20" class="disc-title" fill="#065F46">1. Bank Conflicts Fully Pipelined</text>
+    <text x="18" y="38" class="disc-body">32-way: only 1.43× throughput penalty (vs 32× on SM_80/90). Decoupled accept-resolve pipeline.</text>
+    <text x="18" y="54" class="lbl-sm">ILP=1 zero penalty · 0% cross-warp interference · latency 2.62× (pointer-chase only)</text>
+  </g>
+
+  <!-- Discovery 2 -->
+  <g transform="translate(36,626)">
+    <rect width="1008" height="62" rx="8" fill="#EEF2FF" stroke="#4338CA" stroke-width="1"/>
+    <rect x="0" y="0" width="6" height="62" rx="3" fill="#4338CA"/>
+    <text x="18" y="20" class="disc-title" fill="#4338CA">2. L2 XOR-Hash Eliminates Stride Conflicts</text>
+    <text x="18" y="38" class="disc-body">Uniform ~370 cyc across ALL strides (64B–2MB). No modular camping. 40 ptrs at stride=96MB all L2 hits.</text>
+    <text x="18" y="54" class="lbl-sm">Partition camping remains at stride=64B (11.6×) — address granularity issue, not hash failure</text>
+  </g>
+
+  <!-- Discovery 3 -->
+  <g transform="translate(36,696)">
+    <rect width="1008" height="62" rx="8" fill="#FEF2F2" stroke="#DC2626" stroke-width="1"/>
+    <rect x="0" y="0" width="6" height="62" rx="3" fill="#DC2626"/>
+    <text x="18" y="20" class="disc-title" fill="#DC2626">3. Memory Wall at L1→L2, NOT L2→DRAM</text>
+    <text x="18" y="38" class="disc-body">L1→L2 = 8.0× cliff (44→354 cyc). L2→DRAM = 1.02× (354→362 cyc). GDDR7 ≈ L2 for random access.</text>
+    <text x="18" y="54" class="lbl-sm">L2 value is bandwidth amplification (4.17×), not latency reduction. Optimize for L1 residency (&lt;89 KB) FIRST.</text>
+  </g>
+
+  <!-- Discovery 4 -->
+  <g transform="translate(36,766)">
+    <rect width="1008" height="62" rx="8" fill="#F3E8FF" stroke="#7C3AED" stroke-width="1"/>
+    <rect x="0" y="0" width="6" height="62" rx="3" fill="#7C3AED"/>
+    <text x="18" y="20" class="disc-title" fill="#6D28D9">4. DSMEM Sync 26× Cheaper Than L2 Path</text>
+    <text x="18" y="38" class="disc-body">CGA barrier 86 cyc vs L2 acquire/release 2242 cyc. Raw read 6.5× slower (220 vs 34 cyc).</text>
+    <text x="18" y="54" class="lbl-sm">Wins when ANY synchronization is needed · st.async 2 cyc fire-and-forget issue · mbarrier 5 cyc (ready)</text>
+  </g>
+
+  <!-- Discovery 5 -->
+  <g transform="translate(36,836)">
+    <rect width="1008" height="62" rx="8" fill="#FFFBEB" stroke="#D97706" stroke-width="1"/>
+    <rect x="0" y="0" width="6" height="62" rx="3" fill="#D97706"/>
+    <text x="18" y="20" class="disc-title" fill="#92400E">5. MEMBAR.ALL.GPU (285 cyc) = Universal Cross-SM Bottleneck</text>
+    <text x="18" y="38" class="disc-body">CTA→GPU cliff: 40.7× (7→285 cyc). SC = acq_rel (zero overhead). Cluster.relaxed (85 cyc) avoids MEMBAR.</text>
+    <text x="18" y="54" class="lbl-sm">red.add 5× faster (fire-and-forget) · grid sync ~1242 cyc constant · fence.proxy.async.cta = 7 cyc (near-free)</text>
+  </g>
+
+  <!-- Decorative separator -->
+  <line x1="36" y1="914" x2="1044" y2="914" stroke="#E5E7EB" stroke-width="1"/>
+
+  <!-- ═══════════ SECTION 3: QUANTITATIVE KPI GRID (2 rows × 6 cols) ═══════════ -->
+  <text x="36" y="934" class="sect">Quantitative Performance Summary</text>
+
+  <!-- Row 1 -->
+  <g transform="translate(36,946)">
+    <rect width="160" height="50" rx="6" fill="#fff" stroke="#E5E7EB"/>
+    <rect width="160" height="3" rx="2" fill="#059669"/>
+    <text x="80" y="20" class="lbl-sm" text-anchor="middle">BANK CONFLICT</text>
+    <text x="80" y="40" class="kpi-sm" fill="#059669" text-anchor="middle">1.43× tput</text>
+  </g>
+  <g transform="translate(206,946)">
+    <rect width="160" height="50" rx="6" fill="#fff" stroke="#E5E7EB"/>
+    <rect width="160" height="3" rx="2" fill="#2563EB"/>
+    <text x="80" y="20" class="lbl-sm" text-anchor="middle">L1 ASSOC.</text>
+    <text x="80" y="40" class="kpi-sm" fill="#2563EB" text-anchor="middle">712-way</text>
+  </g>
+  <g transform="translate(376,946)">
+    <rect width="160" height="50" rx="6" fill="#fff" stroke="#E5E7EB"/>
+    <rect width="160" height="3" rx="2" fill="#DC2626"/>
+    <text x="80" y="20" class="lbl-sm" text-anchor="middle">MEMORY WALL</text>
+    <text x="80" y="40" class="kpi-sm" fill="#DC2626" text-anchor="middle">8.0×</text>
+  </g>
+  <g transform="translate(546,946)">
+    <rect width="160" height="50" rx="6" fill="#fff" stroke="#E5E7EB"/>
+    <rect width="160" height="3" rx="2" fill="#4338CA"/>
+    <text x="80" y="20" class="lbl-sm" text-anchor="middle">L2 BW AMPLIFY</text>
+    <text x="80" y="40" class="kpi-sm" fill="#4338CA" text-anchor="middle">4.17×</text>
+  </g>
+  <g transform="translate(716,946)">
+    <rect width="160" height="50" rx="6" fill="#fff" stroke="#E5E7EB"/>
+    <rect width="160" height="3" rx="2" fill="#D97706"/>
+    <text x="80" y="20" class="lbl-sm" text-anchor="middle">FENCE CTA→GPU</text>
+    <text x="80" y="40" class="kpi-sm" fill="#D97706" text-anchor="middle">40.7×</text>
+  </g>
+  <g transform="translate(886,946)">
+    <rect width="158" height="50" rx="6" fill="#fff" stroke="#E5E7EB"/>
+    <rect width="158" height="3" rx="2" fill="#7C3AED"/>
+    <text x="79" y="20" class="lbl-sm" text-anchor="middle">DSMEM SYNC</text>
+    <text x="79" y="40" class="kpi-sm" fill="#7C3AED" text-anchor="middle">26× cheaper</text>
+  </g>
+
+  <!-- Row 2 -->
+  <g transform="translate(36,1004)">
+    <rect width="160" height="50" rx="6" fill="#fff" stroke="#E5E7EB"/>
+    <rect width="160" height="3" rx="2" fill="#059669"/>
+    <text x="80" y="20" class="lbl-sm" text-anchor="middle">SMEM vs L1</text>
+    <text x="80" y="40" class="kpi-sm" fill="#059669" text-anchor="middle">1.29× faster</text>
+  </g>
+  <g transform="translate(206,1004)">
+    <rect width="160" height="50" rx="6" fill="#fff" stroke="#E5E7EB"/>
+    <rect width="160" height="3" rx="2" fill="#059669"/>
+    <text x="80" y="20" class="lbl-sm" text-anchor="middle">L2→DRAM LAT</text>
+    <text x="80" y="40" class="kpi-sm" fill="#059669" text-anchor="middle">1.02×</text>
+  </g>
+  <g transform="translate(376,1004)">
+    <rect width="160" height="50" rx="6" fill="#fff" stroke="#E5E7EB"/>
+    <rect width="160" height="3" rx="2" fill="#4338CA"/>
+    <text x="80" y="20" class="lbl-sm" text-anchor="middle">L2 CAPACITY</text>
+    <text x="80" y="40" class="kpi-sm" fill="#4338CA" text-anchor="middle">96 MB</text>
+  </g>
+  <g transform="translate(546,1004)">
+    <rect width="160" height="50" rx="6" fill="#fff" stroke="#E5E7EB"/>
+    <rect width="160" height="3" rx="2" fill="#D97706"/>
+    <text x="80" y="20" class="lbl-sm" text-anchor="middle">DRAM PEAK BW</text>
+    <text x="80" y="40" class="kpi-sm" fill="#D97706" text-anchor="middle">1231 GB/s</text>
+  </g>
+  <g transform="translate(716,1004)">
+    <rect width="160" height="50" rx="6" fill="#fff" stroke="#E5E7EB"/>
+    <rect width="160" height="3" rx="2" fill="#7C3AED"/>
+    <text x="80" y="20" class="lbl-sm" text-anchor="middle">red vs atom</text>
+    <text x="80" y="40" class="kpi-sm" fill="#7C3AED" text-anchor="middle">5× throughput</text>
+  </g>
+  <g transform="translate(886,1004)">
+    <rect width="158" height="50" rx="6" fill="#fff" stroke="#E5E7EB"/>
+    <rect width="158" height="3" rx="2" fill="#DC2626"/>
+    <text x="79" y="20" class="lbl-sm" text-anchor="middle">SW PREFETCH</text>
+    <text x="79" y="40" class="kpi-sm" fill="#DC2626" text-anchor="middle">−55% (harmful)</text>
+  </g>
+</svg>

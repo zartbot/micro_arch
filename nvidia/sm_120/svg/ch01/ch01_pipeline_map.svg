@@ -1,0 +1,463 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 1020" role="img"
+     aria-label="SM_120 Pipeline Architecture: SMSP internal datapath from warp scheduler through execution pipes to writeback">
+<defs>
+  <linearGradient id="gSched" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#DBEAFE"/><stop offset="1" stop-color="#EFF6FF"/>
+  </linearGradient>
+  <linearGradient id="gRF" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#FEF3C7"/><stop offset="1" stop-color="#FFFBEB"/>
+  </linearGradient>
+  <linearGradient id="gPipe" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#ECFDF5"/><stop offset="1" stop-color="#F0FDF4"/>
+  </linearGradient>
+  <linearGradient id="gTC" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#FFF1F2"/><stop offset="1" stop-color="#FFF5F6"/>
+  </linearGradient>
+  <linearGradient id="gLSU" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#FEF9C3"/><stop offset="1" stop-color="#FEFCE8"/>
+  </linearGradient>
+  <linearGradient id="gSB" x1="0" y1="0" x2="1" y2="0">
+    <stop offset="0" stop-color="#F3E8FF"/><stop offset="1" stop-color="#FAF5FF"/>
+  </linearGradient>
+  <marker id="ar" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto">
+    <path d="M0,0 L7,3.5 L0,7 z" fill="#475569"/>
+  </marker>
+  <marker id="arG" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto">
+    <path d="M0,0 L7,3.5 L0,7 z" fill="#16a34a"/>
+  </marker>
+  <marker id="arR" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto">
+    <path d="M0,0 L7,3.5 L0,7 z" fill="#dc2626"/>
+  </marker>
+  <marker id="arB" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto">
+    <path d="M0,0 L7,3.5 L0,7 z" fill="#1d4ed8"/>
+  </marker>
+  <style><![CDATA[
+    .ttl{font:700 15px "Fraunces",serif;fill:#0b1220}
+    .sub{font:italic 11px "Fraunces",serif;fill:#5b6679}
+    .lbl{font:600 11px "JetBrains Mono",monospace;fill:#2a3548}
+    .lbl-sm{font:500 9.5px "JetBrains Mono",monospace;fill:#5b6679}
+    .lbl-xs{font:400 8.5px "JetBrains Mono",monospace;fill:#040404}
+    .pipe-name{font:700 11px "JetBrains Mono",monospace}
+    .pipe-ops{font:400 9px "JetBrains Mono",monospace;fill:#4b5563}
+    .perf{font:700 10px "JetBrains Mono",monospace;fill:#9f1239}
+    .perf-sm{font:600 9px "JetBrains Mono",monospace;fill:#9f1239}
+    .note{font:italic 9.5px "Fraunces",serif;fill:#5b6679}
+    .badge{font:700 9px "JetBrains Mono",monospace;fill:#ffffff}
+    .section{font:600 12px "IBM Plex Sans",sans-serif;fill:#1e3a5f}
+    .ctrl{font:500 9px "JetBrains Mono",monospace;fill:#6d28d9}
+  ]]></style>
+</defs>
+<rect width="1280" height="2420" fill="#ffffff"/>
+
+<!-- === TITLE === -->
+<text x="40" y="30" class="ttl">SM_120 Pipeline Architecture · Per-SMSP Internal Datapath </text>
+<text x="40" y="48" class="sub">GB202 Blackwell · Single-issue · CGGTY scheduler · 6 independent pipe backends · 2-bank RF with RFC ≥24 entries</text>
+<text x="40" y="64" class="lbl-xs">Source: S1/case_2, S1/case_4, S3/case_9, S11/case_128-156, S12/case_1-6, S13/case_12, S22/case_1-56</text>
+
+<!-- === SM CONTEXT STRIP (top) === -->
+<rect x="30" y="76" width="1220" height="34" rx="6" fill="#f1f5f9" stroke="#cbd5e1"/>
+<text x="46" y="98" class="lbl">SM (1 of 110) · 4 identical SMSPs · 48 warps total · 256 KB RF · 100 KB SRAM · aggregate IPC ceiling: 4.0 (measured 3.66)</text>
+<rect x="910" y="82" width="82" height="22" rx="4" fill="#1e293b"/>
+<text x="924" y="97" class="badge">×4 SMSPs</text>
+<rect x="1000" y="82" width="112" height="22" rx="4" fill="#16a34a"/>
+<text x="1012" y="97" class="badge">0-cyc ctx switch</text>
+<rect x="1120" y="82" width="120" height="22" rx="4" fill="#7c3aed"/>
+<text x="1132" y="97" class="badge">warpid%4 binding</text>
+
+<!-- ====================================================================== -->
+<!-- MAIN PIPELINE FLOW (per-SMSP detail) -->
+<!-- ====================================================================== -->
+
+<!-- === WARP POOL === -->
+<g transform="translate(40,126)">
+  <rect x="0" y="0" width="200" height="120" rx="10" fill="url(#gSched)" stroke="#3b82f6" stroke-width="1.2"/>
+  <text x="100" y="20" class="section" text-anchor="middle">Warp Pool</text>
+  <text x="100" y="38" class="lbl-sm" text-anchor="middle">12 warps/SMSP (static)</text>
+  <!-- warp slots visualization -->
+  <g transform="translate(12,48)">
+    <rect x="0" y="0" width="14" height="14" rx="2" fill="#3b82f6" opacity="0.8"/><text x="7" y="11" class="lbl-xs" text-anchor="middle" fill="#fff">W0</text>
+    <rect x="16" y="0" width="14" height="14" rx="2" fill="#3b82f6" opacity="0.8"/><text x="23" y="11" class="lbl-xs" text-anchor="middle" fill="#fff">W1</text>
+    <rect x="32" y="0" width="14" height="14" rx="2" fill="#3b82f6" opacity="0.8"/><text x="39" y="11" class="lbl-xs" text-anchor="middle" fill="#fff">W2</text>
+    <rect x="48" y="0" width="14" height="14" rx="2" fill="#3b82f6" opacity="0.8"/><text x="55" y="11" class="lbl-xs" text-anchor="middle" fill="#fff">W3</text>
+    <rect x="64" y="0" width="14" height="14" rx="2" fill="#60a5fa" opacity="0.7"/>
+    <rect x="80" y="0" width="14" height="14" rx="2" fill="#60a5fa" opacity="0.7"/>
+    <rect x="96" y="0" width="14" height="14" rx="2" fill="#93c5fd" opacity="0.6"/>
+    <rect x="112" y="0" width="14" height="14" rx="2" fill="#93c5fd" opacity="0.6"/>
+    <rect x="128" y="0" width="14" height="14" rx="2" fill="#bfdbfe" opacity="0.5"/>
+    <rect x="144" y="0" width="14" height="14" rx="2" fill="#bfdbfe" opacity="0.5"/>
+    <rect x="160" y="0" width="14" height="14" rx="2" fill="#dbeafe" opacity="0.4"/>
+    <rect x="0" y="18" width="14" height="14" rx="2" fill="#dbeafe" opacity="0.4"/>
+  </g>
+  <text x="12" y="78" class="lbl-xs">4 warps = full latency hiding</text>
+  <text x="72" y="88" class="lbl-xs"> (4×4-cyc FFMA)</text>
+  <text x="12" y="102" class="lbl-xs">16 warps optimal for memory-bound</text>
+  <text x="12" y="114" class="note">Binding: SC = warpid % 4</text>
+</g>
+
+<!-- Arrow: Warp Pool → Scheduler -->
+<path d="M240 186 L270 186" stroke="#475569" stroke-width="1.5" fill="none" marker-end="url(#ar)"/>
+
+<!-- === CGGTY SCHEDULER === -->
+<g transform="translate(278,130)">
+  <rect x="0" y="0" width="220" height="112" rx="10" fill="url(#gSched)" stroke="#1d4ed8" stroke-width="1.4"/>
+  <text x="110" y="20" class="section" text-anchor="middle" fill="#1d4ed8">CGGTY Scheduler</text>
+  <text x="110" y="38" class="lbl-sm" text-anchor="middle">Compiler Guided → Greedy → Youngest</text>
+  <!-- I-buffer -->
+  <rect x="14" y="48" width="192" height="26" rx="5" fill="#ffffff" stroke="#1d4ed8" stroke-width="0.7"/>
+  <text x="110" y="65" class="lbl" text-anchor="middle">I-Buffer ≈4 entries/warp</text>
+  <text x="14" y="90" class="lbl-xs">Issue rate: 1 insn/cyc/SMSP</text>
+  <text x="14" y="104" class="lbl-xs">Pipeline depth: 2 (decode+dispatch)</text>
+</g>
+
+<!-- Arrow: Scheduler → Decode -->
+<path d="M498 186 L528 186" stroke="#475569" stroke-width="1.5" fill="none" marker-end="url(#ar)"/>
+
+<!-- === DECODE / CONTROL CODE === -->
+<g transform="translate(536,120)">
+  <rect x="0" y="0" width="260" height="132" rx="10" fill="#ffffff" stroke="#6d28d9" stroke-width="1.2"/>
+  <text x="130" y="20" class="section" text-anchor="middle" fill="#6d28d9">128-bit Instruction Decode</text>
+  <!-- Instruction word visualization -->
+  <g transform="translate(14,32)">
+    <!-- Control word (upper 64b) -->
+    <rect x="0" y="0" width="232" height="20" rx="3" fill="#f3e8ff" stroke="#7c3aed" stroke-width="0.6"/>
+    <text x="116" y="14" class="lbl-xs" text-anchor="middle" fill="#6d28d9">Upper 64b: Control Word</text>
+    <!-- Fields -->
+    <rect x="0" y="22" width="36" height="14" rx="2" fill="#a78bfa"/><text x="18" y="32" class="lbl-xs" text-anchor="middle" fill="#fff">stall</text>
+    <rect x="38" y="22" width="28" height="14" rx="2" fill="#8b5cf6"/><text x="52" y="32" class="lbl-xs" text-anchor="middle" fill="#fff">yield</text>
+    <rect x="68" y="22" width="40" height="14" rx="2" fill="#7c3aed"/><text x="88" y="32" class="lbl-xs" text-anchor="middle" fill="#fff">WrBar</text>
+    <rect x="110" y="22" width="40" height="14" rx="2" fill="#6d28d9"/><text x="130" y="32" class="lbl-xs" text-anchor="middle" fill="#fff">RdBar</text>
+    <rect x="152" y="22" width="40" height="14" rx="2" fill="#5b21b6"/><text x="172" y="32" class="lbl-xs" text-anchor="middle" fill="#fff">WaitB</text>
+    <rect x="194" y="22" width="38" height="14" rx="2" fill="#4c1d95"/><text x="213" y="32" class="lbl-xs" text-anchor="middle" fill="#fff">reuse</text>
+    <!-- Opcode word (lower 64b) -->
+    <rect x="0" y="40" width="232" height="20" rx="3" fill="#e0e7ff" stroke="#4338ca" stroke-width="0.6"/>
+    <text x="116" y="54" class="lbl-xs" text-anchor="middle" fill="#3730a3">Lower 64b: Opcode + Operands</text>
+  </g>
+  <text x="14" y="104" class="ctrl">stall[4b]: min inter-issue delay (0-15)</text>
+  <text x="14" y="116" class="ctrl">SB[6]: WrBar×3 + RdBar×3 + WaitB×6</text>
+  <text x="14" y="128" class="ctrl">reuse[4b]: RFC hints (ALU:+85%, TC:no-op)</text>
+</g>
+
+<!-- Arrow: Decode → Operand Fetch -->
+<path d="M666 252 L666 270" stroke="#475569" stroke-width="1.5" fill="none" marker-end="url(#ar)"/>
+
+<!-- === REGISTER FILE + OPERAND COLLECTOR === -->
+<g transform="translate(310,280)">
+  <rect x="0" y="0" width="640" height="120" rx="10" fill="url(#gRF)" stroke="#b45309" stroke-width="1.2"/>
+  <text x="270" y="20" class="section" text-anchor="middle" fill="#92400e">Register File + Operand Collector</text>
+
+  <!-- RF banks -->
+  <g transform="translate(16,32)">
+    <rect x="0" y="0" width="190" height="79" rx="6" fill="#ffffff" stroke="#d97706" stroke-width="0.8"/>
+    <text x="95" y="16" class="lbl" text-anchor="middle" fill="#92400e">Register File</text>
+    <rect x="8" y="22" width="80" height="18" rx="3" fill="#fde68a" stroke="#ca8a04" stroke-width="0.5"/>
+    <text x="48" y="34" class="lbl-xs" text-anchor="middle">Bank 0 (EVEN)</text>
+    <rect x="100" y="22" width="80" height="18" rx="3" fill="#fef08a" stroke="#ca8a04" stroke-width="0.5"/>
+    <text x="140" y="34" class="lbl-xs" text-anchor="middle">Bank 1 (ODD)</text>
+    <text x="48" y="54" class="lbl-xs">16,384 regs/SMSP</text>
+    <text x="48" y="66" class="lbl-xs">2 read ports/bank</text>
+  </g>
+
+  <!-- RFC -->
+  <g transform="translate(180,32)">
+    <rect x="40" y="0" width="150" height="79" rx="6" fill="#ffffff" stroke="#16a34a" stroke-width="0.8"/>
+    <text x="95" y="16" class="lbl" text-anchor="middle" fill="#15803d">RFC (L0 Cache)</text>
+    <text x="50" y="34" class="lbl-xs">≥24 entries/warp</text>
+    <text x="50" y="48" class="lbl-xs">LRU eviction</text>
+    <text x="50" y="62" class="lbl-xs">Bypass RF bank conflict</text>
+    <text x="50" y="74" class="perf-sm">→ 1.34 cyc/FFMA (vs 2.04)</text>
+  </g>
+
+  <!-- Operand Collector -->
+  <g transform="translate(324,32)">
+    <rect x="60" y="0" width="240" height="79" rx="6" fill="#ffffff" stroke="#ea580c" stroke-width="0.8"/>
+    <text x="170" y="16" class="lbl" text-anchor="middle" fill="#9a3412">Operand Collector</text>
+    <text x="80" y="34" class="lbl-xs">3-source read per cycle</text>
+    <text x="80" y="48" class="lbl-xs">Bank conflict +1 cyc (absorbed by ptxas)</text>
+    <text x="80" y="62" class="lbl-xs">Effective penalty: 0 cyc (compiler hides)</text>
+    <text x="80" y="74" class="perf-sm">ptxas R%2 parity allocation</text>
+  </g>
+</g>
+
+<!-- Arrow: Operand Collector → Dispatch -->
+<path d="M580 400 L580 420" stroke="#475569" stroke-width="1.5" fill="none" marker-end="url(#ar)"/>
+<text x="590" y="416" class="lbl-xs">Single-issue dispatch (1 insn/cyc)</text>
+
+<!-- === DISPATCH CROSSBAR (fan-out to pipes) === -->
+<g transform="translate(440,428)">
+  <rect x="0" y="0" width="280" height="30" rx="6" fill="#1e293b" stroke="#0f172a"/>
+  <text x="140" y="20" class="badge" text-anchor="middle">DISPATCH CROSSBAR → 6 PIPE BACKENDS</text>
+</g>
+
+<!-- Fan-out arrows from dispatch to each pipe -->
+<!-- FMA-lite -->
+<path d="M480 458 L100 490" stroke="#16a34a" stroke-width="1.2" fill="none" marker-end="url(#arG)"/>
+<!-- FMA-heavy -->
+<path d="M520 458 L310 490" stroke="#16a34a" stroke-width="1.2" fill="none" marker-end="url(#arG)"/>
+<!-- XU/SFU -->
+<path d="M560 458 L530 490" stroke="#475569" stroke-width="1.2" fill="none" marker-end="url(#ar)"/>
+<!-- LSU -->
+<path d="M600 458 L740 490" stroke="#b45309" stroke-width="1.2" fill="none" marker-end="url(#ar)"/>
+<!-- FP64 -->
+<path d="M640 458 L950 490" stroke="#6d28d9" stroke-width="1.2" fill="none" marker-end="url(#ar)"/>
+<!-- Tensor -->
+<path d="M680 458 L1140 490" stroke="#dc2626" stroke-width="1.2" fill="none" marker-end="url(#arR)"/>
+
+<!-- ====================================================================== -->
+<!-- === PIPE BACKENDS (detailed) === -->
+<!-- ====================================================================== -->
+
+<!-- ═══ PIPE 1: FMA-lite ═══ -->
+<g transform="translate(30,494)">
+  <rect x="0" y="0" width="190" height="200" rx="10" fill="url(#gPipe)" stroke="#16a34a" stroke-width="1.4"/>
+  <rect x="0" y="0" width="190" height="26" rx="10" fill="#16a34a"/>
+  <rect x="0" y="13" width="190" height="13" fill="#16a34a"/>
+  <text x="95" y="18" class="pipe-name" text-anchor="middle" fill="#fff">FMA-lite (pipe_fmalite)</text>
+
+  <text x="12" y="44" class="lbl" fill="#15803d">FP32 + FP16×2 + BF16×2</text>
+  <text x="12" y="62" class="pipe-ops">FFMA  FADD  FMUL</text>
+  <text x="12" y="76" class="pipe-ops">HFMA2  HADD2  HMUL2</text>
+  <text x="12" y="90" class="pipe-ops">BF16 HFMA2.BF16_V2</text>
+
+  <rect x="12" y="100" width="166" height="1" fill="#d1d5db"/>
+  <text x="12" y="118" class="perf">Latency: 4 cycles</text>
+  <text x="12" y="134" class="perf-sm">Throughput: 1.08 cyc/op @ILP≥4</text>
+  <text x="12" y="150" class="lbl-xs">Pipeline depth: 4 stages</text>
+  <text x="12" y="164" class="lbl-xs">Full 32-thread warp/pass</text>
+
+  <rect x="12" y="172" width="166" height="20" rx="3" fill="#dcfce7" stroke="#16a34a" stroke-width="0.5"/>
+  <text x="95" y="186" class="lbl-xs" text-anchor="middle" fill="#166534">Co-issue: FMA-heavy ∥ (1.01×)</text>
+</g>
+
+<!-- ═══ PIPE 2: FMA-heavy ═══ -->
+<g transform="translate(232,494)">
+  <rect x="0" y="0" width="190" height="200" rx="10" fill="url(#gPipe)" stroke="#047857" stroke-width="1.4"/>
+  <rect x="0" y="0" width="190" height="26" rx="10" fill="#047857"/>
+  <rect x="0" y="13" width="190" height="13" fill="#047857"/>
+  <text x="95" y="18" class="pipe-name" text-anchor="middle" fill="#fff">FMA-heavy (pipe_fmaheavy)</text>
+
+  <text x="12" y="44" class="lbl" fill="#065f46">INT32 + Logic + Shift</text>
+  <text x="12" y="62" class="pipe-ops">IMAD  IADD3  LOP3.LUT</text>
+  <text x="12" y="76" class="pipe-ops">SHF  PRMT  LEA  IDP.4A</text>
+  <text x="12" y="90" class="pipe-ops">FMNMX  FSEL  VIMNMX  F2FP</text>
+
+  <rect x="12" y="100" width="166" height="1" fill="#d1d5db"/>
+  <text x="12" y="118" class="perf">Latency: 2-5 cycles</text>
+  <text x="12" y="134" class="perf-sm">IADD3: 2 cyc · IMAD: 4 cyc</text>
+  <text x="12" y="150" class="lbl-xs">IMAD dual-issue: fma+fmaheavy</text>
+  <text x="12" y="164" class="lbl-xs">Throughput: 2.0 ops/cyc (IMAD)</text>
+
+  <rect x="12" y="172" width="166" height="20" rx="3" fill="#dcfce7" stroke="#047857" stroke-width="0.5"/>
+  <text x="95" y="186" class="lbl-xs" text-anchor="middle" fill="#064e3b">VIADD.16x2: 5 cyc latch</text>
+</g>
+
+<!-- ═══ PIPE 3: XU (SFU) ═══ -->
+<g transform="translate(434,494)">
+  <rect x="0" y="0" width="190" height="200" rx="10" fill="#f8fafc" stroke="#475569" stroke-width="1.4"/>
+  <rect x="0" y="0" width="190" height="26" rx="10" fill="#475569"/>
+  <rect x="0" y="13" width="190" height="13" fill="#475569"/>
+  <text x="95" y="18" class="pipe-name" text-anchor="middle" fill="#fff">XU / SFU (pipe_xu)</text>
+
+  <text x="12" y="44" class="lbl" fill="#334155">Transcendentals</text>
+  <text x="12" y="62" class="pipe-ops">MUFU.RCP  MUFU.RSQ</text>
+  <text x="12" y="76" class="pipe-ops">MUFU.SIN  MUFU.COS</text>
+  <text x="12" y="90" class="pipe-ops">MUFU.EX2  MUFU.LG2  MUFU.TANH</text>
+
+  <rect x="12" y="100" width="166" height="1" fill="#d1d5db"/>
+  <text x="12" y="118" class="perf">Latency: 18-44 cycles</text>
+  <text x="12" y="134" class="perf-sm">Tier1: 40-44 (RCP/RSQ/LG2+ref)</text>
+  <text x="12" y="148" class="perf-sm">Tier2: 18-22 (SIN/COS/TANH)</text>
+  <text x="12" y="162" class="perf-sm">Tier3: 18    (EX2/LG2 bare)</text>
+
+  <rect x="12" y="172" width="166" height="20" rx="3" fill="#f1f5f9" stroke="#475569" stroke-width="0.5"/>
+  <text x="95" y="186" class="lbl-xs" text-anchor="middle" fill="#1e293b">FMA+XU overlap=0.9996</text>
+</g>
+
+<!-- ═══ PIPE 4: LSU ═══ -->
+<g transform="translate(636,494)">
+  <rect x="0" y="0" width="210" height="200" rx="10" fill="url(#gLSU)" stroke="#b45309" stroke-width="1.4"/>
+  <rect x="0" y="0" width="210" height="26" rx="10" fill="#b45309"/>
+  <rect x="0" y="13" width="210" height="13" fill="#b45309"/>
+  <text x="105" y="18" class="pipe-name" text-anchor="middle" fill="#fff">LSU (pipe_lsu)</text>
+
+  <text x="12" y="44" class="lbl" fill="#92400e">Load/Store/Atomic</text>
+  <text x="12" y="62" class="pipe-ops">LDG  STG  LDS  STS  LDSM  STSM</text>
+  <text x="12" y="76" class="pipe-ops">ATOM  RED  LDGSTS (cp.async)</text>
+  <text x="12" y="90" class="pipe-ops">Sub: lg_cmd_read/write/atom/shared</text>
+
+  <rect x="12" y="100" width="186" height="1" fill="#d1d5db"/>
+  <text x="12" y="118" class="perf">L1 hit: 44 cyc  L2: 354 cyc</text>
+  <text x="12" y="134" class="perf-sm">DRAM: 362±10 cyc · STG: 6 (f&amp;f)</text>
+  <text x="12" y="148" class="perf-sm">LDS: 34 cyc · STS: 4 cyc</text>
+  <text x="12" y="162" class="lbl-xs">LDSM.M88: 49 cyc · STSM: 10 cyc</text>
+
+  <rect x="12" y="172" width="186" height="20" rx="3" fill="#fef9c3" stroke="#b45309" stroke-width="0.5"/>
+  <text x="105" y="186" class="lbl-xs" text-anchor="middle" fill="#78350f">Queue depth: 12-13 (MSHR)</text>
+</g>
+
+<!-- ═══ PIPE 5: FP64 ═══ -->
+<g transform="translate(858,494)">
+  <rect x="0" y="0" width="180" height="200" rx="10" fill="#faf5ff" stroke="#6d28d9" stroke-width="1.4"/>
+  <rect x="0" y="0" width="180" height="26" rx="10" fill="#6d28d9"/>
+  <rect x="0" y="13" width="180" height="13" fill="#6d28d9"/>
+  <text x="90" y="18" class="pipe-name" text-anchor="middle" fill="#fff">FP64 (pipe_fp64)</text>
+
+  <text x="12" y="44" class="lbl" fill="#5b21b6">Double Precision</text>
+  <text x="12" y="62" class="pipe-ops">DFMA  DADD  DMUL</text>
+  <text x="12" y="76" class="pipe-ops">DMMA.m8n8k4 (routed here!)</text>
+  <text x="12" y="90" class="pipe-ops">op_fp64 + op_dmma sub-counters</text>
+
+  <rect x="12" y="100" width="156" height="1" fill="#d1d5db"/>
+  <text x="12" y="118" class="perf">DFMA: 64 cycles</text>
+  <text x="12" y="134" class="perf-sm">DMMA: 579 cyc (non-pipelined)</text>
+  <text x="12" y="148" class="lbl-xs">4 FP64 EU per SM (1/SMSP)</text>
+  <text x="12" y="162" class="lbl-xs">NOT on pipe_tensor!</text>
+
+  <rect x="12" y="172" width="156" height="20" rx="3" fill="#f3e8ff" stroke="#6d28d9" stroke-width="0.5"/>
+  <text x="90" y="186" class="lbl-xs" text-anchor="middle" fill="#4c1d95">FMA+FP64 overlap=0.4%</text>
+</g>
+
+<!-- ═══ PIPE 6: Tensor Core ═══ -->
+<g transform="translate(1050,494)">
+  <rect x="0" y="0" width="200" height="200" rx="10" fill="url(#gTC)" stroke="#dc2626" stroke-width="1.4"/>
+  <rect x="0" y="0" width="200" height="26" rx="10" fill="#dc2626"/>
+  <rect x="0" y="13" width="200" height="13" fill="#dc2626"/>
+  <text x="100" y="18" class="pipe-name" text-anchor="middle" fill="#fff">Tensor (pipe_tensor)</text>
+
+  <text x="12" y="44" class="lbl" fill="#991b1b">Matrix Multiply-Accumulate</text>
+  <text x="12" y="62" class="pipe-ops">HMMA.16816 (FP16/BF16/TF32)</text>
+  <text x="12" y="76" class="pipe-ops">QMMA.16832 (FP8/FP6/FP4)</text>
+  <text x="12" y="90" class="pipe-ops">QMMA.SF / OMMA.SF (MX block-scale)</text>
+  <text x="12" y="104" class="pipe-ops">IMMA.16832 (INT8) · HMMA.SP</text>
+
+  <rect x="12" y="112" width="176" height="1" fill="#d1d5db"/>
+  <text x="12" y="130" class="perf">Latency: 29 cyc (HMMA/QMMA)</text>
+  <text x="12" y="146" class="perf-sm">Throughput: 15.88 cyc/mma</text>
+  <text x="12" y="160" class="perf-sm">IMMA: 27 cyc lat · 6.55 cyc/mma</text>
+  <text x="12" y="174" class="lbl-xs">.reuse bits: TRUE NO-OP on TC</text>
+
+  <rect x="12" y="182" width="176" height="14" rx="3" fill="#fecdd3" stroke="#dc2626" stroke-width="0.5"/>
+  <text x="100" y="193" class="lbl-xs" text-anchor="middle" fill="#7f1d1d">MX scale: ZERO cost (15.59)</text>
+</g>
+
+<!-- ====================================================================== -->
+<!-- === WRITEBACK PATH === -->
+<!-- ====================================================================== -->
+<path d="M125 694 L125 720 L580 720 L580 730" stroke="#16a34a" stroke-width="1" fill="none" marker-end="url(#arG)"/>
+<path d="M327 694 L327 720" stroke="#047857" stroke-width="1" fill="none"/>
+<path d="M529 694 L529 720" stroke="#475569" stroke-width="1" fill="none"/>
+<path d="M741 694 L741 720 L580 720" stroke="#b45309" stroke-width="1" fill="none"/>
+<path d="M948 694 L948 720 L580 720" stroke="#6d28d9" stroke-width="1" fill="none"/>
+<path d="M1150 694 L1150 720 L580 720" stroke="#dc2626" stroke-width="1" fill="none"/>
+
+<g transform="translate(430,734)">
+  <rect x="-20" y="0" width="360" height="28" rx="6" fill="#f0fdf4" stroke="#16a34a" stroke-width="1"/>
+  <text x="150" y="19" class="lbl" text-anchor="middle" fill="#166534">WRITEBACK → Register File (0-cyc port contention)</text>
+</g>
+
+<!-- ====================================================================== -->
+<!-- === SCOREBOARD SYSTEM (bottom-left) === -->
+<!-- ====================================================================== -->
+<g transform="translate(30,780)">
+  <rect x="0" y="0" width="380" height="230" rx="10" fill="url(#gSB)" stroke="#7c3aed" stroke-width="1.2"/>
+  <text x="190" y="22" class="section" text-anchor="middle" fill="#6d28d9">Hybrid Dependence Tracking (§3.5)</text>
+
+  <!-- Fixed-latency mechanism -->
+  <g transform="translate(14,34)">
+    <rect x="0" y="0" width="352" height="80" rx="6" fill="#ffffff" stroke="#7c3aed" stroke-width="0.7"/>
+    <text x="10" y="16" class="lbl" fill="#6d28d9">Mechanism 1: Stall Counter (Fixed-Latency)</text>
+    <text x="10" y="32" class="lbl-xs">4-bit stall [108:105]: min cycles before re-issue</text>
+    <text x="10" y="46" class="lbl-xs">Compiler trust model — wrong stall → SILENT corruption</text>
+    <text x="10" y="60" class="lbl-xs">stall=0: HW scoreboard fallback (always safe)</text>
+    <text x="10" y="74" class="lbl-xs">stall replaces (not adds to) dependency wait</text>
+  </g>
+
+  <!-- Variable-latency mechanism -->
+  <g transform="translate(14,122)">
+    <rect x="0" y="0" width="352" height="93" rx="6" fill="#ffffff" stroke="#7c3aed" stroke-width="0.7"/>
+    <text x="10" y="16" class="lbl" fill="#6d28d9">Mechanism 2: Scoreboard Counters (Variable-Latency)</text>
+    <text x="10" y="32" class="lbl-xs">6 SB counters/warp (SB0-SB5) · dynamic ptxas allocation</text>
+    <text x="10" y="46" class="lbl-xs">Producer: WrBarrier[3b] → "signal SB_ID when done"</text>
+    <text x="10" y="60" class="lbl-xs">Consumer: WaitBarrier[6b] → "gate issue on SB bitmask"</text>
+    <text x="10" y="74" class="perf-sm">Exhaustion cliff: N=5→6 (44.8× stall, L1-cached)</text>
+    <text x="10" y="88" class="lbl-xs">L2-forced cliff: N=10-11→12 (via SB counter sharing)</text>
+  </g>
+</g>
+
+<!-- ====================================================================== -->
+<!-- === CO-ISSUE MATRIX SUMMARY (bottom-right) === -->
+<!-- ====================================================================== -->
+<g transform="translate(430,780)">
+  <rect x="0" y="0" width="420" height="230" rx="10" fill="#f8fafc" stroke="#334155" stroke-width="1.2"/>
+  <text x="210" y="22" class="section" text-anchor="middle" fill="#1e3a5f">Co-Issue Architecture (§3.4)</text>
+
+  <!-- Key co-issue pairs -->
+  <g transform="translate(14,34)">
+    <text x="0" y="12" class="lbl" fill="#334155">Fully Independent (0% overhead):</text>
+    <text x="0" y="28" class="pipe-ops">FMA + LSU · FMA + FP64 · FMA + TMA · FMA + Uniform</text>
+    <text x="0" y="42" class="pipe-ops">XU + LSU · XU + Tensor · FP64 + LSU · ALU + SMEM</text>
+    <text x="0" y="56" class="pipe-ops">SFU + SMEM · Tensor + DSMEM · HMMA + IMMA (sub-pipe)</text>
+
+    <rect x="0" y="62" width="392" height="1" fill="#e2e8f0"/>
+    <text x="0" y="78" class="lbl" fill="#334155">Partial Overlap (structural hazard):</text>
+    <text x="0" y="94" class="pipe-ops">FMA + ALU: 8.3% (shared issue slot)</text>
+    <text x="0" y="108" class="pipe-ops">FMA + Tensor: 2.4% (near-full, FFMA fills MMA stall)</text>
+    <text x="0" y="122" class="pipe-ops">LSU + Tensor: 17.4% (LDS consume-path contention)</text>
+    <text x="0" y="136" class="pipe-ops">FMA + TEX: 10% (TEX addr calc borrows FMA sub-pipe)</text>
+
+    <rect x="0" y="142" width="392" height="1" fill="#e2e8f0"/>
+    <text x="0" y="158" class="lbl" fill="#334155">MMA-Dominated Rule (TC absorbs all):</text>
+    <text x="0" y="174" class="pipe-ops">29-cyc MMA window → up to 27 non-MMA insns FREE</text>
+    <text x="0" y="188" class="pipe-ops">5-way FMA+ALU+XU+LSU+TC: 0% overhead when TC dominates</text>
+  </g>
+</g>
+
+<!-- ====================================================================== -->
+<!-- === MEMORY HIERARCHY ANNOTATION (bottom-far-right) === -->
+<!-- ====================================================================== -->
+<g transform="translate(870,780)">
+  <rect x="0" y="0" width="380" height="230" rx="10" fill="#fffbeb" stroke="#d97706" stroke-width="1.2"/>
+  <text x="190" y="22" class="section" text-anchor="middle" fill="#92400e">Memory Pipe Detail (LSU internals)</text>
+
+  <g transform="translate(14,34)">
+    <!-- Queue visualization -->
+    <text x="0" y="12" class="lbl" fill="#92400e">MSHR Queue (per-warp outstanding loads):</text>
+    <g transform="translate(0,18)">
+      <rect x="0" y="0" width="24" height="14" rx="2" fill="#fbbf24"/><text x="12" y="11" class="lbl-xs" text-anchor="middle">1</text>
+      <rect x="26" y="0" width="24" height="14" rx="2" fill="#fbbf24"/><text x="38" y="11" class="lbl-xs" text-anchor="middle">2</text>
+      <rect x="52" y="0" width="24" height="14" rx="2" fill="#fbbf24"/><text x="64" y="11" class="lbl-xs" text-anchor="middle">3</text>
+      <rect x="78" y="0" width="24" height="14" rx="2" fill="#fbbf24"/><text x="90" y="11" class="lbl-xs" text-anchor="middle">4</text>
+      <rect x="104" y="0" width="24" height="14" rx="2" fill="#fbbf24"/><text x="116" y="11" class="lbl-xs" text-anchor="middle">5</text>
+      <rect x="130" y="0" width="24" height="14" rx="2" fill="#f59e0b"/><text x="142" y="11" class="lbl-xs" text-anchor="middle">6</text>
+      <rect x="156" y="0" width="24" height="14" rx="2" fill="#f59e0b"/><text x="168" y="11" class="lbl-xs" text-anchor="middle">7</text>
+      <rect x="182" y="0" width="24" height="14" rx="2" fill="#f59e0b"/><text x="194" y="11" class="lbl-xs" text-anchor="middle">8</text>
+      <rect x="208" y="0" width="24" height="14" rx="2" fill="#f59e0b"/><text x="220" y="11" class="lbl-xs" text-anchor="middle">9</text>
+      <rect x="234" y="0" width="24" height="14" rx="2" fill="#d97706"/><text x="246" y="11" class="lbl-xs" text-anchor="middle" fill="#fff">10</text>
+      <rect x="260" y="0" width="24" height="14" rx="2" fill="#d97706"/><text x="272" y="11" class="lbl-xs" text-anchor="middle" fill="#fff">11</text>
+      <rect x="286" y="0" width="24" height="14" rx="2" fill="#92400e"/><text x="298" y="11" class="lbl-xs" text-anchor="middle" fill="#fff">12</text>
+      <rect x="312" y="0" width="24" height="14" rx="2" fill="#dc2626"/><text x="324" y="11" class="lbl-xs" text-anchor="middle" fill="#fff">13</text>
+    </g>
+    <text x="0" y="50" class="lbl-xs">N≤12: all overlap (issue cost only) · N=14: 492× stall cliff</text>
+
+    <rect x="0" y="56" width="352" height="1" fill="#fde68a"/>
+    <text x="0" y="72" class="lbl" fill="#92400e">Latency Hierarchy:</text>
+    <text x="0" y="88" class="pipe-ops">L1 data cache: 44 cyc (89 KB effective, pattern-invariant)</text>
+    <text x="0" y="102" class="pipe-ops">L2 unified:   354 cyc (96 MB, 12 partitions, XOR hash)</text>
+    <text x="0" y="116" class="pipe-ops">GDDR7 DRAM:   362±10 cyc (72 GB, closed-page)</text>
+    <text x="0" y="130" class="pipe-ops">DRAM +bank:   +445 cyc (same-bank serialization penalty)</text>
+
+    <rect x="0" y="138" width="352" height="1" fill="#fde68a"/>
+    <text x="0" y="154" class="lbl" fill="#92400e">Bandwidth:</text>
+    <text x="0" y="170" class="pipe-ops">L1: 116.5 B/cyc (1 warp, 128b)</text>
+    <text x="0" y="184" class="pipe-ops">L2: 13768 GB/s aggregate · 5110 GB/s single-warp</text>
+  </g>
+</g>
+
+<!-- ====================================================================== -->
+<!-- === LEGEND / KEY METRICS (footer) === -->
+<!-- ====================================================================== -->
+<g transform="translate(930,30)">
+  <text x="0" y="0" class="lbl-xs" fill="#6b7280">SM_120 · GB202 · RTX PRO 5000 72 GB · CUDA 13.3 · 2572 MHz locked </text>
+</g>
+
+</svg>

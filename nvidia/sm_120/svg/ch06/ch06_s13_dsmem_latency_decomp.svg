@@ -1,0 +1,228 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 780" role="img" aria-label="6.6.2 DSMEM Fabric Latency Decomposition: Round-Trip Model and Fire-and-Forget Compound Request">
+  <defs>
+    <marker id="ar" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto">
+      <path d="M0,0 L7,3.5 L0,7 Z" fill="#5b6679"/>
+    </marker>
+    <marker id="ar-blue" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto">
+      <path d="M0,0 L7,3.5 L0,7 Z" fill="#1e40af"/>
+    </marker>
+    <marker id="ar-green" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto">
+      <path d="M0,0 L7,3.5 L0,7 Z" fill="#16a34a"/>
+    </marker>
+    <marker id="ar-amber" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto">
+      <path d="M0,0 L7,3.5 L0,7 Z" fill="#d97706"/>
+    </marker>
+  </defs>
+  <rect width="1080" height="780" fill="#ffffff"/>
+
+  <!-- Title -->
+  <text x="36" y="28" style="font:600 14px 'Fraunces',serif;fill:#0b1220">6.6.2 DSMEM Fabric Latency Decomposition</text>
+  <text x="36" y="46" style="font:italic 11px 'Fraunces',serif;fill:#5b6679">Patents: US 2025/0173152 A1 (SM2SM interconnect), US 2023/0315655 A1 (fast data synchronization, compound request)</text>
+
+  <!-- ═══════════════ LEFT: Round-Trip Latency Model ═══════════════ -->
+  <g transform="translate(36,62)">
+    <rect x="0" y="0" width="500" height="460" rx="10" fill="#fafafa" stroke="#d1d5db" stroke-width="0.8"/>
+    <text x="250" y="22" style="font:700 12px 'Fraunces',serif;fill:#0b1220" text-anchor="middle">DSMEM Read Round-Trip: 5-Step Decomposition</text>
+    <text x="250" y="38" style="font:500 9px 'JetBrains Mono',monospace;fill:#6b7280" text-anchor="middle">Total: 219–225 cyc (6.5× local smem baseline of 34 cyc)</text>
+
+    <!-- Source SM column -->
+    <rect x="20" y="54" width="180" height="380" rx="6" fill="#dbeafe" stroke="#1e40af" stroke-width="0.8"/>
+    <text x="110" y="72" style="font:700 10px 'JetBrains Mono',monospace;fill:#1e40af" text-anchor="middle">Source SM (requester)</text>
+
+    <!-- Target SM column -->
+    <rect x="300" y="54" width="180" height="380" rx="6" fill="#dcfce7" stroke="#16a34a" stroke-width="0.8"/>
+    <text x="390" y="72" style="font:700 10px 'JetBrains Mono',monospace;fill:#166534" text-anchor="middle">Target SM (responder)</text>
+
+    <!-- SM2SM Fabric in between -->
+    <rect x="204" y="140" width="92" height="260" rx="4" fill="#fef3c7" stroke="#d97706" stroke-width="0.8"/>
+    <text x="250" y="160" style="font:700 8px 'JetBrains Mono',monospace;fill:#92400e" text-anchor="middle">SM2SM</text>
+    <text x="250" y="172" style="font:700 8px 'JetBrains Mono',monospace;fill:#92400e" text-anchor="middle">Fabric</text>
+
+    <!-- Step 1: mapa address translation -->
+    <rect x="30" y="86" width="160" height="36" rx="4" fill="#eff6ff" stroke="#1e40af" stroke-width="0.6"/>
+    <text x="110" y="100" style="font:600 8px 'JetBrains Mono',monospace;fill:#1e3a8a" text-anchor="middle">Step 1: mapa xlat</text>
+    <text x="110" y="114" style="font:700 9px 'JetBrains Mono',monospace;fill:#1e40af" text-anchor="middle">4 cyc (PRMT remap)</text>
+
+    <!-- Step 2: Request injection -->
+    <rect x="30" y="130" width="160" height="36" rx="4" fill="#eff6ff" stroke="#1e40af" stroke-width="0.6"/>
+    <text x="110" y="144" style="font:600 8px 'JetBrains Mono',monospace;fill:#1e3a8a" text-anchor="middle">Step 2: Inject request</text>
+    <text x="110" y="158" style="font:700 9px 'JetBrains Mono',monospace;fill:#1e40af" text-anchor="middle">~8 cyc (rank+dispatch)</text>
+
+    <!-- Arrow: Source → Fabric (forward) -->
+    <line x1="190" y1="180" x2="204" y2="200" stroke="#d97706" stroke-width="1.5" marker-end="url(#ar-amber)"/>
+
+    <!-- Step 3: Fabric transit (forward) -->
+    <rect x="208" y="186" width="84" height="54" rx="3" fill="#fef3c7" stroke="#d97706" stroke-width="0.6"/>
+    <text x="250" y="202" style="font:600 7px 'JetBrains Mono',monospace;fill:#92400e" text-anchor="middle">Step 3:</text>
+    <text x="250" y="214" style="font:600 7px 'JetBrains Mono',monospace;fill:#92400e" text-anchor="middle">Fabric transit</text>
+    <text x="250" y="230" style="font:700 9px 'JetBrains Mono',monospace;fill:#d97706" text-anchor="middle">~145 cyc</text>
+
+    <!-- Arrow: Fabric → Target -->
+    <line x1="292" y1="220" x2="310" y2="240" stroke="#16a34a" stroke-width="1.5" marker-end="url(#ar-green)"/>
+
+    <!-- Step 4: Remote smem read -->
+    <rect x="310" y="248" width="160" height="36" rx="4" fill="#f0fdf4" stroke="#16a34a" stroke-width="0.6"/>
+    <text x="390" y="262" style="font:600 8px 'JetBrains Mono',monospace;fill:#166534" text-anchor="middle">Step 4: Remote smem read</text>
+    <text x="390" y="276" style="font:700 9px 'JetBrains Mono',monospace;fill:#16a34a" text-anchor="middle">~34 cyc (target SMEM)</text>
+
+    <!-- Step 5: Response return (fabric back) -->
+    <rect x="208" y="300" width="84" height="54" rx="3" fill="#fef3c7" stroke="#d97706" stroke-width="0.6"/>
+    <text x="250" y="316" style="font:600 7px 'JetBrains Mono',monospace;fill:#92400e" text-anchor="middle">Step 5:</text>
+    <text x="250" y="328" style="font:600 7px 'JetBrains Mono',monospace;fill:#92400e" text-anchor="middle">Return transit</text>
+    <text x="250" y="344" style="font:700 9px 'JetBrains Mono',monospace;fill:#d97706" text-anchor="middle">~34 cyc</text>
+
+    <!-- Arrow: Target → Fabric (return) -->
+    <line x1="310" y1="284" x2="292" y2="304" stroke="#d97706" stroke-width="1.5" stroke-dasharray="4,2" marker-end="url(#ar-amber)"/>
+    <!-- Arrow: Fabric → Source (return) -->
+    <line x1="208" y1="340" x2="190" y2="360" stroke="#1e40af" stroke-width="1.5" stroke-dasharray="4,2" marker-end="url(#ar-blue)"/>
+
+    <!-- Data arrives back at source -->
+    <rect x="30" y="366" width="160" height="30" rx="4" fill="#dbeafe" stroke="#1e40af" stroke-width="0.8"/>
+    <text x="110" y="386" style="font:700 9px 'JetBrains Mono',monospace;fill:#1e40af" text-anchor="middle">Data available</text>
+
+    <!-- Total sum box -->
+    <g transform="translate(20,410)">
+      <rect x="0" y="0" width="460" height="36" rx="4" fill="#eff6ff" stroke="#1e40af" stroke-width="0.8"/>
+      <text x="230" y="15" style="font:700 10px 'JetBrains Mono',monospace;fill:#1e40af" text-anchor="middle">4 + 8 + 145 + 34 + 34 = 225 cyc ✓</text>
+      <text x="230" y="30" style="font:500 8px 'JetBrains Mono',monospace;fill:#374151" text-anchor="middle">Matches measured 219–225 cyc across all cluster configurations</text>
+    </g>
+  </g>
+
+  <!-- ═══════════════ RIGHT: Fire-and-Forget Compound Request ═══════════════ -->
+  <g transform="translate(556,62)">
+    <rect x="0" y="0" width="488" height="460" rx="10" fill="#ffffff" stroke="#d1d5db" stroke-width="0.8"/>
+    <text x="244" y="22" style="font:700 12px 'Fraunces',serif;fill:#0b1220" text-anchor="middle">Fast Sync: Compound Request (Patent '655)</text>
+    <text x="244" y="38" style="font:500 9px 'JetBrains Mono',monospace;fill:#6b7280" text-anchor="middle">st.async issues in 5.77 cyc; actual delivery 145 cyc later</text>
+
+    <!-- Traditional 2-RTT flow (crossed out) -->
+    <g transform="translate(10,50)">
+      <rect x="0" y="0" width="220" height="160" rx="6" fill="#fef2f2" stroke="#dc2626" stroke-width="0.8"/>
+      <text x="110" y="18" style="font:700 9px 'JetBrains Mono',monospace;fill:#dc2626" text-anchor="middle">Traditional (2 RTT)</text>
+      <line x1="10" y1="24" x2="210" y2="24" stroke="#fca5a5" stroke-width="0.6"/>
+      <text x="10" y="42" style="font:500 8px 'JetBrains Mono',monospace;fill:#374151">① Write data → remote</text>
+      <text x="10" y="56" style="font:500 8px 'JetBrains Mono',monospace;fill:#374151">② Wait write ACK (1 RTT)</text>
+      <text x="10" y="70" style="font:500 8px 'JetBrains Mono',monospace;fill:#374151">③ Send barrier arrive</text>
+      <text x="10" y="84" style="font:500 8px 'JetBrains Mono',monospace;fill:#374151">④ Wait arrive ACK (1 RTT)</text>
+      <line x1="10" y1="94" x2="210" y2="94" stroke="#fca5a5" stroke-width="0.6"/>
+      <text x="10" y="112" style="font:700 8px 'JetBrains Mono',monospace;fill:#dc2626">Total: ~2 × 225 = 450 cyc</text>
+      <text x="10" y="128" style="font:500 8px 'JetBrains Mono',monospace;fill:#374151">Producer BLOCKED for entire</text>
+      <text x="10" y="142" style="font:500 8px 'JetBrains Mono',monospace;fill:#374151">round trip duration</text>
+      <!-- Crossed out -->
+      <line x1="0" y1="0" x2="220" y2="160" stroke="#dc2626" stroke-width="2" opacity="0.3"/>
+      <line x1="220" y1="0" x2="0" y2="160" stroke="#dc2626" stroke-width="2" opacity="0.3"/>
+    </g>
+
+    <!-- Fast sync (compound request) -->
+    <g transform="translate(244,50)">
+      <rect x="0" y="0" width="232" height="160" rx="6" fill="#f0fdf4" stroke="#16a34a" stroke-width="0.8"/>
+      <text x="116" y="18" style="font:700 9px 'JetBrains Mono',monospace;fill:#166534" text-anchor="middle">Fast Sync (~0.5 RTT)</text>
+      <line x1="10" y1="24" x2="222" y2="24" stroke="#86efac" stroke-width="0.6"/>
+      <text x="10" y="42" style="font:500 8px 'JetBrains Mono',monospace;fill:#374151">① Issue compound request:</text>
+      <text x="10" y="56" style="font:600 8px 'JetBrains Mono',monospace;fill:#166534">   [data + barrier.arrive]</text>
+      <text x="10" y="72" style="font:500 8px 'JetBrains Mono',monospace;fill:#374151">② Producer continues (5.77 cyc)</text>
+      <text x="10" y="88" style="font:500 8px 'JetBrains Mono',monospace;fill:#374151">③ Remote: write SMEM, then</text>
+      <text x="10" y="102" style="font:500 8px 'JetBrains Mono',monospace;fill:#374151">   atomic update mbarrier</text>
+      <line x1="10" y1="112" x2="222" y2="112" stroke="#86efac" stroke-width="0.6"/>
+      <text x="10" y="130" style="font:700 8px 'JetBrains Mono',monospace;fill:#16a34a">Producer cost: 5.77 cyc only</text>
+      <text x="10" y="146" style="font:500 8px 'JetBrains Mono',monospace;fill:#374151">FIFO VC guarantees data-before-</text>
+      <text x="10" y="158" style="font:500 8px 'JetBrains Mono',monospace;fill:#374151">barrier ordering (no ACK needed)</text>
+    </g>
+
+    <!-- Compound request packet format -->
+    <g transform="translate(10,224)">
+      <rect x="0" y="0" width="466" height="100" rx="6" fill="#EEF2FF" stroke="#1e40af" stroke-width="0.8"/>
+      <text x="233" y="18" style="font:700 10px 'JetBrains Mono',monospace;fill:#1e40af" text-anchor="middle">Compound Request Packet (single VC, FIFO-ordered)</text>
+      <line x1="10" y1="26" x2="456" y2="26" stroke="#c7d2fe" stroke-width="0.6"/>
+
+      <!-- Packet fields -->
+      <rect x="10" y="34" width="70" height="24" rx="2" fill="#dbeafe" stroke="#1e40af" stroke-width="0.5"/>
+      <text x="45" y="50" style="font:600 7px 'JetBrains Mono',monospace;fill:#1e40af" text-anchor="middle">Src SM/CTA</text>
+      <rect x="84" y="34" width="70" height="24" rx="2" fill="#dbeafe" stroke="#1e40af" stroke-width="0.5"/>
+      <text x="119" y="50" style="font:600 7px 'JetBrains Mono',monospace;fill:#1e40af" text-anchor="middle">Dst SM/CTA</text>
+      <rect x="158" y="34" width="70" height="24" rx="2" fill="#dcfce7" stroke="#16a34a" stroke-width="0.5"/>
+      <text x="193" y="50" style="font:600 7px 'JetBrains Mono',monospace;fill:#166534" text-anchor="middle">Data Addr</text>
+      <rect x="232" y="34" width="80" height="24" rx="2" fill="#dcfce7" stroke="#16a34a" stroke-width="0.5"/>
+      <text x="272" y="50" style="font:600 7px 'JetBrains Mono',monospace;fill:#166534" text-anchor="middle">Data Payload</text>
+      <rect x="316" y="34" width="70" height="24" rx="2" fill="#fef3c7" stroke="#d97706" stroke-width="0.5"/>
+      <text x="351" y="50" style="font:600 7px 'JetBrains Mono',monospace;fill:#92400e" text-anchor="middle">Bar Addr</text>
+      <rect x="390" y="34" width="66" height="24" rx="2" fill="#fef3c7" stroke="#d97706" stroke-width="0.5"/>
+      <text x="423" y="50" style="font:600 7px 'JetBrains Mono',monospace;fill:#92400e" text-anchor="middle">TxBytes</text>
+
+      <!-- Ordering guarantee -->
+      <text x="10" y="78" style="font:600 8px 'JetBrains Mono',monospace;fill:#374151">HW guarantee: within single VC, write completes BEFORE barrier</text>
+      <text x="10" y="92" style="font:600 8px 'JetBrains Mono',monospace;fill:#374151">update → consumer sees data as soon as mbarrier phase flips</text>
+    </g>
+
+    <!-- Key numbers -->
+    <g transform="translate(10,338)">
+      <rect x="0" y="0" width="466" height="108" rx="6" fill="#FFF7ED" stroke="#c2410c" stroke-width="0.8"/>
+      <text x="10" y="18" style="font:700 9px 'JetBrains Mono',monospace;fill:#c2410c">Measured Latency Breakdown</text>
+      <line x1="10" y1="26" x2="456" y2="26" stroke="#fdba74" stroke-width="0.6"/>
+      <text x="10" y="44" style="font:500 9px 'JetBrains Mono',monospace;fill:#374151">st.async issue cost (producer):        5.77–6.0 cyc</text>
+      <text x="10" y="60" style="font:500 9px 'JetBrains Mono',monospace;fill:#374151">One-way visibility (fabric transit):   ~145 cyc</text>
+      <text x="10" y="76" style="font:500 9px 'JetBrains Mono',monospace;fill:#374151">Full read round-trip:                  219–225 cyc</text>
+      <text x="10" y="92" style="font:500 9px 'JetBrains Mono',monospace;fill:#374151">Sync notification (mbarrier only):     86 cyc</text>
+      <text x="10" y="106" style="font:700 9px 'JetBrains Mono',monospace;fill:#c2410c">Speedup vs traditional 2-RTT: 450→86 cyc = 5.2× for sync</text>
+    </g>
+  </g>
+
+  <!-- ═══════════════ BOTTOM: Topology Invariance & Implications ═══════════════ -->
+  <g transform="translate(36,540)">
+    <rect x="0" y="0" width="1006" height="230" rx="10" fill="#fafafa" stroke="#d1d5db" stroke-width="0.8"/>
+    <text x="20" y="24" style="font:600 12px 'Fraunces',serif;fill:#0b1220">Topology Invariance: Evidence for Dedicated Point-to-Point SM2SM Mesh</text>
+
+    <!-- Left: Invariance data -->
+    <g transform="translate(20,40)">
+      <rect x="0" y="0" width="460" height="174" rx="6" fill="#ffffff" stroke="#e5e7eb" stroke-width="0.8"/>
+      <text x="10" y="18" style="font:700 9px 'JetBrains Mono',monospace;fill:#0b1220">Measurement: 145-cyc one-way transit is CONSTANT across:</text>
+      <line x1="10" y1="26" x2="450" y2="26" stroke="#e5e7eb" stroke-width="0.6"/>
+
+      <text x="10" y="46" style="font:600 9px 'JetBrains Mono',monospace;fill:#374151">• Cluster size (2, 4, or 8 CTAs):</text>
+      <text x="270" y="46" style="font:700 9px 'JetBrains Mono',monospace;fill:#16a34a">0% variance</text>
+      <text x="10" y="64" style="font:600 9px 'JetBrains Mono',monospace;fill:#374151">• Target distance (adjacent/cross-GPC):</text>
+      <text x="300" y="64" style="font:700 9px 'JetBrains Mono',monospace;fill:#16a34a">identical</text>
+      <text x="10" y="82" style="font:600 9px 'JetBrains Mono',monospace;fill:#374151">• Data direction (read vs write):</text>
+      <text x="260" y="82" style="font:700 9px 'JetBrains Mono',monospace;fill:#16a34a">symmetric</text>
+
+      <line x1="10" y1="94" x2="450" y2="94" stroke="#e5e7eb" stroke-width="0.6"/>
+      <text x="10" y="114" style="font:700 9px 'JetBrains Mono',monospace;fill:#1e40af">Implication:</text>
+      <text x="10" y="132" style="font:500 9px 'JetBrains Mono',monospace;fill:#374151">SM2SM is a dedicated point-to-point mesh (NOT shared bus).</text>
+      <text x="10" y="150" style="font:500 9px 'JetBrains Mono',monospace;fill:#374151">Each SM pair has a dedicated channel with fixed latency.</text>
+      <text x="10" y="164" style="font:500 8px 'JetBrains Mono',monospace;fill:#6b7280">(Patent '152: "SM-to-SM interconnect independent of L2 cache path")</text>
+    </g>
+
+    <!-- Right: Architecture diagram (simplified) -->
+    <g transform="translate(500,40)">
+      <rect x="0" y="0" width="486" height="174" rx="6" fill="#EEF2FF" stroke="#1e40af" stroke-width="0.8"/>
+      <text x="243" y="18" style="font:700 9px 'JetBrains Mono',monospace;fill:#1e40af" text-anchor="middle">Dual-Fabric Architecture (Patent '152 Fig. 14–16)</text>
+      <line x1="10" y1="26" x2="476" y2="26" stroke="#c7d2fe" stroke-width="0.6"/>
+
+      <!-- SM boxes -->
+      <rect x="20" y="40" width="80" height="36" rx="4" fill="#dbeafe" stroke="#1e40af" stroke-width="0.8"/>
+      <text x="60" y="54" style="font:700 8px 'JetBrains Mono',monospace;fill:#1e40af" text-anchor="middle">SM₀ (src)</text>
+      <text x="60" y="68" style="font:500 7px 'JetBrains Mono',monospace;fill:#374151" text-anchor="middle">LSU+uTLB</text>
+
+      <rect x="380" y="40" width="86" height="36" rx="4" fill="#dcfce7" stroke="#16a34a" stroke-width="0.8"/>
+      <text x="423" y="54" style="font:700 8px 'JetBrains Mono',monospace;fill:#166534" text-anchor="middle">SM₁ (dst)</text>
+      <text x="423" y="68" style="font:500 7px 'JetBrains Mono',monospace;fill:#374151" text-anchor="middle">SMEM+uTLB</text>
+
+      <!-- SM2SM path (top) -->
+      <rect x="130" y="36" width="220" height="22" rx="3" fill="#fef3c7" stroke="#d97706" stroke-width="0.8"/>
+      <text x="240" y="51" style="font:700 8px 'JetBrains Mono',monospace;fill:#92400e" text-anchor="middle">SM2SM Interconnect (dedicated, FIFO VC)</text>
+      <line x1="100" y1="52" x2="130" y2="48" stroke="#d97706" stroke-width="1.2" marker-end="url(#ar-amber)"/>
+      <line x1="350" y1="48" x2="380" y2="52" stroke="#d97706" stroke-width="1.2" marker-end="url(#ar-amber)"/>
+
+      <!-- GXBAR path (bottom, separate) -->
+      <rect x="130" y="82" width="220" height="22" rx="3" fill="#f3f4f6" stroke="#6b7280" stroke-width="0.8"/>
+      <text x="240" y="97" style="font:700 8px 'JetBrains Mono',monospace;fill:#6b7280" text-anchor="middle">GXBAR → L2 → HBM (global path)</text>
+      <line x1="100" y1="70" x2="130" y2="86" stroke="#6b7280" stroke-width="0.8" stroke-dasharray="3,2"/>
+      <line x1="350" y1="86" x2="380" y2="70" stroke="#6b7280" stroke-width="0.8" stroke-dasharray="3,2"/>
+
+      <!-- Key difference -->
+      <text x="20" y="124" style="font:600 8px 'JetBrains Mono',monospace;fill:#374151">SM2SM: 145 cyc fixed, FIFO-ordered, no cache coherence cost</text>
+      <text x="20" y="140" style="font:600 8px 'JetBrains Mono',monospace;fill:#374151">GXBAR: 49.5 cyc data, but MEMBAR=286 cyc for ordering</text>
+      <text x="20" y="158" style="font:700 8px 'JetBrains Mono',monospace;fill:#1e40af">Two INDEPENDENT physical paths: no bandwidth contention</text>
+    </g>
+  </g>
+</svg>

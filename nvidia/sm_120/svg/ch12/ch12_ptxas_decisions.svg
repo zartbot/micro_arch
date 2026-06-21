@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 380" role="img"
+     aria-label="ptxas SASS control-code fields on SM_120 — 5 decisions per instruction tied to specific hardware mechanisms">
+  <defs>
+    <linearGradient id="ctrlBg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0b1220"/><stop offset="1" stop-color="#1e293b"/>
+    </linearGradient>
+    <style><![CDATA[
+      .ttl{font:600 14px "Fraunces",serif;fill:#0b1220}
+      .sub{font:italic 11px "Fraunces",serif;fill:#5b6679}
+      .lbl{font:600 11px "JetBrains Mono",monospace;fill:#2a3548}
+      .lbl-sm{font:500 10px "JetBrains Mono",monospace;fill:#5b6679}
+      .field-name{font:700 11px "JetBrains Mono",monospace}
+      .bits{font:600 9.5px "JetBrains Mono",monospace;fill:#94a3b8}
+      .hw-target{font:italic 10.5px "Fraunces",serif;fill:#475569}
+      .num{font:600 14px "Fraunces",serif;fill:#0b1220}
+    ]]></style>
+  </defs>
+  <rect width="1080" height="380" fill="#fcfbf6"/>
+  <text x="36" y="32" class="ttl">5 Microarchitecture-Aware SASS Fields ptxas Sets per Instruction</text>
+  <text x="36" y="52" class="sub">Upper 64-bit control-code region of every 128-bit SASS word · each field maps to one SM_120 hardware mechanism · misset → silent perf loss</text>
+
+  <!-- 128-bit instruction context -->
+  <g transform="translate(40,76)">
+    <rect width="1000" height="22" rx="4" fill="#EEF2FF" stroke="#1e40af" stroke-width="0.6"/>
+    <text x="500" y="16" text-anchor="middle" class="lbl-sm" fill="#0a0d11">128-bit SASS instruction · upper 64 bits shown · bits [127:64]</text>
+  </g>
+
+  <!-- The 5 fields -->
+  <g transform="translate(40,108)">
+    <g>
+      <rect x="0" y="0" width="180" height="60" rx="6" fill="#ddd6fe" stroke="#6d28d9" stroke-width="1"/>
+      <text x="90" y="18" class="bits" text-anchor="middle">[60:58] · 3 bits</text>
+      <text x="90" y="36" class="field-name" fill="#5b21b6" text-anchor="middle">.reuse src 0/1/2</text>
+      <text x="90" y="52" class="lbl-sm" fill="#5b21b6" text-anchor="middle">RFC operand cache hint</text>
+    </g>
+
+    <g transform="translate(196,0)">
+      <rect width="180" height="60" rx="6" fill="#bae6fd" stroke="#0369a1" stroke-width="1"/>
+      <text x="90" y="18" class="bits" text-anchor="middle">[57:54] · 4 bits</text>
+      <text x="90" y="36" class="field-name" fill="#075985" text-anchor="middle">SB wait mask</text>
+      <text x="90" y="52" class="lbl-sm" fill="#075985" text-anchor="middle">6-counter scoreboard wait</text>
+    </g>
+
+    <g transform="translate(392,0)">
+      <rect width="170" height="60" rx="6" fill="#fde68a" stroke="#b45309" stroke-width="1"/>
+      <text x="85" y="18" class="bits" text-anchor="middle">[48:46] · 3 bits</text>
+      <text x="85" y="36" class="field-name" fill="#92400e" text-anchor="middle">write barrier</text>
+      <text x="85" y="52" class="lbl-sm" fill="#92400e" text-anchor="middle">SB# for var-latency op</text>
+    </g>
+
+    <g transform="translate(578,0)">
+      <rect width="100" height="60" rx="6" fill="#fed7aa" stroke="#c2410c" stroke-width="1"/>
+      <text x="50" y="18" class="bits" text-anchor="middle">[45] · 1 bit</text>
+      <text x="50" y="36" class="field-name" fill="#9a3412" text-anchor="middle">yield</text>
+      <text x="50" y="52" class="lbl-sm" fill="#9a3412" text-anchor="middle">warp interleave</text>
+    </g>
+
+    <g transform="translate(694,0)">
+      <rect width="180" height="60" rx="6" fill="#a3e635" stroke="#65a30d" stroke-width="1"/>
+      <text x="90" y="18" class="bits" text-anchor="middle">[44:41] · 4 bits</text>
+      <text x="90" y="36" class="field-name" fill="#3f6700" text-anchor="middle">stall counter</text>
+      <text x="90" y="52" class="lbl-sm" fill="#3f6700" text-anchor="middle">3 hardware modes</text>
+    </g>
+
+    <g transform="translate(890,0)">
+      <rect width="110" height="60" rx="6" fill="#e2e8f0" stroke="#475569" stroke-width="1"/>
+      <text x="55" y="18" class="bits" text-anchor="middle">[40:36]</text>
+      <text x="55" y="36" class="field-name" fill="#334155" text-anchor="middle">predicate</text>
+      <text x="55" y="52" class="lbl-sm" fill="#334155" text-anchor="middle">bypasses stall HW</text>
+    </g>
+  </g>
+
+  <g transform="translate(40,200)">
+    <text x="0" y="0" class="lbl" fill="#0b1220">↓ targets SM_120-specific hardware mechanism</text>
+  </g>
+
+  <g transform="translate(40,216)">
+    <rect width="1000" height="142" rx="8" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1"/>
+
+    <g transform="translate(20,16)">
+      <text x="0" y="0" class="field-name" fill="#5b21b6">RFC (≥24 entries, ALU only)</text>
+      <text x="0" y="16" class="hw-target">Effective on ALU pipe; never set on TC</text>
+      <text x="0" y="32" class="hw-target">ALU hit → +85% throughput</text>
+    </g>
+
+    <g transform="translate(216,16)">
+      <text x="0" y="0" class="field-name" fill="#075985">6 scoreboard counters</text>
+      <text x="0" y="16" class="hw-target">N=5→6 outstanding → 44.8× cliff</text>
+      <text x="0" y="32" class="hw-target">co-consume grouping saves 3 cyc</text>
+    </g>
+
+    <g transform="translate(412,16)">
+      <text x="0" y="0" class="field-name" fill="#92400e">SB slot assignment</text>
+      <text x="0" y="16" class="hw-target">Only var-latency LDG/HMMA hold one</text>
+      <text x="0" y="32" class="hw-target">STG fire-and-forget — no SB</text>
+    </g>
+
+    <g transform="translate(598,16)">
+      <text x="0" y="0" class="field-name" fill="#9a3412">SMSP warp scheduler</text>
+      <text x="0" y="16" class="hw-target">yield=0 → 2.4-4.7% slower</text>
+      <text x="0" y="32" class="hw-target">degradation grows with warp count</text>
+    </g>
+
+    <g transform="translate(794,16)">
+      <text x="0" y="0" class="field-name" fill="#3f6700">3 dispatch modes</text>
+      <text x="0" y="16" class="hw-target">linear / sentinel / pipe-aligned</text>
+      <text x="0" y="32" class="hw-target">see dedicated stall figure</text>
+    </g>
+
+    <line x1="20" y1="76" x2="980" y2="76" stroke="#e2e8f0"/>
+
+    <text x="20" y="98" class="lbl" fill="#0b1220">Key takeaway</text>
+    <text x="20" y="118" class="lbl-sm">4 of 5 fields are at HW optimum; the only systematic miscalibration is stall counter on HMMA (11→12 = +6.1%)</text>
+    <text x="20" y="132" class="lbl-sm">.reuse is dual-natured — same field, different HW interpretation on ALU vs TC; patchers ignoring this draw wrong conclusions</text>
+  </g>
+</svg>

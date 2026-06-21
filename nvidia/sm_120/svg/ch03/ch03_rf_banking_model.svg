@@ -1,0 +1,314 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 890" role="img"
+     aria-label="SM_120 Register File 2-Bank Parity Architecture: banking model, conflict scenarios, and ptxas mitigation">
+  <defs>
+    <marker id="ar" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto">
+      <path d="M0,0 L7,3.5 L0,7 Z" fill="#5b6679"/>
+    </marker>
+    <marker id="ar-blue" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto">
+      <path d="M0,0 L7,3.5 L0,7 Z" fill="#2563eb"/>
+    </marker>
+    <marker id="ar-green" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto">
+      <path d="M0,0 L7,3.5 L0,7 Z" fill="#16a34a"/>
+    </marker>
+    <marker id="ar-red" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto">
+      <path d="M0,0 L7,3.5 L0,7 Z" fill="#dc2626"/>
+    </marker>
+    <marker id="ar-purple" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto">
+      <path d="M0,0 L7,3.5 L0,7 Z" fill="#6d28d9"/>
+    </marker>
+    <linearGradient id="bank0G" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#DBEAFE"/><stop offset="1" stop-color="#EFF6FF"/>
+    </linearGradient>
+    <linearGradient id="bank1G" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FEE2E2"/><stop offset="1" stop-color="#FEF2F2"/>
+    </linearGradient>
+    <linearGradient id="rfcG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#DCFCE7"/><stop offset="1" stop-color="#F0FDF4"/>
+    </linearGradient>
+    <linearGradient id="ocG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#F3E8FF"/><stop offset="1" stop-color="#FAF5FF"/>
+    </linearGradient>
+    <linearGradient id="mitigG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FEF9C3"/><stop offset="1" stop-color="#FEFCE8"/>
+    </linearGradient>
+    <style><![CDATA[
+      .ttl{font:600 15px "Fraunces",serif;fill:#0b1220}
+      .sub{font:italic 11.5px "Fraunces",serif;fill:#5b6679}
+      .sect{font:600 13px "Fraunces",serif}
+      .lbl{font:600 11.5px "JetBrains Mono",monospace}
+      .lbl-sm{font:500 10px "JetBrains Mono",monospace;fill:#5b6679}
+      .desc{font:500 10px "JetBrains Mono",monospace;fill:#5b6679}
+      .badge{font:600 9.5px "JetBrains Mono",monospace}
+      .reg{font:600 10px "JetBrains Mono",monospace}
+      .big-num{font:700 20px "JetBrains Mono",monospace}
+      .med-num{font:700 14px "JetBrains Mono",monospace}
+      .note{font:500 9.5px "JetBrains Mono",monospace;fill:#8e97a5}
+      .warn{font:600 10px "JetBrains Mono",monospace;fill:#dc2626}
+      .safe{font:600 10px "JetBrains Mono",monospace;fill:#16a34a}
+      .zone-t{font:600 12px "Fraunces",serif}
+    ]]></style>
+  </defs>
+
+  <rect width="1080" height="890" fill="#ffffff"/>
+
+  <!-- Title -->
+  <text x="36" y="32" class="ttl">SM_120 Register File Banking Model (CuAssembler-Verified)</text>
+  <text x="36" y="52" class="sub">2-Bank parity architecture with ≥24-entry RFC — conflicts exist in HW but are perfectly hidden by ptxas [S12/case_1]</text>
+
+  <!-- ═══════ TOP LEFT: 2-Bank RF Structure ═══════ -->
+  <g transform="translate(30, 76)">
+    <rect x="0" y="0" width="480" height="280" rx="12" fill="#f8fafc" stroke="#334155" stroke-width="1"/>
+    <text x="16" y="24" class="sect" fill="#334155">Register File: 16,384 × 32-bit entries per SMSP</text>
+    <text x="16" y="42" class="desc">Bank assignment = R % 2 (simple even/odd parity)</text>
+
+    <!-- Bank 0 (EVEN) -->
+    <g transform="translate(20, 60)">
+      <rect x="0" y="0" width="440" height="90" rx="8" fill="url(#bank0G)" stroke="#2563eb" stroke-width="1"/>
+      <text x="12" y="20" class="lbl" fill="#2563eb">Bank 0 (EVEN)</text>
+      <rect x="12" y="28" width="116" height="18" rx="8" fill="#2563eb" opacity="0.12"/>
+      <text x="70" y="40" class="badge" fill="#2563eb" text-anchor="middle">2 Read Ports</text>
+
+      <!-- Register cells -->
+      <g transform="translate(12, 54)">
+        <rect x="0" y="0" width="38" height="24" rx="4" fill="#ffffff" stroke="#2563eb" stroke-width="0.8"/>
+        <text x="19" y="16" class="reg" fill="#2563eb" text-anchor="middle">R0</text>
+        <rect x="44" y="0" width="38" height="24" rx="4" fill="#ffffff" stroke="#2563eb" stroke-width="0.8"/>
+        <text x="63" y="16" class="reg" fill="#2563eb" text-anchor="middle">R2</text>
+        <rect x="88" y="0" width="38" height="24" rx="4" fill="#ffffff" stroke="#2563eb" stroke-width="0.8"/>
+        <text x="107" y="16" class="reg" fill="#2563eb" text-anchor="middle">R4</text>
+        <rect x="132" y="0" width="38" height="24" rx="4" fill="#ffffff" stroke="#2563eb" stroke-width="0.8"/>
+        <text x="151" y="16" class="reg" fill="#2563eb" text-anchor="middle">R6</text>
+        <rect x="176" y="0" width="38" height="24" rx="4" fill="#ffffff" stroke="#2563eb" stroke-width="0.8"/>
+        <text x="195" y="16" class="reg" fill="#2563eb" text-anchor="middle">R8</text>
+        <rect x="220" y="0" width="44" height="24" rx="4" fill="#ffffff" stroke="#2563eb" stroke-width="0.8"/>
+        <text x="242" y="16" class="reg" fill="#2563eb" text-anchor="middle">R10</text>
+        <rect x="270" y="0" width="44" height="24" rx="4" fill="#ffffff" stroke="#2563eb" stroke-width="0.8"/>
+        <text x="292" y="16" class="reg" fill="#2563eb" text-anchor="middle">R12</text>
+        <rect x="320" y="0" width="44" height="24" rx="4" fill="#ffffff" stroke="#2563eb" stroke-width="0.8"/>
+        <text x="342" y="16" class="reg" fill="#2563eb" text-anchor="middle">R14</text>
+        <text x="374" y="16" class="desc">…</text>
+      </g>
+    </g>
+
+    <!-- Bank 1 (ODD) -->
+    <g transform="translate(20, 160)">
+      <rect x="0" y="0" width="440" height="90" rx="8" fill="url(#bank1G)" stroke="#dc2626" stroke-width="1"/>
+      <text x="12" y="20" class="lbl" fill="#dc2626">Bank 1 (ODD)</text>
+      <rect x="12" y="28" width="116" height="18" rx="8" fill="#dc2626" opacity="0.12"/>
+      <text x="70" y="40" class="badge" fill="#dc2626" text-anchor="middle">2 Read Ports</text>
+
+      <!-- Register cells -->
+      <g transform="translate(12, 54)">
+        <rect x="0" y="0" width="38" height="24" rx="4" fill="#ffffff" stroke="#dc2626" stroke-width="0.8"/>
+        <text x="19" y="16" class="reg" fill="#dc2626" text-anchor="middle">R1</text>
+        <rect x="44" y="0" width="38" height="24" rx="4" fill="#ffffff" stroke="#dc2626" stroke-width="0.8"/>
+        <text x="63" y="16" class="reg" fill="#dc2626" text-anchor="middle">R3</text>
+        <rect x="88" y="0" width="38" height="24" rx="4" fill="#ffffff" stroke="#dc2626" stroke-width="0.8"/>
+        <text x="107" y="16" class="reg" fill="#dc2626" text-anchor="middle">R5</text>
+        <rect x="132" y="0" width="38" height="24" rx="4" fill="#ffffff" stroke="#dc2626" stroke-width="0.8"/>
+        <text x="151" y="16" class="reg" fill="#dc2626" text-anchor="middle">R7</text>
+        <rect x="176" y="0" width="38" height="24" rx="4" fill="#ffffff" stroke="#dc2626" stroke-width="0.8"/>
+        <text x="195" y="16" class="reg" fill="#dc2626" text-anchor="middle">R9</text>
+        <rect x="220" y="0" width="44" height="24" rx="4" fill="#ffffff" stroke="#dc2626" stroke-width="0.8"/>
+        <text x="242" y="16" class="reg" fill="#dc2626" text-anchor="middle">R11</text>
+        <rect x="270" y="0" width="44" height="24" rx="4" fill="#ffffff" stroke="#dc2626" stroke-width="0.8"/>
+        <text x="292" y="16" class="reg" fill="#dc2626" text-anchor="middle">R13</text>
+        <rect x="320" y="0" width="44" height="24" rx="4" fill="#ffffff" stroke="#dc2626" stroke-width="0.8"/>
+        <text x="342" y="16" class="reg" fill="#dc2626" text-anchor="middle">R15</text>
+        <text x="374" y="16" class="desc">…</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- ═══════ TOP RIGHT: Conflict Scenarios ═══════ -->
+  <g transform="translate(540, 76)">
+    <rect x="0" y="0" width="510" height="280" rx="12" fill="#f8fafc" stroke="#334155" stroke-width="1"/>
+    <text x="16" y="24" class="sect" fill="#334155">3-Source Read Scenarios (FFMA R_dst, R_src0, R_src1, R_src2)</text>
+
+    <!-- Scenario A: Conflict -->
+    <g transform="translate(16, 44)">
+      <rect x="0" y="0" width="478" height="100" rx="8" fill="url(#bank1G)" stroke="#dc2626" stroke-width="0.8"/>
+      <rect x="8" y="6" width="68" height="20" rx="10" fill="#dc2626" opacity="0.15"/>
+      <text x="42" y="19" class="badge" fill="#dc2626" text-anchor="middle">CONFLICT</text>
+      <text x="86" y="19" class="zone-t" fill="#dc2626">All Same Bank (E,E,E or O,O,O)</text>
+
+      <!-- Visual: 3 reads from 1 bank -->
+      <g transform="translate(12, 32)">
+        <rect x="0" y="0" width="32" height="20" rx="4" fill="#2563eb" opacity="0.2" stroke="#2563eb" stroke-width="0.6"/>
+        <text x="16" y="14" class="badge" fill="#2563eb" text-anchor="middle">R4</text>
+        <rect x="38" y="0" width="32" height="20" rx="4" fill="#2563eb" opacity="0.2" stroke="#2563eb" stroke-width="0.6"/>
+        <text x="54" y="14" class="badge" fill="#2563eb" text-anchor="middle">R8</text>
+        <rect x="76" y="0" width="36" height="20" rx="4" fill="#2563eb" opacity="0.2" stroke="#2563eb" stroke-width="0.6"/>
+        <text x="94" y="14" class="badge" fill="#2563eb" text-anchor="middle">R12</text>
+
+        <text x="124" y="14" class="desc">→ all EVEN → same bank</text>
+      </g>
+
+      <text x="12" y="66" class="lbl-sm">Need 3 reads from 1 bank, but only 2 ports → ceil(3/2) = 2 cycles</text>
+      <text x="12" y="82" class="warn">Penalty: +1.0 cycle    (measured: 3.034 cyc/FFMA)</text>
+    </g>
+
+    <!-- Scenario B: No conflict -->
+    <g transform="translate(16, 154)">
+      <rect x="0" y="0" width="478" height="100" rx="8" fill="url(#rfcG)" stroke="#16a34a" stroke-width="0.8"/>
+      <rect x="8" y="6" width="80" height="20" rx="10" fill="#16a34a" opacity="0.15"/>
+      <text x="48" y="19" class="badge" fill="#16a34a" text-anchor="middle">NO CONFLICT</text>
+      <text x="100" y="19" class="zone-t" fill="#16a34a">Mixed Parity (≥1 from each bank)</text>
+
+      <!-- Visual: mixed reads -->
+      <g transform="translate(12, 32)">
+        <rect x="0" y="0" width="32" height="20" rx="4" fill="#2563eb" opacity="0.2" stroke="#2563eb" stroke-width="0.6"/>
+        <text x="16" y="14" class="badge" fill="#2563eb" text-anchor="middle">R4</text>
+        <rect x="38" y="0" width="32" height="20" rx="4" fill="#dc2626" opacity="0.2" stroke="#dc2626" stroke-width="0.6"/>
+        <text x="54" y="14" class="badge" fill="#dc2626" text-anchor="middle">R5</text>
+        <rect x="76" y="0" width="32" height="20" rx="4" fill="#2563eb" opacity="0.2" stroke="#2563eb" stroke-width="0.6"/>
+        <text x="92" y="14" class="badge" fill="#2563eb" text-anchor="middle">R6</text>
+
+        <text x="120" y="14" class="desc">→ E,O,E → mixed banks</text>
+      </g>
+
+      <text x="12" y="66" class="lbl-sm">max(ceil(2/2), ceil(1/2)) = max(1, 1) = 1 cycle → no extra cost</text>
+      <text x="12" y="82" class="safe">Penalty: 0 cycles      (measured: 2.038 cyc/FFMA)</text>
+    </g>
+  </g>
+
+  <!-- ═══════ MIDDLE: Operand Delivery Pipeline ═══════ -->
+  <g transform="translate(30, 380)">
+    <rect x="0" y="0" width="1020" height="210" rx="12" fill="url(#ocG)" stroke="#6d28d9" stroke-width="1" opacity="0.7"/>
+    <text x="16" y="24" class="sect" fill="#6d28d9">Three-Tier Operand Delivery System (Read Path)</text>
+    <text x="16" y="42" class="desc">Instruction requests operands → OC checks RFC → RF bank read → forward to execution pipe</text>
+
+    <!-- Pipeline flow -->
+    <g transform="translate(30, 62)">
+      <!-- Tier 1: RFC (fastest) -->
+      <rect x="0" y="0" width="200" height="66" rx="8" fill="url(#rfcG)" stroke="#16a34a" stroke-width="1.2"/>
+      <text x="100" y="18" class="lbl" fill="#16a34a" text-anchor="middle">Tier 1: RFC Hit</text>
+      <text x="100" y="36" class="badge" fill="#16a34a" text-anchor="middle">0-cycle latency</text>
+      <text x="100" y="52" class="desc" text-anchor="middle">≥24 entries/warp</text>
+      <text x="100" y="64" class="note" text-anchor="middle">.reuse bit = 1 → cached</text>
+
+      <line x1="200" y1="33" x2="232" y2="33" stroke="#5b6679" stroke-width="1" stroke-dasharray="4,3"/>
+      <text x="216" y="48" class="note" text-anchor="middle">miss</text>
+
+      <!-- Tier 2: RF Normal (1 cycle) -->
+      <rect x="236" y="0" width="240" height="66" rx="8" fill="#ffffff" stroke="#2563eb" stroke-width="1.2"/>
+      <text x="356" y="18" class="lbl" fill="#2563eb" text-anchor="middle">Tier 2: RF Read (no conflict)</text>
+      <text x="356" y="36" class="badge" fill="#2563eb" text-anchor="middle">1-cycle latency</text>
+      <text x="356" y="52" class="desc" text-anchor="middle">mixed parity operands</text>
+      <text x="356" y="64" class="note" text-anchor="middle">ptxas guarantees this path</text>
+
+      <line x1="476" y1="33" x2="528" y2="33" stroke="#5b6679" stroke-width="1" stroke-dasharray="4,3"/>
+      <text x="499" y="48" class="note" text-anchor="middle">conflict</text>
+
+      <!-- Tier 3: RF Conflict (+1 cycle) -->
+      <rect x="522" y="0" width="230" height="66" rx="8" fill="url(#bank1G)" stroke="#dc2626" stroke-width="1.2"/>
+      <text x="632" y="18" class="lbl" fill="#dc2626" text-anchor="middle">Tier 3: RF Conflict (+1 cyc)</text>
+      <text x="632" y="36" class="badge" fill="#dc2626" text-anchor="middle">2-cycle latency</text>
+      <text x="632" y="52" class="desc" text-anchor="middle">all-same-parity operands</text>
+      <text x="632" y="64" class="note" text-anchor="middle">only via CuAssembler patch</text>
+
+      <!-- Arrow to Operand Collector -->
+      <line x1="100" y1="66" x2="100" y2="90" stroke="#16a34a" stroke-width="1.2" marker-end="url(#ar-green)"/>
+      <line x1="356" y1="66" x2="356" y2="90" stroke="#2563eb" stroke-width="1.2" marker-end="url(#ar-blue)"/>
+      <line x1="632" y1="66" x2="632" y2="90" stroke="#dc2626" stroke-width="1.2" marker-end="url(#ar-red)"/>
+
+      <!-- Operand Collector -->
+      <rect x="40" y="94" width="660" height="42" rx="8" fill="#ffffff" stroke="#6d28d9" stroke-width="1.2"/>
+      <text x="370" y="112" class="lbl" fill="#6d28d9" text-anchor="middle">Operand Collector — gathers all sources → dispatches to execution pipe</text>
+      <text x="370" y="128" class="note" text-anchor="middle">staging buffer: waits for all operands (RFC/RF/bypass) before issuing to FMA/ALU/LSU/TC</text>
+    </g>
+  </g>
+
+  <!-- ═══════ BOTTOM: ptxas Mitigation + Measured Results ═══════ -->
+  <g transform="translate(30, 600)">
+    <rect x="0" y="0" width="560" height="260" rx="12" fill="url(#mitigG)" stroke="#ca8a04" stroke-width="1"/>
+    <text x="16" y="24" class="sect" fill="#92400e">ptxas Compiler Mitigations (HW-SW Co-Design)</text>
+    <text x="16" y="42" class="desc">Two layers ensure zero observable penalty in production code</text>
+
+    <!-- Mitigation 1 -->
+    <g transform="translate(16, 56)">
+      <rect x="0" y="0" width="28" height="28" rx="14" fill="#16a34a" opacity="0.15" stroke="#16a34a" stroke-width="0.8"/>
+      <text x="14" y="18" class="badge" fill="#16a34a" text-anchor="middle">1</text>
+      <text x="38" y="12" class="lbl" fill="#334155">Parity-Aware Register Allocation</text>
+      <text x="38" y="28" class="lbl-sm">ptxas assigns physical regs to ensure mixed parity across src0/src1/src2</text>
+    </g>
+
+    <!-- Mitigation 2 -->
+    <g transform="translate(16, 96)">
+      <rect x="0" y="0" width="28" height="28" rx="14" fill="#16a34a" opacity="0.15" stroke="#16a34a" stroke-width="0.8"/>
+      <text x="14" y="18" class="badge" fill="#16a34a" text-anchor="middle">2</text>
+      <text x="38" y="12" class="lbl" fill="#334155">.reuse Bits → RFC Caching</text>
+      <text x="38" y="28" class="lbl-sm">4-bit reuse[125:122] flags cache operands in RFC → bypass RF entirely</text>
+    </g>
+
+    <!-- Combined result -->
+    <g transform="translate(16, 140)">
+      <rect x="0" y="0" width="528" height="110" rx="8" fill="#ffffff" stroke="#16a34a" stroke-width="1"/>
+      <text x="14" y="20" class="zone-t" fill="#16a34a">Combined Effect — Measured FFMA Throughput:</text>
+
+      <g transform="translate(14, 34)">
+        <!-- Bar: Conflict -->
+        <rect x="0" y="0" width="270" height="18" rx="4" fill="#dc2626" opacity="0.2" stroke="#dc2626" stroke-width="0.6"/>
+        <text x="135" y="13" class="badge" fill="#dc2626" text-anchor="middle">3.034 cyc — all-same-bank (worst)</text>
+
+        <!-- Bar: No conflict -->
+        <rect x="0" y="24" width="180" height="18" rx="4" fill="#2563eb" opacity="0.2" stroke="#2563eb" stroke-width="0.6"/>
+        <text x="90" y="37" class="badge" fill="#2563eb" text-anchor="middle">2.038 cyc — mixed parity</text>
+
+        <!-- Bar: Optimized -->
+        <rect x="0" y="48" width="128" height="18" rx="4" fill="#16a34a" opacity="0.25" stroke="#16a34a" stroke-width="1"/>
+        <text x="62" y="61" class="badge" fill="#16a34a" text-anchor="middle">1.342 cyc — ptxas+RFC</text>
+
+        <text x="290" y="13" class="note">← penalty: +1.0 cyc (CuAssembler only)</text>
+        <text x="200" y="37" class="note">← baseline (no RFC)</text>
+        <text x="138" y="61" class="safe">← 34% faster (production)</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- ═══════ BOTTOM RIGHT: Why Zero Penalty Observed ═══════ -->
+  <g transform="translate(610, 600)">
+    <rect x="0" y="0" width="440" height="260" rx="12" fill="#f8fafc" stroke="#334155" stroke-width="1"/>
+    <text x="16" y="24" class="sect" fill="#334155">Why "Zero Penalty" at Application Level</text>
+
+    <!-- Table-like comparison -->
+    <g transform="translate(16, 44)">
+      <rect x="0" y="0" width="408" height="36" rx="4" fill="#f1f5f9" stroke="#e2e8f0" stroke-width="0.5"/>
+      <text x="8" y="14" class="badge" fill="#5b6679">WHO ASSIGNS REGS?</text>
+      <text x="190" y="14" class="badge" fill="#5b6679">CONFLICT?</text>
+      <text x="310" y="14" class="badge" fill="#5b6679">PENALTY?</text>
+
+      <!-- Row 1 -->
+      <text x="8" y="32" class="lbl-sm">ptxas (normal)</text>
+      <text x="190" y="32" class="safe">avoided</text>
+      <text x="310" y="32" class="safe">0 cyc</text>
+    </g>
+
+    <g transform="translate(16, 90)">
+      <rect x="0" y="0" width="408" height="22" rx="0" fill="none"/>
+      <text x="8" y="14" class="lbl-sm">PTX asm (+r)</text>
+      <text x="190" y="14" class="safe">ptxas mitigates</text>
+      <text x="310" y="14" class="safe">0 cyc</text>
+    </g>
+
+    <g transform="translate(16, 118)">
+      <rect x="0" y="0" width="408" height="22" rx="0" fill="none"/>
+      <text x="8" y="14" class="lbl-sm">CuAssembler patch</text>
+      <text x="190" y="14" class="warn">forced same-parity</text>
+      <text x="310" y="14" class="warn">+1.0 cyc</text>
+    </g>
+
+    <!-- Insight box -->
+    <g transform="translate(16, 156)">
+      <rect x="0" y="10" width="408" height="76" rx="8" fill="#EDE7FB" stroke="#6d28d9" stroke-width="0.8"/>
+      <text x="12" y="28" class="lbl" fill="#6d28d9">Hardware-Software Co-Design Insight:</text>
+      <text x="12" y="46" class="lbl-sm">A simpler 2-bank, 2-port RF is sufficient</text>
+      <text x="12" y="62" class="lbl-sm">because the compiler GUARANTEES conflict</text>
+      <text x="12" y="78" class="lbl-sm">avoidance — trading silicon area for compiler complexity.</text>
+    </g>
+  </g>
+
+  <!-- Source citation -->
+  <text x="36" y="880" class="note">[source: S12/case_1 (3520 FFMA binary-patched), S11/case_46, S12/case_6, S11/case_149-156]</text>
+</svg>

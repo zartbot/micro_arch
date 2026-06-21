@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 666" role="img" aria-label="6.6.2 DSMEM Fabric Latency Decomposition">
+  <defs>
+    <marker id="ar" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto">
+      <path d="M0,0 L7,3.5 L0,7 Z" fill="#5b6679"/>
+    </marker>
+  </defs>
+  <rect width="1080" height="666" fill="#ffffff"/>
+  <text x="36" y="32" style="font:600 14px 'Fraunces',serif;fill:#0b1220">6.6.2 DSMEM Fabric Latency Decomposition</text>
+  <text x="36" y="52" style="font:italic 11px 'Fraunces',serif;fill:#5b6679">Semantic visualization of measured microarchitectural behavior</text>
+
+    <g transform="translate(40,86)">
+      <rect x="0" y="0" width="1000" height="64" rx="10" fill="#EEF2FF" stroke="#1e40af" stroke-width="0.8"/>
+      <text x="20" y="22" style="font:600 12px 'Fraunces',serif;fill:#1e40af">DSMEM Round-Trip Latency Model</text>
+      <text x="20" y="44" style="font:500 10px 'JetBrains Mono',monospace;fill:#5b6679">Local smem access:          34 cyc (baseline) · DSMEM cross-CTA access:    219-225 cyc</text>
+    </g>    <line x1="540" y1="150" x2="540" y2="172" stroke="#5b6679" stroke-width="1.2" marker-end="url(#ar)"/>
+    <g transform="translate(40,176)">
+      <rect x="0" y="0" width="1000" height="64" rx="10" fill="#EEF2FF" stroke="#1e40af" stroke-width="0.8"/>
+      <text x="20" y="22" style="font:600 12px 'Fraunces',serif;fill:#1e40af">Step 1: mapa address translation     4 cyc  (PRMT-based remapping)</text>
+      <text x="20" y="44" style="font:500 10px 'JetBrains Mono',monospace;fill:#5b6679">Step 2: Request injection into       ~8 cyc  (getctarank + dispatch) · SM2SM fabric</text>
+    </g>    <line x1="540" y1="240" x2="540" y2="262" stroke="#5b6679" stroke-width="1.2" marker-end="url(#ar)"/>
+    <g transform="translate(40,266)">
+      <rect x="0" y="0" width="1000" height="64" rx="10" fill="#EEF2FF" stroke="#1e40af" stroke-width="0.8"/>
+      <text x="20" y="22" style="font:600 12px 'Fraunces',serif;fill:#1e40af">Step 3: SM-to-SM fabric transit      ~145 cyc (one-way visibility latency)</text>
+      <text x="20" y="44" style="font:500 10px 'JetBrains Mono',monospace;fill:#5b6679">Step 4: Remote smem read             ~34 cyc  (target SM&#x27;s shared memory) · Step 5: Response return transit      ~34 cyc</text>
+    </g>    <line x1="540" y1="330" x2="540" y2="352" stroke="#5b6679" stroke-width="1.2" marker-end="url(#ar)"/>
+    <g transform="translate(40,356)">
+      <rect x="0" y="0" width="1000" height="64" rx="10" fill="#EEF2FF" stroke="#1e40af" stroke-width="0.8"/>
+      <text x="20" y="22" style="font:600 12px 'Fraunces',serif;fill:#1e40af">Total estimated: 4 + 8 + 145 + 34 + 34 = 225 cyc ✓</text>
+      <text x="20" y="44" style="font:500 10px 'JetBrains Mono',monospace;fill:#5b6679">The 145-cyc one-way visibility is the SM2SM fabric transit time. · This is CONSTANT regardless of:</text>
+    </g>    <line x1="540" y1="420" x2="540" y2="442" stroke="#5b6679" stroke-width="1.2" marker-end="url(#ar)"/>
+    <g transform="translate(40,446)">
+      <rect x="0" y="0" width="1000" height="64" rx="10" fill="#EEF2FF" stroke="#1e40af" stroke-width="0.8"/>
+      <text x="20" y="22" style="font:600 12px 'Fraunces',serif;fill:#1e40af">- Cluster size (2, 4, or 8 CTAs): 0% variance (topology-invariant)</text>
+      <text x="20" y="44" style="font:500 10px 'JetBrains Mono',monospace;fill:#5b6679">- Target distance (adjacent vs cross-GPC): identical · Implication: SM2SM is a dedicated point-to-point mesh, NOT a shar</text>
+    </g>    <line x1="540" y1="510" x2="540" y2="532" stroke="#5b6679" stroke-width="1.2" marker-end="url(#ar)"/>
+    <g transform="translate(40,536)">
+      <rect x="0" y="0" width="1000" height="64" rx="10" fill="#EEF2FF" stroke="#1e40af" stroke-width="0.8"/>
+      <text x="20" y="22" style="font:600 12px 'Fraunces',serif;fill:#1e40af">Each SM pair has a dedicated channel with fixed latency.</text>
+      <text x="20" y="44" style="font:500 10px 'JetBrains Mono',monospace;fill:#5b6679"></text>
+    </g>
+</svg>

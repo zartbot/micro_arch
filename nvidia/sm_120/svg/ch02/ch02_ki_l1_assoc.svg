@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 100" role="img"
+     aria-label="KI-2.6: L1 fully associative ~712-way — zero conflict misses at any stride">
+  <defs><style><![CDATA[
+    .ttl{font:600 13px "Fraunces",serif;fill:#0b1220}.lbl{font:600 11px "JetBrains Mono",monospace;fill:#2a3548}.lbl-sm{font:500 10px "JetBrains Mono",monospace;fill:#5b6679}.num{font:700 15px "JetBrains Mono",monospace}.stage{font:600 10px "JetBrains Mono",monospace;fill:#fff}
+  ]]></style></defs>
+  <rect width="1080" height="100" fill="#ffffff"/>
+  <text x="36" y="22" class="ttl">KI-2.6: L1 Fully Associative (~712-way) — Zero Conflict Misses at ANY Access Pattern</text>
+  <g transform="translate(36,38)">
+    <rect width="300" height="45" rx="8" fill="#F0FDF4" stroke="#059669" stroke-width="1"/>
+    <text x="15" y="18" class="lbl" fill="#065F46">89 KB / 128B line = 712 entries</text>
+    <text x="15" y="36" class="lbl-sm">Stride=128B cliff = Stride=4KB cliff at N=720</text>
+  </g>
+  <g transform="translate(356,38)">
+    <rect width="340" height="45" rx="8" fill="#EFF6FF" stroke="#2563EB" stroke-width="1"/>
+    <text x="15" y="18" class="lbl" fill="#1D4ED8">Proof: NUM_SETS = 1 (fully assoc)</text>
+    <text x="15" y="36" class="lbl-sm">Set-assoc would cliff earlier at stride=4KB</text>
+  </g>
+  <g transform="translate(716,38)">
+    <rect width="328" height="45" rx="8" fill="#FFFBEB" stroke="#D97706" stroke-width="1"/>
+    <text x="15" y="18" class="lbl" fill="#92400E">No padding/offset tricks needed</text>
+    <text x="15" y="36" class="lbl-sm">Matrix column traversal, gather ops: all safe</text>
+  </g>
+</svg>

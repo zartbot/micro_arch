@@ -1,0 +1,238 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 920" role="img" aria-label="6.1.2a TMA Pipeline Queue Saturation Model">
+  <defs>
+    <marker id="ar" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto">
+      <path d="M0,0 L7,3.5 L0,7 Z" fill="#5b6679"/>
+    </marker>
+    <marker id="ar-blue" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto">
+      <path d="M0,0 L7,3.5 L0,7 Z" fill="#1e40af"/>
+    </marker>
+    <linearGradient id="queueGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#dbeafe"/>
+      <stop offset="100%" stop-color="#bfdbfe"/>
+    </linearGradient>
+    <linearGradient id="satGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#fef3c7"/>
+      <stop offset="100%" stop-color="#fde68a"/>
+    </linearGradient>
+  </defs>
+  <rect width="1080" height="920" fill="#ffffff"/>
+
+  <!-- Title -->
+  <text x="36" y="32" style="font:600 14px 'Fraunces',serif;fill:#0b1220">6.1.2a TMA Pipeline Queue Saturation Model (Inferred from Measurements)</text>
+  <text x="36" y="52" style="font:italic 11px 'Fraunces',serif;fill:#5b6679">SM_120 GB202 — TMA engine two-phase architecture with ≥32-entry descriptor FIFO</text>
+
+  <!-- ═══════════════ UPPER SECTION: Architecture Diagram ═══════════════ -->
+
+  <!-- Issue Side Box -->
+  <g transform="translate(36,76)">
+    <rect x="0" y="0" width="220" height="160" rx="10" fill="#EEF2FF" stroke="#1e40af" stroke-width="1.2"/>
+    <text x="12" y="24" style="font:600 12px 'Fraunces',serif;fill:#1e40af">Issue Side</text>
+    <text x="12" y="42" style="font:500 10px 'JetBrains Mono',monospace;fill:#5b6679">SM → TMA Engine</text>
+    <line x1="12" y1="52" x2="208" y2="52" stroke="#c7d2fe" stroke-width="0.8"/>
+    <text x="12" y="72" style="font:500 10px 'JetBrains Mono',monospace;fill:#374151">UTMALDG dispatch:</text>
+    <text x="12" y="88" style="font:700 12px 'JetBrains Mono',monospace;fill:#dc2626">148 cyc/op</text>
+    <text x="12" y="106" style="font:500 9px 'JetBrains Mono',monospace;fill:#6b7280">(measured, S22/case_40)</text>
+    <line x1="12" y1="116" x2="208" y2="116" stroke="#c7d2fe" stroke-width="0.8"/>
+    <text x="12" y="134" style="font:500 10px 'JetBrains Mono',monospace;fill:#374151">Max issue rate:</text>
+    <text x="12" y="150" style="font:600 10px 'JetBrains Mono',monospace;fill:#1e40af">1 TMA / 148 cyc / warp</text>
+  </g>
+
+  <!-- Arrow: Issue → Queue -->
+  <line x1="260" y1="156" x2="310" y2="156" stroke="#5b6679" stroke-width="1.5" marker-end="url(#ar)"/>
+  <text x="267" y="148" style="font:italic 9px 'JetBrains Mono',monospace;fill:#5b6679">dispatch</text>
+
+  <!-- Queue FIFO (central) -->
+  <g transform="translate(316,86)">
+    <rect x="0" y="0" width="380" height="140" rx="10" fill="url(#queueGrad)" stroke="#1e40af" stroke-width="1.2"/>
+    <text x="120" y="22" style="font:600 13px 'Fraunces',serif;fill:#1e40af">Descriptor FIFO Queue</text>
+    <text x="130" y="38" style="font:italic 10px 'JetBrains Mono',monospace;fill:#6b7280">≥ 32 entries (no cliff observed)</text>
+    <!-- Queue slots visualization -->
+    <g transform="translate(15,52)">
+      <!-- 16 slots shown (representing ≥32) -->
+      <rect x="0" y="0" width="20" height="28" rx="3" fill="#3b82f6" stroke="#1e40af" stroke-width="0.6"/>
+      <rect x="22" y="0" width="20" height="28" rx="3" fill="#3b82f6" stroke="#1e40af" stroke-width="0.6"/>
+      <rect x="44" y="0" width="20" height="28" rx="3" fill="#3b82f6" stroke="#1e40af" stroke-width="0.6"/>
+      <rect x="66" y="0" width="20" height="28" rx="3" fill="#3b82f6" stroke="#1e40af" stroke-width="0.6"/>
+      <rect x="88" y="0" width="20" height="28" rx="3" fill="#60a5fa" stroke="#1e40af" stroke-width="0.6"/>
+      <rect x="110" y="0" width="20" height="28" rx="3" fill="#60a5fa" stroke="#1e40af" stroke-width="0.6"/>
+      <rect x="132" y="0" width="20" height="28" rx="3" fill="#60a5fa" stroke="#1e40af" stroke-width="0.6"/>
+      <rect x="154" y="0" width="20" height="28" rx="3" fill="#60a5fa" stroke="#1e40af" stroke-width="0.6"/>
+      <rect x="176" y="0" width="20" height="28" rx="3" fill="#93c5fd" stroke="#1e40af" stroke-width="0.6"/>
+      <rect x="198" y="0" width="20" height="28" rx="3" fill="#93c5fd" stroke="#1e40af" stroke-width="0.6"/>
+      <rect x="220" y="0" width="20" height="28" rx="3" fill="#93c5fd" stroke="#1e40af" stroke-width="0.6"/>
+      <rect x="242" y="0" width="20" height="28" rx="3" fill="#93c5fd" stroke="#1e40af" stroke-width="0.6"/>
+      <rect x="264" y="0" width="20" height="28" rx="3" fill="#bfdbfe" stroke="#1e40af" stroke-width="0.6"/>
+      <rect x="286" y="0" width="20" height="28" rx="3" fill="#bfdbfe" stroke="#1e40af" stroke-width="0.6"/>
+      <rect x="308" y="0" width="20" height="28" rx="3" fill="#bfdbfe" stroke="#1e40af" stroke-width="0.6"/>
+      <rect x="330" y="0" width="20" height="28" rx="3" fill="#bfdbfe" stroke="#1e40af" stroke-width="0.6"/>
+      <!-- Labels inside slots -->
+      <text x="6" y="18" style="font:700 7px 'JetBrains Mono',monospace;fill:#ffffff">d1</text>
+      <text x="28" y="18" style="font:700 7px 'JetBrains Mono',monospace;fill:#ffffff">d2</text>
+      <text x="50" y="18" style="font:700 7px 'JetBrains Mono',monospace;fill:#ffffff">d3</text>
+      <text x="72" y="18" style="font:700 7px 'JetBrains Mono',monospace;fill:#ffffff">d4</text>
+      <text x="96" y="18" style="font:700 7px 'JetBrains Mono',monospace;fill:#ffffff">...</text>
+      <text x="118" y="18" style="font:700 7px 'JetBrains Mono',monospace;fill:#ffffff">...</text>
+      <text x="140" y="18" style="font:700 7px 'JetBrains Mono',monospace;fill:#ffffff">...</text>
+      <text x="158" y="18" style="font:700 7px 'JetBrains Mono',monospace;fill:#e0e7ff">d8</text>
+      <text x="182" y="18" style="font:700 7px 'JetBrains Mono',monospace;fill:#1e40af">...</text>
+      <text x="204" y="18" style="font:700 7px 'JetBrains Mono',monospace;fill:#1e40af">...</text>
+      <text x="226" y="18" style="font:700 7px 'JetBrains Mono',monospace;fill:#1e40af">...</text>
+      <text x="244" y="18" style="font:700 7px 'JetBrains Mono',monospace;fill:#1e40af">d16</text>
+      <text x="270" y="18" style="font:700 7px 'JetBrains Mono',monospace;fill:#1e40af">...</text>
+      <text x="292" y="18" style="font:700 7px 'JetBrains Mono',monospace;fill:#1e40af">...</text>
+      <text x="314" y="18" style="font:700 7px 'JetBrains Mono',monospace;fill:#1e40af">...</text>
+      <text x="332" y="18" style="font:700 7px 'JetBrains Mono',monospace;fill:#1e40af">32</text>
+    </g>
+    <!-- Queue annotation -->
+    <text x="15" y="100" style="font:500 9px 'JetBrains Mono',monospace;fill:#374151">Each entry = one TMA descriptor (address + dims + strides + format)</text>
+    <text x="15" y="116" style="font:500 9px 'JetBrains Mono',monospace;fill:#374151">SM_90 had ~8 entries; SM_120 has ≥32 (4x deeper)</text>
+    <text x="15" y="130" style="font:600 9px 'JetBrains Mono',monospace;fill:#dc2626">Key: deeper queue = more latency hiding = higher throughput</text>
+  </g>
+
+  <!-- Arrow: Queue → Service -->
+  <line x1="700" y1="156" x2="750" y2="156" stroke="#5b6679" stroke-width="1.5" marker-end="url(#ar)"/>
+  <text x="709" y="148" style="font:italic 9px 'JetBrains Mono',monospace;fill:#5b6679">dequeue</text>
+
+  <!-- Service Side Box -->
+  <g transform="translate(756,76)">
+    <rect x="0" y="0" width="286" height="160" rx="10" fill="#FEF3C7" stroke="#92400e" stroke-width="1.2"/>
+    <text x="12" y="24" style="font:600 12px 'Fraunces',serif;fill:#92400e">Service Side</text>
+    <text x="12" y="42" style="font:500 10px 'JetBrains Mono',monospace;fill:#78350f">TMA Engine → L2/DRAM → smem</text>
+    <line x1="12" y1="52" x2="274" y2="52" stroke="#fcd34d" stroke-width="0.8"/>
+    <text x="12" y="70" style="font:500 10px 'JetBrains Mono',monospace;fill:#374151">Descriptor decode:</text>
+    <text x="12" y="86" style="font:700 11px 'JetBrains Mono',monospace;fill:#92400e">~440 cyc (fixed)</text>
+    <line x1="12" y1="96" x2="274" y2="96" stroke="#fcd34d" stroke-width="0.8"/>
+    <text x="12" y="112" style="font:500 10px 'JetBrains Mono',monospace;fill:#374151">Data transfer (DMA write):</text>
+    <text x="12" y="128" style="font:700 11px 'JetBrains Mono',monospace;fill:#92400e">16.1 B/cyc → 0.062 cyc/B</text>
+    <line x1="12" y1="138" x2="274" y2="138" stroke="#fcd34d" stroke-width="0.8"/>
+    <text x="12" y="154" style="font:500 10px 'JetBrains Mono',monospace;fill:#374151">Completion: mbarrier signal</text>
+  </g>
+
+  <!-- ═══════════════ MIDDLE SECTION: Queue Model Formula ═══════════════ -->
+  <g transform="translate(36,260)">
+    <rect x="0" y="0" width="1006" height="80" rx="8" fill="#f0fdf4" stroke="#16a34a" stroke-width="1"/>
+    <text x="20" y="22" style="font:600 12px 'Fraunces',serif;fill:#16a34a">Queue Saturation Model</text>
+    <text x="20" y="44" style="font:500 11px 'JetBrains Mono',monospace;fill:#374151">Effective throughput = min(queue_depth × issue_rate, service_rate)</text>
+    <text x="20" y="64" style="font:500 11px 'JetBrains Mono',monospace;fill:#374151">Per-load cost: cyc/load = max(service_time / d, DMA_write_floor)    where service_time ≈ 479 cyc, DMA_floor ≈ 62 cyc (1KB/16.1 B/cyc)</text>
+  </g>
+
+  <!-- ═══════════════ LOWER SECTION: Saturation Curve Chart ═══════════════ -->
+  <g transform="translate(36,360)">
+    <rect x="0" y="0" width="1006" height="340" rx="8" fill="#fafafa" stroke="#d1d5db" stroke-width="0.8"/>
+    <text x="20" y="24" style="font:600 12px 'Fraunces',serif;fill:#0b1220">Pipeline Depth vs Per-Load Cost (Measured)</text>
+
+    <!-- Chart area -->
+    <g transform="translate(80,50)">
+      <!-- Y axis -->
+      <line x1="0" y1="0" x2="0" y2="250" stroke="#374151" stroke-width="1.2"/>
+      <text x="-10" y="-8" style="font:600 9px 'JetBrains Mono',monospace;fill:#374151" text-anchor="end">cyc/load</text>
+      <!-- Y labels -->
+      <text x="-8" y="4" style="font:500 9px 'JetBrains Mono',monospace;fill:#6b7280" text-anchor="end">1537</text>
+      <text x="-8" y="65" style="font:500 9px 'JetBrains Mono',monospace;fill:#6b7280" text-anchor="end">1000</text>
+      <text x="-8" y="106" style="font:500 9px 'JetBrains Mono',monospace;fill:#6b7280" text-anchor="end">500</text>
+      <text x="-8" y="177" style="font:500 9px 'JetBrains Mono',monospace;fill:#6b7280" text-anchor="end">200</text>
+      <text x="-8" y="226" style="font:500 9px 'JetBrains Mono',monospace;fill:#6b7280" text-anchor="end">100</text>
+      <!-- Y grid lines -->
+      <line x1="0" y1="65" x2="820" y2="65" stroke="#e5e7eb" stroke-width="0.5" stroke-dasharray="3,3"/>
+      <line x1="0" y1="106" x2="820" y2="106" stroke="#e5e7eb" stroke-width="0.5" stroke-dasharray="3,3"/>
+      <line x1="0" y1="177" x2="820" y2="177" stroke="#e5e7eb" stroke-width="0.5" stroke-dasharray="3,3"/>
+      <line x1="0" y1="226" x2="820" y2="226" stroke="#e5e7eb" stroke-width="0.5" stroke-dasharray="3,3"/>
+
+      <!-- X axis -->
+      <line x1="0" y1="250" x2="820" y2="250" stroke="#374151" stroke-width="1.2"/>
+      <text x="410" y="280" style="font:600 9px 'JetBrains Mono',monospace;fill:#374151" text-anchor="middle">Pipeline Depth (d)</text>
+
+      <!-- X labels -->
+      <text x="0" y="264" style="font:500 9px 'JetBrains Mono',monospace;fill:#6b7280" text-anchor="middle">1</text>
+      <text x="130" y="264" style="font:500 9px 'JetBrains Mono',monospace;fill:#6b7280" text-anchor="middle">2</text>
+      <text x="260" y="264" style="font:500 9px 'JetBrains Mono',monospace;fill:#6b7280" text-anchor="middle">4</text>
+      <text x="390" y="264" style="font:500 9px 'JetBrains Mono',monospace;fill:#6b7280" text-anchor="middle">8</text>
+      <text x="520" y="264" style="font:500 9px 'JetBrains Mono',monospace;fill:#6b7280" text-anchor="middle">16</text>
+      <text x="780" y="264" style="font:500 9px 'JetBrains Mono',monospace;fill:#6b7280" text-anchor="middle">32</text>
+
+      <!-- DMA floor line (62 cyc → scaled) -->
+      <line x1="0" y1="240" x2="820" y2="240" stroke="#dc2626" stroke-width="1.2" stroke-dasharray="6,3"/>
+      <text x="825" y="244" style="font:600 9px 'JetBrains Mono',monospace;fill:#dc2626">DMA floor</text>
+      <text x="825" y="256" style="font:500 8px 'JetBrains Mono',monospace;fill:#dc2626">62 cyc</text>
+
+      <!-- Measured data curve (blue, thick) -->
+      <!-- d=1:1537 d=2:500.5 d=4:263.8 d=8:190.9 d=16:156.6 d=32:139.2 -->
+      <!-- Scale: Y: 0=1537 at top, 250px for 0. Let's use: y = 250 - (val/1537)*250 → actually let's make it: y = (1-val/1600)*250 approx -->
+      <!-- Better: linear scale 0-1600 mapped to 250-0 px. y = 250*(1 - val/1600) wait no: y=0 means val=1600, y=250 means val=0 -->
+      <!-- y = 250 - (val/1600)*250 = 250*(1-val/1600) -->
+      <!-- d1: 1537 → y=250*(1-1537/1600)=250*0.039=9.8 ≈10 -->
+      <!-- d2: 500.5 → y=250*(1-500.5/1600)=250*0.687=172 wait that's wrong. -->
+      <!-- Let me recalculate: y = (1600-val)/1600 * 250 -->
+      <!-- d1: (1600-1537)/1600*250 = 63/1600*250 = 9.8 ≈ 10 -->
+      <!-- d2: (1600-500.5)/1600*250 = 1099.5/1600*250 = 171.8 ≈ 172 -->
+      <!-- d4: (1600-263.8)/1600*250 = 1336.2/1600*250 = 208.8 ≈ 209 -->
+      <!-- d8: (1600-190.9)/1600*250 = 1409.1/1600*250 = 220.2 ≈ 220 -->
+      <!-- d16: (1600-156.6)/1600*250 = 1443.4/1600*250 = 225.5 ≈ 226 -->
+      <!-- d32: (1600-139.2)/1600*250 = 1460.8/1600*250 = 228.3 ≈ 228 -->
+      <polyline points="0,10 130,172 260,209 390,220 520,226 780,228" fill="none" stroke="#1e40af" stroke-width="2.5" stroke-linejoin="round"/>
+
+      <!-- Data points with labels -->
+      <circle cx="0" cy="10" r="5" fill="#1e40af"/>
+      <text x="8" y="6" style="font:700 9px 'JetBrains Mono',monospace;fill:#1e40af">1537</text>
+      <text x="8" y="18" style="font:500 8px 'JetBrains Mono',monospace;fill:#6b7280">1.0x</text>
+
+      <circle cx="130" cy="172" r="5" fill="#1e40af"/>
+      <text x="138" y="168" style="font:700 9px 'JetBrains Mono',monospace;fill:#1e40af">500.5</text>
+      <text x="138" y="188" style="font:500 8px 'JetBrains Mono',monospace;fill:#6b7280">3.1x</text>
+
+      <circle cx="260" cy="209" r="5" fill="#1e40af"/>
+      <text x="268" y="205" style="font:700 9px 'JetBrains Mono',monospace;fill:#1e40af">263.8</text>
+      <text x="268" y="219" style="font:500 8px 'JetBrains Mono',monospace;fill:#6b7280">5.8x</text>
+
+      <circle cx="390" cy="220" r="5" fill="#1e40af"/>
+      <text x="398" y="216" style="font:700 9px 'JetBrains Mono',monospace;fill:#1e40af">190.9</text>
+      <text x="398" y="228" style="font:500 8px 'JetBrains Mono',monospace;fill:#6b7280">8.1x</text>
+
+      <circle cx="520" cy="226" r="5" fill="#1e40af"/>
+      <text x="528" y="222" style="font:700 9px 'JetBrains Mono',monospace;fill:#1e40af">156.6</text>
+      <text x="528" y="234" style="font:500 8px 'JetBrains Mono',monospace;fill:#6b7280">9.8x</text>
+
+      <circle cx="780" cy="228" r="5" fill="#1e40af"/>
+      <text x="720" y="222" style="font:700 9px 'JetBrains Mono',monospace;fill:#1e40af">139.2</text>
+      <text x="720" y="234" style="font:500 8px 'JetBrains Mono',monospace;fill:#6b7280">11.0x</text>
+
+      <!-- Annotations: sweet spot region -->
+      <rect x="95" y="155" width="200" height="72" rx="4" fill="none" stroke="#16a34a" stroke-width="1.5" stroke-dasharray="4,2"/>
+      <text x="195" y="270" style="font:600 9px 'JetBrains Mono',monospace;fill:#16a34a" text-anchor="middle">← Sweet Spot (d=2~4) →</text>
+      <text x="195" y="282" style="font:500 8px 'JetBrains Mono',monospace;fill:#16a34a" text-anchor="middle">Largest marginal gain per stage</text>
+    </g>
+  </g>
+
+  <!-- ═══════════════ BOTTOM SECTION: Key Takeaways ═══════════════ -->
+  <g transform="translate(36,720)">
+    <rect x="0" y="0" width="1006" height="195" rx="8" fill="#FFF7ED" stroke="#c2410c" stroke-width="1"/>
+    <text x="20" y="24" style="font:600 12px 'Fraunces',serif;fill:#c2410c">Architecture Insights &amp; Bottleneck Analysis</text>
+
+    <!-- Left column: Bottleneck explanation -->
+    <g transform="translate(20,40)">
+      <text x="0" y="14" style="font:600 10px 'JetBrains Mono',monospace;fill:#374151">Why measured 139 cyc &gt; predicted 15 cyc at d=32:</text>
+      <text x="0" y="32" style="font:500 9px 'JetBrains Mono',monospace;fill:#6b7280">• DMA write rate bottleneck: 1KB / 16.1 B/cyc = 62 cyc minimum</text>
+      <text x="0" y="48" style="font:500 9px 'JetBrains Mono',monospace;fill:#6b7280">• smem write port contention + mbarrier signal overhead</text>
+      <text x="0" y="64" style="font:500 9px 'JetBrains Mono',monospace;fill:#6b7280">• Residual descriptor decode serialization at head-of-queue</text>
+      <text x="0" y="84" style="font:600 10px 'JetBrains Mono',monospace;fill:#374151">Practical design implication:</text>
+      <text x="0" y="102" style="font:500 9px 'JetBrains Mono',monospace;fill:#6b7280">• d=1→d=2: 3.1x (largest single improvement, double buffering)</text>
+      <text x="0" y="118" style="font:500 9px 'JetBrains Mono',monospace;fill:#6b7280">• d=2→d=4: 1.9x (strong, triple/quad buffering)</text>
+      <text x="0" y="134" style="font:500 9px 'JetBrains Mono',monospace;fill:#6b7280">• d=4→d=8: 1.4x (moderate, diminishing returns begin)</text>
+      <text x="0" y="150" style="font:500 9px 'JetBrains Mono',monospace;fill:#6b7280">• d=16→d=32: 1.12x (negligible — DMA floor dominates)</text>
+    </g>
+
+    <!-- Right column: Comparison box -->
+    <g transform="translate(540,40)">
+      <rect x="0" y="0" width="440" height="140" rx="6" fill="#ffffff" stroke="#e5e7eb" stroke-width="0.8"/>
+      <text x="14" y="20" style="font:600 10px 'JetBrains Mono',monospace;fill:#0b1220">Generation Comparison</text>
+      <line x1="14" y1="28" x2="426" y2="28" stroke="#e5e7eb" stroke-width="0.6"/>
+      <text x="14" y="48" style="font:500 10px 'JetBrains Mono',monospace;fill:#374151">SM_90 (Hopper):  ~8 queue entries</text>
+      <text x="14" y="66" style="font:700 10px 'JetBrains Mono',monospace;fill:#1e40af">SM_120 (Blackwell): ≥32 queue entries (4x deeper)</text>
+      <line x1="14" y1="78" x2="426" y2="78" stroke="#e5e7eb" stroke-width="0.6"/>
+      <text x="14" y="96" style="font:500 9px 'JetBrains Mono',monospace;fill:#6b7280">Deeper queue enables more latency hiding without</text>
+      <text x="14" y="112" style="font:500 9px 'JetBrains Mono',monospace;fill:#6b7280">software loop complexity — hardware manages the</text>
+      <text x="14" y="128" style="font:500 9px 'JetBrains Mono',monospace;fill:#6b7280">outstanding descriptor tracking automatically.</text>
+    </g>
+  </g>
+</svg>

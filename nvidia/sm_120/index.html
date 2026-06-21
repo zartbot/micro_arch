@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dissecting SM_120 (GB202 Blackwell) · SM_120 Microarch Reference</title>
+<link rel="stylesheet" href="assets/css/style.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" integrity="sha384-nB0miv6/jRmo5UMMR1wu3Gz6NLsoTkbqJghGIsx//Rlm+ZU03BU6SQNC66uf4l5+" crossorigin="anonymous">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/styles/atom-one-light.min.css">
+<style>
+/* protect non-color overrides over hljs theme */
+pre code.hljs { background: transparent !important; padding: 0 !important; }
+</style>
+</head>
+<body>
+<div class="shell">
+<aside class="toc">
+
+<div class="toc-brand">SM_120 <span class="accent">GB202</span> · <em>Microarch</em></div>
+<span class="toc-tag">FINAL REPORT · 2026</span>
+<h4>All Chapters</h4>
+<a href="01_architecture_overview.html">01 · Architecture Overview</a>
+<a href="02_memory_subsystem.html">02 · Memory Subsystem</a>
+<a href="03_sm_microarchitecture.html">03 · SM Microarchitecture</a>
+<a href="04_tensorcore_architecture.html">04 · TensorCore Architecture</a>
+<a href="05_instruction_level_characterization.html">05 · Instruction-Level Characterization</a>
+<a href="06_on_chip_network_async.html">06 · On-Chip Network &amp; Async</a>
+<a href="07_warp_scheduler_control.html">07 · Warp Scheduler &amp; Control</a>
+<a href="08_workload_analysis.html">08 · Workload Analysis</a>
+<a href="09_power_thermal_efficiency.html">09 · Power, Thermal &amp; Efficiency</a>
+<a href="10_system_level_multi_gpu.html">10 · System-Level &amp; Multi-GPU</a>
+<a href="11_optimization_guidance.html">11 · Optimization Guidance</a>
+<a href="12_ptxas_compiler_behavior.html">12 · ptxas Compiler Behavior</a>
+<a href="13_unified_performance_model.html">13 · Unified Performance Model</a>
+<a href="14_sm100_to_sm120_porting_guide.html">14 · SM_100 → SM_120 Porting Guide</a>
+<a href="15_agent_ground_truth.html">15 · Agent Ground Truth</a>
+<a href="16_open_questions.html">16 · Open Questions</a>
+<a href="17_cross_reference_map.html">17 · Cross-Reference Map</a>
+<a href="18_appendix_a_test_coverage.html">18 · Appendix A — Test Coverage</a>
+<a href="19_appendix_b_machine_readable.html">19 · Appendix B — Machine-Readable Parameters</a>
+<a href="20_appendix_c_methodology.html">20 · Appendix C — Measurement Methodology</a>
+</aside>
+<main class="content">
+
+<header class="hero">
+<div class="hero-eyebrow"><span class="pulse"></span>NVIDIA · BLACKWELL · COMPUTE 12.0 · CUDA 13.3</div>
+<h1 class="hero-title">Dissecting <em>SM_120</em> through Microbenchmarking</h1>
+<p class="hero-sub">A microarchitecture engineering reference, accurate to the SM-cycle level, synthesized from 26 sections, 1,542 microbenchmark cases, and ~13,400 lines of measurements on the RTX PRO 5000 72GB (GB202).</p>
+<div class="hero-meta">
+<div class="meta-cell"><div class="lbl">SM count</div><div class="val">110<small>of 192</small></div></div>
+<div class="meta-cell"><div class="lbl">Boost clock</div><div class="val">2.572<small>GHz</small></div></div>
+<div class="meta-cell"><div class="lbl">DRAM (GDDR7)</div><div class="val">1344<small>GB/s · 384-bit</small></div></div>
+<div class="meta-cell"><div class="lbl">L2 cache</div><div class="val">96<small>MB · 12 partitions</small></div></div>
+<div class="meta-cell"><div class="lbl">FP16 peak</div><div class="val">271<small>TFLOPS</small></div></div>
+<div class="meta-cell"><div class="lbl">MXFP4 peak</div><div class="val">1077<small>TFLOPS</small></div></div>
+<div class="meta-cell"><div class="lbl">TC latency</div><div class="val">29<small>cyc · 15.88 cyc/mma</small></div></div>
+<div class="meta-cell"><div class="lbl">Test cases</div><div class="val">1542<small>1518 pass</small></div></div>
+</div>
+</header>
+
+<h2 class="ch-title" id="chapter-cards">Chapter Map</h2>
+<section class="ch-grid">
+<a href="01_architecture_overview.html" class="ch-card"><span class="ch-num">CHAPTER 01</span><div class="ch-name">Architecture Overview</div><div class="ch-desc">Chip topology, SM microstructure, feature matrix vs SM_100/SM_110, die-level constraints.</div><div class="ch-meta"><span><span class="dot"></span>491 lines · §1.1–1.5</span></div></a>
+<a href="02_memory_subsystem.html" class="ch-card"><span class="ch-num">CHAPTER 02</span><div class="ch-name">Memory Subsystem</div><div class="ch-desc">L1/Smem (pipelined bank conflicts), L2 (XOR hash, 96 MB), GDDR7 (bank groups), coherence, ordering, atomics, DSMEM.</div><div class="ch-meta"><span><span class="dot"></span>1210 lines · KI-2.1–2.10</span></div></a>
+<a href="03_sm_microarchitecture.html" class="ch-card"><span class="ch-num">CHAPTER 03</span><div class="ch-name">SM Microarchitecture</div><div class="ch-desc">16 pipes, 128-bit encoding, dual-subpipe FMA, 2-bank RF (R%2), RFC ≥24, CGGTY scheduler, hybrid stall/SB model.</div><div class="ch-meta"><span><span class="dot"></span>993 lines · KI-3.1–3.7</span></div></a>
+<a href="04_tensorcore_architecture.html" class="ch-card"><span class="ch-num">CHAPTER 04</span><div class="ch-name">TensorCore Architecture</div><div class="ch-desc">MMA shapes (HMMA/QMMA/OMMA.SF/IMMA), pipeline depth 1.81/4.09, FP8/FP6/FP4/MX, sparsity, ldmatrix/stmatrix.</div><div class="ch-meta"><span><span class="dot"></span>784 lines · KI-4.1–4.10</span></div></a>
+<a href="05_instruction_level_characterization.html" class="ch-card"><span class="ch-num">CHAPTER 05</span><div class="ch-name">Instruction-Level Characterization</div><div class="ch-desc">INT/FP/logic per-instruction catalog, dual-subpipe co-issue, FP64 EU architecture, SFU pipeline depth 5, SHFL 29-cyc.</div><div class="ch-meta"><span><span class="dot"></span>903 lines · KI-5.1–5.6</span></div></a>
+<a href="06_on_chip_network_async.html" class="ch-card"><span class="ch-num">CHAPTER 06</span><div class="ch-name">On-Chip Network &amp; Async</div><div class="ch-desc">TMA (queue ≥32, 479 cyc, multicast ABSENT), cluster (cross-GPC), DSMEM fabric, barrier (O(1) CGA), software pipeline.</div><div class="ch-meta"><span><span class="dot"></span>810 lines · KI-6.1–6.9</span></div></a>
+<a href="07_warp_scheduler_control.html" class="ch-card"><span class="ch-num">CHAPTER 07</span><div class="ch-name">Warp Scheduler &amp; Control</div><div class="ch-desc">CGGTY decision flow, stall/yield/SB control codes, I-cache (4KB L0 / 64KB L1), divergence O(2^D), ILP×TLP iso-throughput.</div><div class="ch-meta"><span><span class="dot"></span>949 lines · KI-7.1–7.10</span></div></a>
+<a href="08_workload_analysis.html" class="ch-card"><span class="ch-num">CHAPTER 08</span><div class="ch-name">Workload Analysis</div><div class="ch-desc">588-shape GEMM sweep, M-scaling 3-regime model, FlashAttention thin-K bottleneck, roofline, GEMV L2 sweet spot, MoE.</div><div class="ch-meta"><span><span class="dot"></span>966 lines · KI-8.1–8.9</span></div></a>
+<a href="09_power_thermal_efficiency.html" class="ch-card"><span class="ch-num">CHAPTER 09</span><div class="ch-name">Power, Thermal &amp; Efficiency</div><div class="ch-desc">Per-instruction power, TFLOPS/W, DVFS linearity, thermal headroom.</div><div class="ch-meta"><span><span class="dot"></span>347 lines · KI-9.1–9.6</span></div></a>
+<a href="10_system_level_multi_gpu.html" class="ch-card"><span class="ch-num">CHAPTER 10</span><div class="ch-name">System-Level &amp; Multi-GPU</div><div class="ch-desc">PCIe Gen5, P2P, kernel launch overhead, CTA scheduling, system-level multi-GPU.</div><div class="ch-meta"><span><span class="dot"></span>1050 lines · KI-10.1–10.7</span></div></a>
+<a href="11_optimization_guidance.html" class="ch-card"><span class="ch-num">CHAPTER 11</span><div class="ch-name">Optimization Guidance</div><div class="ch-desc">CUTLASS / DeepGeMM / FlashInfer optimization strategies and decision recipes.</div><div class="ch-meta"><span><span class="dot"></span>352 lines · KI-11.1–11.8</span></div></a>
+<a href="12_ptxas_compiler_behavior.html" class="ch-card"><span class="ch-num">CHAPTER 12</span><div class="ch-name">ptxas Compiler Behavior</div><div class="ch-desc">Stall counter hardware model, ptxas 6-pass pipeline, CuAssembler optimization surface (+6.1% MMA), DCE/folding.</div><div class="ch-meta"><span><span class="dot"></span>740 lines · Compiler Analysis</span></div></a>
+<a href="13_unified_performance_model.html" class="ch-card"><span class="ch-num">CHAPTER 13</span><div class="ch-name">Unified Performance Model</div><div class="ch-desc">Roofline formulas, multi-resource bottleneck framework, worked examples.</div><div class="ch-meta"><span><span class="dot"></span>457 lines · Performance Model</span></div></a>
+<a href="14_sm100_to_sm120_porting_guide.html" class="ch-card"><span class="ch-num">CHAPTER 14</span><div class="ch-name">SM_100 → SM_120 Porting Guide</div><div class="ch-desc">Feature mapping, hard constraints (no TM, no multicast), case studies for porting from SM_100.</div><div class="ch-meta"><span><span class="dot"></span>285 lines · Porting Guide</span></div></a>
+<a href="15_agent_ground_truth.html" class="ch-card"><span class="ch-num">CHAPTER 15</span><div class="ch-name">Agent Ground Truth</div><div class="ch-desc">Decision trees, parameter tables, validation protocol — knowledge base for an LLM optimization agent.</div><div class="ch-meta"><span><span class="dot"></span>697 lines · Agent Knowledge Base</span></div></a>
+<a href="16_open_questions.html" class="ch-card"><span class="ch-num">CHAPTER 16</span><div class="ch-name">Open Questions</div><div class="ch-desc">Unresolved questions, follow-up experiments.</div><div class="ch-meta"><span><span class="dot"></span>317 lines · Open Questions</span></div></a>
+<a href="17_cross_reference_map.html" class="ch-card"><span class="ch-num">CHAPTER 17</span><div class="ch-name">Cross-Reference Map</div><div class="ch-desc">KI dependency graph, section mapping.</div><div class="ch-meta"><span><span class="dot"></span>205 lines · Reference Graph</span></div></a>
+<a href="18_appendix_a_test_coverage.html" class="ch-card appendix"><span class="ch-num">APPENDIX 18</span><div class="ch-name">Appendix A — Test Coverage</div><div class="ch-desc">24-section pass/fail/anomaly statistics.</div><div class="ch-meta"><span><span class="dot"></span>195 lines · Test Coverage</span></div></a>
+<a href="19_appendix_b_machine_readable.html" class="ch-card appendix"><span class="ch-num">APPENDIX 19</span><div class="ch-name">Appendix B — Machine-Readable Parameters</div><div class="ch-desc">JSON export of all measured parameters for performance models.</div><div class="ch-meta"><span><span class="dot"></span>873 lines · JSON Parameters</span></div></a>
+<a href="20_appendix_c_methodology.html" class="ch-card appendix"><span class="ch-num">APPENDIX 20</span><div class="ch-name">Appendix C — Measurement Methodology</div><div class="ch-desc">Timing infrastructure, known artifacts, confidence rating.</div><div class="ch-meta"><span><span class="dot"></span>399 lines · Methodology</span></div></a>
+</section><blockquote>
+<p><strong>GPU</strong>: NVIDIA RTX PRO 5000 72GB (GB202, Blackwell, Compute Capability 12.0)<br>
+<strong>Die</strong>: GB202 (consumer/workstation variant, 110 of 192 SMs active)<br>
+<strong>Date</strong>: June 2026<br>
+<strong>Data Source</strong>: 1542 microbenchmark test cases across 26 sections<br>
+<strong>Status</strong>: 1518 Pass, 6 Anomaly, 2 Error/Unsupported, 16 Partial<br>
+<strong>Total Report</strong>: ~13,400 lines across 20 chapters (~400+ equivalent pages)<br>
+<strong>CAQR Framework</strong>: Supplemented with AMAT, CPI decomposition, Amdahl validation, Little's Law, EDP, and Fallacies/Pitfalls per Hennessy &amp; Patterson <em>CAQR</em> 7th Ed.<br>
+<strong>Target Audience</strong>: Kernel developers, system optimizers, GPU architects, operator simulation engineers</p>
+</blockquote>
+<hr>
+<h2 class="ch-title" id="table-of-contents">Table of Contents</h2>
+<table>
+<thead>
+<tr>
+<th style="text-align: center;">Ch.</th>
+<th>Title</th>
+<th style="text-align: center;">Lines</th>
+<th>Key Topics</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: center;">1</td>
+<td><a href="01_architecture_overview.html">Architecture Overview</a></td>
+<td style="text-align: center;">491</td>
+<td>Chip topology, SM microstructure, feature matrix vs SM_100/SM_110, die-level constraints</td>
+</tr>
+<tr>
+<td style="text-align: center;">2</td>
+<td><a href="02_memory_subsystem.html">Memory Subsystem</a></td>
+<td style="text-align: center;">883</td>
+<td>L1/Smem (pipelined bank conflicts), L2 (XOR hash, 96 MB), GDDR7 (bank groups), coherence domains, ordering, atomics, DSMEM, KI-2.1–2.10</td>
+</tr>
+<tr>
+<td style="text-align: center;">3</td>
+<td><a href="03_sm_microarchitecture.html">SM Microarchitecture</a></td>
+<td style="text-align: center;">909</td>
+<td>16 pipes, 128-bit encoding, dual-subpipe FMA, 2-bank RF (R%2), RFC ≥24, CGGTY scheduler, hybrid stall/SB model, divergence O(2^D), KI-3.1–3.7</td>
+</tr>
+<tr>
+<td style="text-align: center;">4</td>
+<td><a href="04_tensorcore_architecture.html">TensorCore Architecture</a></td>
+<td style="text-align: center;">777</td>
+<td>MMA shapes (HMMA/QMMA/OMMA.SF/IMMA), pipeline depth 1.81/4.09, FP8/FP6/FP4/MX, sparsity, operand feeding, ldmatrix/stmatrix, quantized pipeline, KI-4.1–4.10</td>
+</tr>
+<tr>
+<td style="text-align: center;">5</td>
+<td><a href="05_instruction_level_characterization.html">Instruction-Level Characterization</a></td>
+<td style="text-align: center;">782</td>
+<td>INT/FP/logic per-instruction catalog, dual-subpipe co-issue, FP64 EU architecture, SFU pipeline depth 5, HFMA2 time-multiplex, shfl 29-cyc, KI-5.1–5.6</td>
+</tr>
+<tr>
+<td style="text-align: center;">6</td>
+<td><a href="06_on_chip_network_async.html">On-Chip Network &amp; Async</a></td>
+<td style="text-align: center;">809</td>
+<td>TMA (queue ≥32, 479 cyc, multicast ABSENT), cluster (cross-GPC), DSMEM (point-to-point fabric), barrier (O(1) CGA), software pipeline 3-stage, KI-6.1–6.9</td>
+</tr>
+<tr>
+<td style="text-align: center;">7</td>
+<td><a href="07_warp_scheduler_control.html">Warp Scheduler &amp; Control</a></td>
+<td style="text-align: center;">912</td>
+<td>CGGTY decision flow, stall/yield/SB control codes, I-cache (4KB L0 / 64KB L1), divergence cost O(2^D), ILP×TLP iso-throughput, register spill, setmaxnreg, KI-7.1–7.10</td>
+</tr>
+<tr>
+<td style="text-align: center;">8</td>
+<td><a href="08_workload_analysis.html">Workload Analysis</a></td>
+<td style="text-align: center;">735</td>
+<td>588-shape GEMM sweep, M-scaling 3-regime model, FlashAttention thin-K bottleneck, roofline, GEMV L2 sweet spot, MoE dispatch, power/DVFS, KI-8.1–8.9</td>
+</tr>
+<tr>
+<td style="text-align: center;">9</td>
+<td><a href="09_power_thermal_efficiency.html">Power, Thermal &amp; Efficiency</a></td>
+<td style="text-align: center;">301</td>
+<td>Per-instruction power, TFLOPS/W, DVFS linearity, thermal headroom, KI-9.1–9.6</td>
+</tr>
+<tr>
+<td style="text-align: center;">10</td>
+<td><a href="10_system_level_multi_gpu.html">System-Level &amp; Multi-GPU</a></td>
+<td style="text-align: center;">956</td>
+<td>PCIe Gen5, P2P, kernel launch overhead, CTA scheduling, KI-10.1–10.7</td>
+</tr>
+<tr>
+<td style="text-align: center;">11</td>
+<td><a href="11_optimization_guidance.html">Optimization Guidance</a></td>
+<td style="text-align: center;">360</td>
+<td>CUTLASS/DeepGeMM/FlashInfer strategies, KI-11.1–11.8</td>
+</tr>
+<tr>
+<td style="text-align: center;">12</td>
+<td><a href="12_ptxas_compiler_behavior.html">ptxas Compiler Behavior</a></td>
+<td style="text-align: center;">740</td>
+<td>Stall counter hardware model (3 modes), ptxas 6-pass pipeline, CuAssembler optimization surface (+6.1% MMA), register allocation, DCE/folding</td>
+</tr>
+<tr>
+<td style="text-align: center;">13</td>
+<td><a href="13_unified_performance_model.html">Unified Performance Model</a></td>
+<td style="text-align: center;">391</td>
+<td>Roofline formulas, bottleneck classification, worked examples</td>
+</tr>
+<tr>
+<td style="text-align: center;">14</td>
+<td><a href="14_sm100_to_sm120_porting_guide.html">SM_100 to SM_120 Porting Guide</a></td>
+<td style="text-align: center;">279</td>
+<td>Feature mapping, hard constraints (no TM, no multicast), case studies</td>
+</tr>
+<tr>
+<td style="text-align: center;">15</td>
+<td><a href="15_agent_ground_truth.html">Agent Ground Truth</a></td>
+<td style="text-align: center;">684</td>
+<td>Decision trees, parameter tables, validation protocol</td>
+</tr>
+<tr>
+<td style="text-align: center;">16</td>
+<td><a href="16_open_questions.html">Open Questions</a></td>
+<td style="text-align: center;">208</td>
+<td>Unresolved questions, follow-up experiments</td>
+</tr>
+<tr>
+<td style="text-align: center;">17</td>
+<td><a href="17_cross_reference_map.html">Cross-Reference Map</a></td>
+<td style="text-align: center;">196</td>
+<td>KI dependency graph, section mapping</td>
+</tr>
+<tr>
+<td style="text-align: center;">A</td>
+<td><a href="18_appendix_a_test_coverage.html">Test Coverage Matrix</a></td>
+<td style="text-align: center;">189</td>
+<td>24-section pass/fail/anomaly statistics</td>
+</tr>
+<tr>
+<td style="text-align: center;">B</td>
+<td><a href="19_appendix_b_machine_readable.html">Machine-Readable Parameters</a></td>
+<td style="text-align: center;">581</td>
+<td>JSON export for performance models</td>
+</tr>
+<tr>
+<td style="text-align: center;">C</td>
+<td><a href="20_appendix_c_methodology.html">Measurement Methodology</a></td>
+<td style="text-align: center;">235</td>
+<td>Timing infrastructure, known artifacts, confidence</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2 class="ch-title" id="quick-reference-critical-measured-parameters">Quick Reference: Critical Measured Parameters</h2>
+<h3 class="sub-title" id="compute-pipeline">Compute Pipeline</h3>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Value</th>
+<th>Source</th>
+<th style="text-align: center;">Chapter</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>SM count</td>
+<td>110 (of 192 on die)</td>
+<td><span class="cite">[S1/case_3]</span></td>
+<td style="text-align: center;">1</td>
+</tr>
+<tr>
+<td>SMSP per SM</td>
+<td>4 (single-issue, 1 insn/cyc each)</td>
+<td><span class="cite">[S22/case_1]</span></td>
+<td style="text-align: center;">3</td>
+</tr>
+<tr>
+<td>Max warps per SM</td>
+<td>48 (12 per SMSP)</td>
+<td><span class="cite">[S3/case_3]</span></td>
+<td style="text-align: center;">3</td>
+</tr>
+<tr>
+<td>Clock (boost sustained)</td>
+<td>2572 MHz (no throttle at any workload)</td>
+<td><span class="cite">[S20/case_11]</span></td>
+<td style="text-align: center;">8</td>
+</tr>
+<tr>
+<td>FFMA latency / throughput</td>
+<td>4 cyc / 1 op/cyc (depth=4)</td>
+<td><span class="cite">[S5/case_23]</span></td>
+<td style="text-align: center;">5</td>
+</tr>
+<tr>
+<td>IADD3 latency / throughput</td>
+<td>2 cyc / 1 op/cyc (depth=2)</td>
+<td><span class="cite">[S4/case_1]</span></td>
+<td style="text-align: center;">5</td>
+</tr>
+<tr>
+<td>HFMA2 latency / throughput</td>
+<td>4 cyc / 0.5 op/cyc (2-cycle issue, time-multiplexed)</td>
+<td><span class="cite">[S5/case_39]</span></td>
+<td style="text-align: center;">5</td>
+</tr>
+<tr>
+<td>DFMA latency / throughput</td>
+<td>64 cyc / non-pipelined per-EU; <strong>4 EU/SM (1 per SMSP)</strong>, multi-warp sat. = 16 cyc/op chip-level (0.0625 DFMA/cyc/SM = 4/64)</td>
+<td><span class="cite">[S5/case_48]</span>; <span class="cite">[S24/case_16]</span>; §5.2.7 [RESOLVED 2026-06-11]</td>
+<td style="text-align: center;">5</td>
+</tr>
+<tr>
+<td>MUFU (bare SFU) latency</td>
+<td>18 cyc (tanh/ex2); composite rcp = 47 cyc</td>
+<td><span class="cite">[S5/case_1,83]</span></td>
+<td style="text-align: center;">5</td>
+</tr>
+<tr>
+<td>SHFL latency</td>
+<td>29 cyc (all modes uniform)</td>
+<td><span class="cite">[S6/case_20]</span></td>
+<td style="text-align: center;">5</td>
+</tr>
+<tr>
+<td>INT+FP co-issue</td>
+<td>MIX/MAX = 1.001 (perfect dual-subpipe)</td>
+<td><span class="cite">[S4/case_32]</span></td>
+<td style="text-align: center;">3, 5</td>
+</tr>
+</tbody>
+</table>
+<h3 class="sub-title" id="tensorcore">TensorCore</h3>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Value</th>
+<th>Source</th>
+<th style="text-align: center;">Chapter</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>HMMA latency / throughput</td>
+<td>29 cyc / 15.88 cyc/mma (depth=1.81)</td>
+<td><span class="cite">[S9/case_1,8]</span></td>
+<td style="text-align: center;">4</td>
+</tr>
+<tr>
+<td>IMMA latency / throughput</td>
+<td>27 cyc / 6.55 cyc/mma (depth=4.09)</td>
+<td><span class="cite">[S9/case_101]</span></td>
+<td style="text-align: center;">4</td>
+</tr>
+<tr>
+<td>Block-scale overhead</td>
+<td>0 cyc (+0% vs dense)</td>
+<td><span class="cite">[S9/case_48]</span></td>
+<td style="text-align: center;">4</td>
+</tr>
+<tr>
+<td>Sparse 2:4 overhead</td>
+<td>0 cyc (+0% vs dense K)</td>
+<td><span class="cite">[S9/case_80]</span></td>
+<td style="text-align: center;">4</td>
+</tr>
+<tr>
+<td>TC cold-start</td>
+<td>~375 cyc (uniform across all formats)</td>
+<td><span class="cite">[S9/case_71]</span></td>
+<td style="text-align: center;">4</td>
+</tr>
+<tr>
+<td>FP16 peak (chip, cuBLAS)</td>
+<td>271 TFLOPS @ boost 2572 MHz; 232-265 TFLOPS measured (S18/S19); 253.6 BF16 (<span class="cite">[S9/case_131]</span>, 16384×4096×7168)</td>
+<td><span class="cite">[S9/case_131]</span>; <span class="cite">[S18/case_1]</span>; <span class="cite">[S19/case_1]</span></td>
+<td style="text-align: center;">8</td>
+</tr>
+<tr>
+<td>FP8 peak (chip, cuBLAS)</td>
+<td>551.1 TFLOPS (102% eff)</td>
+<td><span class="cite">[S9/case_132]</span></td>
+<td style="text-align: center;">8</td>
+</tr>
+<tr>
+<td>MXFP4 peak (chip, CUTLASS)</td>
+<td>1076.5 TFLOPS (100.6% eff)</td>
+<td><span class="cite">[S9/case_136]</span></td>
+<td style="text-align: center;">8</td>
+</tr>
+<tr>
+<td>MXFP4 sustained (hand-tuned)</td>
+<td>1068.5 TFLOPS (99.0% eff)</td>
+<td><span class="cite">[S9/case_128]</span></td>
+<td style="text-align: center;">8</td>
+</tr>
+<tr>
+<td>TC + FFMA co-issue</td>
+<td>93.6% overlap (epilogue free)</td>
+<td><span class="cite">[S9/case_9]</span></td>
+<td style="text-align: center;">4</td>
+</tr>
+<tr>
+<td>TC + ldmatrix co-issue</td>
+<td>100% overlap (0 extra cyc)</td>
+<td><span class="cite">[S9/case_10]</span></td>
+<td style="text-align: center;">4</td>
+</tr>
+<tr>
+<td>Operand reuse ×4</td>
+<td>15.9 cyc/MMA (1.79× baseline)</td>
+<td><span class="cite">[S9/case_34]</span></td>
+<td style="text-align: center;">4</td>
+</tr>
+<tr>
+<td>INT4 emulation</td>
+<td>384 cyc (24× native FP4)</td>
+<td><span class="cite">[S9/case_79]</span></td>
+<td style="text-align: center;">4</td>
+</tr>
+</tbody>
+</table>
+<h3 class="sub-title" id="memory-hierarchy">Memory Hierarchy</h3>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Value</th>
+<th>Source</th>
+<th style="text-align: center;">Chapter</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Smem latency</td>
+<td>34 cyc canonical (33.90 cyc, pointer-chase with SHL overhead); 28 cyc lower bound (27.79 cyc pure pointer-chase, <span class="cite">[S8/case_52]</span>)</td>
+<td><span class="cite">[S8/case_28]</span>, case_52</td>
+<td style="text-align: center;">2</td>
+</tr>
+<tr>
+<td>Smem bank conflict (32-way)</td>
+<td>1.43× throughput penalty (pipelined)</td>
+<td><span class="cite">[S8/case_54]</span></td>
+<td style="text-align: center;">2</td>
+</tr>
+<tr>
+<td>L1 latency</td>
+<td>44 cyc (43.88-43.99, pattern-independent, <span class="cite">[S26/case_7-9]</span>)</td>
+<td><span class="cite">[S26/case_7-9]</span></td>
+<td style="text-align: center;">2</td>
+</tr>
+<tr>
+<td>L1 capacity</td>
+<td>89 KB (default carveout, 100 KB physical SRAM, <span class="cite">[S24/case_1]</span>; OQ-1)</td>
+<td><span class="cite">[S24/case_1]</span></td>
+<td style="text-align: center;">2</td>
+</tr>
+<tr>
+<td>L2 latency</td>
+<td>354 cyc (XOR-hashed, no partition camping)</td>
+<td><span class="cite">[S8/case_2]</span></td>
+<td style="text-align: center;">2</td>
+</tr>
+<tr>
+<td>L2 capacity</td>
+<td>96 MB (12 partitions)</td>
+<td><span class="cite">[S8/case_75]</span></td>
+<td style="text-align: center;">2</td>
+</tr>
+<tr>
+<td>L2 BW (aggregate)</td>
+<td>13,768 GB/s (4.17× DRAM amplification)</td>
+<td><span class="cite">[S8/case_93]</span></td>
+<td style="text-align: center;">2</td>
+</tr>
+<tr>
+<td>DRAM latency</td>
+<td>362 ± 10 cyc (page-hit 362, page-miss 372 random@≥2GB)</td>
+<td><span class="cite">[S8/case_3]</span>, <span class="cite">[S26/case_10-12]</span></td>
+<td style="text-align: center;">2</td>
+</tr>
+<tr>
+<td>DRAM BW (read)</td>
+<td>1231 GB/s (GDDR7, 384-bit)</td>
+<td><span class="cite">[S8/case_81]</span></td>
+<td style="text-align: center;">2</td>
+</tr>
+<tr>
+<td>ldmatrix.x4 latency / tput</td>
+<td>33 cyc / 1.68 cyc (76.2 B/cyc warp)</td>
+<td><span class="cite">[S9/case_146,148]</span></td>
+<td style="text-align: center;">4</td>
+</tr>
+<tr>
+<td>ldmatrix .trans overhead</td>
+<td>0 cyc (crossbar permutation)</td>
+<td><span class="cite">[S9/case_147]</span></td>
+<td style="text-align: center;">4</td>
+</tr>
+<tr>
+<td>Memory wall location</td>
+<td>L1→L2 (7.9× cliff), NOT L2→DRAM (1.01×)</td>
+<td><span class="cite">[S8/case_1-3]</span></td>
+<td style="text-align: center;">2</td>
+</tr>
+</tbody>
+</table>
+<h3 class="sub-title" id="on-chip-network-async">On-Chip Network &amp; Async</h3>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Value</th>
+<th>Source</th>
+<th style="text-align: center;">Chapter</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>TMA 1D latency</td>
+<td>479 cyc (flat 128B-1KB)</td>
+<td><span class="cite">[S10/case_1]</span></td>
+<td style="text-align: center;">6</td>
+</tr>
+<tr>
+<td>TMA queue depth</td>
+<td>≥32 in-flight loads</td>
+<td><span class="cite">[S10/case_78]</span></td>
+<td style="text-align: center;">6</td>
+</tr>
+<tr>
+<td>TMA multicast</td>
+<td><strong>ABSENT</strong> (SW-emulated, 2400-7500× penalty)</td>
+<td><span class="cite">[S10/case_28]</span></td>
+<td style="text-align: center;">6</td>
+</tr>
+<tr>
+<td>DSMEM cross-CTA read</td>
+<td>220 cyc (6.5× local smem)</td>
+<td><span class="cite">[S16/case_3]</span></td>
+<td style="text-align: center;">6</td>
+</tr>
+<tr>
+<td>DSMEM async store issue</td>
+<td>5.77 cyc (fire-and-forget)</td>
+<td><span class="cite">[S16/case_6]</span></td>
+<td style="text-align: center;">6</td>
+</tr>
+<tr>
+<td>Cluster barrier (relaxed)</td>
+<td>85 cyc (O(1) scaling, CGA hardware)</td>
+<td><span class="cite">[S16/case_5]</span></td>
+<td style="text-align: center;">6</td>
+</tr>
+<tr>
+<td>Cluster barrier (full)</td>
+<td>371 cyc (MEMBAR.ALL.GPU dominates 77%)</td>
+<td><span class="cite">[S16/case_5]</span></td>
+<td style="text-align: center;">6</td>
+</tr>
+<tr>
+<td>Cluster max (portable)</td>
+<td>8 CTAs, cross-GPC placement</td>
+<td><span class="cite">[S16/case_1,21]</span></td>
+<td style="text-align: center;">6</td>
+</tr>
+<tr>
+<td>Pipeline optimal depth</td>
+<td>3 stages (2.58× speedup)</td>
+<td><span class="cite">[S10/case_82]</span></td>
+<td style="text-align: center;">6</td>
+</tr>
+</tbody>
+</table>
+<h3 class="sub-title" id="scheduler-control">Scheduler &amp; Control</h3>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Value</th>
+<th>Source</th>
+<th style="text-align: center;">Chapter</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Context switch</td>
+<td>0 cyc (RF-resident, 1-16 warps)</td>
+<td><span class="cite">[S11/case_47]</span></td>
+<td style="text-align: center;">7</td>
+</tr>
+<tr>
+<td>Stall counter range</td>
+<td>4-bit [0-15], 1:1 linear (sentinels at 0,14,15)</td>
+<td><span class="cite">[S11/case_128]</span></td>
+<td style="text-align: center;">7</td>
+</tr>
+<tr>
+<td>Stall=0 fallback cost</td>
+<td>Instruction-dependent: 34 cyc/insn for IADD3 (17× optimal, <span class="cite">[S11/case_129]</span>); 31.10 cyc/insn for FFMA (<span class="cite">[S21/case_16]</span>). The HW scoreboard fallback latency depends on the instruction's write-back path, not a single universal constant.</td>
+<td><span class="cite">[S11/case_129]</span>; <span class="cite">[S21/case_16]</span></td>
+<td style="text-align: center;">7</td>
+</tr>
+<tr>
+<td>Silent stale read boundary</td>
+<td>stall &lt; write-back latency → corruption</td>
+<td><span class="cite">[S11/case_132]</span></td>
+<td style="text-align: center;">7</td>
+</tr>
+<tr>
+<td>SB counters</td>
+<td>6 per warp (effective depth 10-11)</td>
+<td><span class="cite">[S12/case_10,24]</span></td>
+<td style="text-align: center;">7</td>
+</tr>
+<tr>
+<td>SB exhaustion cliff</td>
+<td>N=5→6: 17→761 cyc (44.8× stall, L1-cached); N=10-11→12: 358→726 cyc (~2×, L2-forced)</td>
+<td><span class="cite">[S11/case_44]</span>, <span class="cite">[S12/case_24]</span></td>
+<td style="text-align: center;">7</td>
+</tr>
+<tr>
+<td>I-cache L0 / L1</td>
+<td>~4 KB/SMSP / ~64 KB/SM</td>
+<td><span class="cite">[S13/case_17]</span></td>
+<td style="text-align: center;">7</td>
+</tr>
+<tr>
+<td>I-cache cliff</td>
+<td>8-16 KB (+45% throughput loss)</td>
+<td><span class="cite">[S21/case_32]</span></td>
+<td style="text-align: center;">7</td>
+</tr>
+<tr>
+<td>RF banks</td>
+<td>2 (R%2 parity, +1 cyc conflict — hidden by ptxas)</td>
+<td><span class="cite">[S12/case_1]</span></td>
+<td style="text-align: center;">3</td>
+</tr>
+<tr>
+<td>RF cache (RFC)</td>
+<td>≥24 entries/warp (no cliff detected)</td>
+<td><span class="cite">[S12/case_6]</span></td>
+<td style="text-align: center;">3</td>
+</tr>
+<tr>
+<td>.reuse bits</td>
+<td>Hardware no-op (0% delta, all configs)</td>
+<td><span class="cite">[S11/case_149]</span></td>
+<td style="text-align: center;">3</td>
+</tr>
+<tr>
+<td>LSU queue depth</td>
+<td>12-13 (cliff at N=14: 2→984 cyc)</td>
+<td><span class="cite">[S11/case_97]</span></td>
+<td style="text-align: center;">3</td>
+</tr>
+<tr>
+<td>Divergence (2-way)</td>
+<td>3× uniform cost</td>
+<td><span class="cite">[S7/case_10]</span></td>
+<td style="text-align: center;">7</td>
+</tr>
+<tr>
+<td>Divergence (4-way)</td>
+<td>30.6× uniform (super-linear from BRA tree)</td>
+<td><span class="cite">[S7/case_10]</span></td>
+<td style="text-align: center;">7</td>
+</tr>
+<tr>
+<td>Barrier (__syncthreads)</td>
+<td>12 + 2W cyc (linear, saturates at W=32)</td>
+<td><span class="cite">[S11/case_39]</span></td>
+<td style="text-align: center;">7</td>
+</tr>
+</tbody>
+</table>
+<h3 class="sub-title" id="power-efficiency">Power &amp; Efficiency</h3>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Value</th>
+<th>Source</th>
+<th style="text-align: center;">Chapter</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>TC FP16 power</td>
+<td>108 W (235 TFLOPS, 2.18 TFLOPS/W)</td>
+<td><span class="cite">[S20/case_7]</span></td>
+<td style="text-align: center;">8</td>
+</tr>
+<tr>
+<td>TC MXFP4 power</td>
+<td>89 W (1069 TFLOPS, 12.0 TFLOPS/W)</td>
+<td><span class="cite">[S20/case_16]</span></td>
+<td style="text-align: center;">8</td>
+</tr>
+<tr>
+<td>FP32 FFMA power</td>
+<td>143 W (58 TFLOPS, 0.41 TFLOPS/W)</td>
+<td><span class="cite">[S20/case_9]</span></td>
+<td style="text-align: center;">8</td>
+</tr>
+<tr>
+<td>TC/CUDA efficiency gap</td>
+<td>5.3× TFLOPS/W advantage for TC</td>
+<td>Derived</td>
+<td style="text-align: center;">8</td>
+</tr>
+<tr>
+<td>DVFS linearity</td>
+<td>101-102% of ideal (no clock wall)</td>
+<td><span class="cite">[S20/case_11]</span></td>
+<td style="text-align: center;">8</td>
+</tr>
+<tr>
+<td>Optimal efficiency clock</td>
+<td>~1500 MHz (0.49 TFLOPS/W)</td>
+<td><span class="cite">[S20/case_11]</span></td>
+<td style="text-align: center;">8</td>
+</tr>
+<tr>
+<td>Per-SM incremental (MMA)</td>
+<td>0.12 W/SM (vs 0.74 W/SM for FMA)</td>
+<td><span class="cite">[S20/case_14]</span></td>
+<td style="text-align: center;">8</td>
+</tr>
+<tr>
+<td>Thermal headroom</td>
+<td>27°C below 92°C limit (max 65°C observed)</td>
+<td><span class="cite">[S20/case_10]</span></td>
+<td style="text-align: center;">8</td>
+</tr>
+</tbody>
+</table>
+<h3 class="sub-title" id="ptxas-compiler">ptxas Compiler</h3>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Value</th>
+<th>Source</th>
+<th style="text-align: center;">Chapter</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>MMA stall optimization</td>
+<td>+6.1% (stall 11→12 via CuAssembler)</td>
+<td><span class="cite">[S21/case_82]</span></td>
+<td style="text-align: center;">12</td>
+</tr>
+<tr>
+<td>Reorder window</td>
+<td>20 instructions (two-wave pattern)</td>
+<td><span class="cite">[S21/case_11]</span></td>
+<td style="text-align: center;">12</td>
+</tr>
+<tr>
+<td>Loop unrolling threshold</td>
+<td>None found (unrolls up to 8192 iters)</td>
+<td><span class="cite">[S21/case_14]</span></td>
+<td style="text-align: center;">12</td>
+</tr>
+<tr>
+<td>24-register floor</td>
+<td>ptxas enforced (silently raises maxreg&lt;24)</td>
+<td><span class="cite">[S21/case_111]</span></td>
+<td style="text-align: center;">12</td>
+</tr>
+<tr>
+<td>DCE: asm volatile clobber</td>
+<td>ELIMINATED (must use global store)</td>
+<td><span class="cite">[S21/case_15]</span></td>
+<td style="text-align: center;">12</td>
+</tr>
+<tr>
+<td>Net CuAssembler headroom</td>
+<td>~6-7% for TC-dominated kernels</td>
+<td>Derived</td>
+<td style="text-align: center;">12</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2 class="ch-title" id="citation-format">Citation Format</h2>
+<p>All measured values in this report are traceable to specific test artifacts:</p>
+<table>
+<thead>
+<tr>
+<th>Priority</th>
+<th>Source Type</th>
+<th>Citation Format</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>P0</td>
+<td>Measured reports in <code>test_results/SM_120/</code></td>
+<td><code>[S{N}/case_{M}]</code></td>
+</tr>
+<tr>
+<td>P1</td>
+<td>Discovery notes in <code>agent_docs/platform_specific_mem/sm_120/</code></td>
+<td><code>[PSM: filename.md]</code></td>
+</tr>
+<tr>
+<td>P2</td>
+<td>NVIDIA official PDFs in <code>doc/</code></td>
+<td><code>[DOC: filename.pdf, page N]</code></td>
+</tr>
+<tr>
+<td>P3</td>
+<td>ISA reference</td>
+<td><code>[ISA: section_name]</code></td>
+</tr>
+<tr>
+<td>P4</td>
+<td>Reference code (CUTLASS/FlashInfer/DeepGeMM)</td>
+<td><code>[REF: path/file:line]</code></td>
+</tr>
+</tbody>
+</table>
+<h2 class="ch-title" id="fact-vs--speculation-tags">Fact vs. Speculation Tags</h2>
+<table>
+<thead>
+<tr>
+<th>Tag</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>(none)</td>
+<td>Measured fact with citation</td>
+</tr>
+<tr>
+<td><code>[CALCULATED]</code></td>
+<td>Derived from measured data (formula shown)</td>
+</tr>
+<tr>
+<td><code>[THEORETICAL]</code></td>
+<td>Upper/lower bound (assumptions listed)</td>
+</tr>
+<tr>
+<td><code>[SPECULATIVE]</code></td>
+<td>Microarchitecture hypothesis (evidence + confidence + falsification test)</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2 class="ch-title" id="key-architectural-findings-top-10">Key Architectural Findings (Top 10)</h2>
+<ol>
+<li>
+<p><strong>2-Bank RF with Zero Observable Penalty</strong> (Ch.3): SM_120 has a 2-bank (R%2 parity) register file with +1 cyc conflict penalty — but ptxas's parity-aware allocation ensures conflicts never appear in production code.</p>
+</li>
+<li>
+<p><strong>Dual-Subpipe FMA Architecture</strong> (Ch.3,5): IADD3 (fmalite) and FFMA (fmaheavy) execute on fully independent subpipes at MIX/MAX=1.001, enabling 2 ops/cycle aggregate for mixed INT+FP.</p>
+</li>
+<li>
+<p><strong>TC Pipeline Depth 1.81 / 4.09</strong> (Ch.4): HMMA/QMMA share a 2-slot pipeline (depth 1.81), while IMMA has a separate 4-slot pipeline (depth 4.09) with 2.4× higher throughput.</p>
+</li>
+<li>
+<p><strong>TMA Multicast Absent</strong> (Ch.6): GB202 lacks the LRC multicast crossbar. All multicast attempts are SW-emulated at 2400-7500× penalty. CUTLASS/FlashInfer enforce ClusterShape&lt;1,1,1&gt;.</p>
+</li>
+<li>
+<p><strong>Memory Wall at L1→L2</strong> (Ch.2): The 8.0× latency cliff from L1 (44 cyc) to L2 (354 cyc) is the true memory wall. L2→DRAM is nearly transparent (1.01× for random access).</p>
+</li>
+<li>
+<p><strong>Stall Counter Trust Model</strong> (Ch.7,12): stall &lt; write-back latency causes <strong>silent data corruption</strong>. No trap, no CUDA error. Only stall=0 triggers the hardware safety net.</p>
+</li>
+<li>
+<p><strong>Pipelined Bank Conflicts</strong> (Ch.2): 32-way smem bank conflict costs only 1.43× throughput (vs 32× on prior architectures), enabled by a pipelined replay arbiter.</p>
+</li>
+<li>
+<p><strong>DSMEM Is Chip-Wide</strong> (Ch.6): Cluster CTAs are placed cross-GPC (stride-20). DSMEM latency is uniform regardless of SM distance — the SM2SM fabric is a flat interconnect.</p>
+</li>
+<li>
+<p><strong>Softmax Is Architecturally Free</strong> (Ch.8): MUFU.EX2 co-issues 100% with TC operations. In FlashAttention, the 25% wall-time softmax cost is fully overlapped, adding ~0% actual latency.</p>
+</li>
+<li>
+<p><strong>ILP Dominates Over Occupancy</strong> (Ch.7): Single warp at ILP=4 achieves 92% of peak FP32 throughput. Additional warps help only for memory latency hiding, not compute.</p>
+</li>
+</ol>
+
+<footer class="page-footer">
+<div class="foot-grid">
+<div><strong>SM_120 / GB202 Blackwell</strong> · Microarchitecture Analysis &amp; Reference · 2026</div>
+<div>1542 microbenchmark cases · 26 sections · ~13,400 lines</div>
+<div class="foot-accent">RTX PRO 5000 72GB · CUDA 13.3 · Data source: test_results/SM_120/</div>
+</div>
+</footer>
+
+</main>
+<aside class="toc-right">
+<h4>On This Page</h4>
+<a href="#chapter-cards">Chapter Cards</a>
+<a href="#table-of-contents">Table of Contents</a>
+<a href="#quick-reference-critical-measured-parameters">Quick Reference: Critical Measured Parameters</a>
+<a class="sub" href="#compute-pipeline">Compute Pipeline</a>
+<a class="sub" href="#tensorcore">TensorCore</a>
+<a class="sub" href="#memory-hierarchy">Memory Hierarchy</a>
+<a class="sub" href="#on-chip-network-async">On-Chip Network &amp;amp; Async</a>
+<a class="sub" href="#scheduler-control">Scheduler &amp;amp; Control</a>
+<a class="sub" href="#power-efficiency">Power &amp;amp; Efficiency</a>
+<a class="sub" href="#ptxas-compiler">ptxas Compiler</a>
+<a href="#citation-format">Citation Format</a>
+<a href="#fact-vs--speculation-tags">Fact vs. Speculation Tags</a>
+<a href="#key-architectural-findings-top-10">Key Architectural Findings (Top 10)</a>
+</aside>
+</div>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" integrity="sha384-7zkQWkzuo3B5mTepMUcHkMB5jZaolc2xDwL6VFqjFALcbeS9Ggm/Yr2r3Dy4lfFg" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" integrity="sha384-43gviWU0YVjaDtb/GhzOouOXtZMP/7XUzwPTstBeZFe/+rCMvRwr4yROQP43s0Xk" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/lib/highlight.min.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  if (window.renderMathInElement) {
+    renderMathInElement(document.body, {
+      delimiters: [
+        {left: "$$", right: "$$", display: true},
+        {left: "$", right: "$", display: false}
+      ],
+      throwOnError: false
+    });
+  }
+  if (window.hljs) {
+    document.querySelectorAll("pre code[class^='language-']").forEach(function(el) {
+      try { hljs.highlightElement(el); } catch (e) {}
+    });
+  }
+});
+</script>
+<script src="assets/js/toc.js" defer></script>
+</body>
+</html>

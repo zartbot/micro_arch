@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 460" role="img"
+     aria-label="Stall counter 3 hardware modes on SM_120 — Linear, Sentinel, Pipeline-Aligned with measured cyc/op data">
+  <defs>
+    <linearGradient id="linG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#E9F3D2"/><stop offset="1" stop-color="#F4FAE2"/>
+    </linearGradient>
+    <linearGradient id="senG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFE4E6"/><stop offset="1" stop-color="#FFF1F2"/>
+    </linearGradient>
+    <linearGradient id="alignG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FEF3C7"/><stop offset="1" stop-color="#FFFBEB"/>
+    </linearGradient>
+    <style><![CDATA[
+      .ttl{font:600 14px "Fraunces",serif;fill:#0b1220}
+      .sub{font:italic 11px "Fraunces",serif;fill:#5b6679}
+      .lbl{font:600 11px "JetBrains Mono",monospace;fill:#2a3548}
+      .lbl-sm{font:500 10px "JetBrains Mono",monospace;fill:#5b6679}
+      .axis{font:500 10px "JetBrains Mono",monospace;fill:#5b6679}
+      .modeT{font:700 12px "Fraunces",serif}
+      .num{font:700 11px "JetBrains Mono",monospace;fill:#0b1220}
+      .star{font:700 13px "JetBrains Mono",monospace;fill:#b45309}
+    ]]></style>
+  </defs>
+  <rect width="1080" height="460" fill="#fcfbf6"/>
+  <text x="36" y="32" class="ttl">Stall Counter — Three Hardware Modes on SM_120</text>
+  <text x="36" y="52" class="sub">4-bit field [44:41], values 0-15 — but the hardware is NOT a simple "delay N cycles" counter; different ranges trigger entirely different mechanisms · evidence: cases 9/16/17/82</text>
+
+  <!-- Number line for 0..15 stall values -->
+  <g transform="translate(60,108)">
+    <!-- background bands -->
+    <rect x="0" y="0" width="58" height="46" rx="3" fill="url(#senG)" stroke="#dc2626" stroke-width="0.8"/>
+    <rect x="60" y="0" width="614" height="46" rx="3" fill="url(#linG)" stroke="#16a34a" stroke-width="0.8"/>
+    <rect x="676" y="0" width="54" height="46" rx="3" fill="url(#alignG)" stroke="#b45309" stroke-width="2"/>
+    <rect x="732" y="0" width="54" height="46" rx="3" fill="url(#linG)" stroke="#16a34a" stroke-width="0.8"/>
+    <rect x="788" y="0" width="110" height="46" rx="3" fill="url(#senG)" stroke="#dc2626" stroke-width="0.8"/>
+
+    <!-- tick labels 0..15 -->
+    <g class="axis">
+      <text x="30" y="28" text-anchor="middle">0</text>
+      <text x="86" y="28" text-anchor="middle">1</text>
+      <text x="142" y="28" text-anchor="middle">2</text>
+      <text x="198" y="28" text-anchor="middle">3</text>
+      <text x="254" y="28" text-anchor="middle">4</text>
+      <text x="310" y="28" text-anchor="middle">5</text>
+      <text x="366" y="28" text-anchor="middle">6</text>
+      <text x="422" y="28" text-anchor="middle">7</text>
+      <text x="478" y="28" text-anchor="middle">8</text>
+      <text x="534" y="28" text-anchor="middle">9</text>
+      <text x="590" y="28" text-anchor="middle">10</text>
+      <text x="646" y="28" text-anchor="middle" fill="#dc2626" font-weight="700">11</text>
+      <text x="702" y="28" text-anchor="middle" fill="#b45309" font-weight="700">12</text>
+      <text x="758" y="28" text-anchor="middle">13</text>
+      <text x="814" y="28" text-anchor="middle">14</text>
+      <text x="870" y="28" text-anchor="middle">15</text>
+    </g>
+    <!-- ★ marker for stall=12 -->
+    <text x="702" y="62" text-anchor="middle" class="star">★</text>
+
+    <!-- axis title -->
+    <text x="-12" y="28" text-anchor="end" class="lbl" font-size="12">stall</text>
+  </g>
+
+  <!-- Mode cards (3 horizontal) -->
+  <g transform="translate(36,196)">
+    <!-- Mode A: Linear -->
+    <g>
+      <rect x="0" y="0" width="330" height="160" rx="8" fill="url(#linG)" stroke="#16a34a" stroke-width="1"/>
+      <text x="16" y="22" class="modeT" fill="#16a34a">Mode A · Linear Interval</text>
+      <text x="16" y="40" class="lbl-sm" fill="#16a34a">stall ∈ [1..13] · dispatch_interval = stall × 1 cyc</text>
+
+      <text x="16" y="68" class="lbl" fill="#16a34a">total ≈ stall × N_inst + 1</text>
+
+      <g transform="translate(16,82)">
+        <text x="0" y="0" class="lbl-sm" fill="#16a34a">stall=1  → 1.40 cyc/FFMA  (ptxas FFMA default)</text>
+        <text x="0" y="16" class="lbl-sm" fill="#16a34a">stall=4  → 4.05 cyc/FFMA  (ptxas loop default)</text>
+        <text x="0" y="32" class="lbl-sm" fill="#16a34a">stall=8  → 8.20 cyc/FFMA  (Case 17 sweep)</text>
+        <text x="0" y="52" class="lbl" fill="#16a34a">→ ptxas optimal in this range</text>
+      </g>
+    </g>
+
+    <!-- Mode B: Sentinel -->
+    <g transform="translate(346,0)">
+      <rect width="330" height="160" rx="8" fill="url(#senG)" stroke="#dc2626" stroke-width="1"/>
+      <text x="16" y="22" class="modeT" fill="#dc2626">Mode B · Sentinel (HW Replay)</text>
+      <text x="16" y="40" class="lbl-sm" fill="#dc2626">stall ∈ {0, 14, 15} · triggers full dep replay</text>
+
+      <text x="16" y="68" class="lbl" fill="#dc2626">bypasses linear interval HW</text>
+
+      <g transform="translate(16,82)">
+        <text x="0" y="0" class="lbl-sm" fill="#dc2626">FFMA stall=0  → 31.10 cyc/op (22× slower)</text>
+        <text x="0" y="16" class="lbl-sm" fill="#dc2626">FFMA stall=15 → 32.20 cyc/op</text>
+        <text x="0" y="32" class="lbl-sm" fill="#dc2626">HMMA stall=14 → 55.51 cyc/op (+72%)</text>
+        <text x="0" y="52" class="lbl" fill="#dc2626">→ ptxas never enters this range</text>
+      </g>
+    </g>
+
+    <!-- Mode C: Pipeline-aligned -->
+    <g transform="translate(692,0)">
+      <rect width="316" height="160" rx="8" fill="url(#alignG)" stroke="#b45309" stroke-width="1"/>
+      <text x="16" y="22" class="modeT" fill="#92400e">Mode C · Pipeline Alignment</text>
+      <text x="16" y="40" class="lbl-sm" fill="#92400e">specific values align with TC writeback</text>
+
+      <text x="16" y="68" class="lbl" fill="#92400e">HMMA · TC pipeline granularity</text>
+
+      <g transform="translate(16,82)">
+        <text x="0" y="0" class="lbl-sm" fill="#dc2626">stall=11 → 34.34 cyc (ptxas default ✗)</text>
+        <text x="0" y="16" class="lbl" fill="#b45309">★ stall=12 → 32.23 cyc (HW optimal)</text>
+        <text x="0" y="32" class="lbl-sm" fill="#92400e">stall=13 → 32.23 cyc (same)</text>
+        <text x="0" y="52" class="lbl" fill="#b45309">→ CuAsm 11→12 = +6.1%</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- bottom takeaway -->
+  <text x="36" y="380" class="lbl" fill="#0b1220">Why does Mode C exist?</text>
+  <text x="36" y="398" class="lbl-sm">TC pipeline depth 1.81 · avg throughput 16 cyc/MMA · but stall counter only controls SMSP dispatch, not TC internal re-issue</text>
+  <text x="36" y="414" class="lbl-sm">stall=11 mis-aligns with TC writeback's 1-cycle granularity → 1-cyc partial replay bubble · stall=12 aligns the writeback slot · ptxas latency model misses this</text>
+  <text x="36" y="438" class="lbl-sm" fill="#5b6679">[evidence: Cases 9, 16, 17, 82 sweep]</text>
+</svg>

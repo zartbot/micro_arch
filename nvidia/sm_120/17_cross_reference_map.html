@@ -1,0 +1,881 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Cross-Reference Map · SM_120 Microarch Reference</title>
+    <link rel="stylesheet" href="assets/css/style.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css"
+      integrity="sha384-nB0miv6/jRmo5UMMR1wu3Gz6NLsoTkbqJghGIsx//Rlm+ZU03BU6SQNC66uf4l5+"
+      crossorigin="anonymous"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/styles/atom-one-light.min.css"
+    />
+    <style>
+      /* protect non-color overrides over hljs theme */
+      pre code.hljs {
+        background: transparent !important;
+        padding: 0 !important;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="shell">
+      <aside class="toc">
+        <a class="toc-back" href="index.html">← Index</a>
+        <div class="toc-brand">
+          SM_120 <span class="accent">GB202</span> · <em>Microarch</em>
+        </div>
+        <span class="toc-tag">FINAL REPORT · 2026</span>
+        <h4>All Chapters</h4>
+        <a href="01_architecture_overview.html">01 · Architecture Overview</a>
+        <a href="02_memory_subsystem.html">02 · Memory Subsystem</a>
+        <a href="03_sm_microarchitecture.html">03 · SM Microarchitecture</a>
+        <a href="04_tensorcore_architecture.html"
+          >04 · TensorCore Architecture</a
+        >
+        <a href="05_instruction_level_characterization.html"
+          >05 · Instruction-Level Characterization</a
+        >
+        <a href="06_on_chip_network_async.html"
+          >06 · On-Chip Network &amp; Async</a
+        >
+        <a href="07_warp_scheduler_control.html"
+          >07 · Warp Scheduler &amp; Control</a
+        >
+        <a href="08_workload_analysis.html">08 · Workload Analysis</a>
+        <a href="09_power_thermal_efficiency.html"
+          >09 · Power, Thermal &amp; Efficiency</a
+        >
+        <a href="10_system_level_multi_gpu.html"
+          >10 · System-Level &amp; Multi-GPU</a
+        >
+        <a href="11_optimization_guidance.html">11 · Optimization Guidance</a>
+        <a href="12_ptxas_compiler_behavior.html"
+          >12 · ptxas Compiler Behavior</a
+        >
+        <a href="13_unified_performance_model.html"
+          >13 · Unified Performance Model</a
+        >
+        <a href="14_sm100_to_sm120_porting_guide.html"
+          >14 · SM_100 → SM_120 Porting Guide</a
+        >
+        <a href="15_agent_ground_truth.html">15 · Agent Ground Truth</a>
+        <a href="16_open_questions.html">16 · Open Questions</a>
+        <a
+          href="17_cross_reference_map.html"
+          style="font-weight: 600; color: var(--ink)"
+          >17 · Cross-Reference Map</a
+        >
+        <a href="18_appendix_a_test_coverage.html"
+          >18 · Appendix A — Test Coverage</a
+        >
+        <a href="19_appendix_b_machine_readable.html"
+          >19 · Appendix B — Machine-Readable Parameters</a
+        >
+        <a href="20_appendix_c_methodology.html"
+          >20 · Appendix C — Measurement Methodology</a
+        >
+      </aside>
+      <main class="content">
+        <header class="hero">
+          <div class="hero-eyebrow">
+            <span class="pulse"></span>CHAPTER 17 · SM_120 · GB202 BLACKWELL
+          </div>
+          <h1 class="hero-title">Cross-Reference Map</h1>
+          <p class="lede">
+            This chapter provides a comprehensive cross-reference map linking
+            key findings to their originating test sections, the report chapters
+            where they are discussed, and related findings. The map serves two
+            purposes: (1) enabling readers to trace any conclusion back to its
+            empirical source, and (2) revealing the dependency structure between
+            findings that underlies the unified performance model.
+          </p>
+        </header>
+
+        <h2 class="ch-title" id="17-1-key-finding-cross-reference-table">
+          17.1 Key Finding Cross-Reference Table
+        </h2>
+        <p>
+          Each row maps a key finding (KF) to the measurement sections that
+          produced it, the report chapters that consume it, and related findings
+          that share dependencies or interact architecturally.
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Key Finding</th>
+                <th>Measured In</th>
+                <th>Report Chapters</th>
+                <th>Related KFs</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>KF-01</td>
+                <td>4 sub-cores per SM, single-issue per SMSP</td>
+                <td>S1, S3, S11, S22</td>
+                <td>§1, §3, §5, §6, §12</td>
+                <td>KF-07, KF-17, KF-20</td>
+              </tr>
+              <tr>
+                <td>KF-02</td>
+                <td>L1=44, L2=354, DRAM=362 cyc latency ladder</td>
+                <td>S8, S21, S26</td>
+                <td>§2, §6, §12</td>
+                <td>KF-10, KF-11, KF-17</td>
+              </tr>
+              <tr>
+                <td>KF-03</td>
+                <td>TC uniform 29 cyc all non-FP64 formats</td>
+                <td>S9</td>
+                <td>§1, §3, §4, §6, §9, §12</td>
+                <td>KF-12, KF-19, KF-23</td>
+              </tr>
+              <tr>
+                <td>KF-04</td>
+                <td>TMA multicast SW-emulated (2000-8000x overhead)</td>
+                <td>S10, S16</td>
+                <td>§1, §4, §6, §9, §13</td>
+                <td>KF-21, KF-22</td>
+              </tr>
+              <tr>
+                <td>KF-05</td>
+                <td>3-stage pipeline optimal (1.92x speedup)</td>
+                <td>S8, S10, S18</td>
+                <td>§4, §6, §9, §12</td>
+                <td>KF-02, KF-17</td>
+              </tr>
+              <tr>
+                <td>KF-06</td>
+                <td>No wgmma/tcgen05 on SM_120</td>
+                <td>S0, S2, S9</td>
+                <td>§1, §3, §4, §9, §13</td>
+                <td>KF-03, KF-04</td>
+              </tr>
+              <tr>
+                <td>KF-07</td>
+                <td>CGGTY greedy warp scheduler</td>
+                <td>S11</td>
+                <td>§5, §6, §12</td>
+                <td>KF-01, KF-17</td>
+              </tr>
+              <tr>
+                <td>KF-08</td>
+                <td>Register-occupancy: min(48, floor(65536/(r×32)))</td>
+                <td>S3, S12</td>
+                <td>§1, §5, §12</td>
+                <td>KF-01, KF-17</td>
+              </tr>
+              <tr>
+                <td>KF-09</td>
+                <td>Uniform L2 XOR hash (no partition camping)</td>
+                <td>S3, S8, S17, S21</td>
+                <td>§2, §12</td>
+                <td>KF-10, KF-11</td>
+              </tr>
+              <tr>
+                <td>KF-10</td>
+                <td>GDDR7 1231-1292 GB/s (91.6-96% efficiency)</td>
+                <td>S8, S21</td>
+                <td>§2, §6, §12</td>
+                <td>KF-02, KF-09, KF-11</td>
+              </tr>
+              <tr>
+                <td>KF-11</td>
+                <td>L2 96 MB cliff (4.17x BW drop beyond)</td>
+                <td>S21</td>
+                <td>§2, §6, §12</td>
+                <td>KF-09, KF-10</td>
+              </tr>
+              <tr>
+                <td>KF-12</td>
+                <td>Roofline crossover AI=203 (FP16 TC)</td>
+                <td>S19</td>
+                <td>§6, §8, §9, §12</td>
+                <td>KF-03, KF-10</td>
+              </tr>
+              <tr>
+                <td>KF-13</td>
+                <td>
+                  MX-FP4 227.5 TC-pipe TOPS/W (best TC silicon eff., bit-OPS
+                  unit; chip-level NVFP4 = 2.36 TFLOPS/W)
+                </td>
+                <td>S9, S20</td>
+                <td>§1, §7, §9</td>
+                <td>KF-03, KF-23</td>
+              </tr>
+              <tr>
+                <td>KF-14</td>
+                <td>ptxas near-optimal stall assignment (+0% overhead)</td>
+                <td>S21</td>
+                <td>§5, §9, §11</td>
+                <td>KF-15, KF-16</td>
+              </tr>
+              <tr>
+                <td>KF-15</td>
+                <td>
+                  .reuse bits = functionally active on SM_120 (+85% ILP
+                  throughput)
+                </td>
+                <td>S11, S12, S21</td>
+                <td>§3, §5, §11</td>
+                <td>KF-14, KF-16</td>
+              </tr>
+              <tr>
+                <td>KF-16</td>
+                <td>Stall &lt; latency causes silent stale reads</td>
+                <td>S11</td>
+                <td>§3, §5, §11</td>
+                <td>KF-14, KF-15</td>
+              </tr>
+              <tr>
+                <td>KF-17</td>
+                <td>Latency hiding: L1@10W, DRAM@6W, MMA ILP=8</td>
+                <td>S11, S21</td>
+                <td>§5, §6, §12</td>
+                <td>KF-01, KF-02, KF-07</td>
+              </tr>
+              <tr>
+                <td>KF-18</td>
+                <td>MMA+LDG 100% overlap at &lt;=4:1 ratio</td>
+                <td>S9, S21</td>
+                <td>§3, §6, §12</td>
+                <td>KF-03, KF-05, KF-19</td>
+              </tr>
+              <tr>
+                <td>KF-19</td>
+                <td>TC saturates at 4 warps/SM, SFU at 4 warps/SMSP</td>
+                <td>S9, S21</td>
+                <td>§3, §5, §12</td>
+                <td>KF-01, KF-03</td>
+              </tr>
+              <tr>
+                <td>KF-20</td>
+                <td>CTA round-robin: 11 GPCs, stride-20</td>
+                <td>S3, S21</td>
+                <td>§1, §8</td>
+                <td>KF-01, KF-09</td>
+              </tr>
+              <tr>
+                <td>KF-21</td>
+                <td>
+                  DSMEM wins sync (26x faster), loses raw read (4.5x slower)
+                </td>
+                <td>S17</td>
+                <td>§4, §9, §13</td>
+                <td>KF-04, KF-22</td>
+              </tr>
+              <tr>
+                <td>KF-22</td>
+                <td>Named barrier 14x cheaper than mbarrier</td>
+                <td>S23</td>
+                <td>§4, §9, §13</td>
+                <td>KF-04, KF-21</td>
+              </tr>
+              <tr>
+                <td>KF-23</td>
+                <td>Block-scale (MX) MMA = zero overhead vs. dense</td>
+                <td>S9</td>
+                <td>§1, §3, §4, §9</td>
+                <td>KF-03, KF-13</td>
+              </tr>
+              <tr>
+                <td>KF-24</td>
+                <td>FP8/FP6/FP4 identical 15.88 cyc pipeline throughput</td>
+                <td>S9</td>
+                <td>§3, §4, §6, §12, §14</td>
+                <td>KF-03, KF-23</td>
+              </tr>
+              <tr>
+                <td>KF-25</td>
+                <td>Coalescing degradation curve (stride vs. BW)</td>
+                <td>S21</td>
+                <td>§2, §12, §14</td>
+                <td>KF-10, KF-11</td>
+              </tr>
+              <tr>
+                <td>KF-26</td>
+                <td>Nested divergence O(2^depth) cost</td>
+                <td>S7, S21</td>
+                <td>§4, §5</td>
+                <td>KF-07, KF-01</td>
+              </tr>
+              <tr>
+                <td>KF-27</td>
+                <td>Optimization strategy lookup (26 entries)</td>
+                <td>S4-S23</td>
+                <td>§9, §14</td>
+                <td>All</td>
+              </tr>
+              <tr>
+                <td>KF-28</td>
+                <td>Agent constraint database (14 hard + 8 soft)</td>
+                <td>S0-S23</td>
+                <td>§14</td>
+                <td>All</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <hr />
+        <h2
+          class="ch-title"
+          id="17-2-measurement-section-to-report-chapter-mapping"
+        >
+          17.2 Measurement Section to Report Chapter Mapping
+        </h2>
+        <p>
+          This table shows which measurement sections feed data into which
+          report chapters.
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Meas. Section</th>
+                <th>Section Title</th>
+                <th>Primary Report Chapters</th>
+                <th>Secondary Chapters</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>S0</td>
+                <td>Architecture Delta</td>
+                <td>§1</td>
+                <td>§3, §13</td>
+              </tr>
+              <tr>
+                <td>S1</td>
+                <td>Methodology Calibration</td>
+                <td>§10 (Methodology)</td>
+                <td>§1</td>
+              </tr>
+              <tr>
+                <td>S2</td>
+                <td>Feature Discovery</td>
+                <td>§1, §3</td>
+                <td>§4, §13</td>
+              </tr>
+              <tr>
+                <td>S3</td>
+                <td>Topology Probes</td>
+                <td>§1, §8</td>
+                <td>§2, §5, §12</td>
+              </tr>
+              <tr>
+                <td>S4</td>
+                <td>Integer ALU</td>
+                <td>§3, §5</td>
+                <td>§12, §14</td>
+              </tr>
+              <tr>
+                <td>S5</td>
+                <td>Floating-Point ALU</td>
+                <td>§3, §5</td>
+                <td>§6, §7, §12, §14</td>
+              </tr>
+              <tr>
+                <td>S6</td>
+                <td>Logic, Shift, Conversion</td>
+                <td>§3</td>
+                <td>§5, §12</td>
+              </tr>
+              <tr>
+                <td>S7</td>
+                <td>Sync &amp; Control Flow</td>
+                <td>§4, §5</td>
+                <td>§6, §9, §12</td>
+              </tr>
+              <tr>
+                <td>S8</td>
+                <td>On-Chip Memory</td>
+                <td>§2</td>
+                <td>§6, §12, §14</td>
+              </tr>
+              <tr>
+                <td>S9</td>
+                <td>TensorCore</td>
+                <td>§3, §4</td>
+                <td>§1, §6, §7, §9, §12</td>
+              </tr>
+              <tr>
+                <td>S10</td>
+                <td>TMA &amp; Async</td>
+                <td>§4</td>
+                <td>§6, §9, §13</td>
+              </tr>
+              <tr>
+                <td>S11</td>
+                <td>Execution Pipeline</td>
+                <td>§3, §5</td>
+                <td>§6, §9, §11, §12</td>
+              </tr>
+              <tr>
+                <td>S12</td>
+                <td>Register File &amp; Scoreboard</td>
+                <td>§5</td>
+                <td>§3, §12</td>
+              </tr>
+              <tr>
+                <td>S13</td>
+                <td>Instruction Encoding</td>
+                <td>§5</td>
+                <td>§3, §11</td>
+              </tr>
+              <tr>
+                <td>S14</td>
+                <td>Host-Device Transfer</td>
+                <td>§8</td>
+                <td>§10</td>
+              </tr>
+              <tr>
+                <td>S15</td>
+                <td>GPU-to-GPU P2P</td>
+                <td>§8</td>
+                <td>§10</td>
+              </tr>
+              <tr>
+                <td>S16</td>
+                <td>Cluster &amp; Multi-CTA</td>
+                <td>§4</td>
+                <td>§6, §9, §13</td>
+              </tr>
+              <tr>
+                <td>S17</td>
+                <td>Inter-SM Communication</td>
+                <td>§4</td>
+                <td>§6, §9, §13</td>
+              </tr>
+              <tr>
+                <td>S18</td>
+                <td>SM_120 vs SM_100</td>
+                <td>§1</td>
+                <td>§13</td>
+              </tr>
+              <tr>
+                <td>S19</td>
+                <td>GEMM &amp; Workload</td>
+                <td>§6</td>
+                <td>§8, §9, §12</td>
+              </tr>
+              <tr>
+                <td>S20</td>
+                <td>Power &amp; Efficiency</td>
+                <td>§7</td>
+                <td>§9</td>
+              </tr>
+              <tr>
+                <td>S21</td>
+                <td>Cross-Cutting Probes</td>
+                <td>§2, §5, §6, §12</td>
+                <td>§3, §8, §9, §11, §14</td>
+              </tr>
+              <tr>
+                <td>S22</td>
+                <td>Issue Pipe Architecture</td>
+                <td>§3</td>
+                <td>§5, §12</td>
+              </tr>
+              <tr>
+                <td>S23</td>
+                <td>mbarrier &amp; Warp-Spec</td>
+                <td>§4</td>
+                <td>§9, §13</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <hr />
+        <h2 class="ch-title" id="17-3-report-chapter-dependency-graph">
+          17.3 Report Chapter Dependency Graph
+        </h2>
+        <p>
+          The graph below shows which report chapters must be written before
+          others (data dependencies). Arrows indicate "depends on."
+        </p>
+        <figure class="diagram">
+          <object
+            data="svg/ch17/ch17_dep_graph.svg"
+            type="image/svg+xml"
+            aria-label="Report chapter dependency graph — 8 layers from methodology to synthesis"
+          ></object>
+          <figcaption>
+            Report chapter dependency graph — 8 layers from methodology to
+            synthesis
+          </figcaption>
+        </figure>
+        <h3
+          class="sub-title"
+          id="production-sequencing-recommended-write-order"
+        >
+          Production Sequencing (Recommended Write Order)
+        </h3>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Phase</th>
+                <th>Chapters</th>
+                <th>Rationale</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>A (Foundation)</td>
+                <td>§10 → §1 → §2</td>
+                <td>Methodology first; architecture grounds everything</td>
+              </tr>
+              <tr>
+                <td>B (Instruction)</td>
+                <td>§3 → §4 → §5</td>
+                <td>SM pipes, then TC, then full instruction catalog</td>
+              </tr>
+              <tr>
+                <td>C (Network)</td>
+                <td>§6 → §7</td>
+                <td>On-chip network enables scheduler discussion</td>
+              </tr>
+              <tr>
+                <td>D (Workload)</td>
+                <td>§8 → §9 → §10</td>
+                <td>Workload analysis, power, then system-level</td>
+              </tr>
+              <tr>
+                <td>E (Synthesis)</td>
+                <td>§11 → §12 → §13 → §14</td>
+                <td>Optimization, compiler, model, porting</td>
+              </tr>
+              <tr>
+                <td>F (Agent)</td>
+                <td>§15</td>
+                <td>Requires all prior chapters as input</td>
+              </tr>
+              <tr>
+                <td>G (Finalize)</td>
+                <td>§16 → §17 → §18-20</td>
+                <td>Open questions, cross-ref, appendices</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <hr />
+        <h2 class="ch-title" id="17-4-finding-interaction-matrix">
+          17.4 Finding Interaction Matrix
+        </h2>
+        <p>
+          This matrix identifies findings that interact or constrain each other.
+          An "X" indicates the row finding directly depends on or interacts with
+          the column finding.
+        </p>
+        <aside class="callout callout-info">
+          <p>
+            <strong>Coverage scope</strong>: The 8×8 matrix below intentionally
+            surfaces only the
+            <strong>8 most-interconnected core KFs</strong>
+            (KF-01/02/03/07/08/10/17/19) as a navigable visualization — a full
+            28×28 matrix would be 784 cells, mostly empty. For the remaining KFs
+            (KF-04..06, KF-09, KF-11..16, KF-18, KF-20..28), the dependency
+            relationships are documented per-finding via the
+            <code>Related KFs</code> column of the master table in §17.1 and
+            surfaced in narrative form in the "Critical Interaction Chains"
+            subsection below. KF-20 through KF-28 also appear individually in
+            the Data Source Coverage Map (§17.5) showing single- vs multi-source
+            evidence levels.
+          </p>
+        </aside>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th></th>
+                <th style="text-align: center">KF-01</th>
+                <th style="text-align: center">KF-02</th>
+                <th style="text-align: center">KF-03</th>
+                <th style="text-align: center">KF-07</th>
+                <th style="text-align: center">KF-08</th>
+                <th style="text-align: center">KF-10</th>
+                <th style="text-align: center">KF-17</th>
+                <th style="text-align: center">KF-19</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>KF-01</strong> (4 SC)</td>
+                <td style="text-align: center">—</td>
+                <td style="text-align: center"></td>
+                <td style="text-align: center"></td>
+                <td style="text-align: center">X</td>
+                <td style="text-align: center">X</td>
+                <td style="text-align: center"></td>
+                <td style="text-align: center">X</td>
+                <td style="text-align: center">X</td>
+              </tr>
+              <tr>
+                <td><strong>KF-02</strong> (Latency)</td>
+                <td style="text-align: center"></td>
+                <td style="text-align: center">—</td>
+                <td style="text-align: center"></td>
+                <td style="text-align: center"></td>
+                <td style="text-align: center"></td>
+                <td style="text-align: center">X</td>
+                <td style="text-align: center">X</td>
+                <td style="text-align: center"></td>
+              </tr>
+              <tr>
+                <td><strong>KF-03</strong> (TC 29c)</td>
+                <td style="text-align: center"></td>
+                <td style="text-align: center"></td>
+                <td style="text-align: center">—</td>
+                <td style="text-align: center"></td>
+                <td style="text-align: center"></td>
+                <td style="text-align: center"></td>
+                <td style="text-align: center"></td>
+                <td style="text-align: center">X</td>
+              </tr>
+              <tr>
+                <td><strong>KF-07</strong> (CGGTY)</td>
+                <td style="text-align: center">X</td>
+                <td style="text-align: center"></td>
+                <td style="text-align: center"></td>
+                <td style="text-align: center">—</td>
+                <td style="text-align: center"></td>
+                <td style="text-align: center"></td>
+                <td style="text-align: center">X</td>
+                <td style="text-align: center"></td>
+              </tr>
+              <tr>
+                <td><strong>KF-08</strong> (Reg-occ)</td>
+                <td style="text-align: center">X</td>
+                <td style="text-align: center"></td>
+                <td style="text-align: center"></td>
+                <td style="text-align: center"></td>
+                <td style="text-align: center">—</td>
+                <td style="text-align: center"></td>
+                <td style="text-align: center">X</td>
+                <td style="text-align: center"></td>
+              </tr>
+              <tr>
+                <td><strong>KF-10</strong> (GDDR7)</td>
+                <td style="text-align: center"></td>
+                <td style="text-align: center">X</td>
+                <td style="text-align: center"></td>
+                <td style="text-align: center"></td>
+                <td style="text-align: center"></td>
+                <td style="text-align: center">—</td>
+                <td style="text-align: center"></td>
+                <td style="text-align: center"></td>
+              </tr>
+              <tr>
+                <td><strong>KF-17</strong> (Hiding)</td>
+                <td style="text-align: center">X</td>
+                <td style="text-align: center">X</td>
+                <td style="text-align: center"></td>
+                <td style="text-align: center">X</td>
+                <td style="text-align: center">X</td>
+                <td style="text-align: center"></td>
+                <td style="text-align: center">—</td>
+                <td style="text-align: center"></td>
+              </tr>
+              <tr>
+                <td><strong>KF-19</strong> (Saturation)</td>
+                <td style="text-align: center">X</td>
+                <td style="text-align: center"></td>
+                <td style="text-align: center">X</td>
+                <td style="text-align: center"></td>
+                <td style="text-align: center"></td>
+                <td style="text-align: center"></td>
+                <td style="text-align: center"></td>
+                <td style="text-align: center">—</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <h3 class="sub-title" id="critical-interaction-chains">
+          Critical Interaction Chains
+        </h3>
+        <ol>
+          <li>
+            <strong>Compute-bound chain</strong>: KF-01 (sub-cores) → KF-19 (TC
+            saturation) → KF-03 (TC latency) → KF-12 (roofline crossover)
+          </li>
+          <li>
+            <strong>Memory-bound chain</strong>: KF-10 (GDDR7 BW) → KF-02
+            (latency ladder) → KF-11 (L2 cliff) → KF-25 (coalescing)
+          </li>
+          <li>
+            <strong>Scheduling chain</strong>: KF-01 (sub-cores) → KF-07 (CGGTY)
+            → KF-17 (latency hiding) → KF-08 (reg-occupancy)
+          </li>
+          <li>
+            <strong>Async pipeline chain</strong>: KF-04 (TMA multicast) → KF-05
+            (3-stage pipe) → KF-18 (MMA+LDG overlap)
+          </li>
+          <li>
+            <strong>Power efficiency chain</strong>: KF-03 (TC 29c) → KF-24
+            (FP8=FP4) → KF-13 (MX-FP4 efficiency) → power model
+          </li>
+          <li>
+            <strong>CTA placement chain</strong>: KF-20 (CTA round-robin 11 GPCs
+            stride-20) → KF-04 (TMA multicast SW-emulated) → KF-09 (L2 hash, no
+            partition camping)
+          </li>
+          <li>
+            <strong>Sparsity / format chain</strong>: KF-23 (block-scale zero
+            overhead) → KF-24 (FP8/FP6/FP4 identical 15.88 cyc) → KF-13 (MX-FP4
+            best efficiency)
+          </li>
+          <li>
+            <strong>Synchronization chain</strong>: KF-21 (DSMEM sync 26x) →
+            KF-22 (named barrier 14x cheaper) → KF-04 (TMA multicast absent)
+          </li>
+          <li>
+            <strong>Compiler/ISA chain</strong>: KF-14 (ptxas near-optimal
+            stalls) → KF-15 (.reuse active) → KF-16 (stall&lt;latency stale
+            read) → KF-26 (divergence O(2^D))
+          </li>
+          <li>
+            <strong>Bandwidth ladder chain</strong>: KF-25 (coalescing curve) →
+            KF-10 (GDDR7 BW) → KF-11 (L2 96 MB cliff)
+          </li>
+        </ol>
+        <hr />
+        <h2 class="ch-title" id="17-5-data-source-coverage-map">
+          17.5 Data Source Coverage Map
+        </h2>
+        <p>
+          This table shows which key findings rely on single-source vs.
+          multi-source evidence.
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Evidence Level</th>
+                <th>Key Findings</th>
+                <th>Count</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Multi-source (3+ sections)</td>
+                <td>KF-01, KF-02, KF-05, KF-06, KF-09, KF-10, KF-17, KF-18</td>
+                <td>8</td>
+              </tr>
+              <tr>
+                <td>Dual-source (2 sections)</td>
+                <td>
+                  KF-03, KF-04, KF-08, KF-11, KF-13, KF-15, KF-19, KF-20, KF-24
+                </td>
+                <td>9</td>
+              </tr>
+              <tr>
+                <td>Single-source</td>
+                <td>
+                  KF-07, KF-12, KF-14, KF-16, KF-21, KF-22, KF-23, KF-25, KF-26
+                </td>
+                <td>9</td>
+              </tr>
+              <tr>
+                <td>Comprehensive (all sections)</td>
+                <td>KF-27, KF-28</td>
+                <td>2</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          <strong>Note</strong>: Single-source findings are individually tagged
+          <code>[SINGLE-SOURCE]</code> in their respective chapters. None of the
+          single-source findings are contradicted by data from other sections;
+          they are single-source because only one measurement section was
+          designed to probe that specific property.
+        </p>
+        <hr />
+
+        <footer class="page-footer">
+          <div class="foot-grid">
+            <div>
+              <strong>SM_120 / GB202 Blackwell</strong> · Microarchitecture
+              Analysis &amp; Reference · 2026
+            </div>
+            <div>1542 microbenchmark cases · 26 sections · ~13,400 lines</div>
+            <div class="foot-accent">
+              RTX PRO 5000 72GB · CUDA 13.3 · Data source: test_results/SM_120/
+            </div>
+          </div>
+        </footer>
+      </main>
+      <aside class="toc-right">
+        <h4>Chapter Navigation</h4>
+        <a href="#17-1-key-finding-cross-reference-table"
+          >17.1 Key Finding Cross-Reference Table</a
+        >
+        <a href="#17-2-measurement-section-to-report-chapter-mapping"
+          >17.2 Measurement Section to Report Chapter Mapping</a
+        >
+        <a href="#17-3-report-chapter-dependency-graph"
+          >17.3 Report Chapter Dependency Graph</a
+        >
+        <a class="sub" href="#production-sequencing-recommended-write-order"
+          >Production Sequencing (Recommended Write Order)</a
+        >
+        <a href="#17-4-finding-interaction-matrix"
+          >17.4 Finding Interaction Matrix</a
+        >
+        <a class="sub" href="#critical-interaction-chains"
+          >Critical Interaction Chains</a
+        >
+        <a href="#17-5-data-source-coverage-map"
+          >17.5 Data Source Coverage Map</a
+        >
+      </aside>
+    </div>
+    <script
+      defer
+      src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"
+      integrity="sha384-7zkQWkzuo3B5mTepMUcHkMB5jZaolc2xDwL6VFqjFALcbeS9Ggm/Yr2r3Dy4lfFg"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      defer
+      src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+      integrity="sha384-43gviWU0YVjaDtb/GhzOouOXtZMP/7XUzwPTstBeZFe/+rCMvRwr4yROQP43s0Xk"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      defer
+      src="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/lib/highlight.min.js"
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (window.renderMathInElement) {
+          renderMathInElement(document.body, {
+            delimiters: [
+              { left: "$$", right: "$$", display: true },
+              { left: "$", right: "$", display: false },
+            ],
+            throwOnError: false,
+          });
+        }
+        if (window.hljs) {
+          document
+            .querySelectorAll("pre code[class^='language-']")
+            .forEach(function (el) {
+              try {
+                hljs.highlightElement(el);
+              } catch (e) {}
+            });
+        }
+      });
+    </script>
+    <script src="assets/js/toc.js" defer></script>
+  </body>
+</html>

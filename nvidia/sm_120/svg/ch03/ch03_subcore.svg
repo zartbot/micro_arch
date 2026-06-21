@@ -1,0 +1,213 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 880" role="img"
+     aria-label="SMSP sub-core block diagram: warp scheduler → decode → register file → 6 execution pipes + TC">
+  <defs>
+    <linearGradient id="schedG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#EDE7FB"/><stop offset="1" stop-color="#F5F1FF"/>
+    </linearGradient>
+    <linearGradient id="decG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FEF3C7"/><stop offset="1" stop-color="#FFFBEB"/>
+    </linearGradient>
+    <linearGradient id="rfG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#E0E7FF"/><stop offset="1" stop-color="#EEF2FF"/>
+    </linearGradient>
+    <linearGradient id="pG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#E9F3D2"/><stop offset="1" stop-color="#F4FAE2"/>
+    </linearGradient>
+    <linearGradient id="tcG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFE4E6"/><stop offset="1" stop-color="#FFF1F2"/>
+    </linearGradient>
+    <marker id="ar" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto">
+      <path d="M0,0 L7,3.5 L0,7 Z" fill="#8e97a5"/>
+    </marker>
+    <style><![CDATA[
+      .ttl{font:600 15px "Fraunces",serif;fill:#0b1220}
+      .sub{font:italic 11.5px "Fraunces",serif;fill:#5b6679}
+      .lbl{font:600 12px "JetBrains Mono",monospace;fill:#2a3548}
+      .lbl-sm{font:500 10.5px "JetBrains Mono",monospace;fill:#5b6679}
+      .lbl-sm2{font:500 8.5px "JetBrains Mono",monospace;fill:#5b6679}
+      .lbl-xs{font:500 9px "JetBrains Mono",monospace;fill:#8e97a5}
+      .pipe-t{font:600 13px "Fraunces",serif}
+      .pipe-sub{font:500 11px "JetBrains Mono",monospace}
+      .opc{font:500 9.5px "JetBrains Mono",monospace;fill:#5b6679}
+      .badge{font:600 9.5px "JetBrains Mono",monospace}
+      .stage-num{font:600 18px "Fraunces",serif;fill:#8e97a5}
+    ]]></style>
+  </defs>
+  <rect width="1080" height="880" fill="#ffffff"/>
+  <text x="40" y="34" class="ttl">SMSP Sub-Core Block Diagram · 1 of 4 per SM · Single-Issue Architecture</text>
+  <text x="40" y="54" class="sub">Each SM has 4 identical SMSPs; each dispatches 1 instruction/cycle from 12 resident warps through 6 execution pipes</text>
+
+  <!-- ======== Stage 1: Warp Scheduler ======== -->
+  <g transform="translate(200,76)">
+    <rect x="0" y="0" width="680" height="72" rx="12" fill="url(#schedG)" stroke="#6d28d9" stroke-width="1"/>
+    <text x="24" y="26" class="pipe-t" fill="#6d28d9">Warp Scheduler</text>
+    <rect x="200" y="8" width="90" height="20" rx="10" fill="#6d28d9" opacity="0.12"/>
+    <text x="245" y="22" class="badge" fill="#6d28d9" text-anchor="middle">CGGTY</text>
+    <rect x="298" y="8" width="110" height="20" rx="10" fill="#6d28d9" opacity="0.12"/>
+    <text x="353" y="22" class="badge" fill="#6d28d9" text-anchor="middle">Single-Issue</text>
+    <text x="24" y="48" class="lbl-sm2">12 warps/SMSP · greedy-then-youngest policy · 0-cyc context switch (RF-resident)</text>
+    <text x="24" y="64" class="lbl-sm2">latency hiding: 4 warps saturate FFMA pipeline (4 cyc × 1 issue/cyc)</text>
+  </g>
+  <line x1="540" y1="148" x2="540" y2="168" stroke="#8e97a5" stroke-width="1.5" marker-end="url(#ar)"/>
+  <text x="548" y="162" class="lbl-xs">1 insn/cyc ▾</text>
+
+  <!-- ======== Stage 2: Decode + I-cache ======== -->
+  <g transform="translate(200,176)">
+    <rect x="0" y="0" width="480" height="72" rx="12" fill="url(#decG)" stroke="#b45309" stroke-width="0.9"/>
+    <text x="24" y="26" class="pipe-t" fill="#92400e">Instruction Decode</text>
+    <rect x="200" y="8" width="78" height="20" rx="10" fill="#b45309" opacity="0.1"/>
+    <text x="239" y="22" class="badge" fill="#92400e" text-anchor="middle">128-bit</text>
+    <text x="24" y="48" class="lbl-sm2">17-bit control: stall[4] + yield[1] + WaitBar[6] + RdB/WrB[6]</text>
+    <text x="24" y="64" class="lbl-sm2">reuse[4] bits → functionally active on SM_120 (RFC +85% ILP benefit) · PC step 0x10</text>
+  </g>
+  <!-- I-cache -->
+  <g transform="translate(700,176)">
+    <rect x="0" y="0" width="180" height="72" rx="10" fill="#ffffff" stroke="#b45309" stroke-width="0.7"/>
+    <text x="16" y="22" class="lbl" fill="#92400e">I-Cache</text>
+    <text x="16" y="42" class="lbl-sm" fill="#92400e">L0: ~4 KB/SMSP</text>
+    <text x="16" y="58" class="lbl-sm" fill="#92400e">L1: 64 KB/SM (shared)</text>
+  </g>
+  <line x1="680" y1="212" x2="700" y2="212" stroke="#b45309" stroke-width="1" stroke-dasharray="3 2"/>
+  <line x1="540" y1="248" x2="540" y2="268" stroke="#8e97a5" stroke-width="1.5" marker-end="url(#ar)"/>
+
+  <!-- ======== Stage 3: Register File ======== -->
+  <g transform="translate(140,276)">
+    <rect x="0" y="0" width="800" height="72" rx="12" fill="url(#rfG)" stroke="#1e40af" stroke-width="1"/>
+    <text x="24" y="26" class="pipe-t" fill="#1e40af">Register File</text>
+    <rect x="150" y="8" width="140" height="20" rx="10" fill="#1e40af" opacity="0.1"/>
+    <text x="220" y="22" class="badge" fill="#1e40af" text-anchor="middle">16,384 × 32-bit</text>
+    <rect x="298" y="8" width="100" height="20" rx="10" fill="#1e40af" opacity="0.1"/>
+    <text x="348" y="22" class="badge" fill="#1e40af" text-anchor="middle">2-Bank R%2</text>
+    <text x="24" y="48" class="lbl-sm2">≥3 read ports · operand collector absorbs bank conflicts (0 cyc penalty)</text>
+    <text x="24" y="64" class="lbl-sm2">RFC ≥24 entries/warp (LRU) · bypass: 2 cyc (IADD3) / 4 cyc (FFMA) · uniform RF: 64 entries</text>
+  </g>
+
+  <!-- Fan-out arrows to pipes -->
+  <g>
+    <line x1="270" y1="348" x2="270" y2="380" stroke="#8e97a5" stroke-width="1" marker-end="url(#ar)"/>
+    <line x1="410" y1="348" x2="410" y2="380" stroke="#8e97a5" stroke-width="1" marker-end="url(#ar)"/>
+    <line x1="540" y1="348" x2="540" y2="380" stroke="#8e97a5" stroke-width="1" marker-end="url(#ar)"/>
+    <line x1="670" y1="348" x2="670" y2="380" stroke="#8e97a5" stroke-width="1" marker-end="url(#ar)"/>
+    <line x1="800" y1="348" x2="800" y2="380" stroke="#8e97a5" stroke-width="1" marker-end="url(#ar)"/>
+    <line x1="940" y1="348" x2="940" y2="380" stroke="#8e97a5" stroke-width="1" marker-end="url(#ar)"/>
+  </g>
+
+  <!-- ======== Stage 4: Execution Pipes (3+3 layout, wider cards) ======== -->
+  <!-- Row 1: FMA-lite, FMA-heavy, XU/SFU -->
+  <g transform="translate(60,388)">
+    <!-- FMA-lite -->
+    <g>
+      <rect x="0" y="0" width="316" height="170" rx="12" fill="url(#pG)" stroke="#5a8e00" stroke-width="1"/>
+      <text x="20" y="24" class="pipe-t" fill="#5a8e00">FMA-lite</text>
+      <rect x="110" y="8" width="60" height="18" rx="9" fill="#5a8e00" opacity="0.15"/>
+      <text x="140" y="21" class="badge" fill="#5a8e00" text-anchor="middle">4 cyc</text>
+      <rect x="178" y="8" width="90" height="18" rx="9" fill="#5a8e00" opacity="0.15"/>
+      <text x="223" y="21" class="badge" fill="#5a8e00" text-anchor="middle">1.0 ops/cyc</text>
+      <line x1="20" y1="34" x2="296" y2="34" stroke="#5a8e00" stroke-width="0.5" opacity="0.3"/>
+      <text x="20" y="54" class="opc">FFMA · FADD · FMUL</text>
+      <text x="20" y="72" class="opc">HFMA2 · HADD2 · HMUL2 · BF16</text>
+      <text x="20" y="90" class="opc">FMNMX · FSEL · F2F</text>
+      <line x1="20" y1="104" x2="296" y2="104" stroke="#5a8e00" stroke-width="0.4" opacity="0.2"/>
+      <text x="20" y="122" class="lbl-xs">Co-issues perfectly with FMA-heavy (1.001×)</text>
+      <text x="20" y="140" class="lbl-xs">Dual-subpipe: FP32 + INT32 simultaneous</text>
+      <text x="20" y="158" class="lbl-xs">Also receives XU/SFU micro-ops (5-16%)</text>
+    </g>
+
+    <!-- FMA-heavy -->
+    <g transform="translate(330,0)">
+      <rect x="0" y="0" width="316" height="170" rx="12" fill="url(#pG)" stroke="#5a8e00" stroke-width="1"/>
+      <text x="20" y="24" class="pipe-t" fill="#5a8e00">FMA-heavy</text>
+      <rect x="120" y="8" width="66" height="18" rx="9" fill="#5a8e00" opacity="0.15"/>
+      <text x="153" y="21" class="badge" fill="#5a8e00" text-anchor="middle">4-5 cyc</text>
+      <rect x="194" y="8" width="90" height="18" rx="9" fill="#5a8e00" opacity="0.15"/>
+      <text x="239" y="21" class="badge" fill="#5a8e00" text-anchor="middle">~0.7 ops/cyc</text>
+      <line x1="20" y1="34" x2="296" y2="34" stroke="#5a8e00" stroke-width="0.5" opacity="0.3"/>
+      <text x="20" y="54" class="opc">IMAD · IADD3 (2 cyc lat!) · LEA</text>
+      <text x="20" y="72" class="opc">LOP3 · SHF · PRMT · BFE · BFI</text>
+      <text x="20" y="90" class="opc">VIMNMX · SEL · POPC</text>
+      <line x1="20" y1="104" x2="296" y2="104" stroke="#5a8e00" stroke-width="0.4" opacity="0.2"/>
+      <text x="20" y="122" class="lbl-xs">IADD3: only 2-cyc latency (bypass shortcut)</text>
+      <text x="20" y="140" class="lbl-xs">1.0 ops/cyc achievable at ILP ≥ 2</text>
+      <text x="20" y="158" class="lbl-xs">Integer ALU + bit manipulation</text>
+    </g>
+
+    <!-- XU/SFU -->
+    <g transform="translate(660,0)">
+      <rect x="0" y="0" width="316" height="170" rx="12" fill="#f8faff" stroke="#1e40af" stroke-width="0.9"/>
+      <text x="20" y="24" class="pipe-t" fill="#1e40af">XU / SFU</text>
+      <rect x="110" y="8" width="80" height="18" rx="9" fill="#1e40af" opacity="0.1"/>
+      <text x="150" y="21" class="badge" fill="#1e40af" text-anchor="middle">18-44 cyc</text>
+      <rect x="198" y="8" width="70" height="18" rx="9" fill="#1e40af" opacity="0.1"/>
+      <text x="233" y="21" class="badge" fill="#1e40af" text-anchor="middle">depth=5</text>
+      <line x1="20" y1="34" x2="296" y2="34" stroke="#1e40af" stroke-width="0.5" opacity="0.2"/>
+      <text x="20" y="54" class="opc">MUFU.RCP · MUFU.RSQ</text>
+      <text x="20" y="72" class="opc">MUFU.SIN · MUFU.COS · MUFU.TANH</text>
+      <text x="20" y="90" class="opc">MUFU.EX2 · MUFU.LG2</text>
+      <line x1="20" y1="104" x2="296" y2="104" stroke="#1e40af" stroke-width="0.4" opacity="0.2"/>
+      <text x="20" y="122" class="lbl-xs">Generates FMA-lite micro-ops (5-16% overhead)</text>
+      <text x="20" y="140" class="lbl-xs">Full co-issue with FMA (1.00×)</text>
+      <text x="20" y="158" class="lbl-xs">Pipelined: 5 ops in-flight simultaneously</text>
+    </g>
+  </g>
+
+  <!-- Row 2: LSU, U-pipe, TensorCore -->
+  <g transform="translate(60,576)">
+    <!-- LSU -->
+    <g>
+      <rect x="0" y="0" width="316" height="170" rx="12" fill="#fff7ed" stroke="#ea580c" stroke-width="0.9"/>
+      <text x="20" y="24" class="pipe-t" fill="#9a3412">LSU (Load/Store)</text>
+      <rect x="166" y="8" width="90" height="18" rx="9" fill="#ea580c" opacity="0.1"/>
+      <text x="211" y="21" class="badge" fill="#9a3412" text-anchor="middle">queue 12-13</text>
+      <line x1="20" y1="34" x2="296" y2="34" stroke="#ea580c" stroke-width="0.5" opacity="0.2"/>
+      <text x="20" y="54" class="opc">LDG: 2.27 cyc issue · STG: 5.85 cyc issue</text>
+      <text x="20" y="72" class="opc">LDS/STS: 4.0 cyc · LDSM (ldmatrix)</text>
+      <text x="20" y="90" class="opc">ATOM · RED · SHFL (29 cyc)</text>
+      <line x1="20" y1="104" x2="296" y2="104" stroke="#ea580c" stroke-width="0.4" opacity="0.2"/>
+      <text x="20" y="122" class="lbl-xs">L1 hit: 44 cyc · SMEM: 34 cyc</text>
+      <text x="20" y="140" class="lbl-xs">cp.async bypasses RF (LDGSTS)</text>
+      <text x="20" y="158" class="lbl-xs">Partial co-issue with FMA (0.78×)</text>
+    </g>
+
+    <!-- U-pipe -->
+    <g transform="translate(330,0)">
+      <rect x="0" y="0" width="316" height="170" rx="12" fill="#fcfbf6" stroke="#8e97a5" stroke-width="0.8"/>
+      <text x="20" y="24" class="pipe-t" fill="#5b6679">U-pipe (Uniform)</text>
+      <rect x="166" y="8" width="80" height="18" rx="9" fill="#8e97a5" opacity="0.12"/>
+      <text x="206" y="21" class="badge" fill="#5b6679" text-anchor="middle">free slot</text>
+      <line x1="20" y1="34" x2="296" y2="34" stroke="#8e97a5" stroke-width="0.4" opacity="0.2"/>
+      <text x="20" y="54" class="opc">UIADD3 · UIMAD · UMOV</text>
+      <text x="20" y="72" class="opc">UPLOP3 · LDCU (constant)</text>
+      <text x="20" y="90" class="opc">S2UR · UR2S (convert)</text>
+      <line x1="20" y1="104" x2="296" y2="104" stroke="#8e97a5" stroke-width="0.4" opacity="0.15"/>
+      <text x="20" y="122" class="lbl-xs">Warp-uniform ops → single execution</text>
+      <text x="20" y="140" class="lbl-xs">Uniform register file: 64 entries</text>
+      <text x="20" y="158" class="lbl-xs">Uniform predicates: 8 entries</text>
+    </g>
+
+    <!-- TensorCore -->
+    <g transform="translate(660,0)">
+      <rect x="0" y="0" width="316" height="170" rx="12" fill="url(#tcG)" stroke="#e11d48" stroke-width="1"/>
+      <text x="20" y="24" class="pipe-t" fill="#e11d48">TensorCore (¼ per SMSP)</text>
+      <rect x="210" y="8" width="84" height="18" rx="9" fill="#e11d48" opacity="0.12"/>
+      <text x="252" y="21" class="badge" fill="#e11d48" text-anchor="middle">15.88 c/mma</text>
+      <line x1="20" y1="34" x2="296" y2="34" stroke="#e11d48" stroke-width="0.5" opacity="0.2"/>
+      <text x="20" y="54" class="opc">HMMA.16816 (FP16) · 29 cyc lat</text>
+      <text x="20" y="72" class="opc">QMMA.16832 (FP8/6/4, MX-scale)</text>
+      <text x="20" y="90" class="opc">IMMA.16832 (INT8) · DMMA (FP64)</text>
+      <line x1="20" y1="104" x2="296" y2="104" stroke="#e11d48" stroke-width="0.4" opacity="0.2"/>
+      <text x="20" y="122" class="lbl-xs">ILP ≥ 4 saturates (depth 1.81 / 4.09)</text>
+      <text x="20" y="140" class="lbl-xs">Free co-issue with FMA (1.00×)</text>
+      <text x="20" y="158" class="lbl-xs">FP64 via pipe_fp64 (NOT pipe_tensor)</text>
+    </g>
+  </g>
+
+  <!-- ======== Co-Issue Summary ======== -->
+  <g transform="translate(60,766)">
+    <rect x="0" y="0" width="960" height="94" rx="12" fill="#fcfbf6" stroke="#e6e4da"/>
+    <text x="20" y="22" class="lbl">Co-Issue Matrix (same SMSP, single-warp, measured overlap ratios)</text>
+    <text x="20" y="44" class="lbl-sm">FMA-lite ∥ FMA-heavy = 1.001× (perfect)   FMA ∥ TC = 1.00×    FMA ∥ XU = 1.00×</text>
+    <text x="20" y="62" class="lbl-sm">FMA ∥ LSU = 0.78× (partial)   XU ∥ TC = 0.78×   ALU ∥ LSU = 0.17× (minimal)</text>
+    <text x="20" y="80" class="lbl-sm">TC ∥ DSMEM = 1.00× (free)   HMMA ∥ IMMA = 0.71× (TC subpipe sharing)</text>
+  </g>
+</svg>

@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 600" role="img"
+     aria-label="GEMM M-scaling three-regime model: launch-bound, occupancy-bound, peak-throughput">
+  <defs>
+    <linearGradient id="r1G" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFE4E6"/><stop offset="1" stop-color="#FFF1F2"/>
+    </linearGradient>
+    <linearGradient id="r2G" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FEF3C7"/><stop offset="1" stop-color="#FFFBEB"/>
+    </linearGradient>
+    <linearGradient id="r3G" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#E9F3D2"/><stop offset="1" stop-color="#F4FAE2"/>
+    </linearGradient>
+    <style><![CDATA[
+      .ttl{font:600 14px "Fraunces",serif;fill:#0b1220}
+      .sub{font:italic 11.5px "Fraunces",serif;fill:#5b6679}
+      .axL{font:500 10.5px "JetBrains Mono",monospace;fill:#5b6679}
+      .lbl{font:600 12px "Fraunces",serif;fill:#0b1220}
+      .lbl-sm{font:500 10px "JetBrains Mono",monospace;fill:#5b6679}
+      .pillR{font:600 10.5px "JetBrains Mono",monospace;letter-spacing:0.06em;text-transform:uppercase}
+    ]]></style>
+  </defs>
+  <rect width="1080" height="600" fill="#ffffff"/>
+  <text x="36" y="32" class="ttl">Three-Regime Bottleneck Model</text>
+  <text x="36" y="52" class="sub">As M grows, the dominant bottleneck shifts: launch overhead → SM occupancy ramp → TC peak throughput</text>
+
+  <!-- Plot area -->
+  <g transform="translate(80,90)">
+    <!-- Background regime bands (x mapped log-ish: M=8,32,256,1024,4096 → 0/200/400/600/800) -->
+    <!-- Regime 1: M ≤ 8 -->
+    <rect x="0" y="0" width="200" height="360" fill="url(#r1G)" opacity="0.5"/>
+    <text x="100" y="20" class="pillR" fill="#9f1239" text-anchor="middle">REGIME 1 · LAUNCH-BOUND</text>
+    <text x="100" y="38" class="lbl-sm" fill="#9f1239" text-anchor="middle">M ≤ 8 · &lt; 110 SMs occupied</text>
+
+    <!-- Regime 2: 8 < M ≤ 256 -->
+    <rect x="200" y="0" width="320" height="360" fill="url(#r2G)" opacity="0.5"/>
+    <text x="360" y="20" class="pillR" fill="#92400e" text-anchor="middle">REGIME 2 · OCCUPANCY-BOUND</text>
+    <text x="360" y="38" class="lbl-sm" fill="#92400e" text-anchor="middle">8 &lt; M &lt; 256 · waves &lt; 4 → tail effect</text>
+
+    <!-- Regime 3: M > 256 -->
+    <rect x="520" y="0" width="380" height="360" fill="url(#r3G)" opacity="0.5"/>
+    <text x="710" y="20" class="pillR" fill="#5a8e00" text-anchor="middle">REGIME 3 · TC PEAK</text>
+    <text x="710" y="38" class="lbl-sm" fill="#5a8e00" text-anchor="middle">M ≥ 256 · steady-state TC throughput</text>
+
+    <!-- Axis -->
+    <line x1="0" y1="320" x2="900" y2="320" stroke="#5b6679" stroke-width="1.2"/>
+    <line x1="0" y1="60" x2="0" y2="320" stroke="#5b6679" stroke-width="1.2"/>
+
+    <!-- Y axis grid (Throughput) -->
+    <line x1="0" y1="270" x2="900" y2="270" stroke="#e6e4da" stroke-dasharray="3 3"/>
+    <line x1="0" y1="220" x2="900" y2="220" stroke="#e6e4da" stroke-dasharray="3 3"/>
+    <line x1="0" y1="170" x2="900" y2="170" stroke="#e6e4da" stroke-dasharray="3 3"/>
+    <line x1="0" y1="120" x2="900" y2="120" stroke="#e6e4da" stroke-dasharray="3 3"/>
+    <text x="-12" y="324" class="axL" text-anchor="end">0</text>
+    <text x="-12" y="274" class="axL" text-anchor="end">25%</text>
+    <text x="-12" y="224" class="axL" text-anchor="end">50%</text>
+    <text x="-12" y="174" class="axL" text-anchor="end">75%</text>
+    <text x="-12" y="124" class="axL" text-anchor="end">100% peak</text>
+
+    <!-- X axis ticks -->
+    <text x="0"   y="338" class="axL" text-anchor="middle">1</text>
+    <text x="200" y="338" class="axL" text-anchor="middle">8</text>
+    <text x="360" y="338" class="axL" text-anchor="middle">64</text>
+    <text x="520" y="338" class="axL" text-anchor="middle">256</text>
+    <text x="700" y="338" class="axL" text-anchor="middle">1024</text>
+    <text x="900" y="338" class="axL" text-anchor="middle">4096+</text>
+    <text x="450" y="356" class="axL" text-anchor="middle">M (output rows)</text>
+    <text x="-50" y="190" class="axL" text-anchor="middle" transform="rotate(-90,-50,190)">% TC peak throughput</text>
+
+    <!-- Performance curve (3 regimes) -->
+    <!-- Regime 1: rises slowly from 5% at M=1 to 25% at M=8 -->
+    <!-- Regime 2: rises steeply from 25% at M=8 to 80% at M=256 -->
+    <!-- Regime 3: plateau at 92-100% -->
+    <path d="M 0 308 L 200 270 L 360 200 L 520 144 L 700 124 L 900 122"
+          fill="none" stroke="#0b1220" stroke-width="2.5"/>
+    <!-- markers -->
+    <circle cx="0"   cy="308" r="5" fill="#e11d48" stroke="#fff" stroke-width="1.5"/>
+    <circle cx="200" cy="270" r="5" fill="#e11d48" stroke="#fff" stroke-width="1.5"/>
+    <circle cx="360" cy="200" r="5" fill="#b45309" stroke="#fff" stroke-width="1.5"/>
+    <circle cx="520" cy="144" r="5" fill="#b45309" stroke="#fff" stroke-width="1.5"/>
+    <circle cx="700" cy="124" r="5" fill="#5a8e00" stroke="#fff" stroke-width="1.5"/>
+    <circle cx="900" cy="122" r="5" fill="#5a8e00" stroke="#fff" stroke-width="1.5"/>
+
+    <!-- Region annotations -->
+    <text x="180" y="290" class="lbl-sm" fill="#9f1239" text-anchor="end">~5–25% peak</text>
+    <text x="500" y="216" class="lbl-sm" fill="#92400e" text-anchor="end">~50–80% peak</text>
+    <text x="880" y="142" class="lbl-sm" fill="#5a8e00" text-anchor="end">~92–100% peak</text>
+  </g>
+
+  <!-- Bottom regime detail cards -->
+  <g transform="translate(80,470)">
+    <rect x="0" y="0" width="290" height="106" rx="10" fill="url(#r1G)" stroke="#e11d48" stroke-width="0.9"/>
+    <text x="14" y="22" class="lbl" fill="#9f1239">Launch-bound (M ≤ 8)</text>
+    <text x="14" y="40" class="lbl-sm" fill="#9f1239">Bottleneck: 5.4 µs warm-host launch</text>
+    <text x="14" y="56" class="lbl-sm" fill="#9f1239">Strategy: CUDA Graph (45× speedup)</text>
+    <text x="14" y="74" class="lbl-sm" fill="#9f1239">Strategy: persistent kernel</text>
+    <text x="14" y="92" class="lbl-sm" fill="#9f1239">→ &lt; 110 SMs occupied</text>
+
+    <g transform="translate(310,0)">
+      <rect x="0" y="0" width="290" height="106" rx="10" fill="url(#r2G)" stroke="#b45309" stroke-width="0.9"/>
+      <text x="14" y="22" class="lbl" fill="#92400e">Occupancy-bound (8 &lt; M &lt; 256)</text>
+      <text x="14" y="40" class="lbl-sm" fill="#92400e">Bottleneck: wave quantization</text>
+      <text x="14" y="56" class="lbl-sm" fill="#92400e">N_tiles mod 110 → tail penalty</text>
+      <text x="14" y="74" class="lbl-sm" fill="#92400e">Strategy: split-K · stream-K · tile-tuning</text>
+      <text x="14" y="92" class="lbl-sm" fill="#92400e">→ multi-wave but partial last wave</text>
+    </g>
+
+    <g transform="translate(620,0)">
+      <rect x="0" y="0" width="290" height="106" rx="10" fill="url(#r3G)" stroke="#5a8e00" stroke-width="0.9"/>
+      <text x="14" y="22" class="lbl" fill="#5a8e00">TC peak (M ≥ 256)</text>
+      <text x="14" y="40" class="lbl-sm" fill="#5a8e00">Bottleneck: TC throughput / TMA BW</text>
+      <text x="14" y="56" class="lbl-sm" fill="#5a8e00">15.88 cyc/mma steady state @ ILP≥4</text>
+      <text x="14" y="74" class="lbl-sm" fill="#5a8e00">Strategy: deeper SW pipeline · operand reuse</text>
+      <text x="14" y="92" class="lbl-sm" fill="#5a8e00">→ 92–100 % of measured peak</text>
+    </g>
+  </g>
+</svg>

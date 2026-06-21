@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 720" role="img"
+     aria-label="SM_120 GEMM critical data path: GDDR7 → TMA/cp.async → SMEM (3-stage pipeline) → RF → TC → epilogue → STG/TMA store">
+  <defs>
+    <linearGradient id="dramG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFEDD5"/>
+      <stop offset="1" stop-color="#FFF7ED"/>
+    </linearGradient>
+    <linearGradient id="tmaG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#E0E7FF"/>
+      <stop offset="1" stop-color="#EEF2FF"/>
+    </linearGradient>
+    <linearGradient id="cpG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FEF3C7"/>
+      <stop offset="1" stop-color="#FFFBEB"/>
+    </linearGradient>
+    <linearGradient id="smemG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#E9F3D2"/>
+      <stop offset="1" stop-color="#F4FAE2"/>
+    </linearGradient>
+    <linearGradient id="rfG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#EDE7FB"/>
+      <stop offset="1" stop-color="#F5F1FF"/>
+    </linearGradient>
+    <linearGradient id="tcG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFE4E6"/>
+      <stop offset="1" stop-color="#FFF1F2"/>
+    </linearGradient>
+    <linearGradient id="epiG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#D1FAE5"/>
+      <stop offset="1" stop-color="#ECFDF5"/>
+    </linearGradient>
+    <marker id="ar" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#5b6679"/>
+    </marker>
+    <style><![CDATA[
+      .ttl{font:600 14px "Fraunces",serif;fill:#0b1220}
+      .sub{font:italic 11.5px "Fraunces",serif;fill:#5b6679}
+      .lbl{font:600 12px "JetBrains Mono",monospace;fill:#2a3548}
+      .lbl-sm{font:500 10px "JetBrains Mono",monospace;fill:#5b6679}
+      .num{font:600 18px "Fraunces",serif;fill:#0b1220;letter-spacing:-0.01em}
+      .stage{font:600 13px "Fraunces",serif;fill:#0b1220}
+      .edge{font:500 10px "JetBrains Mono",monospace;fill:#5b6679}
+      .pill{font:600 9.5px "JetBrains Mono",monospace;fill:#5a8e00;letter-spacing:0.04em;text-transform:uppercase}
+    ]]></style>
+  </defs>
+  <rect width="1080" height="720" fill="#ffffff"/>
+  <text x="36" y="32" class="ttl">SM_120 GEMM Critical Data Path · G-S-R-TC (No Tensor Memory)</text>
+  <text x="36" y="52" class="sub">DRAM → TMA / cp.async → 3-stage SMEM buffers → ldmatrix → RF → mma.sync → epilogue → STG/TMA store</text>
+
+  <!-- Stage 1: GDDR7 -->
+  <g transform="translate(40,86)">
+    <rect x="0" y="0" width="1000" height="60" rx="10" fill="url(#dramG)" stroke="#ea580c" stroke-width="0.9"/>
+    <text x="20" y="24" class="stage" fill="#9a3412">① Global Memory · GDDR7</text>
+    <text x="20" y="44" class="lbl-sm">72 GB · 1231 GB/s read · 362 cyc latency · closed-page · 12 partitions</text>
+    <text x="900" y="38" class="num" fill="#9a3412" text-anchor="end">362<tspan font-size="11" dx="4" fill="#9a3412">cyc</tspan></text>
+  </g>
+  <line x1="540" y1="146" x2="540" y2="170" stroke="#5b6679" stroke-width="1.2" marker-end="url(#ar)"/>
+
+  <!-- Stage 2: TMA / cp.async (two-column comparison) -->
+  <g transform="translate(40,176)">
+    <!-- TMA path -->
+    <rect x="0" y="0" width="490" height="100" rx="10" fill="url(#tmaG)" stroke="#1e40af" stroke-width="0.9"/>
+    <text x="20" y="24" class="stage" fill="#1e40af">② A · TMA Engine (preferred)</text>
+    <text x="20" y="44" class="lbl-sm" fill="#1e40af">cp.async.bulk · descriptor-based · async</text>
+    <text x="20" y="62" class="lbl-sm" fill="#1e40af">≥32 in-flight loads · queue-deep</text>
+    <text x="20" y="80" class="lbl-sm" fill="#1e40af">2D copy · 567-2486 cyc · 1D 479 cyc flat 128 B-1 KB</text>
+    <text x="470" y="46" class="num" fill="#1e40af" text-anchor="end">479<tspan font-size="11" dx="4" fill="#1e40af">cyc/1D</tspan></text>
+
+    <!-- cp.async legacy -->
+    <g transform="translate(510,0)">
+      <rect x="0" y="0" width="490" height="100" rx="10" fill="url(#cpG)" stroke="#b45309" stroke-width="0.9"/>
+      <text x="20" y="24" class="stage" fill="#92400e">② B · cp.async (legacy / &lt;4 KB)</text>
+      <text x="20" y="44" class="lbl-sm" fill="#92400e">57-62 cyc per 16 B · per-thread</text>
+      <text x="20" y="62" class="lbl-sm" fill="#92400e">cp.async.ca 4.4× faster than .cg (L1 hit)</text>
+      <text x="20" y="80" class="lbl-sm" fill="#92400e">Crossover with TMA at ≈ 4 KB/copy</text>
+      <text x="470" y="46" class="num" fill="#92400e" text-anchor="end">62<tspan font-size="11" dx="4" fill="#92400e">cyc/16B</tspan></text>
+    </g>
+  </g>
+  <line x1="540" y1="276" x2="540" y2="298" stroke="#5b6679" stroke-width="1.2" marker-end="url(#ar)"/>
+  <text x="552" y="290" class="edge">mbarrier.arrive.expect_tx · 34 cyc</text>
+
+  <!-- Stage 3: SMEM 3-stage pipeline -->
+  <g transform="translate(40,306)">
+    <rect x="0" y="0" width="1000" height="120" rx="10" fill="url(#smemG)" stroke="#5a8e00" stroke-width="0.9"/>
+    <text x="20" y="24" class="stage" fill="#5a8e00">③ Shared Memory · 3-Stage Software Pipeline</text>
+    <text x="20" y="42" class="lbl-sm" fill="#5a8e00">99 KB/block · 34 cyc latency · 32 banks × 4 B · XOR-swizzled 128 B layout eliminates ldmatrix bank conflicts</text>
+
+    <!-- 3 buffers -->
+    <g transform="translate(20,56)">
+      <g>
+        <rect x="0" y="0" width="306" height="50" rx="8" fill="#ffffff" stroke="#5a8e00" stroke-width="0.9"/>
+        <text x="14" y="20" class="lbl" fill="#5a8e00">Buf[0] · A-tile + B-tile</text>
+        <text x="14" y="38" class="lbl-sm" fill="#5a8e00">stage = LOAD ← TMA</text>
+        <rect x="270" y="14" width="24" height="22" rx="4" fill="#5a8e00" opacity="0.18"/>
+        <text x="282" y="29" class="pill" fill="#5a8e00" text-anchor="middle">L</text>
+      </g>
+      <g transform="translate(316,0)">
+        <rect x="0" y="0" width="306" height="50" rx="8" fill="#ffffff" stroke="#5a8e00" stroke-width="0.9"/>
+        <text x="14" y="20" class="lbl" fill="#5a8e00">Buf[1] · A-tile + B-tile</text>
+        <text x="14" y="38" class="lbl-sm" fill="#5a8e00">stage = COMPUTE → ldmatrix → MMA</text>
+        <rect x="270" y="14" width="24" height="22" rx="4" fill="#5a8e00" opacity="0.32"/>
+        <text x="282" y="29" class="pill" fill="#5a8e00" text-anchor="middle">C</text>
+      </g>
+      <g transform="translate(632,0)">
+        <rect x="0" y="0" width="328" height="50" rx="8" fill="#ffffff" stroke="#5a8e00" stroke-width="0.9"/>
+        <text x="14" y="20" class="lbl" fill="#5a8e00">Buf[2] · A-tile + B-tile</text>
+        <text x="14" y="38" class="lbl-sm" fill="#5a8e00">stage = STORE → epilogue / drain</text>
+        <rect x="290" y="14" width="24" height="22" rx="4" fill="#5a8e00" opacity="0.5"/>
+        <text x="302" y="29" class="pill" fill="#5a8e00" text-anchor="middle">S</text>
+      </g>
+    </g>
+    <text x="980" y="44" class="num" fill="#5a8e00" text-anchor="end">2.58×<tspan font-size="11" dx="4" fill="#5a8e00">speedup</tspan></text>
+  </g>
+  <line x1="540" y1="426" x2="540" y2="450" stroke="#5b6679" stroke-width="1.2" marker-end="url(#ar)"/>
+  <text x="552" y="442" class="edge">ldmatrix.sync.aligned.x4 · 49 cyc · 1.68 cyc/op · .trans = FREE</text>
+
+  <!-- Stage 4: Register File -->
+  <g transform="translate(40,458)">
+    <rect x="0" y="0" width="1000" height="76" rx="10" fill="url(#rfG)" stroke="#6d28d9" stroke-width="0.9"/>
+    <text x="20" y="24" class="stage" fill="#6d28d9">④ Register File · 16384 × 32-bit per SMSP</text>
+    <text x="20" y="44" class="lbl-sm" fill="#6d28d9">A frag 8 reg/thread (m16n8k16) · B frag 4 reg/thread · C/D accum 4–8 reg/thread (f32 vs f16)</text>
+    <text x="20" y="62" class="lbl-sm" fill="#6d28d9">Operand-feed overhead: 11.0 cyc/MMA = 27.5% of MMA budget · SM_100 TM eliminates this on B200</text>
+    <text x="970" y="44" class="num" fill="#6d28d9" text-anchor="end">11.0<tspan font-size="11" dx="4" fill="#6d28d9">cyc · 27.5%</tspan></text>
+  </g>
+  <line x1="540" y1="534" x2="540" y2="558" stroke="#5b6679" stroke-width="1.2" marker-end="url(#ar)"/>
+
+  <!-- Stage 5: Tensor Core -->
+  <g transform="translate(40,564)">
+    <rect x="0" y="0" width="1000" height="76" rx="10" fill="url(#tcG)" stroke="#e11d48" stroke-width="0.9"/>
+    <text x="20" y="24" class="stage" fill="#e11d48">⑤ Tensor Core · mma.sync only (NO wgmma / tcgen05)</text>
+    <text x="20" y="44" class="lbl-sm" fill="#e11d48">29 cyc latency · 15.88 cyc/mma @ ILP≥4 · HMMA/QMMA/OMMA.SF share same pipe · TC fully independent — FMA/ALU/XU free during MMA stall</text>
+    <text x="20" y="62" class="lbl-sm" fill="#e11d48">TMA delivery 6.5 B/cyc vs TC consumption 28.9 B/cyc → 4.4× data-starved · deep software pipeline essential</text>
+    <text x="970" y="44" class="num" fill="#e11d48" text-anchor="end">29 / 15.88<tspan font-size="11" dx="4" fill="#e11d48">cyc · cyc/mma</tspan></text>
+  </g>
+  <line x1="540" y1="640" x2="540" y2="662" stroke="#5b6679" stroke-width="1.2" marker-end="url(#ar)"/>
+  <text x="552" y="654" class="edge">D accum → F2FP.BF16.F32.PACK_AB · 11.8 cyc/tile</text>
+
+  <!-- Stage 6: Epilogue -->
+  <g transform="translate(40,668)">
+    <rect x="0" y="0" width="1000" height="40" rx="8" fill="url(#epiG)" stroke="#047857" stroke-width="0.9"/>
+    <text x="20" y="22" class="stage" fill="#047857">⑥ Epilogue → TMA store / STG · TMA store 3.0× faster (94 vs 284 cyc/1KB) · STG fire-and-forget overlaps with next-tile prologue (40.9 % overlap)</text>
+  </g>
+</svg>

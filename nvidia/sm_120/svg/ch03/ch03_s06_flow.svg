@@ -1,0 +1,225 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 840" role="img"
+     aria-label="SM_120 LDSM vs LDS+Consume Co-Issue Constraint: two data paths from shared memory to TensorCore with RF write port contention analysis">
+  <defs>
+    <marker id="ar" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto">
+      <path d="M0,0 L7,3.5 L0,7 Z" fill="#5b6679"/>
+    </marker>
+    <marker id="ar-green" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto">
+      <path d="M0,0 L7,3.5 L0,7 Z" fill="#16a34a"/>
+    </marker>
+    <marker id="ar-red" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto">
+      <path d="M0,0 L7,3.5 L0,7 Z" fill="#dc2626"/>
+    </marker>
+    <marker id="ar-blue" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto">
+      <path d="M0,0 L7,3.5 L0,7 Z" fill="#2563eb"/>
+    </marker>
+    <marker id="ar-purple" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto">
+      <path d="M0,0 L7,3.5 L0,7 Z" fill="#6d28d9"/>
+    </marker>
+    <linearGradient id="smemG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#E0E7FF"/><stop offset="1" stop-color="#EEF2FF"/>
+    </linearGradient>
+    <linearGradient id="lsuG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#DBEAFE"/><stop offset="1" stop-color="#EFF6FF"/>
+    </linearGradient>
+    <linearGradient id="fmaG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FEF3C7"/><stop offset="1" stop-color="#FFFBEB"/>
+    </linearGradient>
+    <linearGradient id="tcG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#F3E8FF"/><stop offset="1" stop-color="#FAF5FF"/>
+    </linearGradient>
+    <linearGradient id="rfG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#F1F5F9"/><stop offset="1" stop-color="#F8FAFC"/>
+    </linearGradient>
+    <style><![CDATA[
+      .ttl{font:600 15px "Fraunces",serif;fill:#0b1220}
+      .sub{font:italic 11.5px "Fraunces",serif;fill:#5b6679}
+      .sect{font:600 13px "Fraunces",serif}
+      .lbl{font:600 11.5px "JetBrains Mono",monospace}
+      .lbl2{font:600 9.5px "JetBrains Mono",monospace}
+      .lbl-sm{font:500 10px "JetBrains Mono",monospace;fill:#5b6679}
+      .desc{font:500 10px "JetBrains Mono",monospace;fill:#5b6679}
+      .badge{font:600 9.5px "JetBrains Mono",monospace}
+      .note{font:500 9.5px "JetBrains Mono",monospace;fill:#8e97a5}
+      .warn{font:600 10px "JetBrains Mono",monospace;fill:#dc2626}
+      .safe{font:600 10px "JetBrains Mono",monospace;fill:#16a34a}
+      .zone-t{font:600 12px "Fraunces",serif}
+    ]]></style>
+  </defs>
+
+  <rect width="1080" height="840" fill="#ffffff"/>
+
+  <!-- Title -->
+  <text x="36" y="32" class="ttl">Constraint 1: LDSM vs LDS+Consume — The Critical GEMM Co-Issue Hazard</text>
+  <text x="36" y="52" class="sub">Why ldmatrix→MMA has 0% overhead but LDS→FADD→MMA has 17.4% overhead: RF write-port contention on the FMA pipe [S22/case_47, S11/case_106]</text>
+
+  <!-- ═══════ SHARED MEMORY SOURCE (top center) ═══════ -->
+  <g transform="translate(380, 76)">
+    <rect x="0" y="0" width="320" height="44" rx="10" fill="url(#smemG)" stroke="#4f46e5" stroke-width="1.2"/>
+    <text x="160" y="18" class="lbl" fill="#4f46e5" text-anchor="middle">Shared Memory (SMEM)</text>
+    <text x="160" y="36" class="desc" text-anchor="middle">128 KB / SM · 32 banks · 4-byte stride</text>
+  </g>
+
+  <!-- Split arrows down to two paths -->
+  <line x1="460" y1="120" x2="260" y2="156" stroke="#16a34a" stroke-width="2" marker-end="url(#ar-green)"/>
+  <line x1="620" y1="120" x2="820" y2="156" stroke="#dc2626" stroke-width="2" marker-end="url(#ar-red)"/>
+
+  <!-- ═══════ LEFT PATH: LDSM → MMA (0% overhead) ═══════ -->
+  <g transform="translate(30, 160)">
+    <rect x="0" y="0" width="480" height="420" rx="12" fill="#F0FDF4" stroke="#16a34a" stroke-width="1.2"/>
+    <rect x="12" y="10" width="140" height="24" rx="12" fill="#16a34a" opacity="0.15"/>
+    <text x="82" y="26" class="badge" fill="#16a34a" text-anchor="middle">PATH A: 0% OVERHEAD</text>
+    <text x="164" y="26" class="zone-t" fill="#16a34a">LDSM (ldmatrix) → HMMA</text>
+
+    <!-- LSU Pipe -->
+    <g transform="translate(40, 48)">
+      <rect x="0" y="0" width="180" height="50" rx="8" fill="url(#lsuG)" stroke="#2563eb" stroke-width="1"/>
+      <text x="90" y="18" class="lbl" fill="#1d4ed8" text-anchor="middle">LSU Pipe</text>
+      <text x="90" y="34" class="badge" fill="#2563eb" text-anchor="middle">LDSM.16x8.M88</text>
+      <text x="90" y="46" class="note" text-anchor="middle">ldmatrix.sync.x4</text>
+    </g>
+
+    <!-- Arrow: LSU → Register File (direct) -->
+    <line x1="130" y1="102" x2="130" y2="128" stroke="#16a34a" stroke-width="1.5" marker-end="url(#ar-green)"/>
+
+    <!-- Register File -->
+    <g transform="translate(40, 132)">
+      <rect x="0" y="0" width="180" height="44" rx="8" fill="url(#rfG)" stroke="#64748b" stroke-width="0.8"/>
+      <text x="90" y="16" class="lbl" fill="#334155" text-anchor="middle">Register File</text>
+      <text x="90" y="34" class="desc" text-anchor="middle">R4-R11 (matrix fragments)</text>
+    </g>
+
+    <!-- Arrow: RF → TC (direct feed, no intermediate) -->
+    <line x1="130" y1="180" x2="130" y2="206" stroke="#16a34a" stroke-width="1.5" marker-end="url(#ar-green)"/>
+    <text x="200" y="196" class="safe">direct feed</text>
+
+    <!-- TensorCore Pipe -->
+    <g transform="translate(40, 210)">
+      <rect x="0" y="0" width="180" height="50" rx="8" fill="url(#tcG)" stroke="#6d28d9" stroke-width="1"/>
+      <text x="90" y="18" class="lbl" fill="#6d28d9" text-anchor="middle">Tensor Pipe</text>
+      <text x="90" y="34" class="badge" fill="#6d28d9" text-anchor="middle">HMMA.16816.F32</text>
+      <text x="90" y="46" class="note" text-anchor="middle">29-cycle latency</text>
+    </g>
+
+    <!-- Key point: no FMA pipe involvement -->
+    <g transform="translate(20, 280)">
+      <rect x="0" y="0" width="440" height="56" rx="8" fill="#ffffff" stroke="#16a34a" stroke-width="0.8"/>
+      <text x="12" y="18" class="safe">No FMA pipe involvement in data path:</text>
+      <text x="12" y="34" class="lbl-sm">• LDSM writes matrix fragments directly to RF</text>
+      <text x="12" y="50" class="lbl-sm">• HMMA reads operands from RF, writes accumulator to RF</text>
+    </g>
+
+    <!-- Result box -->
+    <g transform="translate(20, 350)">
+      <rect x="0" y="0" width="440" height="62" rx="8" fill="#16a34a" opacity="0.08" stroke="#16a34a" stroke-width="0.8"/>
+      <text x="12" y="18" class="lbl" fill="#16a34a">Result: LSU and TC pipes fully parallel</text>
+      <text x="12" y="34" class="safe">MIX/MAX = 1.00 (0% overhead) [S11/case_106]</text>
+      <text x="12" y="50" class="note">RF write ports: LDSM → port A, HMMA → port B (no conflict)</text>
+    </g>
+  </g>
+
+  <!-- ═══════ RIGHT PATH: LDS → FADD → MMA (17.4% overhead) ═══════ -->
+  <g transform="translate(540, 160)">
+    <rect x="0" y="0" width="510" height="420" rx="12" fill="#FEF2F2" stroke="#dc2626" stroke-width="1.2"/>
+    <rect x="12" y="10" width="164" height="24" rx="12" fill="#dc2626" opacity="0.12"/>
+    <text x="94" y="26" class="badge" fill="#dc2626" text-anchor="middle">PATH B: 17.4% OVERHEAD</text>
+    <text x="186" y="26" class="zone-t" fill="#dc2626">LDS → FADD → HMMA</text>
+
+    <!-- LSU Pipe -->
+    <g transform="translate(40, 48)">
+      <rect x="0" y="0" width="160" height="50" rx="8" fill="url(#lsuG)" stroke="#2563eb" stroke-width="1"/>
+      <text x="80" y="18" class="lbl" fill="#1d4ed8" text-anchor="middle">LSU Pipe</text>
+      <text x="80" y="34" class="badge" fill="#2563eb" text-anchor="middle">LDS R10, [addr]</text>
+      <text x="80" y="46" class="note" text-anchor="middle">ld.shared.f32</text>
+    </g>
+
+    <!-- Arrow: LSU → RF -->
+    <line x1="120" y1="102" x2="120" y2="124" stroke="#2563eb" stroke-width="1.2" marker-end="url(#ar-blue)"/>
+
+    <!-- Register File -->
+    <g transform="translate(40, 128)">
+      <rect x="0" y="0" width="160" height="36" rx="8" fill="url(#rfG)" stroke="#64748b" stroke-width="0.8"/>
+      <text x="80" y="14" class="lbl" fill="#334155" text-anchor="middle">Register File</text>
+      <text x="80" y="30" class="desc" text-anchor="middle">R10 (scalar value)</text>
+    </g>
+
+    <!-- Arrow: RF → FMA Pipe (FADD consume) -->
+    <line x1="120" y1="168" x2="120" y2="190" stroke="#b45309" stroke-width="1.5" marker-end="url(#ar)"/>
+
+    <!-- FMA Pipe (FADD consume) — THE BOTTLENECK -->
+    <g transform="translate(40, 194)">
+      <rect x="0" y="0" width="160" height="50" rx="8" fill="url(#fmaG)" stroke="#b45309" stroke-width="1.5"/>
+      <text x="80" y="18" class="lbl" fill="#92400e" text-anchor="middle">FMA Pipe</text>
+      <text x="80" y="34" class="badge" fill="#b45309" text-anchor="middle">FADD (consume)</text>
+      <text x="80" y="46" class="note" text-anchor="middle">sum += loaded_val</text>
+    </g>
+
+    <!-- TensorCore Pipe (parallel, but contention on RF write) -->
+    <g transform="translate(260, 194)">
+      <rect x="0" y="0" width="160" height="50" rx="8" fill="url(#tcG)" stroke="#6d28d9" stroke-width="1"/>
+      <text x="80" y="18" class="lbl" fill="#6d28d9" text-anchor="middle">Tensor Pipe</text>
+      <text x="80" y="34" class="badge" fill="#6d28d9" text-anchor="middle">HMMA.16816</text>
+      <text x="80" y="46" class="note" text-anchor="middle">accumulator writeback</text>
+    </g>
+
+    <!-- CONTENTION INDICATOR: both write to RF -->
+    <g transform="translate(40, 258)">
+      <!-- RF write port (shared) -->
+      <rect x="0" y="0" width="420" height="40" rx="8" fill="#FEE2E2" stroke="#dc2626" stroke-width="1.2"/>
+      <text x="210" y="16" class="lbl" fill="#991b1b" text-anchor="middle">RF Write Port CONTENTION</text>
+      <text x="210" y="34" class="warn" text-anchor="middle">FADD result + HMMA accumulator → same write port → serialized!</text>
+    </g>
+
+    <!-- Arrows into contention zone -->
+    <line x1="120" y1="244" x2="120" y2="258" stroke="#dc2626" stroke-width="1.2" marker-end="url(#ar-red)"/>
+    <line x1="340" y1="244" x2="340" y2="258" stroke="#dc2626" stroke-width="1.2" marker-end="url(#ar-red)"/>
+
+    <!-- Result box -->
+    <g transform="translate(20, 312)">
+      <rect x="0" y="0" width="470" height="90" rx="8" fill="#ffffff" stroke="#dc2626" stroke-width="0.8"/>
+      <text x="12" y="18" class="warn">Root Cause — RF Write Port Bottleneck:</text>
+      <text x="12" y="36" class="lbl-sm">• HMMA writes 4×FP32 accumulator back through RF write port</text>
+      <text x="12" y="52" class="lbl-sm">• FADD writes its sum result through the SAME write port</text>
+      <text x="12" y="68" class="lbl-sm">• When both in flight simultaneously → port serialization</text>
+      <text x="12" y="84" class="warn">Measured: +325 cyc / 1863 cyc = 17.4% overhead [S22/case_47]</text>
+    </g>
+  </g>
+
+  <!-- ═══════ BOTTOM: Production Kernel Optimization Rules ═══════ -->
+  <g transform="translate(30, 600)">
+    <rect x="0" y="0" width="1020" height="215" rx="12" fill="#f8fafc" stroke="#334155" stroke-width="1"/>
+    <text x="16" y="24" class="sect" fill="#334155">Production Kernel Design Implications (GEMM / FlashAttention)</text>
+
+    <g transform="translate(16, 48)">
+      <!-- Rule 1: Use LDSM -->
+      <rect x="0" y="0" width="490" height="60" rx="8" fill="#DCFCE7" stroke="#16a34a" stroke-width="0.8"/>
+      <text x="12" y="18" class="badge" fill="#16a34a">CRITICAL PATH (TC Mainloop)</text>
+      <text x="12" y="36" class="lbl" fill="#166534">Use ldmatrix for ALL smem → TC operand feeding</text>
+      <text x="12" y="52" class="desc">LDSM.16x8 → HMMA = 0% overhead (LSU ∥ TC, no FMA involvement)</text>
+
+      <!-- Rule 2: Avoid LDS+FADD -->
+      <rect x="508" y="0" width="490" height="60" rx="8" fill="#FEE2E2" stroke="#dc2626" stroke-width="0.8"/>
+      <text x="520" y="18" class="badge" fill="#dc2626">AVOID IN TC MAINLOOP</text>
+      <text x="520" y="36" class="lbl" fill="#991b1b">Never use LDS + FADD in TC critical path</text>
+      <text x="520" y="52" class="desc">LDS → FADD consume → HMMA = 17.4% overhead (RF write contention)</text>
+
+      <!-- When LDS+FADD is acceptable -->
+      <rect x="0" y="74" width="998" height="68" rx="8" fill="#FEF3C7" stroke="#b45309" stroke-width="0.6"/>
+      <text x="12" y="92" class="badge" fill="#92400e">ACCEPTABLE USE OF LDS+FADD (non-TC paths):</text>
+      <text x="12" y="120" class="lbl-sm">• Scale factor loading (softmax, RMSNorm): LDS → FMUL outside MMA stall window</text>
+      <text x="500" y="120" class="lbl-sm">• Epilogue accumulation: after MMA chain completes, no write-port contention</text>
+    </g>
+
+    <!-- Timing comparison -->
+    <g transform="translate(16, 142)">
+      <text x="10" y="10" class="lbl2" fill="#334155">Quantitative Impact (64 HMMA + 512 LDS cycle budget):</text>
+      <text x="40" y="43" class="safe">Path A (LDSM): 1863 cyc (TC-only baseline, 0% added)</text>
+      <text x="560" y="43" class="warn">Path B (LDS+FADD): 2188 cyc (+325 cyc, +17.4%)</text>
+      <text x="0" y="64" class="note">Δ = 325 cycles per 64-MMA tile — at 2.1 GHz this is 155 ns/tile wasted on RF port serialization</text>
+    </g>
+  </g>
+
+  <!-- Source -->
+  <text x="36" y="830" class="note">[source: S22/case_47 (LDS+TC retest), S11/case_106 (LDSM+MMA), S26/case_32 (SFU+SMEM cross-check)]</text>
+</svg>

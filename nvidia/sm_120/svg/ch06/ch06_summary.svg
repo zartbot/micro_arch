@@ -1,0 +1,206 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 880" role="img"
+     aria-label="Chapter 06 Summary: On-Chip Network &amp; Async — TMA, DSMEM, Cluster, Software Pipeline">
+  <defs>
+    <style><![CDATA[
+      .eyebrow{font:600 11px "JetBrains Mono",monospace;letter-spacing:0.16em;text-transform:uppercase}
+      .title  {font:500 26px "Fraunces",serif;fill:#0b1220;letter-spacing:-0.02em}
+      .sub    {font:italic 13px "Fraunces",serif;fill:#5b6679}
+      .ttl    {font:600 12px "JetBrains Mono",monospace;letter-spacing:0.04em}
+      .lbl-sm {font:500 9px "JetBrains Mono",monospace;fill:#5b6679;letter-spacing:0.04em;text-transform:uppercase}
+      .kpi-val{font:600 20px "Fraunces",serif;fill:#0b1220;letter-spacing:-0.01em}
+      .insight{font:500 11px "IBM Plex Sans",sans-serif;fill:#2a3548}
+      .sect-t {font:700 11px "JetBrains Mono",monospace;letter-spacing:0.02em}
+    ]]></style>
+  </defs>
+  <rect width="1080" height="880" fill="#fcfbf6"/>
+
+  <!-- Header -->
+  <g transform="translate(36,32)">
+    <rect x="0" y="0" width="4" height="68" fill="#1e40af"/>
+    <text x="16" y="20" class="eyebrow" fill="#1e40af">CHAPTER 06 · SM_120 / GB202 BLACKWELL</text>
+    <text x="16" y="50" class="title">On-Chip Network &amp; Async</text>
+    <text x="16" y="76" class="sub">Dual-fabric architecture · TMA engine · DSMEM · Cluster barriers · 3-stage software pipeline</text>
+  </g>
+
+  <!-- ═══════ ROW 1: Core KPIs (6 cards) ═══════ -->
+  <g transform="translate(36,120)">
+    <!-- Card 1: TMA latency -->
+    <g transform="translate(0,0)">
+      <rect x="0" y="0" width="166" height="76" rx="8" fill="#ffffff" stroke="#e6e4da"/>
+      <rect x="0" y="0" width="166" height="3" rx="8" fill="#dc2626" opacity="0.8"/>
+      <text x="12" y="20" class="lbl-sm">TMA 1D LATENCY</text>
+      <text x="12" y="48" class="kpi-val">479 cyc</text>
+      <text x="12" y="64" class="lbl-sm">flat 128B–1KB (Phase 1)</text>
+    </g>
+    <!-- Card 2: TMA queue -->
+    <g transform="translate(180,0)">
+      <rect x="0" y="0" width="166" height="76" rx="8" fill="#ffffff" stroke="#e6e4da"/>
+      <rect x="0" y="0" width="166" height="3" rx="8" fill="#16a34a" opacity="0.8"/>
+      <text x="12" y="20" class="lbl-sm">TMA QUEUE DEPTH</text>
+      <text x="12" y="48" class="kpi-val">≥32</text>
+      <text x="12" y="64" class="lbl-sm">in-flight · 11× pipeline</text>
+    </g>
+    <!-- Card 3: DSMEM latency -->
+    <g transform="translate(360,0)">
+      <rect x="0" y="0" width="166" height="76" rx="8" fill="#ffffff" stroke="#e6e4da"/>
+      <rect x="0" y="0" width="166" height="3" rx="8" fill="#1e40af" opacity="0.8"/>
+      <text x="12" y="20" class="lbl-sm">DSMEM CROSS-CTA</text>
+      <text x="12" y="48" class="kpi-val">225 cyc</text>
+      <text x="12" y="64" class="lbl-sm">6.5× local · 145 cyc 1-way</text>
+    </g>
+    <!-- Card 4: Fire-and-forget -->
+    <g transform="translate(540,0)">
+      <rect x="0" y="0" width="166" height="76" rx="8" fill="#ffffff" stroke="#e6e4da"/>
+      <rect x="0" y="0" width="166" height="3" rx="8" fill="#1e40af" opacity="0.8"/>
+      <text x="12" y="20" class="lbl-sm">st.async ISSUE</text>
+      <text x="12" y="48" class="kpi-val">5.77 cyc</text>
+      <text x="12" y="64" class="lbl-sm">fire-and-forget (no ACK)</text>
+    </g>
+    <!-- Card 5: Cluster barrier -->
+    <g transform="translate(720,0)">
+      <rect x="0" y="0" width="166" height="76" rx="8" fill="#ffffff" stroke="#e6e4da"/>
+      <rect x="0" y="0" width="166" height="3" rx="8" fill="#d97706" opacity="0.8"/>
+      <text x="12" y="20" class="lbl-sm">CLUSTER BARRIER</text>
+      <text x="12" y="48" class="kpi-val">85 / 371</text>
+      <text x="12" y="64" class="lbl-sm">cyc relaxed / full · O(1)</text>
+    </g>
+    <!-- Card 6: Pipeline speedup -->
+    <g transform="translate(900,0)">
+      <rect x="0" y="0" width="108" height="76" rx="8" fill="#ffffff" stroke="#e6e4da"/>
+      <rect x="0" y="0" width="108" height="3" rx="8" fill="#16a34a" opacity="0.8"/>
+      <text x="12" y="20" class="lbl-sm">3-STAGE</text>
+      <text x="12" y="48" class="kpi-val">2.58×</text>
+      <text x="12" y="64" class="lbl-sm">optimal depth</text>
+    </g>
+  </g>
+
+  <!-- ═══════ ROW 2: Dual-Fabric Architecture Diagram ═══════ -->
+  <g transform="translate(36,216)">
+    <rect x="0" y="0" width="1008" height="240" rx="12" fill="#ffffff" stroke="#e6e4da"/>
+    <text x="20" y="24" class="ttl" fill="#0b1220">Dual-Fabric Architecture: SM2SM vs GXBAR — The "Sync Domain" Choice</text>
+
+    <!-- Left: SM2SM / DSMEM fabric -->
+    <g transform="translate(20,40)">
+      <rect x="0" y="0" width="460" height="180" rx="8" fill="#EEF2FF" stroke="#1e40af" stroke-width="0.8"/>
+      <text x="230" y="18" class="sect-t" fill="#1e40af" text-anchor="middle">SM2SM Fabric (DSMEM Path)</text>
+      <line x1="10" y1="24" x2="450" y2="24" stroke="#c7d2fe" stroke-width="0.5"/>
+      <text x="10" y="44" style="font:500 10px 'JetBrains Mono',monospace;fill:#374151">Latency: 145 cyc one-way / 225 cyc round-trip</text>
+      <text x="10" y="60" style="font:500 10px 'JetBrains Mono',monospace;fill:#374151">Barrier: 85 cyc O(1) scaling (2–8 CTAs)</text>
+      <text x="10" y="76" style="font:500 10px 'JetBrains Mono',monospace;fill:#374151">Topology: point-to-point mesh (0% variance)</text>
+      <text x="10" y="92" style="font:500 10px 'JetBrains Mono',monospace;fill:#374151">Ordering: FIFO per-VC (data-before-barrier HW)</text>
+      <text x="10" y="112" style="font:700 10px 'JetBrains Mono',monospace;fill:#1e40af">Best for: data + sync together (3.5× vs L2)</text>
+      <text x="10" y="128" style="font:700 10px 'JetBrains Mono',monospace;fill:#1e40af">Best for: inter-SM notification (26× vs L2)</text>
+      <text x="10" y="148" style="font:700 10px 'JetBrains Mono',monospace;fill:#dc2626">Limitation: higher raw read latency (4.5×)</text>
+      <text x="10" y="168" style="font:500 9px 'JetBrains Mono',monospace;fill:#6b7280">Patents: US2025/0173152, US2023/0315655</text>
+    </g>
+
+    <!-- Right: GXBAR / L2 fabric -->
+    <g transform="translate(500,40)">
+      <rect x="0" y="0" width="488" height="180" rx="8" fill="#f0fdf4" stroke="#16a34a" stroke-width="0.8"/>
+      <text x="244" y="18" class="sect-t" fill="#166534" text-anchor="middle">GXBAR Fabric (L2 Path)</text>
+      <line x1="10" y1="24" x2="478" y2="24" stroke="#86efac" stroke-width="0.5"/>
+      <text x="10" y="44" style="font:500 10px 'JetBrains Mono',monospace;fill:#374151">Latency: 49.5 cyc (4B cached) / 151 cyc (128B)</text>
+      <text x="10" y="60" style="font:500 10px 'JetBrains Mono',monospace;fill:#374151">Bandwidth: 13,768 GB/s aggregate</text>
+      <text x="10" y="76" style="font:500 10px 'JetBrains Mono',monospace;fill:#374151">Topology: shared crossbar (&lt;4% variance)</text>
+      <text x="10" y="92" style="font:500 10px 'JetBrains Mono',monospace;fill:#374151">Ordering: MEMBAR.ALL.GPU = 286 cyc (expensive)</text>
+      <text x="10" y="112" style="font:700 10px 'JetBrains Mono',monospace;fill:#16a34a">Best for: raw data reads (4.5× faster)</text>
+      <text x="10" y="128" style="font:700 10px 'JetBrains Mono',monospace;fill:#16a34a">Best for: TMA bulk tile loads (BW-optimized)</text>
+      <text x="10" y="148" style="font:700 10px 'JetBrains Mono',monospace;fill:#dc2626">Limitation: sync via coherence = 26× slower</text>
+      <text x="10" y="168" style="font:500 9px 'JetBrains Mono',monospace;fill:#6b7280">Two fabrics are PHYSICALLY INDEPENDENT (no contention)</text>
+    </g>
+  </g>
+
+  <!-- ═══════ ROW 3: TMA Engine + Pipeline Model ═══════ -->
+  <g transform="translate(36,476)">
+    <!-- TMA Engine Model -->
+    <g transform="translate(0,0)">
+      <rect x="0" y="0" width="490" height="170" rx="12" fill="#FFF7ED" stroke="#c2410c" stroke-width="0.8"/>
+      <text x="20" y="24" class="ttl" fill="#c2410c">TMA Engine: Two-Phase Latency Model</text>
+      <line x1="20" y1="32" x2="470" y2="32" stroke="#fdba74" stroke-width="0.5"/>
+      <text x="20" y="52" style="font:600 10px 'JetBrains Mono',monospace;fill:#374151">Phase 1: Descriptor Decode + Addr Gen</text>
+      <text x="380" y="52" style="font:700 10px 'JetBrains Mono',monospace;fill:#c2410c">~440 cyc</text>
+      <text x="20" y="68" style="font:500 9px 'JetBrains Mono',monospace;fill:#6b7280">  6-stage HW pipeline (US2023/0289292 Fig.6)</text>
+      <text x="20" y="88" style="font:600 10px 'JetBrains Mono',monospace;fill:#374151">Phase 2: DMA Write to smem</text>
+      <text x="380" y="88" style="font:700 10px 'JetBrains Mono',monospace;fill:#16a34a">0.031 cyc/B</text>
+      <text x="20" y="104" style="font:500 9px 'JetBrains Mono',monospace;fill:#6b7280">  16.1 B/cyc = smem write port BW</text>
+      <line x1="20" y1="114" x2="470" y2="114" stroke="#fdba74" stroke-width="0.5"/>
+      <text x="20" y="132" style="font:700 10px 'JetBrains Mono',monospace;fill:#0b1220">TMA_lat(size) = 440 + size × 0.031</text>
+      <text x="20" y="148" style="font:500 9px 'JetBrains Mono',monospace;fill:#6b7280">Multicast: ABSENT (SW emulation 2000–50000× penalty)</text>
+      <text x="20" y="162" style="font:500 9px 'JetBrains Mono',monospace;fill:#6b7280">Co-issue: 0% FP32 overhead, 100% TC overlap</text>
+    </g>
+
+    <!-- Software Pipeline Optimization -->
+    <g transform="translate(510,0)">
+      <rect x="0" y="0" width="498" height="170" rx="12" fill="#f0fdf4" stroke="#16a34a" stroke-width="0.8"/>
+      <text x="20" y="24" class="ttl" fill="#166534">Software Pipeline: TMA Latency Hiding</text>
+      <line x1="20" y1="32" x2="478" y2="32" stroke="#86efac" stroke-width="0.5"/>
+      <!-- Bars -->
+      <text x="20" y="52" style="font:600 9px 'JetBrains Mono',monospace;fill:#374151">1-stage:</text>
+      <rect x="90" y="40" width="304" height="14" rx="2" fill="#dc2626" fill-opacity="0.12" stroke="#dc2626" stroke-width="0.6"/>
+      <text x="398" y="52" style="font:700 9px 'JetBrains Mono',monospace;fill:#dc2626">608 cyc (σ=92)</text>
+
+      <text x="20" y="74" style="font:600 9px 'JetBrains Mono',monospace;fill:#374151">2-stage:</text>
+      <rect x="90" y="62" width="161" height="14" rx="2" fill="#1e40af" fill-opacity="0.12" stroke="#1e40af" stroke-width="0.6"/>
+      <text x="255" y="74" style="font:700 9px 'JetBrains Mono',monospace;fill:#1e40af">322 cyc 1.89× (σ=1.0)</text>
+
+      <text x="20" y="96" style="font:600 9px 'JetBrains Mono',monospace;fill:#374151">3-stage:</text>
+      <rect x="90" y="84" width="118" height="14" rx="2" fill="#16a34a" fill-opacity="0.12" stroke="#16a34a" stroke-width="0.6"/>
+      <text x="212" y="96" style="font:700 9px 'JetBrains Mono',monospace;fill:#16a34a">236 cyc 2.58× ← optimal</text>
+
+      <text x="20" y="118" style="font:600 9px 'JetBrains Mono',monospace;fill:#374151">4-stage:</text>
+      <rect x="90" y="106" width="125" height="14" rx="2" fill="#d97706" fill-opacity="0.12" stroke="#d97706" stroke-width="0.6"/>
+      <text x="219" y="118" style="font:700 9px 'JetBrains Mono',monospace;fill:#d97706">249 cyc 2.44× ↑regression</text>
+
+      <line x1="20" y1="130" x2="478" y2="130" stroke="#86efac" stroke-width="0.5"/>
+      <text x="20" y="148" style="font:700 9px 'JetBrains Mono',monospace;fill:#991b1b">Warp specialization: −73% (COUNTERPRODUCTIVE)</text>
+      <text x="20" y="162" style="font:500 9px 'JetBrains Mono',monospace;fill:#6b7280">No Tensor Memory → per-warp pipelining is only strategy</text>
+    </g>
+  </g>
+
+  <!-- ═══════ ROW 4: Key Insights (9 items, compact) ═══════ -->
+  <g transform="translate(36,666)">
+    <rect x="0" y="0" width="1008" height="194" rx="12" fill="#E0E7FF" stroke="#3b82f6" stroke-width="0.8"/>
+    <text x="20" y="24" class="ttl" fill="#1e40af">9 Key Insights — Architectural Decisions for SM_120 On-Chip Network</text>
+
+    <!-- Left column -->
+    <g transform="translate(20,44)">
+      <circle cx="6" cy="6" r="3" fill="#1e40af"/>
+      <text x="16" y="10" class="insight">KI-6.1: DSMEM wins sync (26×), loses raw data (4.5× slower) — "sync domain" choice</text>
+
+      <circle cx="6" cy="28" r="3" fill="#1e40af"/>
+      <text x="16" y="32" class="insight">KI-6.2: TMA value = descriptor addressing + deep pipelining (11×), NOT raw speed</text>
+
+      <circle cx="6" cy="50" r="3" fill="#1e40af"/>
+      <text x="16" y="54" class="insight">KI-6.3: Cluster barrier O(1) scaling via SM2SM sideband — 23× cheaper than L2</text>
+
+      <circle cx="6" cy="72" r="3" fill="#dc2626"/>
+      <text x="16" y="76" class="insight">KI-6.5: SM_120 is 4.4× TMA-starved — 3-stage pipelining essential for TC utilization</text>
+
+      <circle cx="6" cy="94" r="3" fill="#dc2626"/>
+      <text x="16" y="98" class="insight">KI-6.9: TMA multicast ABSENT — "cluster GEMM impossibility" (CUTLASS forces 1×1×1)</text>
+    </g>
+
+    <!-- Right column -->
+    <g transform="translate(540,44)">
+      <circle cx="6" cy="6" r="3" fill="#1e40af"/>
+      <text x="16" y="10" class="insight">KI-6.4: Named barriers 14× cheaper than mbarrier (15 vs 211 cyc)</text>
+
+      <circle cx="6" cy="28" r="3" fill="#d97706"/>
+      <text x="16" y="32" class="insight">KI-6.6: fence.proxy.async dominates at global scope (+2229%)</text>
+
+      <circle cx="6" cy="50" r="3" fill="#d97706"/>
+      <text x="16" y="54" class="insight">KI-6.7: Warp spec adds fixed +259 cyc/iter (&lt;13% at large tiles)</text>
+
+      <circle cx="6" cy="72" r="3" fill="#16a34a"/>
+      <text x="16" y="76" class="insight">KI-6.8: Two fabrics physically independent → no BW contention</text>
+    </g>
+
+    <!-- Bottom summary line -->
+    <g transform="translate(20,152)">
+      <line x1="0" y1="0" x2="968" y2="0" stroke="#93c5fd" stroke-width="0.5"/>
+      <text x="484" y="18" style="font:600 10px 'JetBrains Mono',monospace;fill:#1e40af;letter-spacing:0.04em" text-anchor="middle">179 experiments · 117 TMA · 24 cluster · 38 inter-SM · confidence H across all 9 KIs</text>
+      <text x="484" y="34" style="font:500 9px 'JetBrains Mono',monospace;fill:#5b6679" text-anchor="middle">Design rule: Use DSMEM for sync + data, L2 for raw reads, 3-stage pipeline always, never warp-specialize on SM_120</text>
+    </g>
+  </g>
+</svg>

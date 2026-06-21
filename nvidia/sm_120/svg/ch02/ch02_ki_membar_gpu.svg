@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 140" role="img"
+     aria-label="KI-2.10: MEMBAR.ALL.GPU (285 cyc) is the universal bottleneck for all cross-SM operations">
+  <defs><style><![CDATA[
+    .ttl{font:600 13px "Fraunces",serif;fill:#0b1220}
+    .lbl{font:600 11px "JetBrains Mono",monospace;fill:#2a3548}
+    .lbl-sm{font:500 10px "JetBrains Mono",monospace;fill:#5b6679}
+    .num{font:700 13px "JetBrains Mono",monospace}
+    .num-lg{font:700 20px "JetBrains Mono",monospace}
+    .stage{font:600 10px "JetBrains Mono",monospace;fill:#fff}
+    .insight{font:600 10.5px "IBM Plex Sans",sans-serif;fill:#9f1239}
+  ]]></style></defs>
+  <rect width="1080" height="140" fill="#ffffff"/>
+  <text x="36" y="22" class="ttl">KI-2.10: MEMBAR.ALL.GPU (285 cyc) — The Universal Bottleneck Underlying All Cross-SM Operations</text>
+  <g transform="translate(36,36)">
+    <!-- Central MEMBAR box -->
+    <rect x="350" y="0" width="200" height="40" rx="8" fill="#D97706"/>
+    <text x="450" y="17" class="stage" text-anchor="middle">MEMBAR.ALL.GPU</text>
+    <text x="450" y="33" class="stage" text-anchor="middle">285 cyc (core cost)</text>
+    <!-- Operations that contain it -->
+    <rect x="0" y="50" width="200" height="35" rx="6" fill="#FFFBEB" stroke="#D97706" stroke-width="1"/>
+    <text x="100" y="66" class="lbl-sm" text-anchor="middle">fence.acq_rel.gpu</text>
+    <text x="100" y="80" class="num" fill="#D97706" text-anchor="middle">285 cyc</text>
+    <rect x="220" y="50" width="200" height="35" rx="6" fill="#FFFBEB" stroke="#D97706" stroke-width="1"/>
+    <text x="320" y="66" class="lbl-sm" text-anchor="middle">barrier.cluster (full)</text>
+    <text x="320" y="80" class="num" fill="#D97706" text-anchor="middle">371 cyc = 285+86</text>
+    <rect x="440" y="50" width="200" height="35" rx="6" fill="#FFFBEB" stroke="#D97706" stroke-width="1"/>
+    <text x="540" y="66" class="lbl-sm" text-anchor="middle">st.release.gpu</text>
+    <text x="540" y="80" class="num" fill="#D97706" text-anchor="middle">920 cyc = 285+STG</text>
+    <rect x="660" y="50" width="200" height="35" rx="6" fill="#FFFBEB" stroke="#D97706" stroke-width="1"/>
+    <text x="760" y="66" class="lbl-sm" text-anchor="middle">grid sync</text>
+    <text x="760" y="80" class="num" fill="#D97706" text-anchor="middle">1242 cyc ≈ 2×285</text>
+    <rect x="880" y="50" width="160" height="35" rx="6" fill="#F0FDF4" stroke="#059669" stroke-width="1"/>
+    <text x="960" y="66" class="lbl-sm" text-anchor="middle">cluster.relaxed</text>
+    <text x="960" y="80" class="num" fill="#059669" text-anchor="middle">85 cyc (no MEMBAR!)</text>
+  </g>
+  <g transform="translate(36,108)">
+    <text x="0" y="24" class="insight">RULE: Avoid MEMBAR.ALL.GPU (285 cyc floor). Use cluster.relaxed (85 cyc, skips MEMBAR) or CTA-local fences (7 cyc) whenever possible.</text>
+  </g>
+</svg>

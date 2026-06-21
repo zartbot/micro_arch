@@ -1,0 +1,184 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 920" role="img"
+     aria-label="SM_120 Per-SMSP Execution Pipe Hierarchy: 16 pipes across 10 functional groups">
+  <defs>
+    <style><![CDATA[
+      .ttl{font:600 14px "Fraunces",serif;fill:#0b1220}
+      .sub{font:italic 11px "Fraunces",serif;fill:#5b6679}
+      .grp{font:600 11px "JetBrains Mono",monospace}
+      .pipe{font:500 10px "JetBrains Mono",monospace;fill:#2a3548}
+      .ops{font:400 9px "JetBrains Mono",monospace;fill:#5b6679}
+      .perf{font:600 9px "JetBrains Mono",monospace;fill:#9f1239}
+      .note{font:italic 9px "Fraunces",serif;fill:#5b6679}
+    ]]></style>
+  </defs>
+  <rect width="1080" height="920" fill="#ffffff"/>
+
+  <!-- Title -->
+  <text x="36" y="32" class="ttl">SM_120 Per-SMSP Execution Pipe Hierarchy (§3.4.1)</text>
+  <text x="36" y="52" class="sub">Single-issue architecture: 1 instruction/cycle max per Sub-Core · 16 named pipes · 10 functional groups</text>
+
+  <!-- Root: SMSP -->
+  <g transform="translate(36,72)">
+    <rect x="0" y="0" width="1008" height="36" rx="8" fill="#1e293b" stroke="#0f172a"/>
+    <text x="16" y="23" class="grp" fill="#ffffff">SMSP (Sub-Core)</text>
+    <text x="240" y="23" class="pipe" fill="#94a3b8">single-issue, 1 instruction/cycle max · 12 warp slots · CGGTY scheduler</text>
+  </g>
+
+  <!-- FMA Group -->
+  <g transform="translate(56,124)">
+    <rect x="0" y="0" width="968" height="130" rx="10" fill="#FFF7ED" stroke="#ea580c" stroke-width="0.8"/>
+    <text x="16" y="22" class="grp" fill="#c2410c">FMA Group</text>
+    <text x="130" y="22" class="ops">Unified FP32/INT32 arithmetic</text>
+
+    <rect x="16" y="34" width="440" height="28" rx="6" fill="#fff" stroke="#ea580c" stroke-width="0.5"/>
+    <text x="28" y="52" class="pipe">pipe_fma</text>
+    <text x="120" y="52" class="ops">FFMA, FMUL</text>
+    <text x="340" y="52" class="perf">4 cyc · 1.0 ops/cyc</text>
+
+    <rect x="16" y="66" width="440" height="28" rx="6" fill="#fff" stroke="#ea580c" stroke-width="0.5"/>
+    <text x="28" y="84" class="pipe">pipe_fmalite</text>
+    <text x="130" y="84" class="ops">FADD, HADD2, HFMA2, BF16</text>
+    <text x="340" y="84" class="perf">4 cyc · 1.0 ops/cyc</text>
+
+    <rect x="16" y="98" width="440" height="28" rx="6" fill="#fff" stroke="#ea580c" stroke-width="0.5"/>
+    <text x="28" y="116" class="pipe">pipe_fmaheavy</text>
+    <text x="140" y="116" class="ops">FMNMX, FSEL, SEL, SHF, PRMT, IMAD, VIMNMX</text>
+
+    <text x="470" y="116" class="perf">5 cyc · ~0.7 ops/cyc</text>
+
+    <!-- Subpipes annotation -->
+    <text x="470" y="52" class="note">subpipe_fmaheavy + subpipe_alulite (micro-op co-issue)</text>
+  </g>
+
+  <!-- ALU Group -->
+  <g transform="translate(56,268)">
+    <rect x="0" y="0" width="968" height="84" rx="10" fill="#EFF6FF" stroke="#2563eb" stroke-width="0.8"/>
+    <text x="16" y="22" class="grp" fill="#1d4ed8">ALU Group</text>
+    <text x="120" y="22" class="ops">Integer &amp; Logic</text>
+
+    <rect x="16" y="34" width="440" height="22" rx="6" fill="#fff" stroke="#2563eb" stroke-width="0.5"/>
+    <text x="28" y="50" class="pipe">pipe_alu</text>
+    <text x="100" y="50" class="ops">IADD3, LOP3, ISETP, I2I</text>
+    <text x="340" y="50" class="perf">2-4 cyc · 1.0 ops/cyc</text>
+
+    <rect x="16" y="60" width="440" height="22" rx="6" fill="#fff" stroke="#2563eb" stroke-width="0.5"/>
+    <text x="28" y="76" class="pipe">pipe_aluheavy</text>
+    <text x="136" y="76" class="ops">IMAD.WIDE, BFE, BFI, POPC</text>
+    <text x="340" y="76" class="perf">4+ cyc · ~0.25 ops/cyc</text>
+  </g>
+
+  <!-- XU (SFU) -->
+  <g transform="translate(56,366)">
+    <rect x="0" y="0" width="968" height="42" rx="10" fill="#F5F3FF" stroke="#7c3aed" stroke-width="0.8"/>
+    <text x="16" y="26" class="grp" fill="#6d28d9">XU (SFU)</text>
+    <text x="110" y="26" class="pipe">pipe_xu</text>
+    <text x="190" y="26" class="ops">MUFU.{RCP, RSQ, SIN, COS, LG2, EX2, TANH, SQRT}</text>
+    <text x="640" y="26" class="perf">18-44 cyc · depth=5</text>
+  </g>
+
+  <!-- LSU -->
+  <g transform="translate(56,422)">
+    <rect x="0" y="0" width="968" height="144" rx="10" fill="#ECFDF5" stroke="#059669" stroke-width="0.8"/>
+    <text x="16" y="22" class="grp" fill="#047857">LSU</text>
+    <text x="60" y="22" class="pipe">pipe_lsu</text>
+    <text x="150" y="22" class="ops">Memory operations (variable latency)</text>
+
+    <rect x="16" y="34" width="440" height="22" rx="6" fill="#fff" stroke="#059669" stroke-width="0.5"/>
+    <text x="28" y="50" class="pipe">lg_cmd_read</text>
+    <text x="130" y="50" class="ops">LDG, LDSM</text>
+    <text x="340" y="50" class="perf">2.27 cyc issue</text>
+
+    <rect x="16" y="58" width="440" height="22" rx="6" fill="#fff" stroke="#059669" stroke-width="0.5"/>
+    <text x="28" y="74" class="pipe">lg_cmd_write</text>
+    <text x="140" y="74" class="ops">STG</text>
+    <text x="340" y="74" class="perf">5.85 cyc issue</text>
+
+    <rect x="16" y="82" width="440" height="22" rx="6" fill="#fff" stroke="#059669" stroke-width="0.5"/>
+    <text x="28" y="98" class="pipe">shared_cmd_read</text>
+    <text x="160" y="98" class="ops">LDS</text>
+    <text x="340" y="98" class="perf">4.0 cyc issue</text>
+
+    <rect x="16" y="106" width="440" height="22" rx="6" fill="#fff" stroke="#059669" stroke-width="0.5"/>
+    <text x="28" y="122" class="pipe">shared_cmd_write</text>
+    <text x="170" y="122" class="ops">STS, STSM</text>
+    <text x="340" y="122" class="perf">4.0 cyc issue</text>
+
+    <rect x="470" y="34" width="480" height="22" rx="6" fill="#fff" stroke="#059669" stroke-width="0.5"/>
+    <text x="482" y="50" class="pipe">lg_cmd_atom</text>
+    <text x="570" y="50" class="ops">ATOM, RED, ATOMG, REDG</text>
+    <text x="800" y="50" class="perf">varies</text>
+
+    <text x="470" y="86" class="note">Queue depth: 12-13 entries (significantly exceeds prior architectures)</text>
+    <text x="470" y="104" class="note">SB tracking: WrBarrier assigned per load; 6 HW counters/warp</text>
+  </g>
+
+  <!-- FP64 -->
+  <g transform="translate(56,580)">
+    <rect x="0" y="0" width="968" height="64" rx="10" fill="#FDF2F8" stroke="#be185d" stroke-width="0.8"/>
+    <text x="16" y="22" class="grp" fill="#9d174d">FP64</text>
+    <text x="60" y="22" class="pipe">pipe_fp64</text>
+    <text x="160" y="22" class="perf">64 cyc · non-pipelined</text>
+
+    <rect x="16" y="34" width="440" height="22" rx="6" fill="#fff" stroke="#be185d" stroke-width="0.5"/>
+    <text x="28" y="50" class="pipe">op_fp64</text>
+    <text x="90" y="50" class="ops">DFMA, DADD, DMUL, DMNMX, DSETP</text>
+
+    <rect x="470" y="34" width="480" height="22" rx="6" fill="#fff" stroke="#be185d" stroke-width="0.5"/>
+    <text x="482" y="50" class="pipe">op_dmma</text>
+    <text x="550" y="50" class="ops">DMMA.8x8x4 (routes here, NOT pipe_tensor)</text>
+  </g>
+
+  <!-- Tensor -->
+  <g transform="translate(56,658)">
+    <rect x="0" y="0" width="968" height="64" rx="10" fill="#FEF3C7" stroke="#b45309" stroke-width="0.8"/>
+    <text x="16" y="22" class="grp" fill="#92400e">Tensor</text>
+    <text x="76" y="22" class="pipe">pipe_tensor</text>
+    <text x="180" y="22" class="perf">29 cyc · depth=1.81</text>
+
+    <rect x="16" y="34" width="560" height="22" rx="6" fill="#fff" stroke="#b45309" stroke-width="0.5"/>
+    <text x="28" y="50" class="pipe">subpipe_hmma</text>
+    <text x="130" y="50" class="ops">HMMA, QMMA, QMMA.SF, OMMA.SF (FP16/BF16/TF32/FP8/FP6/FP4/MX)</text>
+
+    <rect x="590" y="34" width="360" height="22" rx="6" fill="#fff" stroke="#b45309" stroke-width="0.5"/>
+    <text x="602" y="50" class="pipe">subpipe_imma</text>
+    <text x="692" y="50" class="ops">IMMA (INT8)</text>
+  </g>
+
+  <!-- Auxiliary pipes row -->
+  <g transform="translate(56,736)">
+    <rect x="0" y="0" width="968" height="80" rx="10" fill="#F8FAFC" stroke="#64748b" stroke-width="0.8"/>
+    <text x="16" y="22" class="grp" fill="#334155">Auxiliary Pipes</text>
+
+    <!-- TEX -->
+    <rect x="16" y="34" width="224" height="36" rx="6" fill="#fff" stroke="#64748b" stroke-width="0.5"/>
+    <text x="28" y="50" class="pipe">pipe_tex</text>
+    <text x="90" y="50" class="ops">TLD, SULD, SUATOM</text>
+    <text x="28" y="64" class="perf">145 cyc latency</text>
+
+    <!-- TMA -->
+    <rect x="250" y="34" width="260" height="36" rx="6" fill="#fff" stroke="#64748b" stroke-width="0.5"/>
+    <text x="262" y="50" class="pipe">pipe_tma</text>
+    <text x="324" y="50" class="ops">UTMALDG, UTMASTG, UTMAPF</text>
+    <text x="262" y="64" class="perf">479+ cyc · 148 cyc/op issue</text>
+
+    <!-- CBU -->
+    <rect x="520" y="34" width="190" height="36" rx="6" fill="#fff" stroke="#64748b" stroke-width="0.5"/>
+    <text x="532" y="50" class="pipe">pipe_cbu</text>
+    <text x="594" y="50" class="ops">BRA, EXIT, BSSY, BSYNC</text>
+    <text x="532" y="64" class="perf">3-7 cyc</text>
+
+    <!-- ADU + Uniform -->
+    <rect x="720" y="34" width="230" height="36" rx="6" fill="#fff" stroke="#64748b" stroke-width="0.5"/>
+    <text x="732" y="50" class="pipe">pipe_adu / pipe_uniform</text>
+    <text x="732" y="64" class="ops">UIADD3, S2UR, CS2UR (compiler)</text>
+  </g>
+
+  <!-- Legend / source -->
+  <g transform="translate(36,840)">
+    <line x1="0" y1="0" x2="1008" y2="0" stroke="#e2e8f0" stroke-width="1"/>
+    <text x="0" y="20" class="note">Performance figures: latency = dependent-chain cycles; ops/cyc = throughput per SMSP (single warp, 32 threads)</text>
+    <text x="0" y="36" class="note">Co-issue capable: FMA+ALU, FMA+LSU, ALU+LSU, Tensor+FMA, Tensor+LSU — 10 of 15 pipe pairs achieve full overlap</text>
+    <text x="0" y="52" class="note">Source: doc/sm_120_pipe_arch.md, S22/case_5-12, S5/case_23-39</text>
+  </g>
+</svg>

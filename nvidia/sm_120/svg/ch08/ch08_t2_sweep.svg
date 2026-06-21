@@ -1,0 +1,252 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 720" role="img"
+     aria-label="Table 8.2 — 588-shape GEMM sweep across libraries and precisions on SM_120">
+  <defs>
+    <style><![CDATA[
+      .ttl{font:600 17px "Fraunces",serif;fill:#0b1220}
+      .sub{font:italic 12px "Fraunces",serif;fill:#5b6679}
+      .axis{font:500 10px "JetBrains Mono",monospace;fill:#5b6679}
+      .axis-ttl{font:600 10px "JetBrains Mono",monospace;fill:#5b6679;letter-spacing:0.10em}
+      .lib{font:600 11px "JetBrains Mono",monospace;fill:#0b1220}
+      .prec{font:600 11px "JetBrains Mono",monospace}
+      .num{font:600 11.5px "JetBrains Mono",monospace;fill:#0b1220}
+      .num-sm{font:500 10.5px "JetBrains Mono",monospace;fill:#5b6679}
+      .grp{font:600 9.5px "JetBrains Mono",monospace;fill:#8e97a5;letter-spacing:0.14em}
+      .legend{font:500 10.5px "JetBrains Mono",monospace;fill:#2a3548}
+      .ann{font:italic 10.5px "Fraunces",serif;fill:#5b6679}
+    ]]></style>
+  </defs>
+
+  <rect width="1100" height="720" fill="#ffffff"/>
+
+  <!-- Title -->
+  <text x="36" y="30" class="ttl">588-Shape GEMM Sweep — Library × Precision Throughput</text>
+  <text x="36" y="48" class="sub">Peak sustained TFLOPS, kernel efficiency and shape coverage on SM_120 / RTX PRO 5000 72GB · Section 9 cases 128–145</text>
+
+  <!-- ===== Top axis (TFLOPS) ===== -->
+  <text x="320" y="68" class="axis-ttl">PEAK TFLOPS</text>
+  <text x="950" y="68" class="axis-ttl" text-anchor="end">EFF %     SHAPES OK</text>
+
+  <!-- Vertical grid lines + tick labels at 0, 250, 500, 750, 1000, 1250, 1400 -->
+  <g stroke="#efeee6" stroke-width="1">
+    <line x1="320"  y1="76" x2="320"  y2="586"/>
+    <line x1="427"  y1="76" x2="427"  y2="586"/>
+    <line x1="534"  y1="76" x2="534"  y2="586"/>
+    <line x1="641"  y1="76" x2="641"  y2="586"/>
+    <line x1="749"  y1="76" x2="749"  y2="586"/>
+    <line x1="856"  y1="76" x2="856"  y2="586"/>
+    <line x1="920"  y1="76" x2="920"  y2="586" stroke="#e6e4da"/>
+  </g>
+  <g class="axis">
+    <text x="320" y="80" text-anchor="middle">0</text>
+    <text x="427" y="80" text-anchor="middle">250</text>
+    <text x="534" y="80" text-anchor="middle">500</text>
+    <text x="641" y="80" text-anchor="middle">750</text>
+    <text x="749" y="80" text-anchor="middle">1000</text>
+    <text x="856" y="80" text-anchor="middle">1250</text>
+    <text x="920" y="80" text-anchor="end">1400</text>
+  </g>
+  <line x1="320" y1="84" x2="920" y2="84" stroke="#0b1220" stroke-width="1"/>
+
+  <!-- 1 TFLOPS = 600/1400 = 0.4286 px ; bar height = 16 -->
+
+  <!-- ============================================================
+       Group 1: Chip sustained (1 row)
+       y rows: 92..120
+       ============================================================ -->
+  <text x="36" y="105" class="grp">CHIP SUSTAINED · HAND-TUNED</text>
+  <text x="36" y="121" class="lib">Chip sustained</text>
+  <text x="170" y="121" class="prec" fill="#5a8e00">MX-FP4 OMMA.SF</text>
+
+  <!-- bar: 1068.5 → 458 px ; soft + main -->
+  <rect x="320" y="111" width="600" height="14" fill="#e9f3d2" rx="3"/>
+  <rect x="320" y="111" width="458" height="14" fill="#5a8e00" rx="3"/>
+  <text x="785" y="123" class="num" fill="#5a8e00">1068.5</text>
+  <text x="978" y="123" class="num" text-anchor="end" fill="#5a8e00">99.0</text>
+  <text x="1064" y="123" class="num-sm" text-anchor="end">50K iters</text>
+
+  <!-- subtle gold star indicating baseline -->
+  <text x="297" y="123" font-size="13" text-anchor="end" fill="#5a8e00">★</text>
+
+  <!-- ============================================================
+       Group 2: cuBLAS (3 rows)
+       y rows: 144, 172, 200
+       ============================================================ -->
+  <text x="36" y="142" class="grp">cuBLAS  ·  cublasGemmEx / cublasLtMatmul</text>
+
+  <!-- Row: cuBLAS BF16 253.6 → 109 -->
+  <text x="36" y="160" class="lib">cuBLAS</text>
+  <text x="170" y="160" class="prec" fill="#1e40af">BF16</text>
+  <rect x="320" y="150" width="600" height="14" fill="#e0e7ff" rx="3"/>
+  <rect x="320" y="150" width="109" height="14" fill="#1e40af" rx="3"/>
+  <text x="436" y="162" class="num">253.6</text>
+  <text x="978" y="162" class="num" text-anchor="end">94.8</text>
+  <text x="1064" y="162" class="num-sm" text-anchor="end">588/588</text>
+
+  <!-- Row: cuBLAS FP8 E4M3 551.1 → 236 -->
+  <text x="36" y="188" class="lib">cuBLAS</text>
+  <text x="170" y="188" class="prec" fill="#9a3412">FP8 E4M3</text>
+  <rect x="320" y="178" width="600" height="14" fill="#ffedd5" rx="3"/>
+  <rect x="320" y="178" width="236" height="14" fill="#ea580c" rx="3"/>
+  <text x="563" y="190" class="num">551.1</text>
+  <text x="978" y="190" class="num" text-anchor="end" fill="#ea580c">102</text>
+  <text x="1064" y="190" class="num-sm" text-anchor="end">462/588</text>
+
+  <!-- Row: cuBLAS MXFP4 1041.9 → 446 -->
+  <text x="36" y="216" class="lib">cuBLAS</text>
+  <text x="170" y="216" class="prec" fill="#5a8e00">MXFP4 VEC16</text>
+  <rect x="320" y="206" width="600" height="14" fill="#e9f3d2" rx="3"/>
+  <rect x="320" y="206" width="446" height="14" fill="#5a8e00" rx="3"/>
+  <text x="773" y="218" class="num">1041.9</text>
+  <text x="978" y="218" class="num" text-anchor="end">97.4</text>
+  <text x="1064" y="218" class="num-sm" text-anchor="end">504/588</text>
+
+  <!-- ============================================================
+       Group 3: CUTLASS dense (4 rows)
+       y rows: 244, 272, 300, 328
+       ============================================================ -->
+  <text x="36" y="238" class="grp">CUTLASS  ·  DENSE</text>
+
+  <!-- CUTLASS BF16 261.8 → 112 -->
+  <text x="36" y="256" class="lib">CUTLASS</text>
+  <text x="170" y="256" class="prec" fill="#1e40af">BF16 coop 128×128</text>
+  <rect x="320" y="246" width="600" height="14" fill="#e0e7ff" rx="3"/>
+  <rect x="320" y="246" width="112" height="14" fill="#1e40af" rx="3"/>
+  <text x="439" y="258" class="num">261.8</text>
+  <text x="978" y="258" class="num" text-anchor="end">97.9</text>
+  <text x="1064" y="258" class="num-sm" text-anchor="end">462/588</text>
+
+  <!-- CUTLASS FP8 blockwise 504.3 → 216 -->
+  <text x="36" y="284" class="lib">CUTLASS</text>
+  <text x="170" y="284" class="prec" fill="#9a3412">FP8 blockwise</text>
+  <rect x="320" y="274" width="600" height="14" fill="#ffedd5" rx="3"/>
+  <rect x="320" y="274" width="216" height="14" fill="#ea580c" rx="3"/>
+  <text x="543" y="286" class="num">504.3</text>
+  <text x="978" y="286" class="num" text-anchor="end">94.1</text>
+  <text x="1064" y="286" class="num-sm" text-anchor="end">588/588</text>
+
+  <!-- CUTLASS MXFP4 1076.5 → 461  ★ best dense -->
+  <text x="36" y="312" class="lib">CUTLASS</text>
+  <text x="170" y="312" class="prec" fill="#5a8e00">MXFP4 256×128×128</text>
+  <rect x="320" y="302" width="600" height="14" fill="#e9f3d2" rx="3"/>
+  <rect x="320" y="302" width="461" height="14" fill="#5a8e00" rx="3"/>
+  <text x="788" y="314" class="num" fill="#5a8e00">1076.5</text>
+  <text x="978" y="314" class="num" text-anchor="end" fill="#5a8e00">100.6</text>
+  <text x="1064" y="314" class="num-sm" text-anchor="end">588/588</text>
+  <text x="297" y="314" font-size="13" text-anchor="end" fill="#5a8e00">★</text>
+
+  <!-- CUTLASS NVFP4 1011.6 → 433 -->
+  <text x="36" y="340" class="lib">CUTLASS</text>
+  <text x="170" y="340" class="prec" fill="#5a8e00">NVFP4 128×128×128</text>
+  <rect x="320" y="330" width="600" height="14" fill="#e9f3d2" rx="3"/>
+  <rect x="320" y="330" width="433" height="14" fill="#5a8e00" rx="3"/>
+  <text x="760" y="342" class="num">1011.6</text>
+  <text x="978" y="342" class="num" text-anchor="end">94.5</text>
+  <text x="1064" y="342" class="num-sm" text-anchor="end">579/588</text>
+
+  <!-- ============================================================
+       Group 4: CUTLASS sparse 2:4 (3 rows)
+       y rows: 368, 396, 424
+       ============================================================ -->
+  <text x="36" y="362" class="grp">CUTLASS  ·  SPARSE 2:4</text>
+
+  <!-- Sparse FP8 682 → 292 -->
+  <text x="36" y="380" class="lib">CUTLASS</text>
+  <text x="170" y="380" class="prec" fill="#6d28d9">Sparse FP8</text>
+  <rect x="320" y="370" width="600" height="14" fill="#ede7fb" rx="3"/>
+  <rect x="320" y="370" width="292" height="14" fill="#6d28d9" rx="3"/>
+  <text x="619" y="382" class="num">682</text>
+  <text x="978" y="382" class="num-sm" text-anchor="end">—</text>
+  <text x="1064" y="382" class="num-sm" text-anchor="end">511/588</text>
+
+  <!-- Sparse MXFP4 1318 → 565  ★ highest absolute -->
+  <text x="36" y="408" class="lib">CUTLASS</text>
+  <text x="170" y="408" class="prec" fill="#6d28d9">Sparse MXFP4</text>
+  <rect x="320" y="398" width="600" height="14" fill="#ede7fb" rx="3"/>
+  <rect x="320" y="398" width="565" height="14" fill="#6d28d9" rx="3"/>
+  <text x="892" y="410" class="num" fill="#6d28d9">1318</text>
+  <text x="978" y="410" class="num" text-anchor="end" fill="#9f1239">61.7</text>
+  <text x="1064" y="410" class="num-sm" text-anchor="end">504/588</text>
+  <text x="297" y="410" font-size="13" text-anchor="end" fill="#6d28d9">★</text>
+
+  <!-- Sparse NVFP4 751 → 322 -->
+  <text x="36" y="436" class="lib">CUTLASS</text>
+  <text x="170" y="436" class="prec" fill="#6d28d9">Sparse NVFP4</text>
+  <rect x="320" y="426" width="600" height="14" fill="#ede7fb" rx="3"/>
+  <rect x="320" y="426" width="322" height="14" fill="#6d28d9" rx="3"/>
+  <text x="649" y="438" class="num">751</text>
+  <text x="978" y="438" class="num" text-anchor="end" fill="#9f1239">35.0</text>
+  <text x="1064" y="438" class="num-sm" text-anchor="end">503/588</text>
+
+  <!-- ============================================================
+       Group 5: CUTLASS Grouped (4 rows)
+       y rows: 464, 492, 520, 548
+       ============================================================ -->
+  <text x="36" y="458" class="grp">CUTLASS  ·  GROUPED  (8 groups, MoE-style)</text>
+
+  <!-- Grouped BF16 252.3 → 108 -->
+  <text x="36" y="476" class="lib">Grouped</text>
+  <text x="170" y="476" class="prec" fill="#1e40af">BF16</text>
+  <rect x="320" y="466" width="600" height="14" fill="#e0e7ff" rx="3"/>
+  <rect x="320" y="466" width="108" height="14" fill="#1e40af" rx="3"/>
+  <text x="435" y="478" class="num">252.3</text>
+  <text x="978" y="478" class="num" text-anchor="end">94.3</text>
+  <text x="1064" y="478" class="num-sm" text-anchor="end">588/588</text>
+
+  <!-- Grouped FP8 521.4 → 223 -->
+  <text x="36" y="504" class="lib">Grouped</text>
+  <text x="170" y="504" class="prec" fill="#9a3412">FP8</text>
+  <rect x="320" y="494" width="600" height="14" fill="#ffedd5" rx="3"/>
+  <rect x="320" y="494" width="223" height="14" fill="#ea580c" rx="3"/>
+  <text x="550" y="506" class="num">521.4</text>
+  <text x="978" y="506" class="num" text-anchor="end">97.3</text>
+  <text x="1064" y="506" class="num-sm" text-anchor="end">336/588</text>
+
+  <!-- Grouped MXFP4 1036.4 → 444 -->
+  <text x="36" y="532" class="lib">Grouped</text>
+  <text x="170" y="532" class="prec" fill="#5a8e00">MXFP4 256×128×128</text>
+  <rect x="320" y="522" width="600" height="14" fill="#e9f3d2" rx="3"/>
+  <rect x="320" y="522" width="444" height="14" fill="#5a8e00" rx="3"/>
+  <text x="771" y="534" class="num">1036.4</text>
+  <text x="978" y="534" class="num" text-anchor="end">96.9</text>
+  <text x="1064" y="534" class="num-sm" text-anchor="end">588/588</text>
+
+  <!-- Grouped NVFP4 866.0 → 371 -->
+  <text x="36" y="560" class="lib">Grouped</text>
+  <text x="170" y="560" class="prec" fill="#5a8e00">NVFP4 128×128×128</text>
+  <rect x="320" y="550" width="600" height="14" fill="#e9f3d2" rx="3"/>
+  <rect x="320" y="550" width="371" height="14" fill="#5a8e00" rx="3"/>
+  <text x="698" y="562" class="num">866.0</text>
+  <text x="978" y="562" class="num" text-anchor="end">81.0</text>
+  <text x="1064" y="562" class="num-sm" text-anchor="end">M=3072</text>
+
+  <!-- ============================================================
+       Bottom annotations: peak benchmark line + legend
+       ============================================================ -->
+  <!-- Reference line at chip baseline 1068.5 -->
+  <line x1="778" y1="92" x2="778" y2="582"
+        stroke="#5a8e00" stroke-width="0.8" stroke-dasharray="3 3" opacity="0.45"/>
+  <text x="781" y="600" class="ann" fill="#5a8e00">↑ chip-sustained baseline 1068.5 TFLOPS (case_128)</text>
+
+  <!-- Legend -->
+  <g transform="translate(36, 624)">
+    <text x="0" y="0" class="grp">PRECISION FAMILY</text>
+
+    <rect x="0" y="10" width="14" height="10" rx="2" fill="#1e40af"/>
+    <text x="20" y="19" class="legend">BF16  (HMMA.16816)</text>
+
+    <rect x="180" y="10" width="14" height="10" rx="2" fill="#ea580c"/>
+    <text x="200" y="19" class="legend">FP8  (QMMA.16832)</text>
+
+    <rect x="350" y="10" width="14" height="10" rx="2" fill="#5a8e00"/>
+    <text x="370" y="19" class="legend">MX-FP4 / NVFP4 dense  (OMMA.SF.16864)</text>
+
+    <rect x="650" y="10" width="14" height="10" rx="2" fill="#6d28d9"/>
+    <text x="670" y="19" class="legend">Sparse 2:4 + block-scale</text>
+
+    <text x="900" y="19" class="legend" fill="#5a8e00">★ peak per category</text>
+
+    <text x="0" y="40" class="ann">Eff% relative to theoretical TFLOPS (FP32 accum); values ≥100 % reflect cuBLAS internal kernel pipelining beyond clamp.</text>
+    <text x="0" y="56" class="ann">Sparse rows quote nominal 2× density gain; the low Eff% on Sparse MXFP4/NVFP4 indicates 2:4 metadata path is bandwidth-limited, not compute-limited.</text>
+  </g>
+</svg>

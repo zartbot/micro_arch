@@ -1,0 +1,1272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Unified Performance Model · SM_120 Microarch Reference</title>
+<link rel="stylesheet" href="assets/css/style.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" integrity="sha384-nB0miv6/jRmo5UMMR1wu3Gz6NLsoTkbqJghGIsx//Rlm+ZU03BU6SQNC66uf4l5+" crossorigin="anonymous">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/styles/atom-one-light.min.css">
+<style>
+/* protect non-color overrides over hljs theme */
+pre code.hljs { background: transparent !important; padding: 0 !important; }
+</style>
+</head>
+<body>
+<div class="shell">
+<aside class="toc">
+<a class="toc-back" href="index.html">← Index</a>
+<div class="toc-brand">SM_120 <span class="accent">GB202</span> · <em>Microarch</em></div>
+<span class="toc-tag">FINAL REPORT · 2026</span>
+<h4>All Chapters</h4>
+<a href="01_architecture_overview.html">01 · Architecture Overview</a>
+<a href="02_memory_subsystem.html">02 · Memory Subsystem</a>
+<a href="03_sm_microarchitecture.html">03 · SM Microarchitecture</a>
+<a href="04_tensorcore_architecture.html">04 · TensorCore Architecture</a>
+<a href="05_instruction_level_characterization.html">05 · Instruction-Level Characterization</a>
+<a href="06_on_chip_network_async.html">06 · On-Chip Network &amp; Async</a>
+<a href="07_warp_scheduler_control.html">07 · Warp Scheduler &amp; Control</a>
+<a href="08_workload_analysis.html">08 · Workload Analysis</a>
+<a href="09_power_thermal_efficiency.html">09 · Power, Thermal &amp; Efficiency</a>
+<a href="10_system_level_multi_gpu.html">10 · System-Level &amp; Multi-GPU</a>
+<a href="11_optimization_guidance.html">11 · Optimization Guidance</a>
+<a href="12_ptxas_compiler_behavior.html">12 · ptxas Compiler Behavior</a>
+<a href="13_unified_performance_model.html" style="font-weight:600;color:var(--ink)">13 · Unified Performance Model</a>
+<a href="14_sm100_to_sm120_porting_guide.html">14 · SM_100 → SM_120 Porting Guide</a>
+<a href="15_agent_ground_truth.html">15 · Agent Ground Truth</a>
+<a href="16_open_questions.html">16 · Open Questions</a>
+<a href="17_cross_reference_map.html">17 · Cross-Reference Map</a>
+<a href="18_appendix_a_test_coverage.html">18 · Appendix A — Test Coverage</a>
+<a href="19_appendix_b_machine_readable.html">19 · Appendix B — Machine-Readable Parameters</a>
+<a href="20_appendix_c_methodology.html">20 · Appendix C — Measurement Methodology</a>
+</aside>
+<main class="content">
+
+<header class="hero">
+<div class="hero-eyebrow"><span class="pulse"></span>CHAPTER 13 · SM_120 · GB202 BLACKWELL</div>
+<h1 class="hero-title">Unified Performance Model</h1>
+<p class="lede">This chapter integrates the scattered latency, throughput, and bandwidth measurements from the preceding chapters into a single computable kernel performance predictor for operator simulation. The model follows a roofline-style multi-resource framework parameterized entirely by measured microarchitectural constants from the SM_120 (GB202, RTX PRO 5000 72GB). Unlike a traditional roofline which considers only arithmetic intensity versus memory bandwidth, this model accounts for six independent hardware resource pipes, synchronization overhead, launch costs, and tail effects. Prediction targets are &lt;20% error for compute-bound kernels and &lt;30% for memory-bound kernels, validated against cuBLAS and CUTLASS measured throughput.</p>
+</header>
+
+<figure class="diagram"><object data="svg/ch13/ch13_summary.svg" type="image/svg+xml" aria-label="Chapter 13 summary — unified analytical performance model"></object><figcaption><span class="fig-num">FIG 13.0</span>Chapter 13 summary — unified analytical performance model</figcaption></figure>
+<h2 class="ch-title" id="13-1-model-structure">13.1 Model Structure</h2>
+<p>The top-level kernel execution time is governed by the maximum of three independent resource categories, plus fixed overhead terms:</p>
+<div class="math-display">$$T_{\text{kernel}} = \max(T_{\text{compute}},\; T_{\text{memory}},\; T_{\text{sync}}) + T_{\text{launch}} + T_{\text{tail}}$$</div>
+<p>Each term decomposes as follows:</p>
+<h3 class="sub-title" id="13-1-1-compute-time">13.1.1 Compute Time</h3>
+<div class="math-display">$$T_{\text{compute}} = \frac{\text{FLOPS}}{\text{peak}_{\text{TFLOPS}} \times \eta_{\text{compute}}}$$</div>
+<div class="math-display">$$\eta_{\text{compute}} = f(\text{occupancy},\; \text{ILP},\; \text{pipe\_utilization},\; \text{co\_issue\_ratio})$$</div>
+<p>The compute efficiency factor <span class="math-inline">$\eta_{\text{compute}}$</span> captures the deviation from theoretical peak due to insufficient instruction-level parallelism, low occupancy, pipe contention, and issue slot sharing. For a well-tuned kernel (ILP <span class="math-inline">$\geq$</span> 4, <span class="math-inline">$\geq$</span> 16 warps/SM), <span class="math-inline">$\eta_{\text{compute}}$</span> approaches 0.85–1.0 for TC-bound workloads <span class="cite">[S9/case_2, S9/case_23]</span>.</p>
+<h3 class="sub-title" id="13-1-2-memory-time">13.1.2 Memory Time</h3>
+<div class="math-display">$$T_{\text{memory}} = \max(T_{\text{global}},\; T_{\text{smem}},\; T_{\text{reg}})$$</div>
+<div class="math-display">$$T_{\text{global}} = \frac{\text{bytes\_transferred}}{\text{BW}_{\text{eff}}(\text{pattern},\; \text{coalescing},\; \text{hit\_rate})}$$</div>
+<div class="math-display">$$T_{\text{smem}} = \frac{N_{\text{smem\_txn}} \times (34 + 2 \times \bar{C}_{\text{bank}})}{W_{\text{throughput}}}$$</div>
+<div class="math-display">$$T_{\text{reg}} = \frac{N_{\text{ldmatrix}} \times 49}{\text{ILP}}$$</div>
+<p>The global memory term uses an effective bandwidth <span class="math-inline">$\text{BW}_{\text{eff}}$</span> that accounts for coalescing degradation (Table 2 below). The shared memory term includes the 34-cycle base latency plus a 2-cycle penalty per conflicting bank way <span class="math-inline">$\bar{C}_{\text{bank}}$</span> <span class="cite">[S8/case_28]</span> (canonical 33.90 cyc with SHL overhead; 27.79 cyc lower bound for pure ld.shared at <span class="cite">[S8/case_52]</span> — see Ch2 §2.1 dual-measurement table). The register term accounts for ldmatrix feeding cost, which is pipelined behind MMA at ILP <span class="math-inline">$\geq$</span> 2 <span class="cite">[S9/case_10]</span>.</p>
+<h3 class="sub-title" id="13-1-3-synchronization-time">13.1.3 Synchronization Time</h3>
+<div class="math-display">$$T_{\text{sync}} = \sum_{i} N_{\text{barrier},i} \times C_{\text{barrier}}(\text{type}_i,\; \text{scope}_i,\; W) \;+\; \sum_{j} N_{\text{fence},j} \times C_{\text{fence}}(\text{scope}_j)$$</div>
+<h3 class="sub-title" id="13-1-4-launch-and-tail-overhead">13.1.4 Launch and Tail Overhead</h3>
+<div class="math-display">$$T_{\text{launch}} = \begin{cases} 5.4\;\mu s & \text{warm host} \\ 1.5\;\mu s & \text{GPU-side} \\ 0.12\;\mu s & \text{CUDA graph} \end{cases}$$</div>
+<div class="math-display">$$T_{\text{tail}} = \frac{N_{\text{tiles}} \bmod N_{\text{SM}}}{N_{\text{SM}}} \times T_{\text{per\_tile}}, \quad N_{\text{SM}} = 110$$</div>
+<p>The tail effect arises from wave quantization on 110 SMs. When the grid size is not an exact multiple of <span class="math-inline">$N_{\text{SM}}$</span>, the final wave under-utilizes the GPU <span class="cite">[S14/case_29]</span>.</p>
+<hr>
+<h2 class="ch-title" id="13-2-multi-resource-bottleneck-framework">13.2 Multi-Resource Bottleneck Framework</h2>
+<p>Beyond the simple max-of-three model, production kernels exhibit simultaneous contention across multiple pipes. The multi-resource formulation accounts for six independent hardware resources:</p>
+<div class="math-display">$$T_{\text{kernel}} = \max(T_{\text{tc}},\; T_{\text{alu}},\; T_{\text{sfu}},\; T_{\text{lsu}},\; T_{\text{smem}},\; T_{\text{sync}}) \times (1 + \epsilon_{\text{overhead}})$$</div>
+<h3 class="sub-title" id="resource-specific-demand-formulas">Resource-Specific Demand Formulas</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Resource</th>
+<th>Formula</th>
+<th>Parameters</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Tensor Core</td>
+<td><span class="math-inline">$T_{\text{tc}} = \dfrac{N_{\text{mma}} \times 15.88}{4 \times W_{\text{active}}}$</span></td>
+<td>15.88 cyc/mma at ILP<span class="math-inline">$\geq$</span>4 <span class="cite">[S9/case_2]</span></td>
+</tr>
+<tr>
+<td>ALU</td>
+<td><span class="math-inline">$T_{\text{alu}} = \dfrac{N_{\text{alu}}}{\text{throughput}_{\text{alu}}}$</span></td>
+<td>fmalite 1.08 cyc vs fmaheavy 2.0 cyc <span class="cite">[S5/case_23, S4/case_3]</span></td>
+</tr>
+<tr>
+<td>SFU</td>
+<td><span class="math-inline">$T_{\text{sfu}} = \dfrac{N_{\text{sfu}} \times 8.43}{4}$</span></td>
+<td>4 SFU units per SM, 8.43 cyc/op <span class="cite">[S5/case_1]</span></td>
+</tr>
+<tr>
+<td>LSU</td>
+<td><span class="math-inline">$T_{\text{lsu}} = N_{\text{ld}} \times 2.27 + N_{\text{st}} \times 5.85$</span></td>
+<td>Issue throughput <span class="cite">[S8/case_11, S8/case_31]</span></td>
+</tr>
+<tr>
+<td>Shared Memory</td>
+<td><span class="math-inline">$T_{\text{smem}} = \dfrac{N_{\text{smem}} \times 34}{P_{\text{smem/SC}}}$</span></td>
+<td>34 cyc base latency <span class="cite">[S8/case_16]</span></td>
+</tr>
+<tr>
+<td>Synchronization</td>
+<td><span class="math-inline">$T_{\text{sync}} = \sum C_{\text{barrier}} + \sum C_{\text{fence}}$</span></td>
+<td>Per-primitive costs from Table 3</td>
+</tr>
+</tbody>
+</table></div>
+<h3 class="sub-title" id="dual-bottleneck-examples">Dual-Bottleneck Examples</h3>
+<p>The model must handle scenarios where two resources are simultaneously constrained. Measured overlap ratios quantify the degree to which pipes operate in parallel:</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Combination</th>
+<th style="text-align: center;">Overlap Ratio</th>
+<th>Measured Pattern</th>
+<th>Source</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>MMA + SFU (attention softmax)</td>
+<td style="text-align: center;">77.5%</td>
+<td>TC + SFU overlap; 4:1 MMA:EX2 ratio adds 6.53 extra cyc/MUFU</td>
+<td><code>section_9/11_tc_sfu_co_issue_*</code></td>
+</tr>
+<tr>
+<td>MMA + LDG</td>
+<td style="text-align: center;">100% at &lt;= 4:1 ratio; -24.6% at 1:1</td>
+<td>Full overlap degrades at high LDG density</td>
+<td><code>section_21/21.7_42_mma_ldg_interleave_*</code></td>
+</tr>
+<tr>
+<td>3-way (ILP x TLP)</td>
+<td style="text-align: center;">Pareto surface</td>
+<td>Saturates at warps * min(ILP, 4) &gt;= 16</td>
+<td><code>section_21/21.8_53_ilp_tlp_iso_*</code></td>
+</tr>
+</tbody>
+</table></div>
+<p>For N-way instruction mixes, the model applies:</p>
+<div class="math-display">$$T_{\text{mix}} = \max(T_{\text{pipe}_A},\; T_{\text{pipe}_B},\; \ldots) \times \left(1 + \sum_{k} \delta_{\text{switch},k}\right)$$</div>
+<p>The switching penalty <span class="math-inline">$\delta_{\text{switch}}$</span> is derived from the co-issue matrix (Table 4 in Section 13.4).</p>
+<p><strong>TMA as a seventh resource bottleneck</strong>: TMA throughput peaks at 14.50 B/cyc (<span class="cite">[S26/case_35]</span>), representing a seventh potential bottleneck not captured by the six-pipe model above. At ILP=4, TC consumption is 10x the TMA delivery rate (<span class="cite">[S26/case_36]</span>). For TC-bound kernels with TMA pipelining, the practical bottleneck is often TMA delivery, not TC execution.</p>
+<hr>
+<h2 class="ch-title" id="13-3-model-input-parameters">13.3 Model Input Parameters</h2>
+<p>All parameters are empirically measured. No training-data priors or theoretical estimates are used when measured values are available.</p>
+<h3 class="sub-title" id="table-1-instruction-latency-and-throughput">Table 1: Instruction Latency and Throughput</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Instruction</th>
+<th style="text-align: center;">Latency (cyc)</th>
+<th style="text-align: center;">Throughput (cyc/op)</th>
+<th>Pipe</th>
+<th style="text-align: center;">ILP Saturation</th>
+<th>Source</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>IADD3</td>
+<td style="text-align: center;">2</td>
+<td style="text-align: center;">1.0 @ILP&gt;=2</td>
+<td>fmalite</td>
+<td style="text-align: center;">2</td>
+<td><code>S4/case_1</code></td>
+</tr>
+<tr>
+<td>IMAD</td>
+<td style="text-align: center;">4</td>
+<td style="text-align: center;">2.0 @ILP&gt;=2</td>
+<td>fmaheavy</td>
+<td style="text-align: center;">2</td>
+<td><code>S4/case_3</code></td>
+</tr>
+<tr>
+<td>FFMA</td>
+<td style="text-align: center;">4</td>
+<td style="text-align: center;">1.08 @ILP&gt;=4</td>
+<td>fmalite</td>
+<td style="text-align: center;">4</td>
+<td><code>S5/case_23</code></td>
+</tr>
+<tr>
+<td>HFMA2</td>
+<td style="text-align: center;">4</td>
+<td style="text-align: center;">2.02 @ILP&gt;=2</td>
+<td>fmalite</td>
+<td style="text-align: center;">2</td>
+<td><code>S5/case_39</code></td>
+</tr>
+<tr>
+<td>DFMA</td>
+<td style="text-align: center;">64</td>
+<td style="text-align: center;">64.0 (non-pipelined)</td>
+<td>fp64</td>
+<td style="text-align: center;">1</td>
+<td><code>S5/case_48</code></td>
+</tr>
+<tr>
+<td>MUFU.RCP</td>
+<td style="text-align: center;">44</td>
+<td style="text-align: center;">8.43 @ILP&gt;=8</td>
+<td>xu</td>
+<td style="text-align: center;">5</td>
+<td><code>S5/case_1</code></td>
+</tr>
+<tr>
+<td>MUFU.EX2</td>
+<td style="text-align: center;">18</td>
+<td style="text-align: center;">4.0 @ILP&gt;=5</td>
+<td>xu</td>
+<td style="text-align: center;">5</td>
+<td><code>S5/case_83</code></td>
+</tr>
+<tr>
+<td>MUFU.SIN</td>
+<td style="text-align: center;">22 (PTX <code>sin.approx.f32</code> with refinement)</td>
+<td style="text-align: center;">~4.5</td>
+<td>xu</td>
+<td style="text-align: center;">5</td>
+<td><code>S5/case_1</code> (bare MUFU.SIN = 18 cyc, see Ch15 Table 1 / Ch5 §5.2.5)</td>
+</tr>
+<tr>
+<td>LDG.32 (L1 hit)</td>
+<td style="text-align: center;">44</td>
+<td style="text-align: center;">2.27 issue</td>
+<td>lsu</td>
+<td style="text-align: center;">--</td>
+<td><code>S26/case_7-9</code></td>
+</tr>
+<tr>
+<td>LDG.32 (L2 hit)</td>
+<td style="text-align: center;">354</td>
+<td style="text-align: center;">2.27 issue</td>
+<td>lsu</td>
+<td style="text-align: center;">--</td>
+<td><code>S8/case_2</code></td>
+</tr>
+<tr>
+<td>LDG.32 (DRAM)</td>
+<td style="text-align: center;">362</td>
+<td style="text-align: center;">2.27 issue</td>
+<td>lsu</td>
+<td style="text-align: center;">--</td>
+<td><code>S26/case_11</code></td>
+</tr>
+<tr>
+<td>LDS.32</td>
+<td style="text-align: center;">34</td>
+<td style="text-align: center;">4.00 issue</td>
+<td>lsu</td>
+<td style="text-align: center;">--</td>
+<td><code>S8/case_16</code></td>
+</tr>
+<tr>
+<td>STG.32</td>
+<td style="text-align: center;">6 (fire-and-forget)</td>
+<td style="text-align: center;">5.85 issue</td>
+<td>lsu</td>
+<td style="text-align: center;">--</td>
+<td><code>S8/case_31</code></td>
+</tr>
+<tr>
+<td>HMMA.16816 (FP16)</td>
+<td style="text-align: center;">29</td>
+<td style="text-align: center;">15.88 @ILP&gt;=4</td>
+<td>tc.hmma</td>
+<td style="text-align: center;">2</td>
+<td><code>S9/case_1</code></td>
+</tr>
+<tr>
+<td>QMMA.16832 (FP8)</td>
+<td style="text-align: center;">29</td>
+<td style="text-align: center;">15.88 @ILP&gt;=4</td>
+<td>tc.hmma</td>
+<td style="text-align: center;">2</td>
+<td><code>S9/case_35</code></td>
+</tr>
+<tr>
+<td>OMMA.SF.16864 (MX-FP4)</td>
+<td style="text-align: center;">29</td>
+<td style="text-align: center;">15.59 @ILP&gt;=4</td>
+<td>tc.hmma</td>
+<td style="text-align: center;">2</td>
+<td><code>S9/case_55</code></td>
+</tr>
+<tr>
+<td>IMMA.16832 (INT8)</td>
+<td style="text-align: center;">27</td>
+<td style="text-align: center;">6.55 @ILP&gt;=4</td>
+<td>tc.imma</td>
+<td style="text-align: center;">4</td>
+<td><code>S9/case_101</code></td>
+</tr>
+<tr>
+<td>LDSM.x4</td>
+<td style="text-align: center;">49</td>
+<td style="text-align: center;">1.68 @ILP&gt;=8</td>
+<td>lsu</td>
+<td style="text-align: center;">--</td>
+<td><code>S8/case_103</code></td>
+</tr>
+<tr>
+<td>SHFL</td>
+<td style="text-align: center;">29</td>
+<td style="text-align: center;">4.60 issue</td>
+<td>dedicated</td>
+<td style="text-align: center;">--</td>
+<td><code>S6/case_20</code></td>
+</tr>
+<tr>
+<td>BAR.SYNC (N threads)</td>
+<td style="text-align: center;">11 + 2W (W = warps)</td>
+<td style="text-align: center;">--</td>
+<td>cbu</td>
+<td style="text-align: center;">--</td>
+<td><code>S26/case_1</code></td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Parameter count</strong>: ~60 instruction entries covering all functional units.</p>
+<h3 class="sub-title" id="table-2-memory-hierarchy-cost-model">Table 2: Memory Hierarchy Cost Model</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Level</th>
+<th>Capacity</th>
+<th style="text-align: center;">Latency (cyc)</th>
+<th>Peak BW</th>
+<th style="text-align: center;">Saturation Condition</th>
+<th>Source</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Shared Memory</td>
+<td>99 KB/block</td>
+<td style="text-align: center;">34</td>
+<td>30.2 B/cyc/warp</td>
+<td style="text-align: center;">8 warps -&gt; 64 B/cyc</td>
+<td><code>S8/case_28,52,53</code></td>
+</tr>
+<tr>
+<td>L1 Cache</td>
+<td>89 KB (default carveout) / 100 KB physical SRAM</td>
+<td style="text-align: center;">44</td>
+<td>116.5 B/cyc (1 warp)</td>
+<td style="text-align: center;">16 warps</td>
+<td><code>S26/case_7-9; S24/case_1; OQ-1</code></td>
+</tr>
+<tr>
+<td>TLB</td>
+<td>712 entries (4KB pages), &gt;=64 (2MB pages)</td>
+<td style="text-align: center;">327 (miss penalty, hidden in L2 latency)</td>
+<td>single-level</td>
+<td style="text-align: center;">--</td>
+<td><code>S26/case_15,17,18</code></td>
+</tr>
+<tr>
+<td>L2 Cache</td>
+<td>96 MB</td>
+<td style="text-align: center;">354</td>
+<td>13768 GB/s aggregate</td>
+<td style="text-align: center;">16 SMs</td>
+<td><code>S8/case_2,93</code></td>
+</tr>
+<tr>
+<td>DRAM (GDDR7)</td>
+<td>72 GB</td>
+<td style="text-align: center;">362</td>
+<td>1231 GB/s read</td>
+<td style="text-align: center;">6 warps/SM</td>
+<td><code>S8/case_3,81; S26/case_11</code></td>
+</tr>
+<tr>
+<td>Constant Cache</td>
+<td>2-4 KB</td>
+<td style="text-align: center;">35 (broadcast)</td>
+<td>4 cyc/lookup</td>
+<td style="text-align: center;">--</td>
+<td><code>S8/case_5,82</code></td>
+</tr>
+<tr>
+<td>DSMEM</td>
+<td>per-cluster</td>
+<td style="text-align: center;">220</td>
+<td>8.2 GB/s/CTA</td>
+<td style="text-align: center;">8 CTAs</td>
+<td><code>S16/case_3,4</code></td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Coalescing degradation curve</strong> (the model must apply this to estimate effective bandwidth for strided access patterns):</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th style="text-align: center;">Stride (elements)</th>
+<th style="text-align: center;">Effective BW (GB/s)</th>
+<th style="text-align: center;">Fraction of Peak</th>
+<th>Source</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: center;">1</td>
+<td style="text-align: center;">858</td>
+<td style="text-align: center;">100%</td>
+<td><code>S21/case_5</code></td>
+</tr>
+<tr>
+<td style="text-align: center;">2</td>
+<td style="text-align: center;">665</td>
+<td style="text-align: center;">77.5%</td>
+<td><code>S21/case_5</code></td>
+</tr>
+<tr>
+<td style="text-align: center;">4</td>
+<td style="text-align: center;">467</td>
+<td style="text-align: center;">54.4%</td>
+<td><code>S21/case_5</code></td>
+</tr>
+<tr>
+<td style="text-align: center;">8</td>
+<td style="text-align: center;">296</td>
+<td style="text-align: center;">34.5%</td>
+<td><code>S21/case_5</code></td>
+</tr>
+<tr>
+<td style="text-align: center;">16</td>
+<td style="text-align: center;">169</td>
+<td style="text-align: center;">19.6%</td>
+<td><code>S21/case_5</code></td>
+</tr>
+<tr>
+<td style="text-align: center;">32</td>
+<td style="text-align: center;">203</td>
+<td style="text-align: center;">23.7%</td>
+<td><code>S21/case_5</code></td>
+</tr>
+<tr>
+<td style="text-align: center;">64-128</td>
+<td style="text-align: center;">265-325</td>
+<td style="text-align: center;">30.9-37.9%</td>
+<td><code>S21/case_5</code></td>
+</tr>
+<tr>
+<td style="text-align: center;">Random</td>
+<td style="text-align: center;">9.9</td>
+<td style="text-align: center;">0.7%</td>
+<td><code>S21/case_6</code></td>
+</tr>
+</tbody>
+</table></div>
+<h3 class="sub-title" id="table-3-synchronization-cost-lookup">Table 3: Synchronization Cost Lookup</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Primitive</th>
+<th style="text-align: center;">Cost (cyc)</th>
+<th>Scaling Behavior</th>
+<th>Source</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>__syncthreads()</code> (32-768 threads)</td>
+<td style="text-align: center;">11-75</td>
+<td>base 11 cyc + 2 cyc/warp</td>
+<td><code>S26/case_1</code></td>
+</tr>
+<tr>
+<td><code>__syncthreads()</code> (1024 threads, 32 warps)</td>
+<td style="text-align: center;">75</td>
+<td>11 + 2×32 = 75 cyc</td>
+<td><code>S26/case_1</code></td>
+</tr>
+<tr>
+<td><code>bar.warp.sync</code></td>
+<td style="text-align: center;">1 (NOP)</td>
+<td>--</td>
+<td><code>S7/case_2</code></td>
+</tr>
+<tr>
+<td>Named barrier sync</td>
+<td style="text-align: center;">24 + 2W</td>
+<td>base 24 cyc + 2 cyc/warp</td>
+<td><code>S26/case_2,3</code></td>
+</tr>
+<tr>
+<td><code>mbarrier.arrive</code></td>
+<td style="text-align: center;">31</td>
+<td>--</td>
+<td><code>S7/case_48</code></td>
+</tr>
+<tr>
+<td><code>mbarrier.arrive.expect_tx</code></td>
+<td style="text-align: center;">34</td>
+<td>Per-byte cost = 0</td>
+<td><code>S7/case_48</code></td>
+</tr>
+<tr>
+<td><code>mbarrier.try_wait</code> (ready)</td>
+<td style="text-align: center;">5-15</td>
+<td>--</td>
+<td><code>S7/case_49</code></td>
+</tr>
+<tr>
+<td><code>mbarrier.try_wait</code> (not-ready spin)</td>
+<td style="text-align: center;">101-153/poll</td>
+<td>--</td>
+<td><code>S7/case_45</code></td>
+</tr>
+<tr>
+<td><code>barrier.cluster</code> (full)</td>
+<td style="text-align: center;">371</td>
+<td>O(1) for 2-8 CTAs</td>
+<td><code>S16/case_5</code></td>
+</tr>
+<tr>
+<td><code>barrier.cluster</code> (relaxed)</td>
+<td style="text-align: center;">85</td>
+<td>O(1) for 2-8 CTAs</td>
+<td><code>S7/case_53</code></td>
+</tr>
+<tr>
+<td><code>fence.acq_rel.cta</code></td>
+<td style="text-align: center;">7</td>
+<td>--</td>
+<td><code>S8/case_64</code></td>
+</tr>
+<tr>
+<td><code>fence.acq_rel.gpu</code></td>
+<td style="text-align: center;">285</td>
+<td>--</td>
+<td><code>S8/case_65</code></td>
+</tr>
+<tr>
+<td><code>fence.acq_rel.sys</code></td>
+<td style="text-align: center;">920</td>
+<td>--</td>
+<td><code>S8/case_66</code></td>
+</tr>
+<tr>
+<td><code>fence.proxy.async</code> (cta)</td>
+<td style="text-align: center;">7</td>
+<td>--</td>
+<td><code>S8/case_123</code></td>
+</tr>
+<tr>
+<td><code>fence.proxy.async</code> (global)</td>
+<td style="text-align: center;">163</td>
+<td>--</td>
+<td><code>S8/case_68</code></td>
+</tr>
+<tr>
+<td>Producer-consumer handoff (mbarrier)</td>
+<td style="text-align: center;">58-59</td>
+<td>--</td>
+<td><code>S23/case_1</code></td>
+</tr>
+<tr>
+<td>Producer-consumer handoff (named bar)</td>
+<td style="text-align: center;">15</td>
+<td>--</td>
+<td><code>S23/case_38</code></td>
+</tr>
+</tbody>
+</table></div>
+<h3 class="sub-title" id="table-4-co-issue-compatibility-matrix">Table 4: Co-Issue Compatibility Matrix</h3>
+<p>This matrix defines the degree of overlap when two pipe types execute concurrently. A value of 1.0 indicates full parallelism (separate pipes); 0.0 indicates full serialization.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Pipe A</th>
+<th>Pipe B</th>
+<th style="text-align: center;">Overlap Ratio</th>
+<th>Notes</th>
+<th>Source</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>FMA</td>
+<td>ALU</td>
+<td style="text-align: center;">1.00</td>
+<td>Shared issue slot, separate backends</td>
+<td><code>S4/case_5</code></td>
+</tr>
+<tr>
+<td>FMA</td>
+<td>XU (SFU)</td>
+<td style="text-align: center;">1.00</td>
+<td>Full co-issue (re-measured 0.9996; prior 1.02 was measurement artifact)</td>
+<td><code>S26/case_28</code></td>
+</tr>
+<tr>
+<td>FMA</td>
+<td>LSU</td>
+<td style="text-align: center;">0.78</td>
+<td>Partial overlap</td>
+<td><code>S11/case_3</code></td>
+</tr>
+<tr>
+<td>FMA</td>
+<td>Tensor</td>
+<td style="text-align: center;">1.00</td>
+<td>FFMA free during MMA stall</td>
+<td><code>S9/case_9</code></td>
+</tr>
+<tr>
+<td>FMA</td>
+<td>FP64</td>
+<td style="text-align: center;">1.00</td>
+<td>Fully independent</td>
+<td><code>S5/case_29</code></td>
+</tr>
+<tr>
+<td>ALU</td>
+<td>LSU</td>
+<td style="text-align: center;">0.17</td>
+<td>Minimal overlap (prior 1.13 was normalization error)</td>
+<td><code>S26/case_29</code></td>
+</tr>
+<tr>
+<td>ALU</td>
+<td>Tensor</td>
+<td style="text-align: center;">1.00</td>
+<td>Full overlap</td>
+<td><code>S22/case_45</code></td>
+</tr>
+<tr>
+<td>XU</td>
+<td>LSU</td>
+<td style="text-align: center;">0.44</td>
+<td>Partial</td>
+<td><code>S5/case_6</code></td>
+</tr>
+<tr>
+<td>XU</td>
+<td>Tensor</td>
+<td style="text-align: center;">0.78</td>
+<td>Partial (77.5%)</td>
+<td><code>S5/case_5</code></td>
+</tr>
+<tr>
+<td>LSU</td>
+<td>Tensor</td>
+<td style="text-align: center;">ratio-dependent: -0.40 (1:1) to 1.00 (&gt;=4:1)</td>
+<td>Varies with LDG:MMA instruction ratio</td>
+<td><code>S26/case_30</code></td>
+</tr>
+<tr>
+<td>Tensor</td>
+<td>DSMEM</td>
+<td style="text-align: center;">1.00</td>
+<td>100% free (no contention)</td>
+<td><code>S9/case_122</code></td>
+</tr>
+<tr>
+<td>HMMA</td>
+<td>IMMA (TC subpipes)</td>
+<td style="text-align: center;">0.71</td>
+<td>TC subpipes partially share resources (71% partial co-issue)</td>
+<td><code>S26/case_31</code></td>
+</tr>
+<tr>
+<td>SFU</td>
+<td>SMEM</td>
+<td style="text-align: center;">0.77</td>
+<td>Partial overlap</td>
+<td><code>S26/case_32</code></td>
+</tr>
+<tr>
+<td>ALU</td>
+<td>SMEM</td>
+<td style="text-align: center;">-0.10</td>
+<td>No benefit, slight interference</td>
+<td><code>S26/case_33</code></td>
+</tr>
+</tbody>
+</table></div>
+<h3 class="sub-title" id="table-5-roofline-parameters">Table 5: Roofline Parameters</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Precision</th>
+<th style="text-align: center;">Peak TFLOPS</th>
+<th style="text-align: center;">DRAM BW (GB/s)</th>
+<th style="text-align: center;">Crossover AI (FLOP/byte)</th>
+<th>Source</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>FP16</td>
+<td style="text-align: center;">271</td>
+<td style="text-align: center;">1231</td>
+<td style="text-align: center;"><strong>220</strong></td>
+<td><code>S18/case_3</code> (cuBLAS best-case 270.53)</td>
+</tr>
+<tr>
+<td>BF16</td>
+<td style="text-align: center;">271</td>
+<td style="text-align: center;">1231</td>
+<td style="text-align: center;"><strong>220</strong></td>
+<td><code>S18/case_3</code> (BF16 shares HMMA.16816)</td>
+</tr>
+<tr>
+<td>FP8</td>
+<td style="text-align: center;">529</td>
+<td style="text-align: center;">1231</td>
+<td style="text-align: center;"><strong>430</strong></td>
+<td>[CALCULATED: 2x FP16 TOPS at same cyc/mma]</td>
+</tr>
+<tr>
+<td>MX-FP4</td>
+<td style="text-align: center;">1069</td>
+<td style="text-align: center;">1231</td>
+<td style="text-align: center;"><strong>869</strong></td>
+<td>[CALCULATED: 4x FP16 TOPS from 4x elements/mma]</td>
+</tr>
+<tr>
+<td>INT8</td>
+<td style="text-align: center;">526</td>
+<td style="text-align: center;">1231</td>
+<td style="text-align: center;"><strong>427</strong></td>
+<td>[CALCULATED: INT8 IMMA throughput]</td>
+</tr>
+<tr>
+<td>TF32 (tensor)</td>
+<td style="text-align: center;">129</td>
+<td style="text-align: center;">1231</td>
+<td style="text-align: center;"><strong>105</strong></td>
+<td>AppB §B.15 <code>fp32_tensor_tf32</code> (theoretical 100% chip-level efficiency); <code>S19/case_25</code> reports 133 TFLOPS for the FP32-class FFMA+IMAD co-issued sustained sweep — the 3.1% gap (129↔133) reflects measurement methodology difference, not hardware variance</td>
+</tr>
+<tr>
+<td>FP32 (CUDA cores)</td>
+<td style="text-align: center;">58</td>
+<td style="text-align: center;">1231</td>
+<td style="text-align: center;"><strong>47</strong></td>
+<td>AppB §B.15 <code>fp32_cuda_cores</code> = 58 TFLOPS @ 2092 MHz pinned (<span class="cite">[S20/case_9]</span>, 143 W); pure FFMA path, no co-issue</td>
+</tr>
+<tr>
+<td>FP64 (DFMA)</td>
+<td style="text-align: center;">0.96</td>
+<td style="text-align: center;">1231</td>
+<td style="text-align: center;"><strong>0.78</strong></td>
+<td>AppB §B.15 <code>fp64_dfma</code>; 4 EU/SM (1 per SMSP) per C-07 (RESOLVED 2026-06-11)</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>AI computation methodology (M-24 RESOLVED 2026-06-11)</strong>: All <code>Crossover AI</code> values use the simple ratio <code>Peak_TFLOPS × 1000 / DRAM_BW_GBps</code>, where DRAM*BW = 1231 GB/s canonical (<span class="cite">[S8/case_81]</span>). Earlier draft Table 5 used 203/406/406/812 — those values mixed methodologies (some used 1283 operational ceiling, some used legacy peak constants), creating internal inconsistency where AI ≠ peak/BW within the same row. The unified ratio above is now used in all roofline formulas in this chapter, AppB §B.15 <code>roofline.crossover_ai*\*</code>, and Ch8 Table 8.8.</p>
+<p><strong>Practical crossover note</strong>: The crossover AI values in Table 5 are theoretical (peak hardware capability). Direct GEMM K-sweep measurement (<span class="cite">[S26/case_39,40]</span>) shows the practical crossover for cuBLAS BF16 occurs at AI ≈ 400-500 FLOP/byte (≈1.8× the theoretical 220), due to L2 caching effects and non-ideal memory access patterns.</p>
+<p><strong>Crossover arithmetic intensity rule</strong>: An operator with arithmetic intensity <span class="math-inline">$\text{AI} = \dfrac{2MNK}{|A| \cdot MK + |B| \cdot KN + |C| \cdot MN}$</span>, where <span class="math-inline">$|A|, |B|, |C|$</span> are element sizes in bytes. If <span class="math-inline">$\text{AI} < \text{AI}_{\text{crossover}}$</span>, the kernel is memory-bound; if <span class="math-inline">$\text{AI} > \text{AI}_{\text{crossover}}$</span>, the kernel is compute-bound.</p>
+<h3 class="sub-title" id="summary-of-parameter-categories">Summary of Parameter Categories</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Parameter Category</th>
+<th>Source Chapters</th>
+<th style="text-align: center;">Approximate Entry Count</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Instruction latency/throughput</td>
+<td>Sections 4-6, 9, 22</td>
+<td style="text-align: center;">~60</td>
+</tr>
+<tr>
+<td>Memory hierarchy latency/BW</td>
+<td>Section 8</td>
+<td style="text-align: center;">~25</td>
+</tr>
+<tr>
+<td>Synchronization costs</td>
+<td>Sections 7, 10, 16, 17, 23</td>
+<td style="text-align: center;">~20</td>
+</tr>
+<tr>
+<td>Pipeline co-issue matrix</td>
+<td>Sections 11, 22</td>
+<td style="text-align: center;">15 pairs</td>
+</tr>
+<tr>
+<td>Occupancy model parameters</td>
+<td>Section 11</td>
+<td style="text-align: center;">5</td>
+</tr>
+<tr>
+<td>Scheduler model</td>
+<td>Section 11</td>
+<td style="text-align: center;">8</td>
+</tr>
+</tbody>
+</table></div>
+<hr>
+<h2 class="ch-title" id="13-4-occupancy-and-scheduling-model">13.4 Occupancy and Scheduling Model</h2>
+<p>The warp scheduler's throughput scaling follows a measured saturation curve:</p>
+<div class="math-display">$$\text{throughput}_{\text{eff}}(W,\; \text{ILP}) = \text{throughput}_{\text{base}} \times \min\!\left(1.0,\; \frac{W \times \min(\text{ILP},\; 4)}{16}\right)$$</div>
+<p>Key parameters:</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Value</th>
+<th>Source</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Max warps per SM</td>
+<td>48</td>
+<td><code>S3/case_2</code></td>
+</tr>
+<tr>
+<td>Max blocks per SM</td>
+<td>24</td>
+<td><code>S3/case_2</code></td>
+</tr>
+<tr>
+<td>Register file per SM</td>
+<td>65536 x 32-bit</td>
+<td><code>S3/case_2</code></td>
+</tr>
+<tr>
+<td>TC saturation threshold</td>
+<td>16 warps or ILP &gt;= 4</td>
+<td><code>S11/case_61</code></td>
+</tr>
+<tr>
+<td>ALU saturation threshold</td>
+<td>16 warps @ ILP &gt;= 4</td>
+<td><code>S21/case_53</code></td>
+</tr>
+<tr>
+<td>Issue width</td>
+<td>1 warp-instruction per cycle per sub-partition</td>
+<td><code>S11/case_3</code></td>
+</tr>
+<tr>
+<td>Sub-partitions per SM</td>
+<td>4</td>
+<td><code>S3/case_2</code></td>
+</tr>
+</tbody>
+</table></div>
+<p>Occupancy is determined by the most constraining resource:</p>
+<div class="math-display">$$\text{occupancy} = \frac{1}{48} \min\!\begin{cases} \left\lfloor \dfrac{65536}{R_{\text{thread}} \times 32} \right\rfloor \times 32 & \text{(register-limited)} \\[6pt] \left\lfloor \dfrac{S_{\text{avail}}}{S_{\text{block}}} \right\rfloor \times W_{\text{block}} & \text{(smem-limited)} \\[6pt] 48 & \text{(absolute max warps)} \\[6pt] 24 \times W_{\text{block}} & \text{(block-limited)} \end{cases}$$</div>
+<hr>
+<h2 class="ch-title" id="13-5-prediction-workflow">13.5 Prediction Workflow</h2>
+<p>Given a kernel specification, the model predicts execution time through the following steps:</p>
+<h3 class="sub-title" id="step-1-extract-instruction-mix">Step 1: Extract Instruction Mix</h3>
+<p>From the kernel source or NCU profile, extract:</p>
+<ul>
+<li>MMA instruction count and precision</li>
+<li>ALU instruction count (fmalite vs fmaheavy)</li>
+<li>SFU instruction count</li>
+<li>Load/store instruction counts and access patterns</li>
+<li>Synchronization primitives and their types</li>
+</ul>
+<h3 class="sub-title" id="step-2-compute-per-resource-demand">Step 2: Compute Per-Resource Demand</h3>
+<p>Apply the formulas from Section 13.2 to compute T_tc, T_alu, T_sfu, T_lsu, T_smem, T_sync independently.</p>
+<h3 class="sub-title" id="step-3-apply-co-issue-overlap">Step 3: Apply Co-Issue Overlap</h3>
+<p>For each pair of co-executing pipes, apply the overlap ratio from Table 4 to determine the effective parallel execution time:</p>
+<div class="math-display">$$T_{\text{eff}} = \max(T_A,\; T_B) + (1 - r_{\text{overlap}}) \times \min(T_A,\; T_B)$$</div>
+<h3 class="sub-title" id="step-4-add-fixed-overheads">Step 4: Add Fixed Overheads</h3>
+<div class="math-display">$$T_{\text{total}} = T_{\text{eff}} + T_{\text{launch}} + T_{\text{tail}}$$</div>
+<h3 class="sub-title" id="worked-example-fp16-attention-forward-pass">Worked Example: FP16 Attention Forward Pass</h3>
+<p><strong>Input specification</strong>:</p>
+<pre><code>kernel_spec:
+  tile_shape: [128, 128, 64]       # M_tile, N_tile, K_tile
+  precision: FP16                   # HMMA.16816
+  warp_count: 8                     # per CTA
+  register_per_thread: 128          # occupancy = floor(65536/(128*32)) = 16 warps/SM
+  smem_per_block_kb: 48
+  grid_size: 110                    # 1 block/SM (persistent)
+  instruction_mix:
+    mma_count: 32                   # per tile iteration
+    ffma_count: 64                  # epilogue + softmax
+    mufu_count: 8                   # exp2 for softmax
+    ldg_count: 16                   # global loads
+    lds_count: 32                   # smem loads (ldmatrix)
+    stg_count: 4                    # output store
+    barrier_count: 2                # __syncthreads
+    fence_count: 1                  # fence.proxy.async.cta</code></pre>
+<p><strong>Prediction</strong>:</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Resource</th>
+<th>Formula</th>
+<th style="text-align: right;">Result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><span class="math-inline">$T_{\text{tc}}$</span></td>
+<td><span class="math-inline">$32 \times 15.88$</span></td>
+<td style="text-align: right;">508.2 cyc</td>
+</tr>
+<tr>
+<td><span class="math-inline">$T_{\text{alu}}$</span></td>
+<td><span class="math-inline">$64 \times 1.08$</span></td>
+<td style="text-align: right;">69.1 cyc</td>
+</tr>
+<tr>
+<td><span class="math-inline">$T_{\text{sfu}}$</span></td>
+<td><span class="math-inline">$8 \times 8.43$</span></td>
+<td style="text-align: right;">67.4 cyc</td>
+</tr>
+<tr>
+<td><span class="math-inline">$T_{\text{lsu}}$</span></td>
+<td><span class="math-inline">$16 \times 2.27 + 4 \times 5.85$</span></td>
+<td style="text-align: right;">59.7 cyc</td>
+</tr>
+<tr>
+<td><span class="math-inline">$T_{\text{smem}}$</span></td>
+<td><span class="math-inline">$32 \times 4.0$</span></td>
+<td style="text-align: right;">128.0 cyc</td>
+</tr>
+<tr>
+<td><span class="math-inline">$T_{\text{sync}}$</span></td>
+<td><span class="math-inline">$2 \times (11 + 2 \times 8) + 1 \times 7$</span></td>
+<td style="text-align: right;">61.0 cyc</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Dominant</strong>: <span class="math-inline">$T_{\text{tc}} = 508.2$</span> cyc (TC-BOUND)</p>
+<p><strong>Co-issue credits</strong> (from Table 4):</p>
+<div class="math-display">$$T_{\text{SFU residual}} = (1 - r_{\text{overlap}}^{\text{XU↔TC}}) \times T_{\text{sfu}} = (1 - 0.78) \times 67.4 = 14.8 \text{ cyc}$$</div>
+<ul>
+<li>ALU behind TC: <span class="math-inline">$r_{\text{overlap}} = 1.00$</span> → ALU fully hidden</li>
+<li>SFU behind TC: <span class="math-inline">$r_{\text{overlap}} = 0.78$</span> → SFU adds 14.8 cyc</li>
+<li>LSU behind TC: <span class="math-inline">$r_{\text{overlap}} = 0.38\text{–}0.83$</span> → LSU partially hidden</li>
+</ul>
+<div class="math-display">$$T_{\text{eff}} = 508.2 + 14.8 = 523.0 \text{ cyc/tile (TC-bound)}$$</div>
+<div class="math-display">$$T_{\text{launch}} = 1.5\;\mu s \text{ (GPU-side, warm)}, \quad T_{\text{tail}} = 0 \text{ (grid} = 110 = 1 \text{ full wave)}$$</div>
+<p><strong>Predicted</strong>: ~523 cyc/tile. Utilization: TC 100%, ALU 13.2%, SFU 12.9%, LSU 11.4%.</p>
+<p><strong>Pipeline startup/drain model</strong>: MMA dependency-chain latency = 29 cyc (first MMA = 20 cyc, startup overhead = -9 cyc). Pipeline drain = 2 cyc (negligible). For small tiles (N &lt; 8 MMAs), startup overhead can be significant: 29/(N*15.88) of total time. Source: <span class="cite">[S26/case_37,38]</span>.</p>
+<p><strong>Headroom analysis</strong>:</p>
+<div class="math-display">$$\eta_{\text{current}} = \frac{\text{TFLOPS}_{\text{measured}}}{\text{TFLOPS}_{\text{peak}}}$$</div>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th style="text-align: center;"><span class="math-inline">$\eta_{\text{current}}$</span></th>
+<th>Interpretation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: center;"><span class="math-inline">$< 70\%$</span></td>
+<td>Significant optimization headroom</td>
+</tr>
+<tr>
+<td style="text-align: center;"><span class="math-inline">$70\%\text{–}85\%$</span></td>
+<td>Moderate tuning opportunities</td>
+</tr>
+<tr>
+<td style="text-align: center;"><span class="math-inline">$> 85\%$</span></td>
+<td>Near-optimal; micro-optimizations only</td>
+</tr>
+</tbody>
+</table></div>
+<hr>
+<h2 class="ch-title" id="13-6-model-validation">13.6 Model Validation</h2>
+<h3 class="sub-title" id="validation-methodology">Validation Methodology</h3>
+<p>The model is validated against cuBLAS and CUTLASS measured throughput across representative shapes and precisions <span class="cite">[S19/case_25]</span>:</p>
+<ul>
+<li>Validation shapes: M = N = K in {128, 512, 1024, 4096, 8192, 16384}</li>
+<li>Precisions: FP16, BF16, FP8, MX-FP4, FP32, INT8, TF32</li>
+<li>Target accuracy: prediction error &lt; 20% for compute-bound kernels, &lt; 30% for memory-bound kernels</li>
+</ul>
+<h3 class="sub-title" id="expected-vs-measured-reference-points">Expected vs Measured Reference Points</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Workload</th>
+<th>Predicted Bottleneck</th>
+<th style="text-align: center;">Model Prediction</th>
+<th style="text-align: center;">Measured</th>
+<th style="text-align: center;">Error</th>
+<th>Source</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>GEMM FP16 M=N=K=4096</td>
+<td>TC-bound</td>
+<td style="text-align: center;">258 TFLOPS</td>
+<td style="text-align: center;">261.8 TFLOPS</td>
+<td style="text-align: center;">-1.5%</td>
+<td><code>S19/case_25</code></td>
+</tr>
+<tr>
+<td>GEMM MX-FP4 M=N=K=4096</td>
+<td>TC-bound</td>
+<td style="text-align: center;">1050 TFLOPS</td>
+<td style="text-align: center;">1076.5 TFLOPS</td>
+<td style="text-align: center;">-2.5%</td>
+<td><code>S9/case_136</code></td>
+</tr>
+<tr>
+<td>GEMV FP16 M=1 N=K=4096</td>
+<td>DRAM-bound</td>
+<td style="text-align: center;">1180 GB/s</td>
+<td style="text-align: center;">1231 GB/s</td>
+<td style="text-align: center;">-4.1%</td>
+<td><code>S19/case_17</code></td>
+</tr>
+<tr>
+<td>FlashAttn FP16 d=128</td>
+<td>Mixed TC+SFU</td>
+<td style="text-align: center;">~130 TFLOPS</td>
+<td style="text-align: center;">~125 TFLOPS</td>
+<td style="text-align: center;">+4.0%</td>
+<td><code>S19/case_62</code></td>
+</tr>
+</tbody>
+</table></div>
+<h3 class="sub-title" id="error-sources-and-mitigations">Error Sources and Mitigations</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Error Source</th>
+<th style="text-align: center;">Typical Magnitude</th>
+<th>Mitigation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ptxas reordering</td>
+<td style="text-align: center;">+/- 1-2 cyc/instruction</td>
+<td>Use measured throughput, not latency chain</td>
+</tr>
+<tr>
+<td>Clock boost variance</td>
+<td style="text-align: center;">+/- 8% (2377-2572 MHz)</td>
+<td>Normalize to fixed clock via nvidia-smi -lgc</td>
+</tr>
+<tr>
+<td>Cache hit rate estimation</td>
+<td style="text-align: center;">+/- 10-15% for mixed patterns</td>
+<td>Use NCU L2 hit rate when available</td>
+</tr>
+<tr>
+<td>Occupancy estimation</td>
+<td style="text-align: center;">+/- 1-2 warps</td>
+<td>Cross-validate with NCU occupancy metric</td>
+</tr>
+<tr>
+<td>Pipeline overlap estimation</td>
+<td style="text-align: center;">+/- 5-10%</td>
+<td>Conservative: use lower bound of overlap range</td>
+</tr>
+</tbody>
+</table></div>
+<hr>
+<h2 class="ch-title" id="13-7-practical-application">13.7 Practical Application</h2>
+<h3 class="sub-title" id="regime-detection">Regime Detection</h3>
+<p>The model identifies three distinct optimization regimes <span class="cite">[S19/case_1,17,62]</span>:</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Regime</th>
+<th>Characteristic</th>
+<th>Example</th>
+<th>Critical Path</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>TC-bound</td>
+<td>AI &gt;&gt; crossover, large M,N,K</td>
+<td>GEMM M=N=K&gt;=2048</td>
+<td>MMA throughput (15.88 cyc/mma)</td>
+</tr>
+<tr>
+<td>DRAM-bound</td>
+<td>AI &lt;&lt; crossover, or M=1</td>
+<td>GEMV, layernorm</td>
+<td>DRAM BW (1231 GB/s)</td>
+</tr>
+<tr>
+<td>Mixed</td>
+<td>AI near crossover, or heterogeneous instruction mix</td>
+<td>FlashAttention</td>
+<td>Dual-pipe overlap</td>
+</tr>
+</tbody>
+</table></div>
+<h3 class="sub-title" id="model-usage-summary">Model Usage Summary</h3>
+<ol>
+<li>Extract kernel characterization (instruction mix, access pattern, sync pattern).</li>
+<li>Compute per-resource demand using measured constants from Tables 1-5.</li>
+<li>Apply co-issue overlap from Table 4 to estimate effective time.</li>
+<li>Identify the dominant bottleneck and compute efficiency gap.</li>
+<li>Map to optimization strategies (see Chapter 15, Section 15.4).</li>
+<li>Predict post-optimization performance and validate.</li>
+</ol>
+<p>This model serves as the foundation for the automated agent optimization loop described in Chapter 15.</p>
+<hr>
+<h2 class="ch-title" id="13-8-caqr-formal-performance-equations-section-25-validation">13.8 CAQR Formal Performance Equations (Section 25 Validation)</h2>
+<h3 class="sub-title" id="13-8-1-gpu-performance-equation-caqr-1-10-adapted">13.8.1 GPU Performance Equation (CAQR §1.10 Adapted)</h3>
+<p>The GPU-adapted performance equation, validated against Section 25 measurements:</p>
+<div class="math-display">$$T_{\text{kernel}} = \frac{N_{\text{insn}} \times \overline{\text{CPI}}}{N_{\text{SMSP}}} = \frac{\sum_i N_{\text{pipe}_i} \times \text{CPI}_{\text{pipe}_i}}{N_{\text{SM}} \times 4}$$</div>
+<p>where <span class="math-inline">$N_{\text{pipe}_i}$</span> is the instruction count for pipe <span class="math-inline">$i$</span> (from NCU <code>smsp__inst_executed_pipe_*</code>), <span class="math-inline">$\text{CPI}_{\text{pipe}_i}$</span> is cycles per instruction from microbenchmarks, and <span class="math-inline">$N_{\text{SMSP}} = 110 \times 4 = 440$</span> issue slots.</p>
+<p><strong>Validation</strong> (cuBLAS BF16 GEMM <span class="math-inline">$M{=}N{=}K{=}4096$</span>, <span class="cite">[S25/case_10]</span>):</p>
+<div class="math-display">$$T_{\text{predicted}} = \frac{460\text{M} \times 9.53}{440} = 9.95\text{M cyc} \;\rightarrow\; 3.98\text{ ms @ 2.5 GHz}$$</div>
+<p><span class="math-inline">$T_{\text{measured}} \approx 4.0$</span> ms, error <span class="math-inline">$= 0.5\%$</span> ✓</p>
+<h3 class="sub-title" id="13-8-2-amdahls-law-analysis-for-top-bottlenecks">13.8.2 Amdahl's Law Analysis for Top Bottlenecks</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Bottleneck</th>
+<th style="text-align: center;">Fraction <span class="math-inline">$f$</span></th>
+<th style="text-align: center;">Amdahl <span class="math-inline">$S_{\max} = \frac{1}{1-f}$</span></th>
+<th style="text-align: center;">Validated?</th>
+<th>Source</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Dispatch tax (loop BRA)</td>
+<td style="text-align: center;">92.4% (in looped code)</td>
+<td style="text-align: center;">13.23×</td>
+<td style="text-align: center;"><strong>Yes (0.0% error)</strong></td>
+<td><span class="cite">[S25/case_17]</span></td>
+</tr>
+<tr>
+<td>smem-to-RF overhead</td>
+<td style="text-align: center;">0.9% (ILP=1 test)</td>
+<td style="text-align: center;">1.010×</td>
+<td style="text-align: center;"><strong>Yes (0.0% error)</strong></td>
+<td><span class="cite">[S25/case_15]</span></td>
+</tr>
+<tr>
+<td>RAW data hazard (ILP=1)</td>
+<td style="text-align: center;">73.5% of CPI</td>
+<td style="text-align: center;">3.77× (ILP=4)</td>
+<td style="text-align: center;"><strong>Yes</strong> (3.77× measured)</td>
+<td><span class="cite">[S25/case_7]</span></td>
+</tr>
+<tr>
+<td>Control hazard (per-BRA)</td>
+<td style="text-align: center;">22.6% of looped CPI</td>
+<td style="text-align: center;">1.29×</td>
+<td style="text-align: center;"><strong>Yes</strong></td>
+<td><span class="cite">[S25/case_8]</span></td>
+</tr>
+<tr>
+<td>Sync overhead (mbarrier)</td>
+<td style="text-align: center;">1.6-3.3%</td>
+<td style="text-align: center;">1.017-1.034×</td>
+<td style="text-align: center;"><strong>Yes (0.1% error)</strong></td>
+<td><span class="cite">[S25/case_16]</span></td>
+</tr>
+</tbody>
+</table></div>
+<h3 class="sub-title" id="13-8-3-littles-law-for-memory-subsystem">13.8.3 Little's Law for Memory Subsystem</h3>
+<pre><code>MLP = Throughput × Latency = Queue_depth
+
+Measured (L2 path, S25/case_4):
+  N=16 independent loads → MLP = 13.7
+  L2 latency = 389 cyc
+  Throughput = 16/455 = 0.0352 loads/cyc
+  Little&#x27;s Law: 0.0352 × 389 = 13.7 ✓ (matches measured queue depth 12-13)</code></pre>
+<h3 class="sub-title" id="13-8-4-amat-for-memory-hierarchy">13.8.4 AMAT for Memory Hierarchy</h3>
+<pre><code>AMAT = 44 + MR_L1 × (310 + MR_L2 × 522)
+
+L1 hit = 44 cyc (constant, pattern/stride independent; S26/case_7-9)
+L2 penalty = 354 - 44 = 310 cyc
+DRAM penalty = 522 cyc (unchanged)
+
+Validated against NCU hit rates for GEMM (S25/case_34):
+  L1 hit rate = 73.86% → MR_L1 = 0.2614
+  L2 hit rate = 89.71% → MR_L2 = 0.1029
+  AMAT = 44 + 0.2614 × (310 + 0.1029 × 522) = 44 + 0.2614 × 363.7 = 139.1 cyc</code></pre>
+<p><strong>Note on DRAM latency</strong>: The 876 cyc DRAM value used in prior measurements could not be reproduced (<span class="cite">[S26/case_11]</span>). GDDR7 page-miss penalty is only ~10 cyc (362 vs 372 cyc); GDDR7 channel interleaving neutralizes row-buffer miss penalties. The practical DRAM latency is 362+/-10 cyc.</p>
+<h3 class="sub-title" id="13-8-5-dynamic-power-model">13.8.5 Dynamic Power Model</h3>
+<pre><code>P_total = P_static + C × f^α
+
+Measured (S25/case_18):
+  P_static = 46-84 W (frequency-dependent leakage)
+  α = 1.355 (sublinear voltage scaling)
+  C = 0.00194
+
+EDP_optimal: BF16 GEMM at max frequency (EDP = 7.2×10⁻⁵ J·s)</code></pre>
+
+<footer class="page-footer">
+<div class="foot-grid">
+<div><strong>SM_120 / GB202 Blackwell</strong> · Microarchitecture Analysis &amp; Reference · 2026</div>
+<div>1542 microbenchmark cases · 26 sections · ~13,400 lines</div>
+<div class="foot-accent">RTX PRO 5000 72GB · CUDA 13.3 · Data source: test_results/SM_120/</div>
+</div>
+</footer>
+
+</main>
+<aside class="toc-right">
+<h4>Chapter Navigation</h4>
+<a href="#13-1-model-structure">13.1 Model Structure</a>
+<a class="sub" href="#13-1-1-compute-time">13.1.1 Compute Time</a>
+<a class="sub" href="#13-1-2-memory-time">13.1.2 Memory Time</a>
+<a class="sub" href="#13-1-3-synchronization-time">13.1.3 Synchronization Time</a>
+<a class="sub" href="#13-1-4-launch-and-tail-overhead">13.1.4 Launch and Tail Overhead</a>
+<a href="#13-2-multi-resource-bottleneck-framework">13.2 Multi-Resource Bottleneck Framework</a>
+<a class="sub" href="#resource-specific-demand-formulas">Resource-Specific Demand Formulas</a>
+<a class="sub" href="#dual-bottleneck-examples">Dual-Bottleneck Examples</a>
+<a href="#13-3-model-input-parameters">13.3 Model Input Parameters</a>
+<a class="sub" href="#table-1-instruction-latency-and-throughput">Table 1: Instruction Latency and Throughput</a>
+<a class="sub" href="#table-2-memory-hierarchy-cost-model">Table 2: Memory Hierarchy Cost Model</a>
+<a class="sub" href="#table-3-synchronization-cost-lookup">Table 3: Synchronization Cost Lookup</a>
+<a class="sub" href="#table-4-co-issue-compatibility-matrix">Table 4: Co-Issue Compatibility Matrix</a>
+<a class="sub" href="#table-5-roofline-parameters">Table 5: Roofline Parameters</a>
+<a class="sub" href="#summary-of-parameter-categories">Summary of Parameter Categories</a>
+<a href="#13-4-occupancy-and-scheduling-model">13.4 Occupancy and Scheduling Model</a>
+<a href="#13-5-prediction-workflow">13.5 Prediction Workflow</a>
+<a class="sub" href="#step-1-extract-instruction-mix">Step 1: Extract Instruction Mix</a>
+<a class="sub" href="#step-2-compute-per-resource-demand">Step 2: Compute Per-Resource Demand</a>
+<a class="sub" href="#step-3-apply-co-issue-overlap">Step 3: Apply Co-Issue Overlap</a>
+<a class="sub" href="#step-4-add-fixed-overheads">Step 4: Add Fixed Overheads</a>
+<a class="sub" href="#worked-example-fp16-attention-forward-pass">Worked Example: FP16 Attention Forward Pass</a>
+<a href="#13-6-model-validation">13.6 Model Validation</a>
+<a class="sub" href="#validation-methodology">Validation Methodology</a>
+<a class="sub" href="#expected-vs-measured-reference-points">Expected vs Measured Reference Points</a>
+<a class="sub" href="#error-sources-and-mitigations">Error Sources and Mitigations</a>
+<a href="#13-7-practical-application">13.7 Practical Application</a>
+<a class="sub" href="#regime-detection">Regime Detection</a>
+<a class="sub" href="#model-usage-summary">Model Usage Summary</a>
+<a href="#13-8-caqr-formal-performance-equations-section-25-validation">13.8 CAQR Formal Performance Equations (Section 25 Validation)</a>
+<a class="sub" href="#13-8-1-gpu-performance-equation-caqr-1-10-adapted">13.8.1 GPU Performance Equation (CAQR §1.10 Adapted)</a>
+<a class="sub" href="#13-8-2-amdahls-law-analysis-for-top-bottlenecks">13.8.2 Amdahl&#x27;s Law Analysis for Top Bottlenecks</a>
+<a class="sub" href="#13-8-3-littles-law-for-memory-subsystem">13.8.3 Little&#x27;s Law for Memory Subsystem</a>
+<a class="sub" href="#13-8-4-amat-for-memory-hierarchy">13.8.4 AMAT for Memory Hierarchy</a>
+<a class="sub" href="#13-8-5-dynamic-power-model">13.8.5 Dynamic Power Model</a>
+</aside>
+</div>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" integrity="sha384-7zkQWkzuo3B5mTepMUcHkMB5jZaolc2xDwL6VFqjFALcbeS9Ggm/Yr2r3Dy4lfFg" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" integrity="sha384-43gviWU0YVjaDtb/GhzOouOXtZMP/7XUzwPTstBeZFe/+rCMvRwr4yROQP43s0Xk" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/lib/highlight.min.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  if (window.renderMathInElement) {
+    renderMathInElement(document.body, {
+      delimiters: [
+        {left: "$$", right: "$$", display: true},
+        {left: "$", right: "$", display: false}
+      ],
+      throwOnError: false
+    });
+  }
+  if (window.hljs) {
+    document.querySelectorAll("pre code[class^='language-']").forEach(function(el) {
+      try { hljs.highlightElement(el); } catch (e) {}
+    });
+  }
+});
+</script>
+<script src="assets/js/toc.js" defer></script>
+</body>
+</html>

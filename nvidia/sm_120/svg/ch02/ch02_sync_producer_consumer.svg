@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 480" role="img"
+     aria-label="SM_120 Producer-Consumer Synchronization Patterns — three common patterns with measured cycle costs">
+  <defs>
+    <linearGradient id="prodG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#DBEAFE"/><stop offset="1" stop-color="#EFF6FF"/>
+    </linearGradient>
+    <linearGradient id="consG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#D1FAE5"/><stop offset="1" stop-color="#ECFDF5"/>
+    </linearGradient>
+    <linearGradient id="l2G" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FEF3C7"/><stop offset="1" stop-color="#FFFBEB"/>
+    </linearGradient>
+    <marker id="arr" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#374151"/>
+    </marker>
+    <marker id="arrB" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2563EB"/>
+    </marker>
+    <marker id="arrG" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#059669"/>
+    </marker>
+    <marker id="arrR" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#DC2626"/>
+    </marker>
+    <style><![CDATA[
+      .ttl{font:600 15px "Fraunces",serif;fill:#0b1220}
+      .sub{font:italic 11px "Fraunces",serif;fill:#5b6679}
+      .lbl{font:600 11px "JetBrains Mono",monospace;fill:#2a3548}
+      .lbl-sm{font:500 10px "JetBrains Mono",monospace;fill:#5b6679}
+      .code{font:500 10px "JetBrains Mono",monospace}
+      .num{font:700 13px "JetBrains Mono",monospace}
+      .num-lg{font:700 16px "JetBrains Mono",monospace}
+      .stage{font:600 10px "JetBrains Mono",monospace;fill:#fff}
+      .sect{font:600 12px "Fraunces",serif;fill:#374151}
+      .insight{font:600 10.5px "IBM Plex Sans",sans-serif;fill:#9f1239}
+    ]]></style>
+  </defs>
+  <rect width="1080" height="480" fill="#ffffff"/>
+
+  <!-- Title -->
+  <text x="36" y="28" class="ttl">Producer-Consumer Synchronization Patterns — Measured Costs on SM_120</text>
+  <text x="36" y="46" class="sub">Three common GPU synchronization idioms with their actual cycle costs from microbenchmark data</text>
+
+  <!-- ═══════ PATTERN 1: Acquire/Release ═══════ -->
+  <text x="36" y="74" class="sect">PATTERN 1: Acquire/Release (Flag-Based Signaling) — Total: ~1313 cyc/handshake</text>
+
+  <g transform="translate(36,86)">
+    <!-- Producer timeline -->
+    <rect x="0" y="0" width="480" height="100" rx="8" fill="url(#prodG)" stroke="#2563EB" stroke-width="1"/>
+    <text x="15" y="18" class="lbl" fill="#1D4ED8">PRODUCER (SM₀)</text>
+    <text x="15" y="38" class="code" fill="#1D4ED8">st.global.b32 [data], value;        // 4.8 cyc (relaxed)</text>
+    <text x="15" y="54" class="code" fill="#1D4ED8">st.release.gpu.global.b32 [flag], 1; // 920 cyc</text>
+    <text x="15" y="72" class="lbl-sm">SASS: STG.E.STRONG.GPU + MEMBAR.ALL.GPU</text>
+    <text x="15" y="88" class="lbl-sm">Drain store buffer → L2 ack from all 12 partitions</text>
+
+    <!-- Arrow to consumer -->
+    <line x1="484" y1="50" x2="530" y2="50" stroke="#D97706" stroke-width="2" stroke-dasharray="5 3" marker-end="url(#arr)"/>
+    <text x="490" y="40" class="num" fill="#D97706">L2</text>
+
+    <!-- Consumer timeline -->
+    <rect x="534" y="0" width="480" height="100" rx="8" fill="url(#consG)" stroke="#059669" stroke-width="1"/>
+    <text x="549" y="18" class="lbl" fill="#065F46">CONSUMER (SM₇₃)</text>
+    <text x="549" y="38" class="code" fill="#065F46">ld.acquire.gpu.global.b32 r, [flag]; // 393 cyc (polling)</text>
+    <text x="549" y="54" class="code" fill="#065F46">// L1 invalidated → forces L2 round-trip</text>
+    <text x="549" y="72" class="code" fill="#065F46">ld.global.b32 r2, [data];            // 44 cyc (ordered)</text>
+    <text x="549" y="88" class="lbl-sm">SASS: LDG.E.STRONG.GPU (bypasses L1, checks L2 coherence)</text>
+  </g>
+
+  <!-- ═══════ PATTERN 2: Fence + Plain Loads ═══════ -->
+  <text x="36" y="214" class="sect">PATTERN 2: Fence-Based Ordering — Total: ~285 cyc/fence (amortized across multiple stores)</text>
+
+  <g transform="translate(36,226)">
+    <!-- Producer -->
+    <rect x="0" y="0" width="480" height="100" rx="8" fill="url(#prodG)" stroke="#2563EB" stroke-width="1"/>
+    <text x="15" y="18" class="lbl" fill="#1D4ED8">PRODUCER (SM₀)</text>
+    <text x="15" y="38" class="code" fill="#1D4ED8">st.global.b32 [data_0..N], values;   // N × 4.8 cyc</text>
+    <text x="15" y="54" class="code" fill="#1D4ED8">fence.acq_rel.gpu;                   // 285 cyc (ONE fence)</text>
+    <text x="15" y="72" class="code" fill="#1D4ED8">st.global.b32 [flag], 1;             // 4.8 cyc</text>
+    <text x="15" y="88" class="lbl-sm">SASS: MEMBAR.ALL.GPU — drains ALL prior stores to L2</text>
+
+    <!-- Arrow -->
+    <line x1="484" y1="50" x2="530" y2="50" stroke="#D97706" stroke-width="2" stroke-dasharray="5 3" marker-end="url(#arr)"/>
+    <text x="490" y="40" class="num" fill="#D97706">L2</text>
+
+    <!-- Consumer -->
+    <rect x="534" y="0" width="480" height="100" rx="8" fill="url(#consG)" stroke="#059669" stroke-width="1"/>
+    <text x="549" y="18" class="lbl" fill="#065F46">CONSUMER (SM₇₃)</text>
+    <text x="549" y="38" class="code" fill="#065F46">spin: ld.acquire.gpu [flag] → poll   // 393 cyc/iter</text>
+    <text x="549" y="54" class="code" fill="#065F46">fence.acq_rel.gpu;                   // 285 cyc</text>
+    <text x="549" y="72" class="code" fill="#065F46">ld.global.b32 r, [data_0..N];        // ordered reads</text>
+    <text x="549" y="88" class="lbl-sm">Fence guarantees: all producer stores visible before consumer reads</text>
+  </g>
+
+  <!-- ═══════ PATTERN 3: Fire-and-Forget (Reduction) ═══════ -->
+  <text x="36" y="354" class="sect">PATTERN 3: Fire-and-Forget Reduction — 5x faster throughput (no return value needed)</text>
+
+  <g transform="translate(36,366)">
+    <!-- red.add path -->
+    <rect x="0" y="0" width="480" height="80" rx="8" fill="url(#prodG)" stroke="#2563EB" stroke-width="1"/>
+    <text x="15" y="18" class="lbl" fill="#1D4ED8">FIRE-AND-FORGET (red.add)</text>
+    <text x="15" y="38" class="code" fill="#1D4ED8">red.global.add.u32 [counter], delta;  // 10.34 cyc/op</text>
+    <text x="15" y="56" class="lbl-sm">No return value → no scoreboard wait → 5x faster throughput</text>
+    <text x="15" y="72" class="lbl-sm">SASS: REDG.E.ADD (fire-and-forget to L2 atomic unit)</text>
+
+    <!-- vs -->
+    <text x="504" y="40" class="num-lg" fill="#D97706" text-anchor="middle">vs</text>
+
+    <!-- atom.add path -->
+    <rect x="534" y="0" width="480" height="80" rx="8" fill="url(#l2G)" stroke="#D97706" stroke-width="1"/>
+    <text x="549" y="18" class="lbl" fill="#92400E">READ-MODIFY-WRITE (atom.add)</text>
+    <text x="549" y="38" class="code" fill="#92400E">atom.global.add.u32 r, [counter], d; // 52.17 cyc/op</text>
+    <text x="549" y="56" class="lbl-sm">Returns old value → must wait for L2 RMW round-trip (378 cyc dep)</text>
+    <text x="549" y="72" class="lbl-sm">SASS: ATOM.E.ADD (full L2 round-trip with result return)</text>
+  </g>
+
+  <!-- Key insight box -->
+  <g transform="translate(36,456)">
+    <rect width="1008" height="20" rx="4" fill="#F0FDF4" stroke="#059669" stroke-width="0.8"/>
+    <text x="20" y="14" class="insight">WARNING: Adding release ordering to red.add makes it 69–126x SLOWER (521–947 cyc) — the fence overhead negates fire-and-forget advantage [S8/case_129]</text>
+  </g>
+</svg>

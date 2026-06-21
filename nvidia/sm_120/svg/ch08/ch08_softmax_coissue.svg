@@ -1,0 +1,227 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 820" role="img"
+     aria-label="§ 8.3.3 Softmax Is Architecturally Free — SFU co-issue window, pipe overlap, net overhead model">
+  <defs>
+    <style><![CDATA[
+      .eyebrow { font: 600 11px "JetBrains Mono", monospace; letter-spacing: 0.16em; text-transform: uppercase }
+      .title   { font: 500 24px "Fraunces", serif; fill: #0b1220; letter-spacing: -0.02em }
+      .sub     { font: italic 12px "Fraunces", serif; fill: #5b6679 }
+      .panel-h { font: 600 13px "JetBrains Mono", monospace; letter-spacing: 0.06em; fill: #0b1220 }
+      .panel-sub { font: italic 11px "Fraunces", serif; fill: #5b6679 }
+      .lbl-sm  { font: 500 9px "JetBrains Mono", monospace; fill: #5b6679; letter-spacing: 0.05em; text-transform: uppercase }
+      .lbl-mono{ font: 500 10px "JetBrains Mono", monospace; fill: #2a3548 }
+      .lbl-mono-em { font: 700 10px "JetBrains Mono", monospace; fill: #0b1220 }
+      .lbl-w-mono { font: 500 9px "JetBrains Mono", monospace; fill: #ffffff }
+    ]]></style>
+  </defs>
+
+  <rect width="1280" height="820" fill="#fcfbf6"/>
+
+  <!-- ============ Header ============ -->
+  <g transform="translate(40,32)">
+    <text x="0" y="0" class="eyebrow" fill="#15803d">SECTION 8.3.3 · SOFTMAX IS ARCHITECTURALLY FREE</text>
+    <text x="0" y="28" class="title">The SFU Co-Issue Window — 130 cyc Wall Time, ~0 cyc Added Latency</text>
+    <text x="0" y="50" class="sub">MUFU.EX2 + FMA co-issue 100% with TC pipe during MMA stall windows; net overhead 0–3%</text>
+    <text x="0" y="68" class="lbl-sm">Source: [S5/case_98] · [S19/case_65] · Chapter 3, §3.4.3 co-issue matrix</text>
+  </g>
+
+  <!-- ============ Panel A: Per-Operation Co-Issue Table ============ -->
+  <g transform="translate(40,108)">
+    <rect x="0" y="0" width="620" height="280" rx="6" fill="#ffffff" stroke="#e2d8c8" stroke-width="0.8"/>
+    <text x="14" y="22" class="panel-h">A · SOFTMAX CYCLE BUDGET — PER-OPERATION CO-ISSUE ANALYSIS</text>
+    <text x="14" y="38" class="panel-sub">Each operation overlaps with TC MMA execution in a different pipe</text>
+
+    <!-- Table header -->
+    <g transform="translate(14,56)">
+      <rect x="0" y="0" width="590" height="20" rx="2" fill="#f1f5f9"/>
+      <text x="8" y="14" class="lbl-sm">OPERATION</text>
+      <text x="180" y="14" class="lbl-sm">PIPE</text>
+      <text x="270" y="14" class="lbl-sm">LATENCY</text>
+      <text x="360" y="14" class="lbl-sm">CO-ISSUE W/ TC?</text>
+      <text x="500" y="14" class="lbl-sm">VISIBLE COST</text>
+    </g>
+
+    <!-- Row 1: max reduction -->
+    <g transform="translate(14,82)">
+      <text x="8" y="14" class="lbl-mono">max reduction (MMA)</text>
+      <text x="180" y="14" class="lbl-mono-em" fill="#2563eb">TC</text>
+      <text x="270" y="14" class="lbl-mono">7.25 cyc</text>
+      <text x="360" y="14" class="lbl-mono-em" fill="#15803d">IS the TC work</text>
+      <text x="500" y="14" class="lbl-mono-em" fill="#15803d">0 cyc (free)</text>
+    </g>
+
+    <!-- Row 2: sub.f32 -->
+    <g transform="translate(14,104)">
+      <text x="8" y="14" class="lbl-mono">sub.f32 (rescale)</text>
+      <text x="180" y="14" class="lbl-mono-em" fill="#d97706">FMA</text>
+      <text x="270" y="14" class="lbl-mono">4 cyc</text>
+      <text x="360" y="14" class="lbl-mono">93.6% overlap</text>
+      <text x="500" y="14" class="lbl-mono">~0.25 cyc</text>
+    </g>
+
+    <!-- Row 3: MUFU.EX2 -->
+    <g transform="translate(14,126)">
+      <rect x="0" y="-2" width="590" height="20" rx="2" fill="#ecfdf5"/>
+      <text x="8" y="14" class="lbl-mono-em">MUFU.EX2 (exp2)</text>
+      <text x="180" y="14" class="lbl-mono-em" fill="#7c3aed">XU/SFU</text>
+      <text x="270" y="14" class="lbl-mono-em">18 cyc</text>
+      <text x="360" y="14" class="lbl-mono-em" fill="#15803d">100% overlap</text>
+      <text x="500" y="14" class="lbl-mono-em" fill="#15803d">0 cyc (free)</text>
+    </g>
+
+    <!-- Row 4: mul.f32 -->
+    <g transform="translate(14,148)">
+      <text x="8" y="14" class="lbl-mono">mul.f32 (scale)</text>
+      <text x="180" y="14" class="lbl-mono-em" fill="#d97706">FMA</text>
+      <text x="270" y="14" class="lbl-mono">4 cyc</text>
+      <text x="360" y="14" class="lbl-mono">93.6% overlap</text>
+      <text x="500" y="14" class="lbl-mono">~0.25 cyc</text>
+    </g>
+
+    <!-- Separator -->
+    <line x1="14" y1="170" x2="604" y2="170" stroke="#cbd5e1" stroke-width="0.8"/>
+
+    <!-- Total -->
+    <g transform="translate(14,180)">
+      <text x="8" y="14" class="lbl-mono-em">TOTAL VISIBLE COST:</text>
+      <text x="500" y="14" class="lbl-mono-em" fill="#15803d">~0.50 cyc/row</text>
+    </g>
+
+    <!-- Key insight box -->
+    <g transform="translate(14,208)">
+      <rect x="0" y="0" width="590" height="59" rx="4" fill="#ecfdf5" stroke="#16a34a" stroke-width="0.6"/>
+      <text x="12" y="18" class="lbl-mono-em" fill="#15803d">130 cyc wall-clock ≠ 130 cyc added latency</text>
+      <text x="12" y="36" class="lbl-mono" fill="#15803d">The 130 cyc overlaps with MMA execution — softmax fills idle pipe slots</text>
+      <text x="12" y="52" class="lbl-mono" fill="#15803d">Net softmax overhead in fused FlashAttention: 0–3% (not 25%)</text>
+    </g>
+  </g>
+
+  <!-- ============ Panel B: Timeline Visualization ============ -->
+  <g transform="translate(680,108)">
+    <rect x="0" y="0" width="560" height="280" rx="6" fill="#ffffff" stroke="#e2d8c8" stroke-width="0.8"/>
+    <text x="14" y="22" class="panel-h">B · PIPE OVERLAP TIMELINE (29 CYC MMA WINDOW)</text>
+    <text x="14" y="38" class="panel-sub">SFU and FMA execute during MMA latency stalls — zero contention</text>
+
+    <!-- Time axis -->
+    <line x1="14" y1="240" x2="530" y2="240" stroke="#cbd5e1" stroke-width="1"/>
+    <text x="14" y="254" class="lbl-sm">0 cyc</text>
+    <text x="260" y="254" class="lbl-sm">15</text>
+    <text x="510" y="254" class="lbl-sm">29</text>
+
+    <!-- TC Pipe row -->
+    <g transform="translate(14,56)">
+      <text x="0" y="14" class="lbl-mono-em">TC Pipe:</text>
+      <rect x="80" y="0" width="448" height="28" rx="3" fill="#2563eb" opacity="0.75"/>
+      <text x="90" y="18" class="lbl-w-mono">MMA.m16n8k16 (29 cyc latency — results not ready until end)</text>
+    </g>
+
+    <!-- FMA Pipe row -->
+    <g transform="translate(14,100)">
+      <text x="0" y="14" class="lbl-mono-em">FMA Pipe:</text>
+      <rect x="80" y="0" width="62" height="28" rx="3" fill="#d97706" opacity="0.7"/>
+      <text x="86" y="18" class="lbl-w-mono">SUB(4c)</text>
+      <rect x="280" y="0" width="62" height="28" rx="3" fill="#d97706" opacity="0.7"/>
+      <text x="286" y="18" class="lbl-w-mono">MUL(4c)</text>
+      <text x="360" y="18" class="lbl-mono" fill="#5b6679">← idle slots →</text>
+    </g>
+
+    <!-- SFU Pipe row -->
+    <g transform="translate(14,144)">
+      <text x="0" y="14" class="lbl-mono-em">XU/SFU:</text>
+      <rect x="150" y="0" width="180" height="28" rx="3" fill="#7c3aed" opacity="0.7"/>
+      <text x="160" y="18" class="lbl-w-mono">MUFU.EX2 exp2 (18 cyc)</text>
+    </g>
+
+    <!-- Co-issue indicators -->
+    <g transform="translate(14,188)">
+      <text x="80" y="14" class="lbl-mono-em" fill="#15803d">← ALL THREE PIPES ACTIVE SIMULTANEOUSLY →</text>
+      <text x="80" y="32" class="lbl-mono" fill="#15803d">XU + Tensor = 0% overhead (Ch3, §3.4.3)</text>
+      <text x="80" y="48" class="lbl-mono" fill="#15803d">FMA + Tensor = 6.4% overhead (93.6% overlap)</text>
+    </g>
+  </g>
+
+  <!-- ============ Panel C: Why Fast-Math Is Useless ============ -->
+  <g transform="translate(40,408)">
+    <rect x="0" y="0" width="580" height="220" rx="6" fill="#ffffff" stroke="#e2d8c8" stroke-width="0.8"/>
+    <text x="14" y="22" class="panel-h">C · WHY SOFTMAX FAST-MATH IS USELESS ON SM_120</text>
+    <text x="14" y="38" class="panel-sub">Optimizing a zero-cost operation cannot improve total throughput</text>
+
+    <!-- Comparison -->
+    <g transform="translate(14,56)">
+      <!-- Standard softmax -->
+      <rect x="0" y="0" width="260" height="80" rx="4" fill="#f8fafc" stroke="#cbd5e1" stroke-width="0.6"/>
+      <text x="12" y="18" class="lbl-sm" fill="#5b6679">STANDARD (MUFU.EX2)</text>
+      <text x="12" y="38" class="lbl-mono">exp2 latency: 18 cyc</text>
+      <text x="12" y="54" class="lbl-mono">Visible cost: 0 cyc</text>
+      <text x="12" y="70" class="lbl-mono-em" fill="#15803d">Net: FREE</text>
+
+      <!-- Fast-math softmax -->
+      <rect x="280" y="0" width="260" height="80" rx="4" fill="#f8fafc" stroke="#cbd5e1" stroke-width="0.6"/>
+      <text x="292" y="18" class="lbl-sm" fill="#5b6679">FAST-MATH (APPROX)</text>
+      <text x="292" y="38" class="lbl-mono">approx exp: ~8 cyc</text>
+      <text x="292" y="54" class="lbl-mono">Visible cost: 0 cyc</text>
+      <text x="292" y="70" class="lbl-mono-em" fill="#15803d">Net: STILL FREE</text>
+    </g>
+
+    <!-- Conclusion -->
+    <g transform="translate(14,148)">
+      <rect x="0" y="0" width="546" height="56" rx="4" fill="#fef2f2" stroke="#dc2626" stroke-width="0.6"/>
+      <text x="12" y="18" class="lbl-mono-em" fill="#dc2626">CONCLUSION: Both standard and fast-math cost 0 visible cycles</text>
+      <text x="12" y="36" class="lbl-mono" fill="#dc2626">Reducing 18→8 cyc in a fully-overlapped pipe = zero throughput gain</text>
+      <text x="12" y="52" class="lbl-mono" fill="#dc2626">Fast-math only trades accuracy for nothing on this architecture</text>
+    </g>
+  </g>
+
+  <!-- ============ Panel D: Key Metrics ============ -->
+  <g transform="translate(640,408)">
+    <rect x="0" y="0" width="600" height="220" rx="6" fill="#ffffff" stroke="#e2d8c8" stroke-width="0.8"/>
+    <text x="14" y="22" class="panel-h">D · CO-ISSUE CHARACTERIZATION SUMMARY</text>
+
+    <g transform="translate(14,42)">
+      <rect x="0" y="0" width="572" height="164" rx="4" fill="#f8fafc" stroke="#cbd5e1" stroke-width="0.6"/>
+      <text x="12" y="18" class="lbl-sm" fill="#5b6679">SM_120 PIPE CO-ISSUE MATRIX (ATTENTION-RELEVANT)</text>
+      <line x1="12" y1="24" x2="560" y2="24" stroke="#cbd5e1" stroke-width="0.5"/>
+
+      <text x="12" y="42" class="lbl-mono-em">XU/SFU + TC:</text>
+      <text x="140" y="42" class="lbl-mono-em" fill="#15803d">0% overhead (perfect co-issue)</text>
+      <text x="340" y="42" class="lbl-mono" fill="#5b6679">← MUFU.EX2 is FREE</text>
+
+      <text x="12" y="62" class="lbl-mono-em">FMA + TC:</text>
+      <text x="140" y="62" class="lbl-mono">6.4% overhead (93.6% overlap)</text>
+      <text x="340" y="62" class="lbl-mono" fill="#5b6679">← SUB/MUL nearly free</text>
+
+      <text x="12" y="82" class="lbl-mono-em">MMA + merge:</text>
+      <text x="140" y="82" class="lbl-mono">+3.6% over MMA-only</text>
+      <text x="340" y="82" class="lbl-mono" fill="#5b6679">[S5/case_98]</text>
+
+      <line x1="12" y1="94" x2="560" y2="94" stroke="#cbd5e1" stroke-width="0.5"/>
+
+      <text x="12" y="112" class="lbl-mono-em">Softmax wall-clock:</text>
+      <text x="180" y="112" class="lbl-mono">130 cyc (25% of tile time)</text>
+
+      <text x="12" y="132" class="lbl-mono-em">Softmax added cost:</text>
+      <text x="180" y="132" class="lbl-mono-em" fill="#15803d">~0.5 cyc/row (0–3% net overhead)</text>
+
+      <text x="12" y="152" class="lbl-mono-em">Rescale budget:</text>
+      <text x="180" y="152" class="lbl-mono">21.1 cyc/rescale (sub+exp2+mul) [S19/case_65]</text>
+    </g>
+  </g>
+
+  <!-- ============ Panel E: Architectural Implication ============ -->
+  <g transform="translate(40,648)">
+    <rect x="0" y="0" width="1200" height="158" rx="6" fill="#ffffff" stroke="#e2d8c8" stroke-width="0.8"/>
+    <text x="14" y="22" class="panel-h">E · ARCHITECTURAL IMPLICATIONS FOR KERNEL OPTIMIZATION</text>
+
+    <g transform="translate(14,42)">
+      <rect x="0" y="0" width="1172" height="100" rx="4" fill="#fffbeb" stroke="#d97706" stroke-width="0.6"/>
+      <text x="12" y="18" class="lbl-sm" fill="#b45309">OPTIMIZATION RULES DERIVED FROM CO-ISSUE ARCHITECTURE</text>
+      <line x1="12" y1="24" x2="1160" y2="24" stroke="#d97706" stroke-width="0.3"/>
+
+      <text x="12" y="42" class="lbl-mono">1. Softmax fast-math (approx exp2) provides ZERO benefit — the standard path is already free</text>
+      <text x="12" y="58" class="lbl-mono">2. FP16 softmax accumulation vs FP32: no throughput difference (both overlap identically with TC)</text>
+      <text x="12" y="74" class="lbl-mono">3. The 25% wall-time fraction is MISLEADING — it represents overlapped time, not added cost</text>
+      <text x="12" y="90" class="lbl-mono">4. Optimization effort should target the THIN-K GEMM bottleneck (§8.3.2), not softmax</text>
+    </g>
+  </g>
+
+</svg>

@@ -1,0 +1,221 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 800" role="img"
+     aria-label="SM_120 CuAssembler optimization surface — confirmed improvements, no-effect knobs, and dangerous patches with quantified gain/risk and source cases">
+  <defs>
+    <linearGradient id="goodG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#D1FAE5"/><stop offset="1" stop-color="#ECFDF5"/>
+    </linearGradient>
+    <linearGradient id="neutG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#E0E7FF"/><stop offset="1" stop-color="#EEF2FF"/>
+    </linearGradient>
+    <linearGradient id="badG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFE4E6"/><stop offset="1" stop-color="#FFF1F2"/>
+    </linearGradient>
+    <linearGradient id="sumG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FEF3C7"/><stop offset="1" stop-color="#FFFBEB"/>
+    </linearGradient>
+    <style><![CDATA[
+      .ttl{font:600 14px "Fraunces",serif;fill:#0b1220}
+      .sub{font:italic 11px "Fraunces",serif;fill:#5b6679}
+      .catT{font:700 13px "Fraunces",serif}
+      .head{font:700 10px "JetBrains Mono",monospace;fill:#5b6679;letter-spacing:0.4px}
+      .row{font:500 10.5px "JetBrains Mono",monospace;fill:#0b1220}
+      .src{font:500 9.5px "JetBrains Mono",monospace;fill:#5b6679}
+      .gainPos{font:700 11px "JetBrains Mono",monospace;fill:#16a34a}
+      .gainZero{font:600 11px "JetBrains Mono",monospace;fill:#5b6679}
+      .gainNeg{font:700 11px "JetBrains Mono",monospace;fill:#dc2626}
+      .riskLow{font:600 10px "JetBrains Mono",monospace;fill:#16a34a}
+      .riskNone{font:600 10px "JetBrains Mono",monospace;fill:#5b6679}
+      .riskHi{font:700 10px "JetBrains Mono",monospace;fill:#dc2626}
+      .riskCrit{font:700 10px "JetBrains Mono",monospace;fill:#7f1d1d}
+      .icon{font:700 14px "JetBrains Mono",monospace}
+      .note{font:italic 10px "Fraunces",serif;fill:#5b6679}
+      .key{font:700 11px "JetBrains Mono",monospace;fill:#0b1220}
+    ]]></style>
+  </defs>
+  <rect width="1080" height="760" fill="#fcfbf6"/>
+
+  <!-- title bar -->
+  <text x="36" y="32" class="ttl">SM_120 CuAssembler Optimization Surface — Exhaustive Survey</text>
+  <text x="36" y="52" class="sub">All known SASS-level patches classified by risk and impact · evidence: S11/S12/S21 cases</text>
+
+  <!-- Column header strip -->
+  <g transform="translate(36,72)">
+    <rect x="0" y="0" width="1008" height="22" rx="4" fill="#ededed"/>
+    <text x="14" y="15" class="head" fill="#000000">  OPTIMIZATION                                  GAIN        RISK         MECHANISM                          SOURCE</text>
+  </g>
+
+  <!-- ===================== CATEGORY 1: CONFIRMED IMPROVEMENTS ===================== -->
+  <g transform="translate(36,108)">
+    <rect x="0" y="0" width="1008" height="156" rx="10" fill="url(#goodG)" stroke="#16a34a" stroke-width="1"/>
+    <!-- left color stripe -->
+    <rect x="0" y="0" width="6" height="156" rx="3" fill="#16a34a"/>
+    <!-- header -->
+    <g transform="translate(20,22)">
+      <text x="0" y="0" class="catT" fill="#16a34a">✓ Category 1 · Confirmed Improvements</text>
+      <text x="320" y="0" class="note">Apply with confidence — measurable gain, validated mechanism</text>
+    </g>
+    <!-- rows: x=20..1000  Optimization 20-340  Gain 360-440  Risk 460-540  Mechanism 560-820  Source 840-990 -->
+    <g transform="translate(0,40)">
+      <text x="20" y="14" class="icon" fill="#16a34a">▲</text>
+      <text x="40" y="14" class="row">HMMA stall 11→12</text>
+      <text x="360" y="14" class="gainPos">+6.1%</text>
+      <text x="460" y="14" class="riskLow">LOW</text>
+      <text x="560" y="14" class="row">TC writeback alignment (1-cyc)</text>
+      <text x="840" y="14" class="src">S21/case_82</text>
+
+      <text x="20" y="34" class="icon" fill="#16a34a">▲</text>
+      <text x="40" y="34" class="row">QMMA stall 11→12</text>
+      <text x="360" y="34" class="gainPos">+6.1%</text>
+      <text x="460" y="34" class="riskLow">LOW</text>
+      <text x="560" y="34" class="row">Same as HMMA</text>
+      <text x="840" y="34" class="src">S21/case_84</text>
+
+      <text x="20" y="54" class="icon" fill="#16a34a">▲</text>
+      <text x="40" y="54" class="row">OMMA.SF stall 11→12</text>
+      <text x="360" y="54" class="gainPos">+6.1%</text>
+      <text x="460" y="54" class="riskLow">LOW</text>
+      <text x="560" y="54" class="row">Same as HMMA</text>
+      <text x="840" y="54" class="src">S21/case_85</text>
+
+      <text x="20" y="74" class="icon" fill="#16a34a">▲</text>
+      <text x="40" y="74" class="row">SB co-consumed grouping</text>
+      <text x="360" y="74" class="gainPos">+3 cyc</text>
+      <text x="460" y="74" class="riskNone">NONE</text>
+      <text x="560" y="74" class="row">Fewer scoreboard waits per group</text>
+      <text x="840" y="74" class="src">S21/case_105</text>
+
+      <text x="20" y="94" class="icon" fill="#16a34a">▲</text>
+      <text x="40" y="94" class="row">.reuse bit on ALU (ILP-rich)</text>
+      <text x="360" y="94" class="gainPos">+85%</text>
+      <text x="460" y="94" class="riskNone">N/A*</text>
+      <text x="560" y="94" class="row">RFC cache hit · ptxas already sets</text>
+      <text x="840" y="94" class="src">S11/case_155, S12/case_1</text>
+    </g>
+    <text x="20" y="152" class="note">* ptxas already emits .reuse=101 in throughput-bound FFMA — no patching needed; clearing it costs −85%.</text>
+  </g>
+
+  <!-- ===================== CATEGORY 2: CONFIRMED NO EFFECT ===================== -->
+  <g transform="translate(36,272)">
+    <rect x="0" y="0" width="1008" height="166" rx="10" fill="url(#neutG)" stroke="#1e40af" stroke-width="1"/>
+    <rect x="0" y="0" width="6" height="166" rx="3" fill="#1e40af"/>
+    <g transform="translate(20,22)">
+      <text x="0" y="0" class="catT" fill="#1e40af">○ Category 2 · Confirmed No Effect — Don't Bother</text>
+      <text x="380" y="0" class="note">Hardware absorbs the change · ptxas already at optimum · or path not consulted</text>
+    </g>
+    <g transform="translate(0,40)">
+      <text x="20" y="14" class="icon" fill="#1e40af">●</text>
+      <text x="40" y="14" class="row">.reuse bit on TC (HMMA/QMMA)</text>
+      <text x="360" y="14" class="gainZero">0%</text>
+      <text x="460" y="14" class="riskNone">N/A</text>
+      <text x="560" y="14" class="row">TC has independent operand fetch</text>
+      <text x="840" y="14" class="src">S21/case_78 retest</text>
+
+      <text x="20" y="34" class="icon" fill="#1e40af">●</text>
+      <text x="40" y="34" class="row">FFMA stall tuning</text>
+      <text x="360" y="34" class="gainZero">0%</text>
+      <text x="460" y="34" class="riskNone">N/A</text>
+      <text x="560" y="34" class="row">ptxas optimal at stall=1</text>
+      <text x="840" y="34" class="src">S21/case_9</text>
+
+      <text x="20" y="54" class="icon" fill="#1e40af">●</text>
+      <text x="40" y="54" class="row">Bank-conflict avoidance</text>
+      <text x="360" y="54" class="gainZero">0%</text>
+      <text x="460" y="54" class="riskNone">N/A</text>
+      <text x="560" y="54" class="row">OC absorbs all parity conflicts</text>
+      <text x="840" y="54" class="src">S12/case_1–3</text>
+
+      <text x="20" y="74" class="icon" fill="#dc2626">●</text>
+      <text x="40" y="74" class="row">Yield bit (set yield=0)</text>
+      <text x="360" y="74" class="gainNeg">−2.4%</text>
+      <text x="460" y="74" class="riskHi">HARMFUL</text>
+      <text x="560" y="74" class="row">Hurts warp interleaving</text>
+      <text x="840" y="74" class="src">S21/case_106</text>
+
+      <text x="20" y="94" class="icon" fill="#1e40af">●</text>
+      <text x="40" y="94" class="row">Register renaming</text>
+      <text x="360" y="94" class="gainZero">0%</text>
+      <text x="460" y="94" class="riskNone">N/A</text>
+      <text x="560" y="94" class="row">RFC ≥24 entries masks any benefit</text>
+      <text x="840" y="94" class="src">S12/case_6</text>
+
+      <text x="20" y="114" class="icon" fill="#1e40af">●</text>
+      <text x="40" y="114" class="row">Forcing .reuse=111 on HMMA</text>
+      <text x="360" y="114" class="gainZero">0%</text>
+      <text x="460" y="114" class="riskNone">N/A</text>
+      <text x="560" y="114" class="row">456 HMMA tested · HW ignores</text>
+      <text x="840" y="114" class="src">SM_120 server1 verification</text>
+    </g>
+  </g>
+
+  <!-- ===================== CATEGORY 3: DANGEROUS ===================== -->
+  <g transform="translate(36,446)">
+    <rect x="0" y="0" width="1008" height="126" rx="10" fill="url(#badG)" stroke="#dc2626" stroke-width="1"/>
+    <rect x="0" y="0" width="6" height="126" rx="3" fill="#dc2626"/>
+    <g transform="translate(20,22)">
+      <text x="0" y="0" class="catT" fill="#dc2626">✗ Category 3 · Dangerous — Silent Corruption Risk</text>
+      <text x="350" y="0" class="note">Patches that pass cuobjdump but break execution at runtime</text>
+    </g>
+    <g transform="translate(0,40)">
+      <text x="20" y="14" class="icon" fill="#dc2626">⚠</text>
+      <text x="40" y="14" class="row">Stall counter decrease (e.g. 4→2)</text>
+      <text x="360" y="14" class="gainNeg">CORRUPT</text>
+      <text x="460" y="14" class="riskCrit">CRITICAL</text>
+      <text x="560" y="14" class="row">Silent stale register read</text>
+      <text x="840" y="14" class="src">S11/case_132–140</text>
+
+      <text x="20" y="34" class="icon" fill="#dc2626">⚠</text>
+      <text x="40" y="34" class="row">SB counter reassignment</text>
+      <text x="360" y="34" class="gainNeg">CORRUPT</text>
+      <text x="460" y="34" class="riskHi">HIGH</text>
+      <text x="560" y="34" class="row">Missing wait → stale load result</text>
+      <text x="840" y="34" class="src">S21/case_105</text>
+
+      <text x="20" y="54" class="icon" fill="#dc2626">⚠</text>
+      <text x="40" y="54" class="row">stall=14 / 15 (HW sentinel)</text>
+      <text x="360" y="54" class="gainNeg">−72%</text>
+      <text x="460" y="54" class="riskHi">HIGH</text>
+      <text x="560" y="54" class="row">Forces full dependency replay</text>
+      <text x="840" y="54" class="src">S21/case_82</text>
+
+      <text x="20" y="74" class="icon" fill="#dc2626">⚠</text>
+      <text x="40" y="74" class="row">Forcing reuse with same-parity src</text>
+      <text x="360" y="74" class="gainNeg">CORRUPT</text>
+      <text x="460" y="74" class="riskHi">HIGH</text>
+      <text x="560" y="74" class="row">RFC tag mismatch · stale operands</text>
+      <text x="840" y="74" class="src">S12/case_28</text>
+    </g>
+  </g>
+
+  <!-- ===================== SUMMARY ===================== -->
+  <g transform="translate(36,580)">
+    <rect x="0" y="0" width="1008" height="122" rx="10" fill="url(#sumG)" stroke="#b45309" stroke-width="1"/>
+    <rect x="0" y="0" width="6" height="122" rx="3" fill="#b45309"/>
+    <text x="20" y="22" class="catT" fill="#92400e">★ Net Optimization Headroom for Production GEMM</text>
+
+    <!-- breakdown -->
+    <g transform="translate(20,38)">
+      <text x="0"  y="14" class="row" fill="#92400e">  MMA chains (HMMA/QMMA/OMMA.SF) · stall=11→12 patch</text>
+      <text x="540" y="14" class="gainPos">+6.1%</text>
+      <text x="640" y="14" class="src">applies to ~70% of TC-bound kernel cycles</text>
+
+      <text x="0"  y="34" class="row" fill="#92400e">  SB co-consumed grouping in load-heavy regions</text>
+      <text x="540" y="34" class="gainPos">+0.1–0.5%</text>
+      <text x="640" y="34" class="src">small, but free; few groups per kernel</text>
+
+      <text x="0"  y="54" class="row" fill="#92400e">  Total realistic gain for TC-dominated kernels</text>
+      <text x="540" y="54" class="gainPos" style="font-size:13px">≈ 6–7%</text>
+      <text x="640" y="54" class="src">all other patches yield 0% or corrupt code</text>
+    </g>
+
+    <!-- conclusion -->
+    <g transform="translate(20,98)">
+      <text x="0" y="15" class="key" fill="#92400e">Bottom line:</text>
+      <text x="92" y="15" class="row" fill="#92400e">ptxas is near-optimal on SM_120 · the only justified CuAssembler intervention is the stall=12 MMA patch.</text>
+    </g>
+  </g>
+
+  <!-- footer source line -->
+  <text x="36" y="725" class="src">Risk semantics — N/A: no measurable change · LOW: change is reversible and tested · HIGH: silent slowdown · CRITICAL: data corruption beyond recovery</text>
+  <text x="36" y="745" class="src">Source coverage — 8 cases (S11), 6 cases (S12), 14 cases (S21) · all measurements at 2077 MHz pinned, single-warp launch ⟨⟨⟨1, 32⟩⟩⟩</text>
+</svg>

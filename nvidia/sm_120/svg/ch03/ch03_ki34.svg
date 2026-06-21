@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 280" role="img"
+     aria-label="KI-3.4: Zero switching penalty at any group size — pipe mux settles in 1 cycle">
+  <defs>
+    <marker id="ar" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#5b6679"/></marker>
+    <style><![CDATA[
+      .ttl{font:600 14px "Fraunces",serif;fill:#0b1220}
+      .sub{font:italic 11px "Fraunces",serif;fill:#5b6679}
+      .lbl{font:600 11px "JetBrains Mono",monospace}
+      .lbl-sm{font:500 10px "JetBrains Mono",monospace;fill:#5b6679}
+      .badge{font:600 9.5px "JetBrains Mono",monospace}
+      .note{font:500 9px "JetBrains Mono",monospace;fill:#8e97a5}
+      .safe{font:600 10px "JetBrains Mono",monospace;fill:#16a34a}
+    ]]></style>
+  </defs>
+  <rect width="1080" height="280" fill="#ffffff"/>
+  <text x="36" y="28" class="ttl">KI-3.4: Finer Instruction Interleaving Always Better — 0% Switching Penalty</text>
+  <text x="36" y="46" class="sub">Group size 1 (finest) = Group size 8 (coarsest) = 0% penalty. No switching cost to amortize. [S22/case_26]</text>
+
+  <!-- Flat penalty chart -->
+  <g transform="translate(40, 66)">
+    <rect x="0" y="0" width="540" height="190" rx="10" fill="#f8fafc" stroke="#334155" stroke-width="0.8"/>
+    <text x="12" y="20" class="lbl" fill="#334155">Measured Switching Penalty vs Group Size</text>
+
+    <g transform="translate(20, 44)">
+      <!-- Group sizes -->
+      <rect x="0" y="0" width="100" height="30" rx="4" fill="#DCFCE7" stroke="#16a34a" stroke-width="0.6"/>
+      <text x="50" y="14" class="badge" fill="#16a34a" text-anchor="middle">Group=1</text>
+      <text x="50" y="26" class="safe" text-anchor="middle">0%</text>
+
+      <rect x="120" y="0" width="100" height="30" rx="4" fill="#DCFCE7" stroke="#16a34a" stroke-width="0.6"/>
+      <text x="170" y="14" class="badge" fill="#16a34a" text-anchor="middle">Group=2</text>
+      <text x="170" y="26" class="safe" text-anchor="middle">0%</text>
+
+      <rect x="240" y="0" width="100" height="30" rx="4" fill="#DCFCE7" stroke="#16a34a" stroke-width="0.6"/>
+      <text x="290" y="14" class="badge" fill="#16a34a" text-anchor="middle">Group=4</text>
+      <text x="290" y="26" class="safe" text-anchor="middle">0%</text>
+
+      <rect x="360" y="0" width="100" height="30" rx="4" fill="#DCFCE7" stroke="#16a34a" stroke-width="0.6"/>
+      <text x="410" y="14" class="badge" fill="#16a34a" text-anchor="middle">Group=8</text>
+      <text x="410" y="26" class="safe" text-anchor="middle">0%</text>
+
+      <!-- Flat line -->
+      <line x1="50" y1="40" x2="410" y2="40" stroke="#16a34a" stroke-width="2"/>
+      <text x="420" y="44" class="safe">← FLAT </text>
+      <text x="420" y="54" class="safe">(all identical)</text>
+    </g>
+
+    <!-- Explanation -->
+    <g transform="translate(20, 110)">
+      <rect x="0" y="0" width="500" height="60" rx="6" fill="#EDE7FB" stroke="#6d28d9" stroke-width="0.5"/>
+      <text x="12" y="18" class="lbl" fill="#6d28d9">Why: Pipe selection mux settles in &lt;1 cycle</text>
+      <text x="12" y="36" class="lbl-sm">No pipeline flush, no reconfiguration needed when switching targets.</text>
+      <text x="12" y="52" class="lbl-sm">The 8.3% FMA+ALU overhead is from shared issue slot, NOT switching cost.</text>
+    </g>
+  </g>
+
+  <!-- Right: Implication -->
+  <g transform="translate(600, 66)">
+    <rect x="0" y="0" width="440" height="190" rx="10" fill="#DCFCE7" stroke="#16a34a" stroke-width="0.8"/>
+    <text x="12" y="20" class="lbl" fill="#16a34a">Optimization Implication</text>
+    <text x="12" y="44" class="lbl-sm">• Prioritize dependency satisfaction over pipe grouping</text>
+    <text x="12" y="62" class="lbl-sm">• Interleave different pipe types FREELY</text>
+    <text x="12" y="80" class="lbl-sm">• No benefit to batching same-pipe instructions</text>
+    <text x="12" y="98" class="lbl-sm">• ptxas already interleaves optimally</text>
+
+    <rect x="12" y="116" width="416" height="56" rx="6" fill="#ffffff" stroke="#16a34a" stroke-width="0.5"/>
+    <text x="24" y="134" class="safe">Best pattern: alternate every instruction</text>
+    <text x="24" y="150" class="lbl-sm">FFMA, IADD3, FFMA, MUFU, FFMA, LDS ← optimal</text>
+    <text x="24" y="166" class="note">Not: FFMA×4, IADD3×4, MUFU×4 (same performance, no benefit)</text>
+  </g>
+</svg>

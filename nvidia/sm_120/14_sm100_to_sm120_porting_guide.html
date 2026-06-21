@@ -1,0 +1,925 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SM_100 → SM_120 Porting Guide · SM_120 Microarch Reference</title>
+<link rel="stylesheet" href="assets/css/style.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" integrity="sha384-nB0miv6/jRmo5UMMR1wu3Gz6NLsoTkbqJghGIsx//Rlm+ZU03BU6SQNC66uf4l5+" crossorigin="anonymous">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/styles/atom-one-light.min.css">
+<style>
+/* protect non-color overrides over hljs theme */
+pre code.hljs { background: transparent !important; padding: 0 !important; }
+</style>
+</head>
+<body>
+<div class="shell">
+<aside class="toc">
+<a class="toc-back" href="index.html">← Index</a>
+<div class="toc-brand">SM_120 <span class="accent">GB202</span> · <em>Microarch</em></div>
+<span class="toc-tag">FINAL REPORT · 2026</span>
+<h4>All Chapters</h4>
+<a href="01_architecture_overview.html">01 · Architecture Overview</a>
+<a href="02_memory_subsystem.html">02 · Memory Subsystem</a>
+<a href="03_sm_microarchitecture.html">03 · SM Microarchitecture</a>
+<a href="04_tensorcore_architecture.html">04 · TensorCore Architecture</a>
+<a href="05_instruction_level_characterization.html">05 · Instruction-Level Characterization</a>
+<a href="06_on_chip_network_async.html">06 · On-Chip Network &amp; Async</a>
+<a href="07_warp_scheduler_control.html">07 · Warp Scheduler &amp; Control</a>
+<a href="08_workload_analysis.html">08 · Workload Analysis</a>
+<a href="09_power_thermal_efficiency.html">09 · Power, Thermal &amp; Efficiency</a>
+<a href="10_system_level_multi_gpu.html">10 · System-Level &amp; Multi-GPU</a>
+<a href="11_optimization_guidance.html">11 · Optimization Guidance</a>
+<a href="12_ptxas_compiler_behavior.html">12 · ptxas Compiler Behavior</a>
+<a href="13_unified_performance_model.html">13 · Unified Performance Model</a>
+<a href="14_sm100_to_sm120_porting_guide.html" style="font-weight:600;color:var(--ink)">14 · SM_100 → SM_120 Porting Guide</a>
+<a href="15_agent_ground_truth.html">15 · Agent Ground Truth</a>
+<a href="16_open_questions.html">16 · Open Questions</a>
+<a href="17_cross_reference_map.html">17 · Cross-Reference Map</a>
+<a href="18_appendix_a_test_coverage.html">18 · Appendix A — Test Coverage</a>
+<a href="19_appendix_b_machine_readable.html">19 · Appendix B — Machine-Readable Parameters</a>
+<a href="20_appendix_c_methodology.html">20 · Appendix C — Measurement Methodology</a>
+</aside>
+<main class="content">
+
+<header class="hero">
+<div class="hero-eyebrow"><span class="pulse"></span>CHAPTER 14 · SM_120 · GB202 BLACKWELL</div>
+<h1 class="hero-title">SM_100 → SM_120 Porting Guide</h1>
+<p class="lede">This chapter provides a systematic guide for porting GPU kernels from SM_100 (B200, data-center Blackwell with Tensor Memory and wgmma) to SM_120 (GB202, RTX PRO 5000 72GB without Tensor Memory). The SM_120 shares the same Blackwell generation but lacks key features present on SM_100: tcgen05/TMEM, wgmma, TMA multicast, 2-SM cooperative execution, and `cvt.rs` stochastic rounding. These are not incremental differences but fundamental architectural divergences that require full mainloop restructuring. All performance impact figures are measured on the RTX PRO 5000 72GB and traced to specific microbenchmark test cases.</p>
+</header>
+
+<figure class="diagram"><object data="svg/ch14/ch14_summary.svg" type="image/svg+xml" aria-label="Chapter 14 summary — SM_100 → SM_120 porting guide and hard constraints"></object><figcaption><span class="fig-num">FIG 14.0</span>Chapter 14 summary — SM_100 → SM_120 porting guide and hard constraints</figcaption></figure>
+<h2 class="ch-title" id="14-1-feature-mapping-table">14.1 Feature Mapping Table</h2>
+<p>The following table maps SM_100 features to their SM_120 replacements with measured performance impact:</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>SM_100 Feature</th>
+<th>SM_120 Replacement</th>
+<th>Performance Impact</th>
+<th>Source</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>tcgen05.mma</code> (QGMMA)</td>
+<td><code>mma.sync</code> (HMMA/QMMA)</td>
+<td>-50% per-SM TFLOPS (15.88 vs 7.94 cyc/mma)</td>
+<td><code>S9/case_12</code></td>
+</tr>
+<tr>
+<td>Tensor Memory (256 KB/SM)</td>
+<td>Shared memory buffer (99 KB/SM)</td>
+<td>-60% buffer capacity; smaller K-tile or fewer stages</td>
+<td><code>S18/case_04</code></td>
+</tr>
+<tr>
+<td><code>wgmma</code> descriptor feed</td>
+<td>Explicit <code>ldmatrix</code> + <code>mma.sync</code></td>
+<td>+11.0 cyc smem-to-RF overhead per MMA (27.5%)</td>
+<td><code>S18/case_04</code></td>
+</tr>
+<tr>
+<td>TMA multicast</td>
+<td>Per-CTA unicast + DSMEM share</td>
+<td>DSMEM 6.5x slower than local smem; force ClusterShape&lt;1,1,1&gt;</td>
+<td><code>S10/case_28-32</code></td>
+</tr>
+<tr>
+<td>Warp specialization (TMA/MMA)</td>
+<td>All-compute (recommended)</td>
+<td>All-compute 2.5-3.1x better on SM_120 for TC-bound</td>
+<td><code>S9/case_33</code></td>
+</tr>
+<tr>
+<td>2-SM cooperative</td>
+<td>Single-SM only</td>
+<td>Not available on SM_120; cluster still usable for DSMEM</td>
+<td><code>S0/case_11</code></td>
+</tr>
+<tr>
+<td><code>st.async.bulk</code></td>
+<td><code>st.async.shared::cluster</code> or manual</td>
+<td>Fire-and-forget preserved within cluster scope</td>
+<td><code>S16/case_06</code></td>
+</tr>
+<tr>
+<td><code>cvt.rs</code> stochastic rounding</td>
+<td>Not available (sm_100a only)</td>
+<td>Must use <code>.rn</code> rounding on SM_120</td>
+<td><code>S6/case_28</code></td>
+</tr>
+<tr>
+<td><code>setmaxnreg</code> (base sm_100)</td>
+<td>Requires <code>compute_120a</code></td>
+<td>Rejected on base sm_120; need <code>-gencode arch=compute_120a</code></td>
+<td><code>S12/case_16</code></td>
+</tr>
+<tr>
+<td>NVLink barrier (<code>red.release.sys</code>)</td>
+<td>PCIe path only</td>
+<td>947 cyc (vs ~200 cyc NVLink [SPECULATIVE — SM_100 not measured, see §14.4.2 footnote])</td>
+<td><code>S8/case_129</code></td>
+</tr>
+</tbody>
+</table></div>
+<hr>
+<h2 class="ch-title" id="14-2-hard-constraints-compilation-or-launch-failures">14.2 Hard Constraints (Compilation or Launch Failures)</h2>
+<p>These constraints cause immediate failures if violated:</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Constraint</th>
+<th>Consequence</th>
+<th>Source</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>C1</td>
+<td>No <code>wgmma</code> / <code>tcgen05</code> instructions</td>
+<td>ptxas compilation failure on sm_120</td>
+<td><code>S0/case_11</code></td>
+</tr>
+<tr>
+<td>C2</td>
+<td>No TMA multicast</td>
+<td>2000-8000x SW-emulation penalty; CUTLASS static_assert blocks</td>
+<td><code>S10/case_28</code></td>
+</tr>
+<tr>
+<td>C3</td>
+<td>No <code>cvt.rs</code> stochastic rounding</td>
+<td>Compilation failure (sm_100a only instruction)</td>
+<td><code>S6/case_28</code></td>
+</tr>
+<tr>
+<td>C4</td>
+<td>Max shared memory per block = 99 KB</td>
+<td>cudaFuncSetAttribute required for &gt;48 KB; launch failure otherwise</td>
+<td><code>S1/case_3</code></td>
+</tr>
+<tr>
+<td>C8</td>
+<td>TMA sub-byte types rejected</td>
+<td>CUDA_ERROR_INVALID_VALUE when attempting TMA loads for FP4 tiles</td>
+<td><code>S10/case_116</code></td>
+</tr>
+<tr>
+<td>C11</td>
+<td>INT4 mma.sync is emulated (24x cost)</td>
+<td>Use FP4 E2M1 QMMA instead; no native INT4 opcode exists</td>
+<td><code>S9/case_79</code></td>
+</tr>
+<tr>
+<td>C12</td>
+<td><code>setmaxnreg</code> requires <code>compute_120a</code></td>
+<td>Rejected on base sm_120 target</td>
+<td><code>S12/case_16</code></td>
+</tr>
+<tr>
+<td>C13</td>
+<td><code>setmaxnreg</code> per-warp asymmetric dec/inc</td>
+<td>Undefined behavior; must match across warp group</td>
+<td><code>S12/case_32</code></td>
+</tr>
+</tbody>
+</table></div>
+<hr>
+<h2 class="ch-title" id="14-3-architectural-differences-in-data-path">14.3 Architectural Differences in Data Path</h2>
+<h3 class="sub-title" id="14-3-1-gemm-critical-path-comparison">14.3.1 GEMM Critical Path Comparison</h3>
+<p><strong>SM_100 (with Tensor Memory)</strong>:</p>
+<pre><code>Global Memory -&gt; TMA Engine -&gt; Tensor Memory (256 KB/SM) -&gt; wgmma (descriptor feed)
+                                    ^
+                                    |  Zero smem-to-RF overhead
+                                    v
+                              Tensor Core (wgmma: m64nXkY shapes)</code></pre>
+<p><strong>SM_120 (without Tensor Memory)</strong>:</p>
+<pre><code>Global Memory -&gt; TMA Engine -&gt; Shared Memory (99 KB/SM) -&gt; ldmatrix -&gt; Registers -&gt; mma.sync
+                                                              ^
+                                                              |  +11.0 cyc overhead (27.5%)
+                                                              v
+                                                        Tensor Core (mma.sync: m16n8kY shapes)</code></pre>
+<p>Key differences in the data path:</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Aspect</th>
+<th>SM_100</th>
+<th>SM_120</th>
+<th>Impact</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Operand feed</td>
+<td>Descriptor -&gt; TM -&gt; TC</td>
+<td>smem -&gt; ldmatrix -&gt; RF -&gt; TC</td>
+<td>+27.5% overhead per MMA</td>
+</tr>
+<tr>
+<td>Buffer capacity</td>
+<td>256 KB TM + 228 KB smem</td>
+<td>99 KB smem only</td>
+<td>2.6x less buffering</td>
+</tr>
+<tr>
+<td>MMA shape</td>
+<td>m64n{8-256}k{16-64}</td>
+<td>m16n8k{16-64}</td>
+<td>4x more instructions for same output tile</td>
+</tr>
+<tr>
+<td>Pipeline depth</td>
+<td>5+ stages practical</td>
+<td>3 stages optimal (diminishing returns at 4)</td>
+<td>Fewer stages to hide TMA latency</td>
+</tr>
+<tr>
+<td>Warp specialization</td>
+<td>Beneficial (TM bypass)</td>
+<td>Detrimental (2.5-3.1x worse)</td>
+<td>All-compute is the correct paradigm</td>
+</tr>
+</tbody>
+</table></div>
+<h3 class="sub-title" id="14-3-2-instruction-count-explosion">14.3.2 Instruction Count Explosion</h3>
+<p>The change from wgmma to mma.sync fundamentally increases instruction count for the same computation:</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Operation</th>
+<th style="text-align: center;">SM_100 (wgmma)</th>
+<th style="text-align: center;">SM_120 (mma.sync)</th>
+<th style="text-align: center;">Ratio</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Instructions per m128n128k16 tile</td>
+<td style="text-align: center;">4 wgmma</td>
+<td style="text-align: center;">128 mma.sync</td>
+<td style="text-align: center;">32x</td>
+</tr>
+<tr>
+<td>Operand loads per tile</td>
+<td style="text-align: center;">0 (descriptor feed)</td>
+<td style="text-align: center;">128 ldmatrix</td>
+<td style="text-align: center;">--</td>
+</tr>
+<tr>
+<td>Throughput per SM</td>
+<td style="text-align: center;">~wgmma rate</td>
+<td style="text-align: center;">15.88 cyc/mma at ILP&gt;=4</td>
+<td style="text-align: center;">--</td>
+</tr>
+<tr>
+<td>Achieved TFLOPS/SM</td>
+<td style="text-align: center;">28.1 [SPECULATIVE]</td>
+<td style="text-align: center;">29.3</td>
+<td style="text-align: center;">1.04x (SM_120 wins)</td>
+</tr>
+</tbody>
+</table></div>
+<aside class="callout callout-info">
+<p><strong>[SPECULATIVE] note on <code>28.1 TFLOPS/SM</code> for SM_100</strong>: SM_100 hardware was <strong>not available</strong> for direct measurement in this campaign — all S18 cross-generation cases (<span class="cite">[S18/case_2,4,7]</span>) report ⚠️ Anomaly/Unsupported. The 28.1 TFLOPS/SM value is <strong>derived from NVIDIA-published B200 specs</strong> (132 SMs, ~3712 TFLOPS FP16-tensor at 1.965 GHz boost ⇒ 28.1 TFLOPS/SM = 3712 / 132); the 1.04× SM_120 advantage in the row above relies on this derivation, <strong>not</strong> on first-party measurement. Treat all SM_100 numerics in this chapter as <code>[SPECULATIVE]</code> unless explicitly cited to an S18 PASS case.</p>
+</aside>
+<p>Despite the 32x instruction count increase, the SM_120 achieves slightly higher per-SM TFLOPS due to its higher clock frequency (2377 vs 2250 MHz baseline on B200). However, B200 has more SMs, yielding higher chip-level throughput.</p>
+<hr>
+<h2 class="ch-title" id="14-4-porting-case-studies">14.4 Porting Case Studies</h2>
+<h3 class="sub-title" id="14-4-1-cutlass-sm100_gemm_tma_warpspecialized-to-sm120_gemm_tma_cooperative">14.4.1 CUTLASS: sm100_gemm_tma_warpspecialized to sm120_gemm_tma_cooperative</h3>
+<p><strong>Porting steps</strong> (not incremental; full mainloop restructure required):</p>
+<ol>
+<li>
+<p><strong>Replace wgmma with mma.sync</strong>: Restructure the entire mainloop from descriptor-based wgmma to register-based mma.sync. Changes tile shape from m64nXk to m16n8k, requiring 4x more loop iterations.</p>
+</li>
+<li>
+<p><strong>Replace TM descriptor feed with ldmatrix + register staging</strong>: Insert explicit ldmatrix.sync.aligned.x4 instructions (49 cyc latency, 1.68 cyc/op throughput) before each mma.sync. Use XOR-swizzle (128B) to eliminate bank conflicts [S8/case_142: 4.23x benefit].</p>
+</li>
+<li>
+<p><strong>Remove multicast; use ClusterShape&lt;1,1,1&gt;</strong>: TMA multicast is non-functional on SM_120. Set cluster shape to unity. If A-operand sharing is needed, use unicast + DSMEM redistribution (220 cyc per remote read) <span class="cite">[S16/case_3]</span>.</p>
+</li>
+<li>
+<p><strong>Remove warp specialization; switch to all-compute</strong>: Warp specialization adds 259 cyc/iter overhead with no TM bypass benefit. All-compute is 2.5-3.1x faster for TC-bound kernels <span class="cite">[S9/case_33]</span>.</p>
+</li>
+<li>
+<p><strong>Adjust tile size</strong>: Optimal tiles are 256x128x128 (MX-FP4) or 128x128xK (FP16), constrained by 99 KB smem <span class="cite">[S9/case_136]</span>.</p>
+</li>
+<li>
+<p><strong>Set pipeline depth to 3</strong>: Three-stage pipeline provides 1.92x speedup over serial; fourth stage adds only 5.5% <span class="cite">[S10/case_82]</span>.</p>
+</li>
+</ol>
+<p><strong>Verification</strong>: CUTLASS MX-FP4 on SM_120 achieves 1076.5 TFLOPS = 100.6% theoretical efficiency <span class="cite">[S9/case_136]</span>.</p>
+<h3 class="sub-title" id="14-4-2-deepgemm-nvlink-barrier-to-pcie-path">14.4.2 DeepGeMM: NVLink Barrier to PCIe Path</h3>
+<p>DeepGeMM's multi-GPU synchronization uses <code>red.release.sys.global.add</code> for NVLink-based barriers:</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Operation</th>
+<th style="text-align: center;">SM_100 (NVLink)</th>
+<th style="text-align: center;">SM_120 (PCIe)</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>red.release.sys</code></td>
+<td style="text-align: center;">~200 cyc [SPECULATIVE]</td>
+<td style="text-align: center;">947 cyc</td>
+<td>Use NCCL for collective communication</td>
+</tr>
+<tr>
+<td><code>red.release.gpu</code></td>
+<td style="text-align: center;">~150 cyc [SPECULATIVE]</td>
+<td style="text-align: center;">521 cyc</td>
+<td>Acceptable for intra-node</td>
+</tr>
+</tbody>
+</table></div>
+<aside class="callout callout-info">
+<p><strong>[SPECULATIVE] note on SM_100 NVLink barrier costs (m-17 RESOLVED 2026-06-11)</strong>: SM_100 hardware was <strong>not available</strong> for direct measurement — all <span class="cite">[S18/case_2,4,7]</span> cross-generation cases reported ⚠️ Anomaly/Unsupported. The <code>~200 cyc</code> (<code>red.release.sys</code>) and <code>~150 cyc</code> (<code>red.release.gpu</code>) values above are <strong>estimates derived from published B200 documentation</strong>, not first-party measurements. Apply the same <code>[SPECULATIVE]</code> treatment to all SM_100 NVLink-related numerics in §14.4 / §14.5 unless explicitly cited to an S18 PASS case. Confidence: <strong>M</strong> (B200 docs are authoritative for B200, but PCIe-path SM_120 may behave differently than NVLink-path SM_100 in ways not captured by static doc values).
+| Grid sync (L2 atomic) | 224 ns O(1) | 224 ns O(1) | Works identically <span class="cite">[S8/case_131]</span> |
+| Tile scheduler (work-stealing) | atomic pattern | atomic pattern | Works identically <span class="cite">[S19/case_38]</span> |</p>
+</aside>
+<p><strong>Porting recommendation</strong>: Replace custom AllReduce with NCCL (35.2 GB/s vs 2.4 GB/s custom) <span class="cite">[S17/case_14-15]</span>. Grid sync and tile scheduling patterns port without modification.</p>
+<h3 class="sub-title" id="14-4-3-flashinfer-mla-unicast-dsmem-pattern">14.4.3 FlashInfer MLA: Unicast + DSMEM Pattern</h3>
+<p>FlashInfer on SM_120 uses a unicast + DSMEM pattern that avoids the broken multicast:</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Component</th>
+<th>Implementation</th>
+<th style="text-align: center;">Performance</th>
+<th>Source</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>A-tile load</td>
+<td>Per-CTA TMA unicast</td>
+<td style="text-align: center;">479 cyc/1D tile</td>
+<td><code>S10/case_1</code></td>
+</tr>
+<tr>
+<td>Cross-CTA sharing</td>
+<td>DSMEM redistribution</td>
+<td style="text-align: center;">220 cyc/read</td>
+<td><code>S16/case_3</code></td>
+</tr>
+<tr>
+<td>MMA engine</td>
+<td>OMMA.SF m16n8k64 (NVFP4)</td>
+<td style="text-align: center;">28.86 cyc/mma</td>
+<td><code>S9/case_165</code></td>
+</tr>
+<tr>
+<td>Pipeline depth</td>
+<td>4.0 stages</td>
+<td style="text-align: center;">Optimal for this tile size</td>
+<td><code>S9/case_165</code></td>
+</tr>
+<tr>
+<td>Intra-CTA sync</td>
+<td>Named barriers (not mbarrier)</td>
+<td style="text-align: center;">15 cyc (vs 211 cyc mbarrier)</td>
+<td><code>S23/case_38</code></td>
+</tr>
+</tbody>
+</table></div>
+<hr>
+<h2 class="ch-title" id="14-5-new-capabilities-available-on-sm_120">14.5 New Capabilities Available on SM_120</h2>
+<p>While SM_120 lacks some SM_100 features, it gains or retains other capabilities:</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Feature</th>
+<th style="text-align: center;">Status on SM_120</th>
+<th>Notes</th>
+<th>Source</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>MX-FP4 (MXFP4) block-scale MMA</td>
+<td style="text-align: center;">Full support via OMMA.SF</td>
+<td>Zero overhead vs dense MMA</td>
+<td><code>S9/case_55</code></td>
+</tr>
+<tr>
+<td>NVFP4 (E2M1x2) conversion</td>
+<td style="text-align: center;">Supported (<code>cvt.e2m1x2</code>)</td>
+<td>B8 destination encoding</td>
+<td><code>S6/case_49</code></td>
+</tr>
+<tr>
+<td>FP6 (E3M2, E2M3) MMA</td>
+<td style="text-align: center;">Supported via QMMA</td>
+<td>Same 15.88 cyc throughput</td>
+<td><code>S9/case_45</code></td>
+</tr>
+<tr>
+<td>2:4 Structured sparsity</td>
+<td style="text-align: center;">Full support with <code>::ordered_metadata</code></td>
+<td>2.00x exact gain</td>
+<td><code>S9/case_81</code></td>
+</tr>
+<tr>
+<td>Sparse MX-FP4</td>
+<td style="text-align: center;">Supported (CUTLASS)</td>
+<td>1318 TFLOPS peak</td>
+<td><code>S9/case_140</code></td>
+</tr>
+<tr>
+<td>TMA 1D/2D/3D</td>
+<td style="text-align: center;">Fully functional (unicast)</td>
+<td>479 cyc/1D, 567-2486 cyc/2D</td>
+<td><code>S10/case_1</code></td>
+</tr>
+<tr>
+<td><code>setmaxnreg</code> (compute_120a)</td>
+<td style="text-align: center;">Supported with -arch flag</td>
+<td>60 cyc one-time cost</td>
+<td><code>S12/case_13</code></td>
+</tr>
+<tr>
+<td><code>discard.global.L2</code></td>
+<td style="text-align: center;">Supported (immediate L1 eviction)</td>
+<td>L2 entry preserved</td>
+<td>PSM: discard-global-l2</td>
+</tr>
+<tr>
+<td><code>st.bulk.weak.shared::cta</code></td>
+<td style="text-align: center;">Supported</td>
+<td>533-6322x faster than memset</td>
+<td><code>S8/case_132</code></td>
+</tr>
+<tr>
+<td>Cluster (up to 8 CTAs)</td>
+<td style="text-align: center;">Supported (portable)</td>
+<td>Relaxed arrive: 85 cyc</td>
+<td><code>S7/case_53</code></td>
+</tr>
+<tr>
+<td>CUDA Graphs</td>
+<td style="text-align: center;">Full support</td>
+<td>1.67x for 10-kernel pipeline</td>
+<td><code>S14/case_14</code></td>
+</tr>
+</tbody>
+</table></div>
+<hr>
+<h2 class="ch-title" id="14-6-format-specific-porting-notes">14.6 Format-Specific Porting Notes</h2>
+<h3 class="sub-title" id="14-6-1-fp8-e4m3-e5m2">14.6.1 FP8 (E4M3, E5M2)</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Aspect</th>
+<th>SM_100</th>
+<th>SM_120</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>MMA instruction</td>
+<td><code>wgmma.mma_async</code> FP8</td>
+<td><code>mma.sync</code> QMMA.16832</td>
+<td>Same 15.88 cyc throughput</td>
+</tr>
+<tr>
+<td>Conversion</td>
+<td><code>cvt</code> with all rounding modes</td>
+<td><code>.rn</code> only (no <code>.rs</code> stochastic)</td>
+<td>Must handle rounding in software if needed</td>
+</tr>
+<tr>
+<td>Accumulator</td>
+<td>FP32</td>
+<td>FP32</td>
+<td>Identical</td>
+</tr>
+<tr>
+<td>Peak TFLOPS</td>
+<td>Higher (more SMs)</td>
+<td>529 TFLOPS [CALCULATED]</td>
+<td>Per-SM equivalent</td>
+</tr>
+</tbody>
+</table></div>
+<h3 class="sub-title" id="14-6-2-mx-fp4-nvfp4-e2m1">14.6.2 MX-FP4 / NVFP4 (E2M1)</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Aspect</th>
+<th>SM_100</th>
+<th>SM_120</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>MMA instruction</td>
+<td>QMMA via wgmma</td>
+<td>OMMA.SF m16n8k64</td>
+<td>Block-scale uses OMMA.SF (not QMMA.SF) [PSM: fp4-block-scale]</td>
+</tr>
+<tr>
+<td>Block scale factors</td>
+<td>Via TM direct feed</td>
+<td>Via smem + ldmatrix</td>
+<td>SF TMA load: 560 cyc (L2-served, hidden behind MMA) <span class="cite">[S9/case_167]</span></td>
+</tr>
+<tr>
+<td>Scale factor layout</td>
+<td>Swizzled in TM</td>
+<td>Swizzled or linear in smem</td>
+<td>Zero delta: SF loads hidden behind MMA <span class="cite">[S9/case_168]</span></td>
+</tr>
+<tr>
+<td>TMA for sub-byte tiles</td>
+<td>Direct</td>
+<td>CUDA_ERROR_INVALID_VALUE</td>
+<td>Must pack FP4 into byte containers before TMA <span class="cite">[S10/case_116]</span></td>
+</tr>
+<tr>
+<td>Peak TFLOPS</td>
+<td>Higher (more SMs)</td>
+<td>1069 TFLOPS [CALCULATED]</td>
+<td>100.6% achieved via CUTLASS <span class="cite">[S9/case_136]</span></td>
+</tr>
+</tbody>
+</table></div>
+<h3 class="sub-title" id="14-6-3-int8int4">14.6.3 INT8/INT4</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Aspect</th>
+<th>SM_100</th>
+<th>SM_120</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>INT8 MMA</td>
+<td><code>wgmma</code> INT8</td>
+<td><code>mma.sync</code> IMMA.16832</td>
+<td>6.55 cyc throughput, ILP&gt;=4 <span class="cite">[S9/case_101]</span></td>
+</tr>
+<tr>
+<td>INT4 MMA</td>
+<td>Native (if available)</td>
+<td>Emulated (24x cost)</td>
+<td>Use FP4 E2M1 QMMA instead <span class="cite">[S9/case_79]</span></td>
+</tr>
+<tr>
+<td>INT8 peak</td>
+<td>--</td>
+<td>526 TFLOPS</td>
+<td>[CALCULATED]</td>
+</tr>
+</tbody>
+</table></div>
+<hr>
+<h2 class="ch-title" id="14-7-synchronization-porting">14.7 Synchronization Porting</h2>
+<h3 class="sub-title" id="14-7-1-barrier-selection-guide">14.7.1 Barrier Selection Guide</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Use Case</th>
+<th>SM_100 Approach</th>
+<th>SM_120 Recommendation</th>
+<th style="text-align: center;">Cost Comparison</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Intra-CTA warp sync</td>
+<td>mbarrier</td>
+<td>Named barrier</td>
+<td style="text-align: center;">15 vs 211 cyc (14x cheaper) <span class="cite">[S23/case_38]</span></td>
+</tr>
+<tr>
+<td>TMA completion tracking</td>
+<td>mbarrier.expect_tx</td>
+<td>mbarrier.expect_tx (same)</td>
+<td style="text-align: center;">34 cyc <span class="cite">[S7/case_48]</span></td>
+</tr>
+<tr>
+<td>Cross-CTA sync</td>
+<td>barrier.cluster (full)</td>
+<td>barrier.cluster (relaxed)</td>
+<td style="text-align: center;">85 vs 371 cyc (4.4x cheaper) <span class="cite">[S7/case_53]</span></td>
+</tr>
+<tr>
+<td>Producer-consumer</td>
+<td>mbarrier phase</td>
+<td>Named barrier phase</td>
+<td style="text-align: center;">15 vs 58-59 cyc <span class="cite">[S23/case_1,38]</span></td>
+</tr>
+<tr>
+<td>Grid-level</td>
+<td>grid.sync()</td>
+<td>grid.sync() (same)</td>
+<td style="text-align: center;">1242 cyc constant <span class="cite">[S8/case_131]</span></td>
+</tr>
+</tbody>
+</table></div>
+<h3 class="sub-title" id="14-7-2-fence-scope-porting">14.7.2 Fence Scope Porting</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Fence</th>
+<th style="text-align: center;">SM_100 Cost</th>
+<th style="text-align: center;">SM_120 Cost</th>
+<th>Porting Note</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>fence.acq_rel.cta</code></td>
+<td style="text-align: center;">Similar</td>
+<td style="text-align: center;">7 cyc</td>
+<td>Preferred for CTA-local data <span class="cite">[S8/case_64]</span></td>
+</tr>
+<tr>
+<td><code>fence.acq_rel.gpu</code></td>
+<td style="text-align: center;">Similar</td>
+<td style="text-align: center;">285 cyc</td>
+<td>Use only for cross-CTA shared state <span class="cite">[S8/case_65]</span></td>
+</tr>
+<tr>
+<td><code>fence.acq_rel.sys</code></td>
+<td style="text-align: center;">~200 cyc (NVLink) [SPECULATIVE; see §14.4.2 footnote]</td>
+<td style="text-align: center;">920 cyc (PCIe)</td>
+<td>4.6x more expensive; minimize usage <span class="cite">[S8/case_66]</span></td>
+</tr>
+<tr>
+<td><code>fence.proxy.async</code> (cta)</td>
+<td style="text-align: center;">Similar</td>
+<td style="text-align: center;">7 cyc</td>
+<td>Use CTA scope whenever possible <span class="cite">[S8/case_123]</span></td>
+</tr>
+<tr>
+<td><code>fence.proxy.async</code> (global)</td>
+<td style="text-align: center;">Similar</td>
+<td style="text-align: center;">163 cyc</td>
+<td>23x more expensive than CTA scope <span class="cite">[S8/case_68]</span></td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Critical rule</strong>: Always prefer CTA-scope fences (7 cyc) over GPU-scope (285 cyc) when data is CTA-local. This provides 40.7x savings <span class="cite">[S8/case_64-65]</span>. On SM_120, the sys-scope penalty is far larger than on NVLink-equipped SM_100 due to the PCIe interconnect.</p>
+<hr>
+<h2 class="ch-title" id="14-8-multi-gpu-communication-porting">14.8 Multi-GPU Communication Porting</h2>
+<p>The SM_120 (RTX PRO 5000) uses PCIe 5.0 x16 interconnect, unlike SM_100 (B200) which has NVLink. This fundamentally changes multi-GPU kernel design:</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Communication Pattern</th>
+<th style="text-align: center;">SM_100 (NVLink)</th>
+<th style="text-align: center;">SM_120 (PCIe)</th>
+<th>Recommended Approach</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>AllReduce</td>
+<td style="text-align: center;">~900 GB/s</td>
+<td style="text-align: center;">35.2 GB/s (NCCL)</td>
+<td>Use NCCL; avoid custom <span class="cite">[S17/case_14]</span></td>
+</tr>
+<tr>
+<td>Point-to-point</td>
+<td style="text-align: center;">~900 GB/s</td>
+<td style="text-align: center;">53 GB/s (raw P2P memcpy)</td>
+<td>P2P preferred over collective <span class="cite">[S15/case_1]</span></td>
+</tr>
+<tr>
+<td>AllToAll (MoE)</td>
+<td style="text-align: center;">NVLink-bounded</td>
+<td style="text-align: center;">53 GB/s via raw P2P</td>
+<td>MoE expert parallelism viable <span class="cite">[S17/case_16]</span></td>
+</tr>
+<tr>
+<td>Cross-NUMA P2P</td>
+<td style="text-align: center;">N/A</td>
+<td style="text-align: center;">41 GB/s (24% penalty)</td>
+<td>Pin experts to same NUMA node</td>
+</tr>
+<tr>
+<td>Custom AllReduce</td>
+<td style="text-align: center;">Beneficial</td>
+<td style="text-align: center;">2.4 GB/s (14x worse than NCCL)</td>
+<td>Never use custom AllReduce <span class="cite">[S17/case_15]</span></td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Porting implication</strong>: Replace tensor parallelism (AllReduce-heavy) with pipeline parallelism or expert parallelism (point-to-point routing). The inter-stage latency for pipeline parallelism is 544 ns (min), 1376 ns (median) via griddepcontrol <span class="cite">[S17/case_9]</span>.</p>
+<hr>
+<h2 class="ch-title" id="14-9-compiler-and-build-system-changes">14.9 Compiler and Build System Changes</h2>
+<h3 class="sub-title" id="14-9-1-compilation-flags">14.9.1 Compilation Flags</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Flag</th>
+<th>SM_100</th>
+<th>SM_120</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Architecture</td>
+<td><code>-arch=sm_100</code> or <code>-arch=sm_100a</code></td>
+<td><code>-arch=sm_120</code> or <code>-arch=sm_120a</code></td>
+<td><code>compute_120a</code> needed for setmaxnreg</td>
+</tr>
+<tr>
+<td>Shared memory</td>
+<td><code>-maxrregcount</code></td>
+<td>Same</td>
+<td>Floor at 24 regs enforced by ptxas <span class="cite">[S21/case_111]</span></td>
+</tr>
+<tr>
+<td>Fast math</td>
+<td><code>--use_fast_math</code></td>
+<td><code>--use_fast_math</code></td>
+<td>3.95-11.3x SFU speedup preserved <span class="cite">[S5/case_84-92]</span></td>
+</tr>
+</tbody>
+</table></div>
+<h3 class="sub-title" id="14-9-2-ptx-differences">14.9.2 PTX Differences</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>PTX Feature</th>
+<th>SM_100</th>
+<th>SM_120</th>
+<th>Action Required</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>wgmma.mma_async</code></td>
+<td>Available</td>
+<td>REJECTED</td>
+<td>Replace with <code>mma.sync.aligned</code></td>
+</tr>
+<tr>
+<td><code>tcgen05.*</code></td>
+<td>Available</td>
+<td>REJECTED</td>
+<td>Remove entirely</td>
+</tr>
+<tr>
+<td><code>cp.async.bulk.tensor</code> (multicast)</td>
+<td>Functional</td>
+<td>Non-functional (SW fallback)</td>
+<td>Use unicast only</td>
+</tr>
+<tr>
+<td><code>cvt.rn.satfinite</code></td>
+<td>Optional <code>.rs</code></td>
+<td><code>.rn</code> only</td>
+<td>Remove <code>.rs</code> rounding mode</td>
+</tr>
+<tr>
+<td><code>setmaxnreg</code></td>
+<td>base sm_100</td>
+<td>Requires <code>compute_120a</code></td>
+<td>Add <code>-gencode arch=compute_120a</code></td>
+</tr>
+<tr>
+<td><code>mma.sync.aligned.m16n8k*</code></td>
+<td>Available</td>
+<td>Available (primary TC path)</td>
+<td>Use as main TC instruction</td>
+</tr>
+</tbody>
+</table></div>
+<hr>
+<h2 class="ch-title" id="14-10-performance-expectations-after-porting">14.10 Performance Expectations After Porting</h2>
+<p>When correctly ported, SM_120 kernels should achieve the following efficiency levels relative to theoretical peak:</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Workload</th>
+<th style="text-align: center;">Efficiency Target</th>
+<th style="text-align: center;">Measured Reference</th>
+<th>Source</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>GEMM FP16 (large M,N,K)</td>
+<td style="text-align: center;"><strong>96.6%</strong> of cuBLAS measured chip peak (271 TFLOPS, <span class="cite">[S18/case_3]</span>); equivalently 89.4% of theoretical chip peak (293 TFLOPS, AppB §B.15 fp16_tensor_theoretical)</td>
+<td style="text-align: center;">261.8 TFLOPS (cuBLAS sustained, <span class="cite">[S19/case_25]</span>)</td>
+<td><code>S19/case_25</code></td>
+</tr>
+<tr>
+<td>GEMM MX-FP4 (CUTLASS)</td>
+<td style="text-align: center;">&gt;95%</td>
+<td style="text-align: center;">1076.5 TFLOPS (100.6%)</td>
+<td><code>S9/case_136</code></td>
+</tr>
+<tr>
+<td>GEMM FP8 (large)</td>
+<td style="text-align: center;">70-75%</td>
+<td style="text-align: center;">--</td>
+<td>[CALCULATED from FP16 ratio]</td>
+</tr>
+<tr>
+<td>GEMV FP16 (M=1)</td>
+<td style="text-align: center;">&gt;85% BW utilization</td>
+<td style="text-align: center;">1231 GB/s (95.9% of 1283 GB/s operational ceiling / 91.6% of 1344 GB/s spec); the earlier <code>(98%)</code> annotation was a stale label that did not match any defined baseline</td>
+<td><code>S19/case_17</code></td>
+</tr>
+<tr>
+<td>FlashAttention FP16</td>
+<td style="text-align: center;">46% of TC peak</td>
+<td style="text-align: center;">125 TFLOPS</td>
+<td><code>S19/case_62</code></td>
+</tr>
+<tr>
+<td>Grouped GEMM MX-FP4</td>
+<td style="text-align: center;">&gt;90%</td>
+<td style="text-align: center;">1036.4 TFLOPS (96.9%)</td>
+<td><code>S9/case_144</code></td>
+</tr>
+</tbody>
+</table></div>
+<h3 class="sub-title" id="porting-checklist-summary">Porting Checklist Summary</h3>
+<ol>
+<li>Remove all <code>wgmma</code>/<code>tcgen05</code> instructions; replace with <code>mma.sync.aligned</code>.</li>
+<li>Replace TM operand feed with <code>ldmatrix.sync.aligned.x4</code> + XOR-swizzle.</li>
+<li>Remove multicast; set ClusterShape&lt;1,1,1&gt; or use unicast+DSMEM.</li>
+<li>Switch from warp specialization to all-compute paradigm.</li>
+<li>Limit pipeline depth to 3 stages (99 KB smem constraint).</li>
+<li>Replace <code>cvt.rs</code> with <code>cvt.rn</code>; handle stochastic rounding in software if needed.</li>
+<li>Add <code>-gencode arch=compute_120a</code> if using <code>setmaxnreg</code>.</li>
+<li>Replace custom AllReduce with NCCL; prefer P2P for MoE routing.</li>
+<li>Replace mbarrier-based intra-CTA sync with named barriers (14x cheaper).</li>
+<li>Minimize GPU-scope and sys-scope fences; prefer CTA-scope (40.7x cheaper).</li>
+</ol>
+
+<footer class="page-footer">
+<div class="foot-grid">
+<div><strong>SM_120 / GB202 Blackwell</strong> · Microarchitecture Analysis &amp; Reference · 2026</div>
+<div>1542 microbenchmark cases · 26 sections · ~13,400 lines</div>
+<div class="foot-accent">RTX PRO 5000 72GB · CUDA 13.3 · Data source: test_results/SM_120/</div>
+</div>
+</footer>
+
+</main>
+<aside class="toc-right">
+<h4>Chapter Navigation</h4>
+<a href="#14-1-feature-mapping-table">14.1 Feature Mapping Table</a>
+<a href="#14-2-hard-constraints-compilation-or-launch-failures">14.2 Hard Constraints (Compilation or Launch Failures)</a>
+<a href="#14-3-architectural-differences-in-data-path">14.3 Architectural Differences in Data Path</a>
+<a class="sub" href="#14-3-1-gemm-critical-path-comparison">14.3.1 GEMM Critical Path Comparison</a>
+<a class="sub" href="#14-3-2-instruction-count-explosion">14.3.2 Instruction Count Explosion</a>
+<a href="#14-4-porting-case-studies">14.4 Porting Case Studies</a>
+<a class="sub" href="#14-4-1-cutlass-sm100_gemm_tma_warpspecialized-to-sm120_gemm_tma_cooperative">14.4.1 CUTLASS: sm100_gemm_tma_warpspecialized to sm120_gemm_tma_cooperative</a>
+<a class="sub" href="#14-4-2-deepgemm-nvlink-barrier-to-pcie-path">14.4.2 DeepGeMM: NVLink Barrier to PCIe Path</a>
+<a class="sub" href="#14-4-3-flashinfer-mla-unicast-dsmem-pattern">14.4.3 FlashInfer MLA: Unicast + DSMEM Pattern</a>
+<a href="#14-5-new-capabilities-available-on-sm_120">14.5 New Capabilities Available on SM_120</a>
+<a href="#14-6-format-specific-porting-notes">14.6 Format-Specific Porting Notes</a>
+<a class="sub" href="#14-6-1-fp8-e4m3-e5m2">14.6.1 FP8 (E4M3, E5M2)</a>
+<a class="sub" href="#14-6-2-mx-fp4-nvfp4-e2m1">14.6.2 MX-FP4 / NVFP4 (E2M1)</a>
+<a class="sub" href="#14-6-3-int8int4">14.6.3 INT8/INT4</a>
+<a href="#14-7-synchronization-porting">14.7 Synchronization Porting</a>
+<a class="sub" href="#14-7-1-barrier-selection-guide">14.7.1 Barrier Selection Guide</a>
+<a class="sub" href="#14-7-2-fence-scope-porting">14.7.2 Fence Scope Porting</a>
+<a href="#14-8-multi-gpu-communication-porting">14.8 Multi-GPU Communication Porting</a>
+<a href="#14-9-compiler-and-build-system-changes">14.9 Compiler and Build System Changes</a>
+<a class="sub" href="#14-9-1-compilation-flags">14.9.1 Compilation Flags</a>
+<a class="sub" href="#14-9-2-ptx-differences">14.9.2 PTX Differences</a>
+<a href="#14-10-performance-expectations-after-porting">14.10 Performance Expectations After Porting</a>
+<a class="sub" href="#porting-checklist-summary">Porting Checklist Summary</a>
+</aside>
+</div>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" integrity="sha384-7zkQWkzuo3B5mTepMUcHkMB5jZaolc2xDwL6VFqjFALcbeS9Ggm/Yr2r3Dy4lfFg" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" integrity="sha384-43gviWU0YVjaDtb/GhzOouOXtZMP/7XUzwPTstBeZFe/+rCMvRwr4yROQP43s0Xk" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/lib/highlight.min.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  if (window.renderMathInElement) {
+    renderMathInElement(document.body, {
+      delimiters: [
+        {left: "$$", right: "$$", display: true},
+        {left: "$", right: "$", display: false}
+      ],
+      throwOnError: false
+    });
+  }
+  if (window.hljs) {
+    document.querySelectorAll("pre code[class^='language-']").forEach(function(el) {
+      try { hljs.highlightElement(el); } catch (e) {}
+    });
+  }
+});
+</script>
+<script src="assets/js/toc.js" defer></script>
+</body>
+</html>

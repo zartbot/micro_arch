@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 140" role="img"
+     aria-label="KI-2.2: XOR hash eliminates stride-dependent L2 conflicts — uniform 370 cyc across all strides">
+  <defs><style><![CDATA[
+    .ttl{font:600 13px "Fraunces",serif;fill:#0b1220}.lbl{font:600 11px "JetBrains Mono",monospace;fill:#2a3548}.lbl-sm{font:500 10px "JetBrains Mono",monospace;fill:#5b6679}.num{font:700 15px "JetBrains Mono",monospace}.stage{font:600 10px "JetBrains Mono",monospace;fill:#fff}
+  ]]></style></defs>
+  <rect width="1080" height="140" fill="#ffffff"/>
+  <text x="36" y="22" class="ttl">KI-2.2: L2 XOR Hash — Prior Modular (stride-dependent conflicts) vs SM_120 XOR (uniform distribution)</text>
+  <g transform="translate(36,38)">
+    <rect width="480" height="80" rx="8" fill="#FEF2F2" stroke="#DC2626" stroke-width="1"/>
+    <text x="15" y="20" class="lbl" fill="#DC2626">Prior: Modular Indexing</text>
+    <text x="15" y="40" class="lbl-sm">stride = N × line_size → ALL map to same set</text>
+    <text x="15" y="56" class="lbl-sm">→ Pathological conflict misses at power-of-2 strides</text>
+    <text x="15" y="72" class="num" fill="#DC2626">Stride-dependent cliffs</text>
+  </g>
+  <g transform="translate(540,38)">
+    <rect width="500" height="80" rx="8" fill="#F0FDF4" stroke="#059669" stroke-width="1"/>
+    <text x="15" y="20" class="lbl" fill="#065F46">SM_120: XOR-Hashed Indexing</text>
+    <text x="15" y="40" class="lbl-sm">hash = raw XOR (raw≫K) XOR (raw≫2K) → uniform distribution</text>
+    <text x="15" y="56" class="lbl-sm">→ ANY stride produces uniform set spread (measured: 370 cyc all)</text>
+    <text x="15" y="72" class="num" fill="#059669">Zero stride-dependent conflict</text>
+  </g>
+</svg>

@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 440" role="img"
+     aria-label="Operand delivery 3-tier model on SM_120 — RFC hit / RF mixed / RF same-parity, plus ALU vs TC pipeline differentiation">
+  <defs>
+    <linearGradient id="t1G" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#D1FAE5"/><stop offset="1" stop-color="#ECFDF5"/>
+    </linearGradient>
+    <linearGradient id="t2G" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#E0E7FF"/><stop offset="1" stop-color="#EEF2FF"/>
+    </linearGradient>
+    <linearGradient id="t3G" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFE4E6"/><stop offset="1" stop-color="#FFF1F2"/>
+    </linearGradient>
+    <linearGradient id="aluG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#EDE7FB"/><stop offset="1" stop-color="#F5F1FF"/>
+    </linearGradient>
+    <linearGradient id="tcG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fee2e2"/><stop offset="1" stop-color="#fef2f2"/>
+    </linearGradient>
+    <style><![CDATA[
+      .ttl{font:600 14px "Fraunces",serif;fill:#0b1220}
+      .sub{font:italic 11px "Fraunces",serif;fill:#5b6679}
+      .lbl{font:600 11px "JetBrains Mono",monospace;fill:#2a3548}
+      .lbl-sm{font:500 10px "JetBrains Mono",monospace;fill:#5b6679}
+      .tierT{font:700 12px "Fraunces",serif}
+      .num{font:700 18px "Fraunces",serif}
+      .pipeT{font:700 12px "Fraunces",serif}
+    ]]></style>
+  </defs>
+  <rect width="1080" height="440" fill="#fcfbf6"/>
+  <text x="36" y="32" class="ttl">Operand Delivery — 3-Tier Model · ptxas Picks Tier via Parity + .reuse</text>
+  <text x="36" y="52" class="sub">SM_120 RF has only 2 banks (R%2 parity) · RFC overlay provides a faster path · ptxas actively selects the tier rather than relying on HW fallback</text>
+
+  <!-- Three tier columns -->
+  <g transform="translate(36,84)">
+    <!-- Tier 1 -->
+    <g>
+      <rect x="0" y="0" width="330" height="180" rx="8" fill="url(#t1G)" stroke="#16a34a" stroke-width="1"/>
+      <text x="16" y="22" class="tierT" fill="#16a34a">Tier 1 · RFC Hit</text>
+      <text x="16" y="40" class="lbl-sm" fill="#16a34a">.reuse set · ≥24 entries cache</text>
+
+      <text x="16" y="78" class="num" fill="#16a34a">1.34 <tspan font-size="11">cyc/FFMA</tspan></text>
+
+      <g transform="translate(16,98)">
+        <text x="0" y="0" class="lbl-sm" fill="#16a34a">→ operand read from RFC, 0 cyc</text>
+        <text x="0" y="14" class="lbl-sm" fill="#16a34a">→ bypasses RF read ports entirely</text>
+        <text x="0" y="28" class="lbl-sm" fill="#16a34a">→ ptxas default in ILP-rich code</text>
+      </g>
+
+      <text x="16" y="160" class="lbl" fill="#16a34a">+85% vs Tier 2 (ILP=8)</text>
+    </g>
+
+    <!-- Tier 2 -->
+    <g transform="translate(346,0)">
+      <rect width="330" height="180" rx="8" fill="url(#t2G)" stroke="#1e40af" stroke-width="1"/>
+      <text x="16" y="22" class="tierT" fill="#1e40af">Tier 2 · RF, Mixed Parity</text>
+      <text x="16" y="40" class="lbl-sm" fill="#1e40af">3-src across even+odd · 1 OC cycle</text>
+
+      <text x="16" y="78" class="num" fill="#1e40af">2.04 <tspan font-size="11">cyc/FFMA</tspan></text>
+
+      <g transform="translate(16,98)">
+        <text x="0" y="0" class="lbl-sm" fill="#1e40af">→ R4(E) R5(O) R6(E) → 1 cyc</text>
+        <text x="0" y="14" class="lbl-sm" fill="#1e40af">→ 2 ports serve 3 operands</text>
+        <text x="0" y="28" class="lbl-sm" fill="#1e40af">→ ptxas falls here when RFC unavail</text>
+      </g>
+
+      <text x="16" y="160" class="lbl" fill="#1e40af">baseline (no conflict, no RFC)</text>
+    </g>
+
+    <!-- Tier 3 -->
+    <g transform="translate(692,0)">
+      <rect width="316" height="180" rx="8" fill="url(#t3G)" stroke="#9f1239" stroke-width="1"/>
+      <text x="16" y="22" class="tierT" fill="#9f1239">Tier 3 · RF, Same Parity</text>
+      <text x="16" y="40" class="lbl-sm" fill="#9f1239">3-src all even (or all odd) · ⌈3/2⌉=2 cyc</text>
+
+      <text x="16" y="78" class="num" fill="#9f1239">3.03 <tspan font-size="11">cyc/FFMA</tspan></text>
+
+      <g transform="translate(16,98)">
+        <text x="0" y="0" class="lbl-sm" fill="#9f1239">→ R4 R8 R12 (all even) → 2 cyc</text>
+        <text x="0" y="14" class="lbl-sm" fill="#9f1239">→ OC serializes the reads</text>
+        <text x="0" y="28" class="lbl-sm" fill="#9f1239">→ ptxas never produces this pattern</text>
+      </g>
+
+      <text x="16" y="160" class="lbl" fill="#9f1239">+1.0 cyc penalty (CuAsm only)</text>
+    </g>
+  </g>
+
+  <!-- Pipeline differentiation -->
+  <text x="36" y="298" class="ttl" font-size="13">ALU vs TC Pipes Interpret the Same .reuse Field Differently</text>
+  <text x="36" y="316" class="sub">Same bits [60:58], but only the ALU path consults RFC · TC has its own operand fetch network</text>
+
+  <g transform="translate(36,330)">
+    <!-- ALU pipe -->
+    <g>
+      <rect x="0" y="0" width="500" height="90" rx="8" fill="url(#aluG)" stroke="#6d28d9" stroke-width="1"/>
+      <text x="16" y="22" class="pipeT" fill="#5b21b6">ALU Pipes (FFMA / FADD / IMAD)</text>
+      <text x="16" y="40" class="lbl-sm" fill="#5b21b6">ptxas sets .reuse=101 (cache src0+src2) · hits RFC</text>
+      <text x="16" y="58" class="lbl" fill="#16a34a">.reuse functionally active → +85% throughput at ILP=8</text>
+      <text x="16" y="76" class="lbl-sm" fill="#5b21b6">[source: S11/case_155, S12/case_1]</text>
+    </g>
+
+    <!-- TC pipe -->
+    <g transform="translate(516,0)">
+      <rect width="492" height="90" rx="8" fill="url(#tcG)" stroke="#9f1239" stroke-width="1"/>
+      <text x="16" y="22" class="pipeT" fill="#9f1239">TC Pipes (HMMA / QMMA / OMMA.SF)</text>
+      <text x="16" y="40" class="lbl-sm" fill="#9f1239">ptxas never sets it (456 HMMA all 000) · TC bypasses RFC</text>
+      <text x="16" y="58" class="lbl" fill="#9f1239">forced .reuse=111 → 0% delta (HW ignores)</text>
+      <text x="16" y="76" class="lbl-sm" fill="#9f1239">[source: S21/case_78 retest]</text>
+    </g>
+  </g>
+</svg>

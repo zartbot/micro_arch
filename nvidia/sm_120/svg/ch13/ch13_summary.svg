@@ -1,0 +1,421 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 1120" role="img"
+     aria-label="Chapter 13 summary: Unified Performance Model — Roofline + Multi-Resource Bottleneck + Worked Examples">
+  <defs>
+    <style><![CDATA[
+      .eyebrow{font:600 11px "JetBrains Mono",monospace;letter-spacing:0.16em;text-transform:uppercase}
+      .title  {font:500 26px "Fraunces",serif;fill:#0b1220;letter-spacing:-0.02em}
+      .sub    {font:italic 13px "Fraunces",serif;fill:#5b6679}
+      .ttl    {font:600 13px "JetBrains Mono",monospace;letter-spacing:0.06em}
+      .lbl-sm {font:500 10px "JetBrains Mono",monospace;fill:#5b6679;letter-spacing:0.06em;text-transform:uppercase}
+      .kpi-val{font:600 22px "Fraunces",serif;fill:#0b1220;letter-spacing:-0.01em}
+      .kpi-md {font:600 17px "Fraunces",serif;fill:#0b1220}
+      .data   {font:500 10px "JetBrains Mono",monospace;fill:#2a3548}
+      .data-b {font:600 11px "JetBrains Mono",monospace;fill:#0b1220}
+      .insight{font:500 13px "IBM Plex Sans",sans-serif;fill:#2a3548}
+      .eq     {font:italic 600 12px "JetBrains Mono",monospace;fill:#e11d48}
+      .pipe-lbl{font:600 9px "JetBrains Mono",monospace;fill:#fff;letter-spacing:0.05em;text-transform:uppercase}
+      .mem-lbl{font:500 10px "JetBrains Mono",monospace;fill:#0b1220}
+      .mem-val{font:600 11px "JetBrains Mono",monospace;fill:#e11d48}
+    ]]></style>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1080" height="1120" fill="#fcfbf6"/>
+
+  <!-- ═══ HEADER ═══ -->
+  <g transform="translate(36,32)">
+    <rect x="0" y="0" width="3" height="68" fill="#e11d48"/>
+    <text x="16" y="20" class="eyebrow" fill="#e11d48">CHAPTER 13 · SM_120 / GB202 BLACKWELL</text>
+    <text x="16" y="50" class="title">Unified Performance Model</text>
+    <text x="16" y="76" class="sub">Roofline + multi-resource bottleneck framework · 6+1 pipes · 14 co-issue pairs · &lt;20% prediction error</text>
+  </g>
+
+  <!-- ═══ SECTION 1: Core Equation + 7-Pipe Diagram ═══ -->
+  <g transform="translate(36,128)">
+    <!-- Core equation box -->
+    <rect x="0" y="0" width="540" height="110" rx="10" fill="#fff" stroke="#e6e4da"/>
+    <rect x="0" y="0" width="540" height="3" rx="10" fill="#e11d48" opacity="0.8"/>
+    <text x="16" y="24" class="lbl-sm">MODEL TOP-LEVEL EQUATION</text>
+    <text x="16" y="52" class="eq">T_kernel = max(T_compute, T_memory, T_sync)</text>
+    <text x="16" y="72" class="eq">         + T_launch + T_tail</text>
+    <text x="16" y="96" class="data">6 resource pipes + TMA 7th bottleneck · 110 SMs · 4 SMSP/SM · 440 issue slots</text>
+
+    <!-- 7-pipe visualization -->
+    <g transform="translate(560,0)">
+      <rect x="0" y="0" width="456" height="110" rx="10" fill="#fff" stroke="#e6e4da"/>
+      <rect x="0" y="0" width="456" height="3" rx="10" fill="#e11d48" opacity="0.8"/>
+      <text x="16" y="24" class="lbl-sm">7 HARDWARE RESOURCE PIPES</text>
+      <!-- Pipe bars -->
+      <g transform="translate(16,40)">
+        <rect x="0" y="0" width="52" height="22" rx="4" fill="#e11d48"/>
+        <text x="26" y="15" class="pipe-lbl" text-anchor="middle">TC</text>
+        <rect x="58" y="0" width="52" height="22" rx="4" fill="#be123c"/>
+        <text x="84" y="15" class="pipe-lbl" text-anchor="middle">ALU</text>
+        <rect x="116" y="0" width="52" height="22" rx="4" fill="#9f1239"/>
+        <text x="142" y="15" class="pipe-lbl" text-anchor="middle">SFU</text>
+        <rect x="174" y="0" width="52" height="22" rx="4" fill="#881337"/>
+        <text x="200" y="15" class="pipe-lbl" text-anchor="middle">LSU</text>
+        <rect x="232" y="0" width="52" height="22" rx="4" fill="#4c0519"/>
+        <text x="258" y="15" class="pipe-lbl" text-anchor="middle">SMEM</text>
+        <rect x="290" y="0" width="52" height="22" rx="4" fill="#64748b"/>
+        <text x="316" y="15" class="pipe-lbl" text-anchor="middle">SYNC</text>
+        <rect x="352" y="0" width="70" height="22" rx="4" fill="#f59e0b" stroke="#d97706"/>
+        <text x="387" y="15" class="pipe-lbl" text-anchor="middle" fill="#7c2d12">TMA 7th</text>
+      </g>
+      <text x="16" y="84" class="data">T_mix = max(T_pipeA, T_pipeB) × (1 + Σδ_switch)</text>
+      <text x="16" y="100" class="data">TMA: 14.50 B/cyc peak · TC consumes 10× TMA rate @ILP=4</text>
+    </g>
+  </g>
+
+  <!-- ═══ SECTION 2: Roofline Crossover Cards ═══ -->
+  <g transform="translate(36,254)">
+    <text x="0" y="14" class="ttl" fill="#e11d48">ROOFLINE CROSSOVER POINTS (Table 5)</text>
+    <!-- FP16 -->
+    <g transform="translate(0,26)">
+      <rect x="0" y="0" width="155" height="68" rx="8" fill="#fff" stroke="#e6e4da"/>
+      <text x="12" y="18" class="lbl-sm">FP16 / BF16</text>
+      <text x="12" y="44" class="kpi-val">220</text>
+      <text x="80" y="44" class="data">FLOP/byte</text>
+      <text x="12" y="60" class="data">271 TFLOPS</text>
+    </g>
+    <!-- FP8 -->
+    <g transform="translate(166,26)">
+      <rect x="0" y="0" width="155" height="68" rx="8" fill="#fff" stroke="#e6e4da"/>
+      <text x="12" y="18" class="lbl-sm">FP8</text>
+      <text x="12" y="44" class="kpi-val">430</text>
+      <text x="80" y="44" class="data">FLOP/byte</text>
+      <text x="12" y="60" class="data">529 TFLOPS</text>
+    </g>
+    <!-- MXFP4 -->
+    <g transform="translate(332,26)">
+      <rect x="0" y="0" width="155" height="68" rx="8" fill="#fff" stroke="#e6e4da"/>
+      <text x="12" y="18" class="lbl-sm">MX-FP4</text>
+      <text x="12" y="44" class="kpi-val">869</text>
+      <text x="80" y="44" class="data">FLOP/byte</text>
+      <text x="12" y="60" class="data">1069 TFLOPS</text>
+    </g>
+    <!-- INT8 -->
+    <g transform="translate(498,26)">
+      <rect x="0" y="0" width="155" height="68" rx="8" fill="#fff" stroke="#e6e4da"/>
+      <text x="12" y="18" class="lbl-sm">INT8</text>
+      <text x="12" y="44" class="kpi-val">427</text>
+      <text x="80" y="44" class="data">FLOP/byte</text>
+      <text x="12" y="60" class="data">526 TFLOPS</text>
+    </g>
+    <!-- TF32 -->
+    <g transform="translate(664,26)">
+      <rect x="0" y="0" width="155" height="68" rx="8" fill="#fff" stroke="#e6e4da"/>
+      <text x="12" y="18" class="lbl-sm">TF32</text>
+      <text x="12" y="44" class="kpi-val">105</text>
+      <text x="80" y="44" class="data">FLOP/byte</text>
+      <text x="12" y="60" class="data">129 TFLOPS</text>
+    </g>
+    <!-- FP64 -->
+    <g transform="translate(830,26)">
+      <rect x="0" y="0" width="155" height="68" rx="8" fill="#fff" stroke="#e6e4da"/>
+      <text x="12" y="18" class="lbl-sm">FP64 DFMA</text>
+      <text x="12" y="44" class="kpi-val">0.78</text>
+      <text x="80" y="44" class="data">FLOP/byte</text>
+      <text x="12" y="60" class="data">0.96 TFLOPS</text>
+    </g>
+    <!-- BW annotation -->
+    <text x="996" y="108" class="data" text-anchor="end">DRAM BW = 1231 GB/s (12-ch GDDR7)</text>
+  </g>
+
+  <!-- ═══ SECTION 3: Memory Hierarchy Ladder ═══ -->
+  <g transform="translate(36,380)">
+    <rect x="0" y="0" width="490" height="202" rx="10" fill="#fff" stroke="#e6e4da"/>
+    <rect x="0" y="0" width="490" height="3" rx="10" fill="#e11d48" opacity="0.6"/>
+    <text x="16" y="24" class="ttl" fill="#e11d48">MEMORY HIERARCHY (Table 2)</text>
+    <!-- Ladder visualization -->
+    <g transform="translate(16,42)">
+      <!-- SMEM -->
+      <rect x="0" y="0" width="90" height="24" rx="4" fill="#fecdd3"/>
+      <text x="8" y="16" class="mem-lbl">SMEM</text>
+      <text x="100" y="16" class="mem-val">34 cyc</text>
+      <text x="170" y="16" class="data">99 KB · 30.2 B/cyc/warp</text>
+      <!-- L1 -->
+      <rect x="0" y="30" width="120" height="24" rx="4" fill="#fda4af"/>
+      <text x="8" y="46" class="mem-lbl">L1 Cache</text>
+      <text x="130" y="46" class="mem-val">44 cyc</text>
+      <text x="200" y="46" class="data">89 KB · 116.5 B/cyc (1 warp)</text>
+      <!-- L2 -->
+      <rect x="0" y="60" width="260" height="24" rx="4" fill="#fb7185"/>
+      <text x="8" y="76" class="mem-lbl">L2 Cache</text>
+      <text x="270" y="76" class="mem-val">354 cyc</text>
+      <text x="342" y="76" class="data">96 MB · 13768 GB/s</text>
+      <!-- DRAM -->
+      <rect x="0" y="90" width="270" height="24" rx="4" fill="#e11d48"/>
+      <text x="8" y="106" class="mem-lbl" fill="#fff">DRAM (GDDR7)</text>
+      <text x="280" y="106" class="mem-val">362 cyc</text>
+      <text x="342" y="106" class="data">72 GB · 1231 GB/s</text>
+      <!-- Coalescing -->
+      <text x="0" y="134" class="data-b">Coalescing degradation:</text>
+      <text x="0" y="148" class="data">stride 1→100% | 2→77% | 4→54% | 8→35% | 16→20% | random→0.7%</text>
+    </g>
+  </g>
+
+  <!-- ═══ SECTION 3b: Key Instructions ═══ -->
+  <g transform="translate(546,380)">
+    <rect x="0" y="0" width="490" height="202" rx="10" fill="#fff" stroke="#e6e4da"/>
+    <rect x="0" y="0" width="490" height="3" rx="10" fill="#e11d48" opacity="0.6"/>
+    <text x="16" y="24" class="ttl" fill="#e11d48">KEY INSTRUCTIONS (Table 1, ~60 entries)</text>
+    <g transform="translate(16,42)">
+      <!-- Header -->
+      <text x="0" y="0" class="data-b">Instruction</text>
+      <text x="168" y="0" class="data-b">Lat</text>
+      <text x="210" y="0" class="data-b">Tput</text>
+      <text x="275" y="0" class="data-b">Pipe</text>
+      <text x="345" y="0" class="data-b">ILP</text>
+      <text x="380" y="0" class="data-b">Notes</text>
+      <!-- Row 1 -->
+      <text x="0" y="16" class="data">HMMA.16816 (FP16)</text>
+      <text x="168" y="16" class="data">29</text>
+      <text x="210" y="16" class="data">15.88</text>
+      <text x="275" y="16" class="data">tc</text>
+      <text x="345" y="16" class="data">2</text>
+      <!-- Row 2 -->
+      <text x="0" y="30" class="data">QMMA.16832 (FP8)</text>
+      <text x="168" y="30" class="data">29</text>
+      <text x="210" y="30" class="data">15.88</text>
+      <text x="275" y="30" class="data">tc</text>
+      <text x="345" y="30" class="data">2</text>
+      <!-- Row 3 -->
+      <text x="0" y="44" class="data">OMMA.SF.16864 (MX4)</text>
+      <text x="168" y="44" class="data">29</text>
+      <text x="210" y="44" class="data">15.59</text>
+      <text x="275" y="44" class="data">tc</text>
+      <text x="345" y="44" class="data">2</text>
+      <!-- Row 4 -->
+      <text x="0" y="58" class="data">FFMA (FP32)</text>
+      <text x="168" y="58" class="data">4</text>
+      <text x="210" y="58" class="data">1.08</text>
+      <text x="275" y="58" class="data">fmalite</text>
+      <text x="345" y="58" class="data">4</text>
+      <!-- Row 5 -->
+      <text x="0" y="72" class="data">MUFU.EX2</text>
+      <text x="168" y="72" class="data">18</text>
+      <text x="210" y="72" class="data">4.00</text>
+      <text x="275" y="72" class="data">xu</text>
+      <text x="345" y="72" class="data">5</text>
+      <!-- Row 6 -->
+      <text x="0" y="86" class="data">LDG.32 (L1 hit)</text>
+      <text x="168" y="86" class="data">44</text>
+      <text x="210" y="86" class="data">2.27</text>
+      <text x="275" y="86" class="data">lsu</text>
+      <text x="345" y="86" class="data">-</text>
+      <!-- Row 7 -->
+      <text x="0" y="100" class="data">LDG.32 (DRAM)</text>
+      <text x="168" y="100" class="data">362</text>
+      <text x="210" y="100" class="data">2.27</text>
+      <text x="275" y="100" class="data">lsu</text>
+      <text x="345" y="100" class="data">-</text>
+      <!-- Row 8 -->
+      <text x="0" y="114" class="data">LDSM.x4 (ldmatrix)</text>
+      <text x="168" y="114" class="data">49</text>
+      <text x="210" y="114" class="data">1.68</text>
+      <text x="275" y="114" class="data">lsu</text>
+      <text x="345" y="114" class="data">-</text>
+      <!-- Row 9 -->
+      <text x="0" y="128" class="data">DFMA (FP64)</text>
+      <text x="168" y="128" class="data">64</text>
+      <text x="210" y="128" class="data">64.00</text>
+      <text x="275" y="128" class="data">fp64</text>
+      <text x="345" y="128" class="data">1</text>
+      <text x="380" y="128" class="data">non-pipelined</text>
+    </g>
+  </g>
+
+  <!-- ═══ SECTION 4: Co-Issue Matrix (Left) ═══ -->
+  <g transform="translate(36,590)">
+    <rect x="0" y="0" width="490" height="220" rx="10" fill="#fff" stroke="#e6e4da"/>
+    <rect x="0" y="0" width="490" height="3" rx="10" fill="#e11d48" opacity="0.6"/>
+    <text x="16" y="24" class="ttl" fill="#e11d48">CO-ISSUE MATRIX (Table 4, 14 pairs)</text>
+    <g transform="translate(16,42)">
+      <!-- Header -->
+      <text x="0" y="0" class="data-b">Pipe A</text>
+      <text x="70" y="0" class="data-b">Pipe B</text>
+      <text x="140" y="0" class="data-b">Overlap</text>
+      <text x="210" y="0" class="data-b">Notes</text>
+      <!-- Rows -->
+      <text x="0" y="16" class="data">FMA</text>
+      <text x="70" y="16" class="data">TC</text>
+      <text x="140" y="16" class="data">1.00</text>
+      <text x="210" y="16" class="data">FFMA free during MMA stall</text>
+      <text x="0" y="30" class="data">FMA</text>
+      <text x="70" y="30" class="data">XU(SFU)</text>
+      <text x="140" y="30" class="data">1.00</text>
+      <text x="210" y="30" class="data">Full co-issue</text>
+      <text x="0" y="44" class="data">ALU</text>
+      <text x="70" y="44" class="data">TC</text>
+      <text x="140" y="44" class="data">1.00</text>
+      <text x="210" y="44" class="data">Full overlap</text>
+      <text x="0" y="58" class="data">TC</text>
+      <text x="70" y="58" class="data">DSMEM</text>
+      <text x="140" y="58" class="data">1.00</text>
+      <text x="210" y="58" class="data">No contention</text>
+      <text x="0" y="72" class="data">XU</text>
+      <text x="70" y="72" class="data">TC</text>
+      <text x="140" y="72" class="data">0.78</text>
+      <text x="210" y="72" class="data">Partial (attention softmax)</text>
+      <text x="0" y="86" class="data">HMMA</text>
+      <text x="70" y="86" class="data">IMMA</text>
+      <text x="140" y="86" class="data">0.71</text>
+      <text x="210" y="86" class="data">TC subpipes share</text>
+      <text x="0" y="100" class="data">SFU</text>
+      <text x="70" y="100" class="data">SMEM</text>
+      <text x="140" y="100" class="data">0.77</text>
+      <text x="210" y="100" class="data">Partial overlap</text>
+      <text x="0" y="114" class="data">XU</text>
+      <text x="70" y="114" class="data">LSU</text>
+      <text x="140" y="114" class="data">0.44</text>
+      <text x="210" y="114" class="data">Partial</text>
+      <text x="0" y="128" class="data">ALU</text>
+      <text x="70" y="128" class="data">LSU</text>
+      <text x="140" y="128" class="data">0.17</text>
+      <text x="210" y="128" class="data">Minimal overlap</text>
+      <text x="0" y="142" class="data">LSU</text>
+      <text x="70" y="142" class="data">TC</text>
+      <text x="140" y="142" class="data">-0.40~1.0</text>
+      <text x="210" y="142" class="data">Ratio-dependent</text>
+    </g>
+    <text x="16" y="202" class="data">T_eff = max(T_A, T_B) + (1 - r_overlap) × min(T_A, T_B)</text>
+  </g>
+
+  <!-- ═══ SECTION 4b: Validation + Worked Example (Right) ═══ -->
+  <g transform="translate(546,590)">
+    <rect x="0" y="0" width="490" height="220" rx="10" fill="#fff" stroke="#e6e4da"/>
+    <rect x="0" y="0" width="490" height="3" rx="10" fill="#e11d48" opacity="0.6"/>
+    <text x="16" y="24" class="ttl" fill="#e11d48">VALIDATION &amp; WORKED EXAMPLE</text>
+    <g transform="translate(16,42)">
+      <!-- Header -->
+      <text x="0" y="0" class="data-b">Workload</text>
+      <text x="160" y="0" class="data-b">Predicted</text>
+      <text x="250" y="0" class="data-b">Measured</text>
+      <text x="350" y="0" class="data-b">Error</text>
+      <!-- Rows -->
+      <text x="0" y="16" class="data">GEMM FP16 4096³</text>
+      <text x="160" y="16" class="data">258 TF</text>
+      <text x="250" y="16" class="data">261.8 TF</text>
+      <text x="350" y="16" class="data">-1.5%</text>
+      <text x="0" y="30" class="data">GEMM MX-FP4 4096³</text>
+      <text x="160" y="30" class="data">1050 TF</text>
+      <text x="250" y="30" class="data">1076.5 TF</text>
+      <text x="350" y="30" class="data">-2.5%</text>
+      <text x="0" y="44" class="data">GEMV FP16</text>
+      <text x="160" y="44" class="data">1180 GB/s</text>
+      <text x="250" y="44" class="data">1231 GB/s</text>
+      <text x="350" y="44" class="data">-4.1%</text>
+      <text x="0" y="58" class="data">FlashAttn FP16 d128</text>
+      <text x="160" y="58" class="data">~130 TF</text>
+      <text x="250" y="58" class="data">~125 TF</text>
+      <text x="350" y="58" class="data">+4.0%</text>
+      <!-- Worked Example -->
+      <!-- Worked Example -->
+      <text x="0" y="78" class="data-b">───── Worked Example: FP16 Attention (cyc/tile) ─────</text>
+      <!-- Resource demand row 1 -->
+      <text x="0" y="96" class="data-b">T_tc</text>
+      <text x="50" y="96" class="data">508.2</text>
+      <text x="110" y="96" class="data-b">T_alu</text>
+      <text x="155" y="96" class="data">69.1</text>
+      <text x="210" y="96" class="data-b">T_sfu</text>
+      <text x="255" y="96" class="data">67.4</text>
+      <!-- Resource demand row 2 -->
+      <text x="0" y="112" class="data-b">T_lsu</text>
+      <text x="50" y="112" class="data">59.7</text>
+      <text x="110" y="112" class="data-b">T_smem</text>
+      <text x="155" y="112" class="data">128.0</text>
+      <text x="210" y="112" class="data-b">T_sync</text>
+      <text x="255" y="112" class="data">61.0</text>
+      <!-- Result -->
+      <text x="0" y="132" class="data-b">Dominant:</text>
+      <text x="70" y="132" class="data">TC (508.2) + SFU residual (14.8) = 523 cyc/tile</text>
+      <text x="0" y="148" class="data-b">Utilization:</text>
+      <text x="80" y="148" class="data">TC 100%</text>
+      <text x="145" y="148" class="data">ALU 13%</text>
+      <text x="210" y="148" class="data">SFU 13%</text>
+      <text x="275" y="148" class="data">LSU 11%</text>
+      <!-- CAQR -->
+      <text x="0" y="166" class="data-b">CAQR:</text>
+      <text x="50" y="166" class="data">T_pred = 460M×9.53/440 = 3.98ms (err = 0.5%)</text>
+    </g>
+  </g>
+
+  <!-- ═══ SECTION 5: Sync + Occupancy + Regime (Bottom Middle) ═══ -->
+  <g transform="translate(36,818)">
+    <!-- Sync Cost -->
+    <rect x="0" y="0" width="326" height="140" rx="10" fill="#fff" stroke="#e6e4da"/>
+    <rect x="0" y="0" width="326" height="3" rx="10" fill="#e11d48" opacity="0.6"/>
+    <text x="16" y="24" class="ttl" fill="#e11d48">SYNC COSTS (Table 3)</text>
+    <g transform="translate(16,42)">
+      <!-- Header -->
+      <text x="0" y="0" class="data-b">Primitive</text>
+      <text x="130" y="0" class="data-b">Cost</text>
+      <!-- Rows -->
+      <text x="0" y="16" class="data">__syncthreads</text>
+      <text x="130" y="16" class="data">11+2W cyc (75@32w)</text>
+      <text x="0" y="30" class="data">bar.warp.sync</text>
+      <text x="130" y="30" class="data">1 cyc (NOP)</text>
+      <text x="0" y="44" class="data">mbarrier.arrive</text>
+      <text x="130" y="44" class="data">31 cyc</text>
+      <text x="0" y="58" class="data">barrier.cluster</text>
+      <text x="130" y="58" class="data">371 cyc (full)</text>
+      <text x="0" y="72" class="data">fence.acq_rel</text>
+      <text x="130" y="72" class="data">7/285/920 (cta/gpu/sys)</text>
+      <text x="0" y="86" class="data">P-C handoff</text>
+      <text x="130" y="86" class="data">58 cyc (mbar) / 15 (named)</text>
+    </g>
+
+    <!-- Occupancy -->
+    <g transform="translate(340,0)">
+      <rect x="0" y="0" width="326" height="140" rx="10" fill="#fff" stroke="#e6e4da"/>
+      <rect x="0" y="0" width="326" height="3" rx="10" fill="#e11d48" opacity="0.6"/>
+      <text x="16" y="24" class="ttl" fill="#e11d48">OCCUPANCY MODEL</text>
+      <g transform="translate(16,42)">
+        <text x="0" y="0" class="data">Max warps/SM: 48   Blocks/SM: 24</text>
+        <text x="0" y="14" class="data">RegFile: 65536×32b  SMSP: 4/SM</text>
+        <text x="0" y="32" class="data-b">Saturation curve:</text>
+        <text x="0" y="48" class="data">tput = base × min(1, W×min(ILP,4)/16)</text>
+        <text x="0" y="66" class="data">TC sat: 16 warps or ILP≥4</text>
+        <text x="0" y="80" class="data">Issue: 1 warp-insn/cyc/SMSP</text>
+      </g>
+    </g>
+
+    <!-- Three Regimes -->
+    <g transform="translate(680,0)">
+      <rect x="0" y="0" width="326" height="140" rx="10" fill="#fff" stroke="#e6e4da"/>
+      <rect x="0" y="0" width="326" height="3" rx="10" fill="#e11d48" opacity="0.6"/>
+      <text x="16" y="24" class="ttl" fill="#e11d48">THREE REGIMES</text>
+      <g transform="translate(16,42)">
+        <rect x="0" y="0" width="10" height="10" rx="2" fill="#e11d48"/>
+        <text x="16" y="10" class="data-b">TC-bound</text>
+        <text x="90" y="10" class="data">AI≫crossover, GEMM</text>
+        <rect x="0" y="20" width="10" height="10" rx="2" fill="#f59e0b"/>
+        <text x="16" y="30" class="data-b">DRAM-bound</text>
+        <text x="100" y="30" class="data">AI≪crossover, GEMV</text>
+        <rect x="0" y="40" width="10" height="10" rx="2" fill="#6366f1"/>
+        <text x="16" y="50" class="data-b">Mixed</text>
+        <text x="60" y="50" class="data">AI≈crossover, FlashAttn</text>
+        <text x="0" y="72" class="data">AI = 2MNK / (|A|MK+|B|KN+|C|MN)</text>
+        <text x="0" y="86" class="data">Practical BF16 crossover ≈ 400-500</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- ═══ KEY INSIGHTS ═══ -->
+  <g transform="translate(36,972)">
+    <rect x="0" y="0" width="1008" height="124" rx="12" fill="#FFE4E6" stroke="#ec4899" stroke-width="0.8"/>
+    <text x="20" y="24" class="ttl" fill="#e11d48">Key Insights</text>
+    <g transform="translate(20,44)">
+      <circle cx="6" cy="-4" r="3" fill="#e11d48"/>
+      <text x="18" y="0" class="insight">All 133+ parameters empirically measured (no theoretical priors) — prediction error &lt;5% for large TC-bound GEMM</text>
+      <circle cx="6" cy="18" r="3" fill="#e11d48"/>
+      <text x="18" y="22" class="insight">TMA at 14.50 B/cyc = seventh bottleneck pipe; TC consumes 10× TMA delivery rate at ILP=4</text>
+      <circle cx="6" cy="40" r="3" fill="#e11d48"/>
+      <text x="18" y="44" class="insight">Practical BF16 crossover at AI ≈ 400-500 FLOP/byte (1.8× theoretical 220) due to L2 caching</text>
+      <circle cx="6" cy="62" r="3" fill="#e11d48"/>
+      <text x="18" y="66" class="insight">CAQR GPU equation validated at 0.5% error; Amdahl/Little/AMAT all confirmed within measurement noise</text>
+    </g>
+  </g>
+</svg>

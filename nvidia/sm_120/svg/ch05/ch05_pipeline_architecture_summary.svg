@@ -1,0 +1,215 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 730" role="img" aria-label="SM_120 Complete Pipeline Architecture — Six Execution Pipes with Co-Issue Matrix and Latency Spectrum">
+  <defs>
+    <marker id="arr" markerWidth="7" markerHeight="5" refX="7" refY="2.5" orient="auto">
+      <path d="M0,0 L7,2.5 L0,5 Z" fill="#475569"/>
+    </marker>
+  </defs>
+
+  <rect width="1080" height="730" fill="#fafbfc"/>
+
+  <!-- Title -->
+  <text x="540" y="28" text-anchor="middle" style="font:700 15px 'Inter','Segoe UI',sans-serif;fill:#0f172a">SM_120 Complete Pipeline Architecture (per SMSP)</text>
+  <text x="540" y="48" text-anchor="middle" style="font:italic 11px 'Inter','Segoe UI',sans-serif;fill:#64748b">Six execution pipes — co-issue matrix, latency spectrum from 2 to 422 cycles, and architectural implications</text>
+
+  <!-- ═══════ SMSP Scheduler ═══════ -->
+  <rect x="300" y="64" width="480" height="32" rx="5" fill="#1e293b"/>
+  <text x="540" y="85" text-anchor="middle" style="font:600 11px 'JetBrains Mono',monospace;fill:#f1f5f9">SMSP Warp Scheduler (single dispatch port → multi-pipe issue)</text>
+
+  <!-- Dispatch arrows to 6 pipes -->
+  <line x1="380" y1="96" x2="130" y2="118" stroke="#475569" stroke-width="1.2" marker-end="url(#arr)"/>
+  <line x1="440" y1="96" x2="310" y2="118" stroke="#475569" stroke-width="1.2" marker-end="url(#arr)"/>
+  <line x1="520" y1="96" x2="490" y2="118" stroke="#475569" stroke-width="1.2" marker-end="url(#arr)"/>
+  <line x1="580" y1="96" x2="640" y2="118" stroke="#475569" stroke-width="1.2" marker-end="url(#arr)"/>
+  <line x1="660" y1="96" x2="790" y2="118" stroke="#475569" stroke-width="1.2" marker-end="url(#arr)"/>
+  <line x1="720" y1="96" x2="950" y2="118" stroke="#475569" stroke-width="1.2" marker-end="url(#arr)"/>
+
+  <!-- ═══════ Six Pipe Boxes (aligned row) ═══════ -->
+
+  <!-- P0-lite (fmalite) -->
+  <rect x="30" y="120" width="160" height="140" rx="7" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.3"/>
+  <rect x="30" y="120" width="160" height="22" rx="7" fill="#dcfce7" stroke="#16a34a" stroke-width="1.3"/>
+  <rect x="30" y="136" width="160" height="6" fill="#dcfce7"/>
+  <text x="110" y="136" text-anchor="middle" style="font:700 9.5px 'JetBrains Mono',monospace;fill:#15803d">P0-lite (fmalite)</text>
+  <text x="42" y="158" style="font:500 8.5px 'JetBrains Mono',monospace;fill:#374151">IADD3   2c</text>
+  <text x="42" y="172" style="font:500 8.5px 'JetBrains Mono',monospace;fill:#374151">LOP3    4c</text>
+  <text x="42" y="186" style="font:500 8.5px 'JetBrains Mono',monospace;fill:#374151">ISETP   5c</text>
+  <text x="42" y="200" style="font:500 8.5px 'JetBrains Mono',monospace;fill:#374151">FFMA    4c</text>
+  <text x="42" y="214" style="font:500 8.5px 'JetBrains Mono',monospace;fill:#374151">FADD    4c</text>
+  <rect x="42" y="228" width="136" height="18" rx="3" fill="#065f46" opacity="0.85"/>
+  <text x="110" y="241" text-anchor="middle" style="font:700 8.5px 'JetBrains Mono',monospace;fill:#fff">1.0 ops/cyc</text>
+
+  <!-- P0-heavy (fmaheavy) -->
+  <rect x="206" y="120" width="160" height="140" rx="7" fill="#fef9c3" stroke="#ca8a04" stroke-width="1.3"/>
+  <rect x="206" y="120" width="160" height="22" rx="7" fill="#fef08a" stroke="#ca8a04" stroke-width="1.3"/>
+  <rect x="206" y="136" width="160" height="6" fill="#fef08a"/>
+  <text x="286" y="136" text-anchor="middle" style="font:700 9.5px 'JetBrains Mono',monospace;fill:#854d0e">P0-heavy (fmaheavy)</text>
+  <text x="218" y="158" style="font:500 8.5px 'JetBrains Mono',monospace;fill:#374151">IMAD    4c</text>
+  <text x="218" y="172" style="font:500 8.5px 'JetBrains Mono',monospace;fill:#374151">SHF     4c</text>
+  <text x="218" y="186" style="font:500 8.5px 'JetBrains Mono',monospace;fill:#374151">PRMT    4c</text>
+  <text x="218" y="200" style="font:500 8.5px 'JetBrains Mono',monospace;fill:#374151">HFMA2   4c/2i</text>
+  <text x="218" y="214" style="font:500 8.5px 'JetBrains Mono',monospace;fill:#374151">IDP.4A  4c</text>
+  <rect x="218" y="228" width="136" height="18" rx="3" fill="#78350f" opacity="0.85"/>
+  <text x="286" y="241" text-anchor="middle" style="font:700 8.5px 'JetBrains Mono',monospace;fill:#fff">1.0 ops/cyc</text>
+
+  <!-- P1 (FP64) -->
+  <rect x="382" y="120" width="160" height="140" rx="7" fill="#ede9fe" stroke="#7c3aed" stroke-width="1.3"/>
+  <rect x="382" y="120" width="160" height="22" rx="7" fill="#ddd6fe" stroke="#7c3aed" stroke-width="1.3"/>
+  <rect x="382" y="136" width="160" height="6" fill="#ddd6fe"/>
+  <text x="462" y="136" text-anchor="middle" style="font:700 9.5px 'JetBrains Mono',monospace;fill:#5b21b6">P1 (FP64)</text>
+  <text x="394" y="158" style="font:500 8.5px 'JetBrains Mono',monospace;fill:#374151">DFMA    64c</text>
+  <text x="394" y="172" style="font:500 8.5px 'JetBrains Mono',monospace;fill:#374151">F2F.F64 64c</text>
+  <text x="394" y="190" style="font:italic 8px 'Inter',sans-serif;fill:#6b7280">Non-pipelined</text>
+  <text x="394" y="204" style="font:italic 8px 'Inter',sans-serif;fill:#6b7280">1 EU per SMSP</text>
+  <rect x="394" y="228" width="136" height="18" rx="3" fill="#4c1d95" opacity="0.85"/>
+  <text x="462" y="241" text-anchor="middle" style="font:700 8.5px 'JetBrains Mono',monospace;fill:#fff">1/64 cyc</text>
+
+  <!-- P2 (SFU) -->
+  <rect x="558" y="120" width="160" height="140" rx="7" fill="#fef3c7" stroke="#d97706" stroke-width="1.3"/>
+  <rect x="558" y="120" width="160" height="22" rx="7" fill="#fde68a" stroke="#d97706" stroke-width="1.3"/>
+  <rect x="558" y="136" width="160" height="6" fill="#fde68a"/>
+  <text x="638" y="136" text-anchor="middle" style="font:700 9.5px 'JetBrains Mono',monospace;fill:#92400e">P2 (SFU/XU)</text>
+  <text x="570" y="158" style="font:500 8.5px 'JetBrains Mono',monospace;fill:#374151">MUFU.*  18-20c</text>
+  <text x="570" y="172" style="font:500 8.5px 'JetBrains Mono',monospace;fill:#374151">(PTX:   18-44c)</text>
+  <text x="570" y="190" style="font:italic 8px 'Inter',sans-serif;fill:#6b7280">4 units per SM</text>
+  <text x="570" y="204" style="font:italic 8px 'Inter',sans-serif;fill:#6b7280">Issue: ~8-9 cyc</text>
+  <rect x="570" y="228" width="136" height="18" rx="3" fill="#78350f" opacity="0.85"/>
+  <text x="638" y="241" text-anchor="middle" style="font:700 8.5px 'JetBrains Mono',monospace;fill:#fff">~1/18 cyc</text>
+
+  <!-- SHFL -->
+  <rect x="734" y="120" width="160" height="140" rx="7" fill="#fee2e2" stroke="#dc2626" stroke-width="1.3"/>
+  <rect x="734" y="120" width="160" height="22" rx="7" fill="#fecaca" stroke="#dc2626" stroke-width="1.3"/>
+  <rect x="734" y="136" width="160" height="6" fill="#fecaca"/>
+  <text x="814" y="136" text-anchor="middle" style="font:700 9.5px 'JetBrains Mono',monospace;fill:#991b1b">SHFL</text>
+  <text x="746" y="158" style="font:500 8.5px 'JetBrains Mono',monospace;fill:#374151">SHFL.*  29c</text>
+  <text x="746" y="176" style="font:italic 8px 'Inter',sans-serif;fill:#6b7280">Warp crossbar</text>
+  <text x="746" y="190" style="font:italic 8px 'Inter',sans-serif;fill:#6b7280">+.sync barrier</text>
+  <text x="746" y="204" style="font:italic 8px 'Inter',sans-serif;fill:#6b7280">Issue: 4.6 cyc</text>
+  <rect x="746" y="228" width="136" height="18" rx="3" fill="#7f1d1d" opacity="0.85"/>
+  <text x="814" y="241" text-anchor="middle" style="font:700 8.5px 'JetBrains Mono',monospace;fill:#fff">1/29 cyc</text>
+
+  <!-- CVT -->
+  <rect x="910" y="120" width="140" height="140" rx="7" fill="#dbeafe" stroke="#2563eb" stroke-width="1.3"/>
+  <rect x="910" y="120" width="140" height="22" rx="7" fill="#bfdbfe" stroke="#2563eb" stroke-width="1.3"/>
+  <rect x="910" y="136" width="140" height="6" fill="#bfdbfe"/>
+  <text x="980" y="136" text-anchor="middle" style="font:700 9.5px 'JetBrains Mono',monospace;fill:#1e40af">CVT</text>
+  <text x="922" y="158" style="font:500 8.5px 'JetBrains Mono',monospace;fill:#374151">F2F   7.5c</text>
+  <text x="922" y="172" style="font:500 8.5px 'JetBrains Mono',monospace;fill:#374151">I2FP  12.4c</text>
+  <text x="922" y="186" style="font:500 8.5px 'JetBrains Mono',monospace;fill:#374151">F2I   12.4c</text>
+  <text x="922" y="204" style="font:italic 8px 'Inter',sans-serif;fill:#6b7280">Independent unit</text>
+  <rect x="922" y="228" width="116" height="18" rx="3" fill="#1e40af" opacity="0.85"/>
+  <text x="980" y="241" text-anchor="middle" style="font:700 8.5px 'JetBrains Mono',monospace;fill:#fff">varies</text>
+
+  <!-- ═══════ Co-Issue Matrix ═══════ -->
+  <rect x="30" y="278" width="500" height="180" rx="8" fill="#eff6ff" stroke="#bfdbfe" stroke-width="1"/>
+  <text x="280" y="298" text-anchor="middle" style="font:700 11px 'Inter',sans-serif;fill:#1d4ed8">Co-Issue Matrix (simultaneous dispatch)</text>
+
+  <!-- Matrix grid -->
+  <g transform="translate(50,320)">
+    <!-- Headers -->
+    <text x="70" y="0" style="font:600 8px 'JetBrains Mono',monospace;fill:#475569">P0-lite</text>
+    <text x="130" y="0" style="font:600 8px 'JetBrains Mono',monospace;fill:#475569">P0-hvy</text>
+    <text x="195" y="0" style="font:600 8px 'JetBrains Mono',monospace;fill:#475569">P1</text>
+    <text x="240" y="0" style="font:600 8px 'JetBrains Mono',monospace;fill:#475569">P2</text>
+    <text x="285" y="0" style="font:600 8px 'JetBrains Mono',monospace;fill:#475569">SHFL</text>
+    <text x="340" y="0" style="font:600 8px 'JetBrains Mono',monospace;fill:#475569">CVT</text>
+    <text x="390" y="0" style="font:600 8px 'JetBrains Mono',monospace;fill:#475569">LD/ST</text>
+
+    <!-- P0-lite row -->
+    <text x="0" y="18" style="font:600 8px 'JetBrains Mono',monospace;fill:#475569">P0-lite</text>
+    <text x="82" y="18" style="font:700 9px 'JetBrains Mono',monospace;fill:#94a3b8">—</text>
+    <text x="142" y="18" style="font:900 14px 'Inter',sans-serif;fill:#16a34a">✓</text>
+    <text x="200" y="18" style="font:900 14px 'Inter',sans-serif;fill:#16a34a">✓</text>
+    <text x="248" y="18" style="font:900 14px 'Inter',sans-serif;fill:#16a34a">✓</text>
+    <text x="296" y="18" style="font:700 9px 'JetBrains Mono',monospace;fill:#94a3b8">—</text>
+    <text x="348" y="18" style="font:700 9px 'JetBrains Mono',monospace;fill:#94a3b8">—</text>
+    <text x="400" y="18" style="font:900 14px 'Inter',sans-serif;fill:#16a34a">✓</text>
+
+    <!-- P0-heavy row -->
+    <text x="0" y="36" style="font:600 8px 'JetBrains Mono',monospace;fill:#475569">P0-hvy</text>
+    <text x="82" y="36" style="font:900 14px 'Inter',sans-serif;fill:#16a34a">✓</text>
+    <text x="142" y="36" style="font:700 9px 'JetBrains Mono',monospace;fill:#94a3b8">—</text>
+    <text x="200" y="36" style="font:900 14px 'Inter',sans-serif;fill:#16a34a">✓</text>
+    <text x="248" y="36" style="font:900 14px 'Inter',sans-serif;fill:#16a34a">✓</text>
+    <text x="296" y="36" style="font:700 9px 'JetBrains Mono',monospace;fill:#94a3b8">—</text>
+    <text x="348" y="36" style="font:700 9px 'JetBrains Mono',monospace;fill:#94a3b8">—</text>
+    <text x="400" y="36" style="font:900 14px 'Inter',sans-serif;fill:#16a34a">✓</text>
+
+    <!-- P1 row -->
+    <text x="0" y="54" style="font:600 8px 'JetBrains Mono',monospace;fill:#475569">P1</text>
+    <text x="82" y="54" style="font:900 14px 'Inter',sans-serif;fill:#16a34a">✓</text>
+    <text x="142" y="54" style="font:900 14px 'Inter',sans-serif;fill:#16a34a">✓</text>
+    <text x="200" y="54" style="font:700 9px 'JetBrains Mono',monospace;fill:#94a3b8">—</text>
+    <text x="248" y="54" style="font:900 14px 'Inter',sans-serif;fill:#16a34a">✓</text>
+    <text x="296" y="54" style="font:700 9px 'JetBrains Mono',monospace;fill:#94a3b8">—</text>
+    <text x="348" y="54" style="font:700 9px 'JetBrains Mono',monospace;fill:#94a3b8">—</text>
+    <text x="400" y="54" style="font:900 14px 'Inter',sans-serif;fill:#16a34a">✓</text>
+
+    <!-- P2 row -->
+    <text x="0" y="72" style="font:600 8px 'JetBrains Mono',monospace;fill:#475569">P2</text>
+    <text x="82" y="72" style="font:900 14px 'Inter',sans-serif;fill:#16a34a">✓</text>
+    <text x="142" y="72" style="font:900 14px 'Inter',sans-serif;fill:#16a34a">✓</text>
+    <text x="200" y="72" style="font:900 14px 'Inter',sans-serif;fill:#16a34a">✓</text>
+    <text x="248" y="72" style="font:700 9px 'JetBrains Mono',monospace;fill:#94a3b8">—</text>
+    <text x="296" y="72" style="font:700 9px 'JetBrains Mono',monospace;fill:#94a3b8">—</text>
+    <text x="348" y="72" style="font:700 9px 'JetBrains Mono',monospace;fill:#94a3b8">—</text>
+    <text x="400" y="72" style="font:900 14px 'Inter',sans-serif;fill:#16a34a">✓</text>
+
+    <!-- Legend -->
+    <text x="0" y="104" style="font:900 14px 'Inter',sans-serif;fill:#16a34a">✓</text>
+    <text x="14" y="104" style="font:500 8.5px 'Inter',sans-serif;fill:#374151">= can co-issue in same cycle (verified by MIX/MAX = 1.0)</text>
+    <text x="0" y="120" style="font:700 9px 'JetBrains Mono',monospace;fill:#94a3b8">—</text>
+    <text x="14" y="120" style="font:500 8.5px 'Inter',sans-serif;fill:#374151">= same pipe (mutual exclusion) or not tested</text>
+  </g>
+
+  <!-- ═══════ Latency Spectrum (right side) ═══════ -->
+  <rect x="550" y="278" width="500" height="180" rx="8" fill="#f8fafc" stroke="#94a3b8" stroke-width="0.8"/>
+  <text x="800" y="298" text-anchor="middle" style="font:700 11px 'Inter',sans-serif;fill:#1e293b">Latency Spectrum (log scale, 2–422 cyc)</text>
+
+  <!-- Log-scale bars -->
+  <g transform="translate(570,310)">
+    <rect x="0" y="0" width="18" height="12" rx="2" fill="#16a34a" opacity="0.85"/>
+    <text x="24" y="10" style="font:600 8.5px 'JetBrains Mono',monospace;fill:#374151">2c   IADD3</text>
+
+    <rect x="0" y="18" width="36" height="12" rx="2" fill="#16a34a" opacity="0.7"/>
+    <text x="42" y="28" style="font:600 8.5px 'JetBrains Mono',monospace;fill:#374151">4c   FFMA / IMAD / LOP3 / SHF</text>
+
+    <rect x="0" y="36" width="50" height="12" rx="2" fill="#2563eb" opacity="0.7"/>
+    <text x="56" y="46" style="font:600 8.5px 'JetBrains Mono',monospace;fill:#374151">7.5c CVT (f16↔f32)</text>
+
+    <rect x="0" y="54" width="66" height="12" rx="2" fill="#d97706" opacity="0.7"/>
+    <text x="72" y="64" style="font:600 8.5px 'JetBrains Mono',monospace;fill:#374151">18c  MUFU (bare)</text>
+
+    <rect x="0" y="72" width="82" height="12" rx="2" fill="#dc2626" opacity="0.7"/>
+    <text x="88" y="82" style="font:600 8.5px 'JetBrains Mono',monospace;fill:#374151">29c  SHFL.sync</text>
+
+    <rect x="0" y="90" width="108" height="12" rx="2" fill="#d97706" opacity="0.5"/>
+    <text x="114" y="100" style="font:600 8.5px 'JetBrains Mono',monospace;fill:#374151">44c  MUFU.RCP (PTX wrapper)</text>
+
+    <rect x="0" y="108" width="150" height="12" rx="2" fill="#7c3aed" opacity="0.7"/>
+    <text x="156" y="118" style="font:600 8.5px 'JetBrains Mono',monospace;fill:#374151">64c  DFMA (non-pipelined)</text>
+
+    <rect x="0" y="126" width="460" height="12" rx="2" fill="#475569" opacity="0.5"/>
+    <text x="200" y="136" style="font:600 8.5px 'JetBrains Mono',monospace;fill:#374151">422c div.u64 (subroutine call)</text>
+  </g>
+
+  <!-- ═══════ Architectural Implications (bottom) ═══════ -->
+  <rect x="30" y="474" width="1020" height="232" rx="10" fill="#f0fdf4" stroke="#16a34a" stroke-width="1"/>
+  <text x="540" y="498" text-anchor="middle" style="font:700 12px 'Inter',sans-serif;fill:#15803d">Key Architectural Implications for Kernel Optimization</text>
+
+  <g transform="translate(50,510)">
+    <text x="0" y="14" style="font:500 10px 'Inter',sans-serif;fill:#374151"><tspan style="font-weight:700;color:#166534">1. Dual-pipe co-issue is free parallelism:</tspan> IADD3 (address math) and FFMA (compute) execute simultaneously at 2.0 aggregate ops/cyc. Interleave them in GEMM mainloops.</text>
+
+    <text x="0" y="42" style="font:500 10px 'Inter',sans-serif;fill:#374151"><tspan style="font-weight:700">2. Shallow pipelines → low register pressure:</tspan> INT saturates at ILP=2 (2 regs), FP32 at ILP=4 (4 regs). Much shallower than Ampere/Hopper (ILP=4–8).</text>
+
+    <text x="0" y="70" style="font:500 10px 'Inter',sans-serif;fill:#374151"><tspan style="font-weight:700">3. FP16 ALU gives no throughput advantage:</tspan> HFMA2 per-element = FP32 throughput. Half-precision acceleration is Tensor Core exclusive on SM_120.</text>
+
+    <text x="0" y="98" style="font:500 10px 'Inter',sans-serif;fill:#374151"><tspan style="font-weight:700">4. FP64 is consumer-tier (1:32 ratio):</tspan> Non-pipelined 64-cyc DFMA. Use only for address math or accumulator precision, not bulk compute.</text>
+
+    <text x="0" y="126" style="font:500 10px 'Inter',sans-serif;fill:#374151"><tspan style="font-weight:700">5. SFU wrappers dominate transcendental cost:</tspan> Bare MUFU is 18c but PTX rcp/rsqrt is 40-44c. Consider CuAssembler SASS patching for critical paths.</text>
+
+    <text x="0" y="154" style="font:500 10px 'Inter',sans-serif;fill:#374151"><tspan style="font-weight:700">6. Avoid shuffle-based reductions:</tspan> 29c per shfl makes butterfly reductions 10× slower than Ampere. Use smem (40c) or atomicAdd.shared (24c) instead.</text>
+
+    <text x="0" y="182" style="font:500 10px 'Inter',sans-serif;fill:#374151"><tspan style="font-weight:700">7. Integer division is catastrophic:</tspan> div.u64 costs 422c (211× IADD3). Always strength-reduce with magic-number multiply or bitwise AND.</text>
+  </g>
+</svg>

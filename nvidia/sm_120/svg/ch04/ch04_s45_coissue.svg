@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 580" role="img"
+     aria-label="4.5 TC Co-Issue Characterization — overlap percentages visualized as a heatmap-style matrix with pipeline independence model">
+  <defs>
+    <style><![CDATA[
+      .eyebrow{font:600 11px "JetBrains Mono",monospace;letter-spacing:0.14em;text-transform:uppercase}
+      .title  {font:500 18px "Fraunces",serif;fill:#0b1220;letter-spacing:-0.02em}
+      .ttl    {font:600 11px "JetBrains Mono",monospace;letter-spacing:0.04em}
+      .lbl    {font:500 10px "JetBrains Mono",monospace;fill:#5b6679}
+      .lbl-sm {font:500 9px "JetBrains Mono",monospace;fill:#5b6679;letter-spacing:0.03em;text-transform:uppercase}
+      .val    {font:600 16px "Fraunces",serif;fill:#0b1220}
+      .val-sm {font:600 13px "Fraunces",serif;fill:#0b1220}
+      .note   {font:500 10.5px "IBM Plex Sans",sans-serif;fill:#2a3548}
+      .note-em{font:600 10.5px "IBM Plex Sans",sans-serif;fill:#e11d48}
+      .note-gr{font:600 10.5px "IBM Plex Sans",sans-serif;fill:#16a34a}
+      .cyc-val{font:500 9px "JetBrains Mono",monospace;fill:#5b6679}
+      .bar-lbl{font:600 10px "JetBrains Mono",monospace;fill:#ffffff}
+      .pct    {font:600 12px "Fraunces",serif}
+    ]]></style>
+  </defs>
+
+  <rect width="1080" height="580" fill="#fcfbf6"/>
+
+  <!-- Header -->
+  <g transform="translate(36,24)">
+    <rect x="0" y="0" width="3" height="40" fill="#e11d48"/>
+    <text x="14" y="14" class="eyebrow" fill="#e11d48">§4.5 · TC CO-ISSUE CHARACTERIZATION</text>
+    <text x="14" y="36" class="title">Pipeline Independence: TC Overlap with Other Functional Units</text>
+  </g>
+
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <!-- SECTION 1: Visual overlap bars (heatmap-like) -->
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <g transform="translate(36,78)">
+    <text x="0" y="0" class="ttl" fill="#e11d48">MEASURED CO-ISSUE OVERLAP (% of instructions hidden behind MMA)</text>
+
+    <g transform="translate(0,18)">
+      <!-- Each row: label + proportional bar + percentage -->
+      <!-- Row height = 40px, gap = 6px -->
+
+      <!-- TC + LDG/ldmatrix: 100% -->
+      <g transform="translate(0,0)">
+        <text x="0" y="16" class="note">TC + LDG / ldmatrix</text>
+        <rect x="200" y="2" width="600" height="26" rx="4" fill="#16a34a" opacity="0.7"/>
+        <text x="210" y="20" class="bar-lbl">100% overlap — fully hidden, 0 extra cyc</text>
+        <text x="810" y="18" class="pct" fill="#16a34a">100%</text>
+        <text x="860" y="18" class="cyc-val">[case_10]</text>
+      </g>
+
+      <!-- TC + DSMEM: 100% -->
+      <g transform="translate(0,34)">
+        <text x="0" y="16" class="note">TC + DSMEM (cluster)</text>
+        <rect x="200" y="2" width="600" height="26" rx="4" fill="#16a34a" opacity="0.65"/>
+        <text x="210" y="20" class="bar-lbl">100% overlap — 0 extra cyc</text>
+        <text x="810" y="18" class="pct" fill="#16a34a">100%</text>
+        <text x="860" y="18" class="cyc-val">[case_122]</text>
+      </g>
+
+      <!-- TC + V-pipe: 100% -->
+      <g transform="translate(0,68)">
+        <text x="0" y="16" class="note">TC + V-pipe (VIADD)</text>
+        <rect x="200" y="2" width="600" height="26" rx="4" fill="#16a34a" opacity="0.6"/>
+        <text x="210" y="20" class="bar-lbl">100% overlap — 0 extra cyc</text>
+        <text x="810" y="18" class="pct" fill="#16a34a">100%</text>
+        <text x="860" y="18" class="cyc-val">[case_109]</text>
+      </g>
+
+      <!-- TC + U-pipe: ~100% -->
+      <g transform="translate(0,102)">
+        <text x="0" y="16" class="note">TC + U-pipe (UIADD3)</text>
+        <rect x="200" y="2" width="594" height="26" rx="4" fill="#16a34a" opacity="0.5"/>
+        <text x="210" y="20" class="bar-lbl">~100% overlap — 0–4.3% overhead at 1–4× ratio</text>
+        <text x="810" y="18" class="pct" fill="#16a34a">~100%</text>
+        <text x="860" y="18" class="cyc-val">[case_110]</text>
+      </g>
+
+      <!-- TC + OMMA↔QMMA: 94% -->
+      <g transform="translate(0,136)">
+        <text x="0" y="16" class="note">OMMA.SF + QMMA.SF</text>
+        <rect x="200" y="2" width="564" height="26" rx="4" fill="#2563eb" opacity="0.5"/>
+        <text x="210" y="20" class="bar-lbl">94% overlap — +0.94 cyc switch cost (shared TC port)</text>
+        <text x="810" y="18" class="pct" fill="#2563eb">94%</text>
+        <text x="860" y="18" class="cyc-val">[case_62]</text>
+      </g>
+
+      <!-- TC + FFMA: 93.6% -->
+      <g transform="translate(0,170)">
+        <text x="0" y="16" class="note">TC + FFMA (epilogue)</text>
+        <rect x="200" y="2" width="562" height="26" rx="4" fill="#f59e0b" opacity="0.55"/>
+        <text x="210" y="20" style="font:600 10px 'JetBrains Mono',monospace;fill:#5b3300">93.6% — 256 FFMA adds only 65 cyc to 128 HMMA</text>
+        <text x="810" y="18" class="pct" fill="#92400e">93.6%</text>
+        <text x="860" y="18" class="cyc-val">[case_9]</text>
+      </g>
+
+      <!-- TC + SFU: 86% -->
+      <g transform="translate(0,204)">
+        <text x="0" y="16" class="note">TC + SFU (MUFU)</text>
+        <rect x="200" y="2" width="516" height="26" rx="4" fill="#f59e0b" opacity="0.4"/>
+        <text x="210" y="20" style="font:600 10px 'JetBrains Mono',monospace;fill:#5b3300">86% — 6.53 cyc/MUFU effective (vs 4 cyc standalone)</text>
+        <text x="810" y="18" class="pct" fill="#92400e">86%</text>
+        <text x="860" y="18" class="cyc-val">[case_11]</text>
+      </g>
+
+      <!-- QMMA.SF + FFMA: 50.7% -->
+      <g transform="translate(0,238)">
+        <text x="0" y="16" class="note">QMMA.SF + FFMA</text>
+        <rect x="200" y="2" width="334" height="26" rx="4" fill="#e11d48" opacity="0.35"/>
+        <text x="210" y="20" style="font:600 10px 'JetBrains Mono',monospace;fill:#7f1d1d">50.7% — block-scale reads consume FMA co-issue slots</text>
+        <text x="810" y="18" class="pct" fill="#e11d48">50.7%</text>
+        <text x="860" y="18" class="cyc-val">[case_66]</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <!-- SECTION 2: Pipeline model explanation -->
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <g transform="translate(36,380)">
+    <text x="0" y="0" class="ttl" fill="#e11d48">WHY CO-ISSUE WORKS: INDEPENDENT EXECUTION PORTS</text>
+
+    <g transform="translate(0,18)">
+      <rect x="0" y="0" width="1008" height="80" rx="10" fill="#ffffff" stroke="#e6e4da"/>
+
+      <!-- Port diagram -->
+      <g transform="translate(20,14)">
+        <rect x="0" y="0" width="110" height="55" rx="6" fill="#e11d48" opacity="0.1" stroke="#e11d48" stroke-width="0.8"/>
+        <text x="10" y="18" class="ttl" fill="#e11d48">TC Port</text>
+        <text x="10" y="36" class="cyc-val">pipe_tensor</text>
+        <text x="10" y="48" class="cyc-val">HMMA/QMMA/OMMA</text>
+
+        <rect x="130" y="0" width="110" height="55" rx="6" fill="#f59e0b" opacity="0.1" stroke="#f59e0b" stroke-width="0.8"/>
+        <text x="140" y="18" class="ttl" fill="#92400e">FMA Port</text>
+        <text x="140" y="36" class="cyc-val">pipe_fma</text>
+        <text x="140" y="48" class="cyc-val">FFMA/DFMA/F2F</text>
+
+        <rect x="260" y="0" width="110" height="55" rx="6" fill="#2563eb" opacity="0.1" stroke="#2563eb" stroke-width="0.8"/>
+        <text x="270" y="18" class="ttl" fill="#2563eb">LSU Port</text>
+        <text x="270" y="36" class="cyc-val">pipe_lsu</text>
+        <text x="270" y="48" class="cyc-val">LDG/STG/ldmatrix</text>
+
+        <rect x="390" y="0" width="110" height="55" rx="6" fill="#16a34a" opacity="0.1" stroke="#16a34a" stroke-width="0.8"/>
+        <text x="400" y="18" class="ttl" fill="#16a34a">SFU Port</text>
+        <text x="400" y="36" class="cyc-val">pipe_xu</text>
+        <text x="400" y="48" class="cyc-val">MUFU/RCP/RSQ</text>
+
+        <rect x="520" y="0" width="90" height="55" rx="6" fill="#9333ea" opacity="0.1" stroke="#9333ea" stroke-width="0.8"/>
+        <text x="530" y="18" class="ttl" fill="#9333ea">V-pipe</text>
+        <text x="530" y="36" class="cyc-val">VIADD</text>
+        <text x="530" y="48" class="cyc-val">VIMNMX</text>
+
+        <rect x="630" y="0" width="90" height="55" rx="6" fill="#5b6679" opacity="0.1" stroke="#5b6679" stroke-width="0.8"/>
+        <text x="640" y="18" class="ttl" fill="#5b6679">U-pipe</text>
+        <text x="640" y="36" class="cyc-val">UIADD3</text>
+        <text x="640" y="48" class="cyc-val">uniform ops</text>
+
+        <!-- Annotation -->
+        <text x="740" y="18" class="note">All ports issue</text>
+        <text x="740" y="34" class="note-em">independently</text>
+        <text x="740" y="50" class="note">within each SMSP</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <!-- SECTION 3: Key insight -->
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <g transform="translate(36,490)">
+    <rect x="0" y="0" width="1008" height="63" rx="10" fill="#FEF3C7" stroke="#f59e0b" stroke-width="0.8"/>
+    <text x="20" y="18" class="ttl" fill="#92400e">PRACTICAL IMPLICATION</text>
+    <text x="20" y="38" class="note">Post-MMA epilogue (bias add, activation, softmax rescaling) is <tspan style="font-weight:700;fill:#16a34a">essentially free</tspan> when interleaved with TC operations.</text>
+    <text x="20" y="54" class="note">Exception: block-scale QMMA.SF reduces FFMA co-issue from 93.6% → 50.7% (scale reads consume operand bandwidth).</text>
+  </g>
+
+  <!-- Footer -->
+  <g transform="translate(36,562)">
+    <line x1="0" y1="0" x2="1008" y2="0" stroke="#e6e4da" stroke-width="0.8"/>
+    <text x="0" y="14" class="cyc-val">Source: [S9/case_9-11] co-issue sweep · [S9/case_109-110] V/U-pipe · [S9/case_122] DSMEM · [S9/case_62,66] block-scale</text>
+    <text x="850" y="14" class="cyc-val">SM_120 · 2026</text>
+  </g>
+</svg>

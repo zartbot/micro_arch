@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 756" role="img" aria-label="Lane-Mask Dichotomy Explained">
+  <defs>
+    <marker id="ar" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto">
+      <path d="M0,0 L7,3.5 L0,7 Z" fill="#5b6679"/>
+    </marker>
+  </defs>
+  <rect width="1080" height="756" fill="#ffffff"/>
+  <text x="36" y="32" style="font:600 14px 'Fraunces',serif;fill:#0b1220">Lane-Mask Dichotomy Explained</text>
+  <text x="36" y="52" style="font:italic 11px 'Fraunces',serif;fill:#5b6679">Semantic visualization of measured microarchitectural behavior</text>
+
+    <g transform="translate(40,86)">
+      <rect x="0" y="0" width="1000" height="64" rx="10" fill="#F5F1FF" stroke="#6d28d9" stroke-width="0.8"/>
+      <text x="20" y="22" style="font:600 12px 'Fraunces',serif;fill:#6d28d9">Sparse-lane (lane 0 only) vs Full-warp (all 32 lanes) Dispatch Paths</text>
+      <text x="20" y="44" style="font:500 10px 'JetBrains Mono',monospace;fill:#5b6679">==================================================================== · All 32 lanes active (kE-kH; case_16; real DGEMM):</text>
+    </g>    <line x1="540" y1="150" x2="540" y2="172" stroke="#5b6679" stroke-width="1.2" marker-end="url(#ar)"/>
+    <g transform="translate(40,176)">
+      <rect x="0" y="0" width="1000" height="64" rx="10" fill="#F5F1FF" stroke="#6d28d9" stroke-width="0.8"/>
+      <text x="20" y="22" style="font:600 12px 'Fraunces',serif;fill:#6d28d9">SMSP scheduler -&gt; issues warp at full SIMD width</text>
+      <text x="20" y="44" style="font:500 10px 'JetBrains Mono',monospace;fill:#5b6679">-&gt; FP64 EU receives 32-lane wide DFMA dispatch · -&gt; EU completes 1 DFMA per 64 cyc (full-warp)</text>
+    </g>    <line x1="540" y1="240" x2="540" y2="262" stroke="#5b6679" stroke-width="1.2" marker-end="url(#ar)"/>
+    <g transform="translate(40,266)">
+      <rect x="0" y="0" width="1000" height="64" rx="10" fill="#F5F1FF" stroke="#6d28d9" stroke-width="0.8"/>
+      <text x="20" y="22" style="font:600 12px 'Fraunces',serif;fill:#6d28d9">-&gt; No re-arbitration overhead</text>
+      <text x="20" y="44" style="font:500 10px 'JetBrains Mono',monospace;fill:#5b6679">Each of 4 warps lands on its own SMSP and EU. · time:  0      64     128</text>
+    </g>    <line x1="540" y1="330" x2="540" y2="352" stroke="#5b6679" stroke-width="1.2" marker-end="url(#ar)"/>
+    <g transform="translate(40,356)">
+      <rect x="0" y="0" width="1000" height="64" rx="10" fill="#F5F1FF" stroke="#6d28d9" stroke-width="0.8"/>
+      <text x="20" y="22" style="font:600 12px 'Fraunces',serif;fill:#6d28d9">W0-&gt;E0 [DFMA] [DFMA] ...    0% contention</text>
+      <text x="20" y="44" style="font:500 10px 'JetBrains Mono',monospace;fill:#5b6679">W1-&gt;E1 [DFMA] [DFMA] ... · W2-&gt;E2 [DFMA] [DFMA] ...</text>
+    </g>    <line x1="540" y1="420" x2="540" y2="442" stroke="#5b6679" stroke-width="1.2" marker-end="url(#ar)"/>
+    <g transform="translate(40,446)">
+      <rect x="0" y="0" width="1000" height="64" rx="10" fill="#F5F1FF" stroke="#6d28d9" stroke-width="0.8"/>
+      <text x="20" y="22" style="font:600 12px 'Fraunces',serif;fill:#6d28d9">W3-&gt;E3 [DFMA] [DFMA] ...</text>
+      <text x="20" y="44" style="font:500 10px 'JetBrains Mono',monospace;fill:#5b6679">Lane 0 only active (kA-kD; case_50/13/17): · SMSP scheduler detects mask=1 (sparse warp)</text>
+    </g>    <line x1="540" y1="510" x2="540" y2="532" stroke="#5b6679" stroke-width="1.2" marker-end="url(#ar)"/>
+    <g transform="translate(40,536)">
+      <rect x="0" y="0" width="1000" height="64" rx="10" fill="#F5F1FF" stroke="#6d28d9" stroke-width="0.8"/>
+      <text x="20" y="22" style="font:600 12px 'Fraunces',serif;fill:#6d28d9">-&gt; still allocates full warp slot in EU</text>
+      <text x="20" y="44" style="font:500 10px 'JetBrains Mono',monospace;fill:#5b6679">-&gt; but adds ~12 cyc &quot;sparse-mask handling&quot; tax · -&gt; per-warp DFMA cost: 64 + ~12 = ~76 cyc</text>
+    </g>    <line x1="540" y1="600" x2="540" y2="622" stroke="#5b6679" stroke-width="1.2" marker-end="url(#ar)"/>
+    <g transform="translate(40,626)">
+      <rect x="0" y="0" width="1000" height="64" rx="10" fill="#F5F1FF" stroke="#6d28d9" stroke-width="0.8"/>
+      <text x="20" y="22" style="font:600 12px 'Fraunces',serif;fill:#6d28d9">NCU smsp__cycles_active.sum scales 4.76x at 4W (vs inst 4.00x)</text>
+      <text x="20" y="44" style="font:500 10px 'JetBrains Mono',monospace;fill:#5b6679">because each SMSP idles ~19% of the time arbitrating sparse warps.</text>
+    </g>
+</svg>

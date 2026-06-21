@@ -1,0 +1,235 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 900" role="img"
+     aria-label="§ 8.3.2 Thin-K GEMM Efficiency Model — K-loop dependency, ILP scaling, overhead sources, K-dimension comparison">
+  <defs>
+    <style><![CDATA[
+      .eyebrow { font: 600 11px "JetBrains Mono", monospace; letter-spacing: 0.16em; text-transform: uppercase }
+      .title   { font: 500 24px "Fraunces", serif; fill: #0b1220; letter-spacing: -0.02em }
+      .sub     { font: italic 12px "Fraunces", serif; fill: #5b6679 }
+      .panel-h { font: 600 13px "JetBrains Mono", monospace; letter-spacing: 0.06em; fill: #0b1220 }
+      .panel-sub { font: italic 11px "Fraunces", serif; fill: #5b6679 }
+      .lbl-sm  { font: 500 9px "JetBrains Mono", monospace; fill: #5b6679; letter-spacing: 0.05em; text-transform: uppercase }
+      .lbl-mono{ font: 500 10px "JetBrains Mono", monospace; fill: #2a3548 }
+      .lbl-mono-em { font: 700 10px "JetBrains Mono", monospace; fill: #0b1220 }
+      .lbl-w-mono { font: 500 9px "JetBrains Mono", monospace; fill: #ffffff }
+      .big-num { font: 700 28px "Fraunces", serif }
+    ]]></style>
+  </defs>
+
+  <rect width="1280" height="900" fill="#fcfbf6"/>
+
+  <!-- ============ Header ============ -->
+  <g transform="translate(40,32)">
+    <text x="0" y="0" class="eyebrow" fill="#dc2626">SECTION 8.3.2 · WHY THIN-K GEMMS ARE STRUCTURALLY INEFFICIENT</text>
+    <text x="0" y="28" class="title">K-Loop Dependency Chain — The 46% Efficiency Root Cause</text>
+    <text x="0" y="50" class="sub">mma.sync.m16n8k16 at K=128: 8 dependent MMAs, ILP=1 within K, 69% overhead fraction</text>
+    <text x="0" y="68" class="lbl-sm">Source: [S19/case_62] · [S19/case_66] · m16n8k16 tile shape · SM_120 pipeline characterization</text>
+  </g>
+
+  <!-- ============ Panel A: K-Loop Dependency Chain ============ -->
+  <g transform="translate(40,108)">
+    <rect x="0" y="0" width="620" height="300" rx="6" fill="#ffffff" stroke="#e2d8c8" stroke-width="0.8"/>
+    <text x="14" y="22" class="panel-h">A · K-LOOP DEPENDENCY CHAIN (K=128, m16n8k16)</text>
+    <text x="14" y="38" class="panel-sub">8 MMAs form a dependent accumulator chain — ILP=1 within K-dimension</text>
+
+    <!-- Chain visualization -->
+    <g transform="translate(14,56)">
+      <!-- MMA boxes in chain -->
+      <rect x="0" y="0" width="64" height="32" rx="3" fill="#2563eb" opacity="0.8"/>
+      <text x="32" y="20" class="lbl-w-mono" text-anchor="middle">MMA[0]</text>
+
+      <line x1="64" y1="16" x2="78" y2="16" stroke="#dc2626" stroke-width="1.5" marker-end="none"/>
+      <rect x="78" y="0" width="64" height="32" rx="3" fill="#2563eb" opacity="0.75"/>
+      <text x="110" y="20" class="lbl-w-mono" text-anchor="middle">MMA[1]</text>
+
+      <line x1="142" y1="16" x2="156" y2="16" stroke="#dc2626" stroke-width="1.5"/>
+      <rect x="156" y="0" width="64" height="32" rx="3" fill="#2563eb" opacity="0.7"/>
+      <text x="188" y="20" class="lbl-w-mono" text-anchor="middle">MMA[2]</text>
+
+      <line x1="220" y1="16" x2="234" y2="16" stroke="#dc2626" stroke-width="1.5"/>
+      <text x="240" y="20" class="lbl-mono" fill="#5b6679">···</text>
+
+      <line x1="260" y1="16" x2="274" y2="16" stroke="#dc2626" stroke-width="1.5"/>
+      <rect x="274" y="0" width="64" height="32" rx="3" fill="#2563eb" opacity="0.65"/>
+      <text x="306" y="20" class="lbl-w-mono" text-anchor="middle">MMA[6]</text>
+
+      <line x1="338" y1="16" x2="352" y2="16" stroke="#dc2626" stroke-width="1.5"/>
+      <rect x="352" y="0" width="64" height="32" rx="3" fill="#2563eb" opacity="0.6"/>
+      <text x="384" y="20" class="lbl-w-mono" text-anchor="middle">MMA[7]</text>
+
+      <!-- Feedback arrow -->
+      <text x="200" y="52" class="lbl-sm" fill="#dc2626" text-anchor="middle">← ACCUMULATOR FEEDBACK (RAW DEPENDENCY) →</text>
+    </g>
+
+    <!-- Timing breakdown -->
+    <g transform="translate(14,120)">
+      <rect x="0" y="0" width="590" height="164" rx="4" fill="#f8fafc" stroke="#cbd5e1" stroke-width="0.6"/>
+      <text x="12" y="18" class="lbl-sm" fill="#5b6679">TIMING MODEL</text>
+      <line x1="12" y1="24" x2="578" y2="24" stroke="#cbd5e1" stroke-width="0.5"/>
+
+      <text x="12" y="42" class="lbl-mono-em">Per output tile (16x8 elements):</text>
+      <text x="12" y="60" class="lbl-mono">K-loop iterations: 128 / 16 = 8 MMAs</text>
+      <text x="12" y="78" class="lbl-mono">Each MMA latency: 29 cyc (m16n8k16)</text>
+      <text x="12" y="96" class="lbl-mono">Throughput at ILP=4: 15.88 cyc/MMA</text>
+
+      <line x1="12" y1="108" x2="578" y2="108" stroke="#cbd5e1" stroke-width="0.5"/>
+      <text x="12" y="126" class="lbl-mono-em" fill="#dc2626">K-chain FORCES serial execution:</text>
+      <text x="12" y="144" class="lbl-mono" fill="#dc2626">8 x 29 cyc = 232 cyc (ILP=1, cannot overlap within K)</text>
+      <text x="12" y="160" class="lbl-mono" fill="#5b6679">Must rely on M/N-dimension tile parallelism for ILP</text>
+    </g>
+  </g>
+
+  <!-- ============ Panel B: ILP Scaling ============ -->
+  <g transform="translate(680,108)">
+    <rect x="0" y="0" width="560" height="300" rx="6" fill="#ffffff" stroke="#e2d8c8" stroke-width="0.8"/>
+    <text x="14" y="22" class="panel-h">B · ILP SCALING — OUTPUT TILES IN FLIGHT</text>
+    <text x="14" y="38" class="panel-sub">More M/N tiles → higher ILP → better throughput per MMA</text>
+
+    <!-- ILP bars -->
+    <g transform="translate(14,56)">
+      <!-- ILP=1 -->
+      <text x="0" y="16" class="lbl-mono-em">ILP=1:</text>
+      <rect x="70" y="2" width="290" height="20" rx="2" fill="#dc2626" opacity="0.6"/>
+      <text x="80" y="16" class="lbl-w-mono">8 x 28.78 = 230 cyc/tile</text>
+      <text x="368" y="16" class="lbl-mono-em" fill="#dc2626">230 cyc</text>
+
+      <!-- ILP=2 -->
+      <text x="0" y="44" class="lbl-mono-em">ILP=2:</text>
+      <rect x="70" y="30" width="170" height="20" rx="2" fill="#d97706" opacity="0.6"/>
+      <text x="80" y="44" class="lbl-w-mono">8 x 16.87 = 135 cyc/tile</text>
+      <text x="248" y="44" class="lbl-mono-em" fill="#b45309">135 cyc</text>
+
+      <!-- ILP=4 -->
+      <text x="0" y="72" class="lbl-mono-em">ILP=4:</text>
+      <rect x="70" y="58" width="160" height="20" rx="2" fill="#16a34a" opacity="0.6"/>
+      <text x="80" y="72" class="lbl-w-mono">8 x 15.88 = 127 cyc/tile</text>
+      <text x="238" y="72" class="lbl-mono-em" fill="#15803d">127 cyc</text>
+
+      <!-- Theoretical max -->
+      <text x="-3" y="100" class="lbl-mono">Theoretical:</text>
+      <rect x="70" y="86" width="100" height="20" rx="2" fill="#707070" opacity="0.5"/>
+      <text x="80" y="100" class="lbl-w-mono">8 x 8 = 64 cyc</text>
+      <text x="178" y="100" class="lbl-mono" fill="#5b6679">64 cyc (100%)</text>
+    </g>
+
+    <!-- Parallelism note -->
+    <g transform="translate(14,170)">
+      <rect x="0" y="0" width="530" height="114" rx="4" fill="#ecfdf5" stroke="#16a34a" stroke-width="0.6"/>
+      <text x="12" y="18" class="lbl-sm" fill="#15803d">PARALLELISM AT LARGE SEQ (seq=8192)</text>
+      <line x1="12" y1="24" x2="518" y2="24" stroke="#16a34a" stroke-width="0.3"/>
+
+      <text x="12" y="42" class="lbl-mono">Output tiles: (8192/16) x (8192/8) = 524K tiles</text>
+      <text x="12" y="60" class="lbl-mono">Issue slots: 110 SM x 4 SMSP = 440</text>
+      <text x="12" y="78" class="lbl-mono-em" fill="#15803d">Ample M/N parallelism → ILP=4 achievable</text>
+      <text x="12" y="96" class="lbl-mono" fill="#15803d">But 46% eff shows ILP alone cannot overcome</text>
+      <text x="12" y="110" class="lbl-mono" fill="#15803d">the per-K-step overhead (tile setup + smem→RF)</text>
+    </g>
+  </g>
+
+  <!-- ============ Panel C: Three Overhead Sources ============ -->
+  <g transform="translate(40,428)">
+    <rect x="0" y="0" width="620" height="250" rx="6" fill="#ffffff" stroke="#e2d8c8" stroke-width="0.8"/>
+    <text x="14" y="22" class="panel-h">C · THREE OVERHEAD SOURCES (69% OVERHEAD FRACTION)</text>
+    <text x="14" y="38" class="panel-sub">Per-K-step costs that cannot be amortized at K=128</text>
+
+    <!-- Source 1 -->
+    <g transform="translate(14,56)">
+      <rect x="0" y="0" width="590" height="52" rx="4" fill="#fef2f2" stroke="#dc2626" stroke-width="0.5"/>
+      <text x="12" y="16" class="lbl-mono-em" fill="#dc2626">(1) Tile Setup Overhead</text>
+      <text x="12" y="32" class="lbl-mono">mbarrier + ldmatrix per K-step: fixed cost per iteration</text>
+      <text x="12" y="48" class="lbl-mono" fill="#5b6679">At 8 K-steps: 8x tile setup vs 256x at K=4096 (32x worse amortization)</text>
+    </g>
+
+    <!-- Source 2 -->
+    <g transform="translate(14,118)">
+      <rect x="0" y="0" width="590" height="52" rx="4" fill="#fef2f2" stroke="#dc2626" stroke-width="0.5"/>
+      <text x="12" y="16" class="lbl-mono-em" fill="#dc2626">(2) Zero K-Reuse</text>
+      <text x="12" y="32" class="lbl-mono">A/B operands loaded 8x but each used only ONCE per MMA</text>
+      <text x="12" y="48" class="lbl-mono" fill="#5b6679">No temporal locality in register file across K-steps</text>
+    </g>
+
+    <!-- Source 3 -->
+    <g transform="translate(14,180)">
+      <rect x="0" y="0" width="590" height="52" rx="4" fill="#fef2f2" stroke="#dc2626" stroke-width="0.5"/>
+      <text x="12" y="16" class="lbl-mono-em" fill="#dc2626">(3) Smem→RF Transfer Cost</text>
+      <text x="12" y="32" class="lbl-mono">11 cyc/MMA x 8 MMA = 88 cyc overhead on 127 cyc compute</text>
+      <text x="12" y="48" class="lbl-mono-em" fill="#dc2626">Overhead fraction: 88 / 127 = 69% of useful compute time</text>
+    </g>
+  </g>
+
+  <!-- ============ Panel D: K-Dimension Comparison ============ -->
+  <g transform="translate(680,428)">
+    <rect x="0" y="0" width="560" height="250" rx="6" fill="#ffffff" stroke="#e2d8c8" stroke-width="0.8"/>
+    <text x="14" y="22" class="panel-h">D · K-DIMENSION EFFICIENCY SCALING</text>
+    <text x="14" y="38" class="panel-sub">Larger K → more MMAs → overhead amortized → higher efficiency</text>
+
+    <!-- Efficiency bars -->
+    <g transform="translate(14,56)">
+      <!-- K=64 -->
+      <text x="0" y="14" class="lbl-mono">K=64:</text>
+      <rect x="70" y="2" width="80" height="18" rx="2" fill="#fecaca" stroke="#dc2626" stroke-width="0.5"/>
+      <text x="158" y="14" class="lbl-mono" fill="#dc2626">~32% (4 K-iters)</text>
+
+      <!-- K=128 (attention) -->
+      <text x="0" y="38" class="lbl-mono-em">K=128:</text>
+      <rect x="70" y="26" width="115" height="18" rx="2" fill="#fee2e2" stroke="#dc2626" stroke-width="0.8"/>
+      <text x="193" y="38" class="lbl-mono-em" fill="#dc2626">46% (8 K-iters) ← Q x K^T</text>
+
+      <!-- K=seq (Score x V) -->
+      <text x="0" y="62" class="lbl-mono">K=seq:</text>
+      <rect x="70" y="50" width="152" height="18" rx="2" fill="#fef3c7" stroke="#d97706" stroke-width="0.5"/>
+      <text x="230" y="62" class="lbl-mono" fill="#b45309">61% ← Score x V</text>
+
+      <!-- K=4096 -->
+      <text x="0" y="86" class="lbl-mono">K=4096:</text>
+      <rect x="70" y="74" width="240" height="18" rx="2" fill="#dcfce7" stroke="#16a34a" stroke-width="0.5"/>
+      <text x="318" y="86" class="lbl-mono" fill="#15803d">95-100% (256 K-iters)</text>
+    </g>
+
+    <!-- Explanation -->
+    <g transform="translate(14,152)">
+      <rect x="0" y="0" width="530" height="82" rx="4" fill="#f8fafc" stroke="#cbd5e1" stroke-width="0.6"/>
+      <text x="12" y="18" class="lbl-sm" fill="#5b6679">WHY LARGE K WINS</text>
+      <line x1="12" y1="24" x2="518" y2="24" stroke="#cbd5e1" stroke-width="0.5"/>
+      <text x="12" y="42" class="lbl-mono">K=4096: 256 MMAs per tile → setup amortized 256x</text>
+      <text x="12" y="58" class="lbl-mono">Operands reused across smem-resident K-blocks</text>
+      <text x="12" y="74" class="lbl-mono">Smem→RF overhead: 88 cyc / (256 x 16) = negligible</text>
+    </g>
+  </g>
+
+  <!-- ============ Panel E: Implications ============ -->
+  <g transform="translate(40,698)">
+    <rect x="0" y="0" width="1200" height="178" rx="6" fill="#ffffff" stroke="#e2d8c8" stroke-width="0.8"/>
+    <text x="14" y="22" class="panel-h">E · STRUCTURAL IMPLICATIONS FOR ATTENTION WORKLOADS</text>
+
+    <!-- Score x V comparison -->
+    <g transform="translate(14,42)">
+      <rect x="0" y="0" width="540" height="120" rx="4" fill="#f5f3ff" stroke="#7c3aed" stroke-width="0.6"/>
+      <text x="12" y="18" class="lbl-sm" fill="#7c3aed">Q x K^T vs SCORE x V COMPARISON</text>
+      <line x1="12" y1="24" x2="528" y2="24" stroke="#7c3aed" stroke-width="0.3"/>
+
+      <text x="12" y="42" class="lbl-mono-em">Q x K^T:</text>
+      <text x="100" y="42" class="lbl-mono">M=Br, N=Bc, K=head_dim=128 → 46% eff</text>
+      <text x="12" y="60" class="lbl-mono-em">Score x V:</text>
+      <text x="100" y="60" class="lbl-mono">M=Br, N=head_dim=128, K=Bc (larger) → 61% eff</text>
+
+      <line x1="12" y1="72" x2="528" y2="72" stroke="#7c3aed" stroke-width="0.3"/>
+      <text x="12" y="90" class="lbl-mono" fill="#7c3aed">Score x V has larger effective K (=Bc, typically 64-256)</text>
+      <text x="12" y="106" class="lbl-mono" fill="#7c3aed">but small N (=head_dim=128) still limits tile parallelism</text>
+    </g>
+
+    <!-- Key takeaways -->
+    <g transform="translate(570,42)">
+      <rect x="0" y="0" width="616" height="120" rx="4" fill="#fffbeb" stroke="#d97706" stroke-width="0.6"/>
+      <text x="12" y="18" class="lbl-sm" fill="#b45309">KEY TAKEAWAYS</text>
+      <line x1="12" y1="24" x2="604" y2="24" stroke="#d97706" stroke-width="0.3"/>
+
+      <text x="12" y="42" class="lbl-mono">1. 46% eff is STRUCTURAL, not a software bug — hardware K-chain limit</text>
+      <text x="12" y="58" class="lbl-mono">2. head_dim=256 → 16 K-iters → projected 60-70% eff</text>
+      <text x="12" y="74" class="lbl-mono">3. FlashAttention tiling (small Br x Bc) compounds the problem</text>
+      <text x="12" y="90" class="lbl-mono">4. Only TMEM bypass (SM_100a tcgen05) can eliminate smem→RF overhead</text>
+      <text x="12" y="106" class="lbl-mono">5. SM_120 adds +27.5% smem→RF penalty vs hypothetical direct path</text>
+    </g>
+  </g>
+
+</svg>

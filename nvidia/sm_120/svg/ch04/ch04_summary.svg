@@ -1,0 +1,293 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 940" role="img"
+     aria-label="Chapter 04 Summary — SM_120 TensorCore Complete Architecture: SMSP data path, dual subpipes, data delivery, and chip-level performance">
+  <defs>
+    <style><![CDATA[
+      .eyebrow{font:600 11px "JetBrains Mono",monospace;letter-spacing:0.14em;text-transform:uppercase}
+      .title  {font:500 22px "Fraunces",serif;fill:#0b1220;letter-spacing:-0.02em}
+      .sub    {font:italic 12px "Fraunces",serif;fill:#5b6679}
+      .ttl    {font:600 11px "JetBrains Mono",monospace;letter-spacing:0.04em}
+      .lbl    {font:500 10px "JetBrains Mono",monospace;fill:#5b6679}
+      .lbl-sm {font:500 9px "JetBrains Mono",monospace;fill:#5b6679;letter-spacing:0.03em;text-transform:uppercase}
+      .val    {font:600 16px "Fraunces",serif;fill:#0b1220}
+      .val-sm {font:600 12px "Fraunces",serif;fill:#0b1220}
+      .note   {font:500 10px "IBM Plex Sans",sans-serif;fill:#2a3548}
+      .note-em{font:600 9.5px "IBM Plex Sans",sans-serif;fill:#e11d48}
+      .note-bl{font:600 9.5px "IBM Plex Sans",sans-serif;fill:#2563eb}
+      .note-gr{font:600 9.5px "IBM Plex Sans",sans-serif;fill:#16a34a}
+      .cyc-val{font:500 9px "JetBrains Mono",monospace;fill:#5b6679}
+      .unit-t {font:600 10px "JetBrains Mono",monospace}
+      .unit-d {font:500 9px "JetBrains Mono",monospace;fill:#5b6679}
+      .kpi-val{font:600 18px "Fraunces",serif;fill:#0b1220}
+      .kpi-u  {font:500 9px "JetBrains Mono",monospace;fill:#5b6679}
+    ]]></style>
+    <marker id="a1" markerWidth="6" markerHeight="6" refX="4" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#5b6679"/>
+    </marker>
+    <marker id="a2" markerWidth="6" markerHeight="6" refX="4" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#e11d48"/>
+    </marker>
+    <marker id="a3" markerWidth="6" markerHeight="6" refX="4" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#16a34a"/>
+    </marker>
+  </defs>
+
+  <rect width="1080" height="940" fill="#fcfbf6"/>
+
+  <!-- Header -->
+  <g transform="translate(36,24)">
+    <rect x="0" y="-10" width="3" height="60" fill="#e11d48"/>
+    <text x="14" y="4" class="eyebrow" fill="#e11d48">CHAPTER 04 · SM_120 / GB202 BLACKWELL</text>
+    <text x="14" y="30" class="title">TensorCore Architecture — Complete SMSP Data Path</text>
+  </g>
+  <text x="50" y="72" class="sub">195 microbenchmark cases · mma.sync only (no wgmma/tcgen05/TM) · 1,070 TFLOPS MXFP4 @ 99% efficiency</text>
+
+  <!-- ═══════════ SMSP ARCHITECTURE (main diagram) ═══════════ -->
+  <g transform="translate(36,80)">
+
+    <!-- Shared Memory (left) -->
+    <g transform="translate(0,0)">
+      <rect x="0" y="0" width="180" height="80" rx="8" fill="#EFF6FF" stroke="#2563eb" stroke-width="1"/>
+      <text x="10" y="16" class="ttl" fill="#2563eb">SHARED MEMORY</text>
+      <text x="10" y="32" class="note">99 KB · XOR-swizzled</text>
+      <text x="10" y="46" class="note">128 B/cyc · 0 bank confl</text>
+      <text x="10" y="62" class="cyc-val">TMA tile buffers (A/B)</text>
+      <text x="10" y="74" class="cyc-val">cp.async.bulk: 479 cyc</text>
+    </g>
+
+    <!-- ldmatrix path -->
+    <line x1="182" y1="40" x2="214" y2="40" stroke="#2563eb" stroke-width="1" marker-end="url(#a1)"/>
+    <g transform="translate(218,10)">
+      <rect x="0" y="0" width="120" height="60" rx="6" fill="#FEF3C7" stroke="#f59e0b" stroke-width="0.8"/>
+      <text x="6" y="14" class="unit-t" fill="#92400e">ldmatrix.x4</text>
+      <text x="6" y="28" class="unit-d">33 cyc lat</text>
+      <text x="6" y="40" class="unit-d">1.68 cyc tput</text>
+      <text x="6" y="52" class="note-em">.trans = FREE</text>
+    </g>
+    <line x1="340" y1="40" x2="372" y2="40" stroke="#f59e0b" stroke-width="1" marker-end="url(#a1)"/>
+
+    <!-- Register File -->
+    <g transform="translate(376,0)">
+      <rect x="0" y="0" width="220" height="80" rx="8" fill="#FDF4FF" stroke="#9333ea" stroke-width="1.2"/>
+      <text x="10" y="16" class="ttl" fill="#9333ea">REGISTER FILE</text>
+      <text x="10" y="32" class="note">256 regs · 2 ports/bank</text>
+      <text x="10" y="46" class="note-em">80.3 B/cyc → TC (bottleneck)</text>
+      <text x="10" y="62" class="note">A:4 + B:2 + C:4 = 10 regs/MMA</text>
+      <text x="10" y="74" class="cyc-val">Spill @ 62 chains: +12%</text>
+    </g>
+
+    <!-- Arrow RF→TC -->
+    <line x1="486" y1="82" x2="486" y2="104" stroke="#e11d48" stroke-width="1.5" marker-end="url(#a2)"/>
+    <text x="496" y="98" class="note-em">~16 cyc read</text>
+
+    <!-- SM_100 contrast (top right) -->
+    <g transform="translate(630,0)">
+      <rect x="0" y="0" width="383" height="80" rx="8" fill="#f9f8f4" stroke="#d1d0c7" stroke-width="0.8" stroke-dasharray="4,3"/>
+      <text x="10" y="16" class="lbl-sm" fill="#999">SM_100 HAS (SM_120 DOES NOT)</text>
+      <text x="10" y="34" class="note" fill="#999">✗ Tensor Memory 256KB · ✗ tcgen05/wgmma · ✗ TM→TC bypass</text>
+      <text x="10" y="50" class="note" fill="#999">SM_120: mma.sync only · all operands via RF · warp-spec counterproductive</text>
+      <text x="10" y="68" class="cyc-val" fill="#999">11.0 cyc/MMA smem→RF overhead (27.5%) — TM eliminates this</text>
+    </g>
+  </g>
+
+  <!-- ═══════════ TENSOR CORE UNIT ═══════════ -->
+  <g transform="translate(36,190)">
+    <rect x="0" y="0" width="1008" height="340" rx="12" fill="#ffffff" stroke="#e11d48" stroke-width="1.4"/>
+    <rect x="0" y="0" width="1008" height="24" rx="12" fill="#FFF1F2"/>
+    <text x="14" y="16" class="ttl" fill="#e11d48">TENSOR CORE UNIT (1 per SMSP × 4 per SM) · pipe_tensor</text>
+    <text x="440" y="16" class="lbl">29 cyc lat · 15.88 cyc/mma · Cold: ~375 cyc · Power: ~57W</text>
+
+    <!-- Operand Collector -->
+    <g transform="translate(14,34)">
+      <rect x="0" y="0" width="980" height="28" rx="4" fill="#f9f8f4" stroke="#e6e4da"/>
+      <text x="8" y="12" class="ttl" fill="#5b6679">OPERAND COLLECTOR</text>
+      <text x="8" y="24" class="cyc-val">10 regs read → ~16 cyc = 15.88 cyc dispatch floor (RF-read limited, NOT execution-limited)</text>
+      <text x="700" y="12" class="note-em">Minimum dispatch: 15.88 cyc/mma</text>
+    </g>
+
+    <!-- Format Decoder -->
+    <g transform="translate(14,70)">
+      <rect x="0" y="0" width="980" height="22" rx="4" fill="#FEF3C7" stroke="#f59e0b" stroke-width="0.5"/>
+      <text x="8" y="14" class="unit-t" fill="#92400e">FORMAT DECODER</text>
+      <text x="130" y="14" class="cyc-val">Cross-format: 0 cyc · Cross-family (k32↔k64): +0.94 cyc · K=8/16/32/64 all same timing</text>
+    </g>
+
+    <!-- subpipe_hmma -->
+    <g transform="translate(14,102)">
+      <rect x="0" y="0" width="600" height="216" rx="8" fill="#e11d48" opacity="0.02" stroke="#e11d48" stroke-width="0.8"/>
+      <text x="8" y="14" class="ttl" fill="#e11d48">subpipe_hmma — ALL FP FORMATS</text>
+      <text x="230" y="14" class="lbl">Depth 1.81 · 29 cyc · 15.88 cyc/mma</text>
+
+      <!-- 2-slot model -->
+      <g transform="translate(8,24)">
+        <rect x="0" y="0" width="160" height="20" rx="3" fill="#e11d48" opacity="0.1" stroke="#e11d48" stroke-width="0.5"/>
+        <text x="4" y="14" class="unit-t" fill="#e11d48">Slot 0 (29 cyc)</text>
+        <rect x="166" y="0" width="160" height="20" rx="3" fill="#e11d48" opacity="0.06" stroke="#e11d48" stroke-width="0.4" stroke-dasharray="3,2"/>
+        <text x="170" y="14" class="unit-t" fill="#e11d48">Slot 1 (13 cyc gap)</text>
+        <text x="340" y="14" class="cyc-val">ILP=2:1.71× · ILP=4:1.81× · ILP≥5: 0</text>
+      </g>
+
+      <!-- Instruction grid (compact) -->
+      <g transform="translate(8,52)">
+        <rect x="0" y="0" width="90" height="28" rx="3" fill="#e11d48" opacity="0.05" stroke="#e11d48" stroke-width="0.4"/>
+        <text x="4" y="12" class="unit-t" fill="#e11d48">HMMA</text>
+        <text x="4" y="24" class="unit-d">FP16/BF16/TF32</text>
+
+        <rect x="96" y="0" width="90" height="28" rx="3" fill="#e11d48" opacity="0.05" stroke="#e11d48" stroke-width="0.4"/>
+        <text x="100" y="12" class="unit-t" fill="#e11d48">QMMA</text>
+        <text x="100" y="24" class="unit-d">FP8/FP6/FP4</text>
+
+        <rect x="192" y="0" width="90" height="28" rx="3" fill="#e11d48" opacity="0.05" stroke="#e11d48" stroke-width="0.4"/>
+        <text x="196" y="12" class="unit-t" fill="#e11d48">QMMA.SF</text>
+        <text x="196" y="24" class="unit-d">MX FP8 +scale</text>
+
+        <rect x="288" y="0" width="90" height="28" rx="3" fill="#e11d48" opacity="0.05" stroke="#e11d48" stroke-width="0.4"/>
+        <text x="292" y="12" class="unit-t" fill="#e11d48">OMMA.SF</text>
+        <text x="292" y="24" class="unit-d">MX FP4 k=64</text>
+
+        <rect x="384" y="0" width="90" height="28" rx="3" fill="#e11d48" opacity="0.05" stroke="#e11d48" stroke-width="0.4"/>
+        <text x="388" y="12" class="unit-t" fill="#e11d48">*.SP</text>
+        <text x="388" y="24" class="unit-d">Sparse 2:4</text>
+
+        <rect x="480" y="0" width="100" height="28" rx="3" fill="#f9f8f4" stroke="#d1d0c7" stroke-width="0.4"/>
+        <text x="484" y="12" class="unit-t" fill="#999">INT4 emu</text>
+        <text x="484" y="24" class="unit-d" fill="#999">24× penalty!</text>
+      </g>
+
+      <!-- Key properties -->
+      <g transform="translate(8,90)">
+        <text x="0" y="0" class="note">All FP formats: identical 29/15.88 timing · Block-scale: +0% · Sparse: +0%</text>
+        <text x="0" y="14" class="note">K-independent (array ≥64 wide) · Operand reuse ×4: 15.94 cyc (1.79×)</text>
+      </g>
+
+      <!-- Co-issue -->
+      <g transform="translate(8,116)">
+        <rect x="0" y="0" width="580" height="86" rx="5" fill="#f0fdf4" stroke="#16a34a" stroke-width="0.5"/>
+        <text x="6" y="12" class="lbl-sm" fill="#16a34a">CO-ISSUE (independent port within SMSP)</text>
+        <text x="6" y="28" class="note">TC+FFMA: 93.6% (RF write-port contention only)</text>
+        <text x="6" y="42" class="note">TC+LDG/ldmatrix: 100% · TC+DSMEM: 100% · TC+V/U-pipe: ~100%</text>
+        <text x="6" y="56" class="note">TC+SFU: 86% (shared operand crossbar)</text>
+        <text x="6" y="70" class="note">QMMA.SF+FFMA: 50.7% (scale reads consume issue slots)</text>
+        <text x="340" y="70" class="note-gr">Epilogue is FREE when interleaved with MMA</text>
+      </g>
+    </g>
+
+    <!-- subpipe_imma -->
+    <g transform="translate(628,102)">
+      <rect x="0" y="0" width="366" height="100" rx="8" fill="#2563eb" opacity="0.02" stroke="#2563eb" stroke-width="0.8"/>
+      <text x="8" y="14" class="ttl" fill="#2563eb">subpipe_imma — INT8</text>
+      <text x="160" y="14" class="lbl">Depth 4.09 · 27 cyc · 6.55 cyc/mma</text>
+
+      <g transform="translate(8,24)">
+        <rect x="0" y="0" width="74" height="18" rx="2" fill="#2563eb" opacity="0.08" stroke="#2563eb" stroke-width="0.4"/>
+        <text x="4" y="12" class="unit-d" fill="#2563eb">Stg1</text>
+        <rect x="78" y="0" width="74" height="18" rx="2" fill="#2563eb" opacity="0.08" stroke="#2563eb" stroke-width="0.4"/>
+        <text x="82" y="12" class="unit-d" fill="#2563eb">Stg2</text>
+        <rect x="156" y="0" width="74" height="18" rx="2" fill="#2563eb" opacity="0.08" stroke="#2563eb" stroke-width="0.4"/>
+        <text x="160" y="12" class="unit-d" fill="#2563eb">Stg3</text>
+        <rect x="234" y="0" width="74" height="18" rx="2" fill="#2563eb" opacity="0.08" stroke="#2563eb" stroke-width="0.4"/>
+        <text x="238" y="12" class="unit-d" fill="#2563eb">Stg4</text>
+      </g>
+      <text x="8" y="58" class="note-bl">2.42× faster (8-bit MUL, 4× smaller area)</text>
+      <text x="8" y="72" class="note">IMMA.16832.S8 · INT4: EMULATED 24×</text>
+      <text x="8" y="86" class="cyc-val">Shares TC port with HMMA (mutually exclusive)</text>
+    </g>
+
+    <!-- DMMA note -->
+    <g transform="translate(628,212)">
+      <rect x="0" y="0" width="366" height="32" rx="5" fill="#f9f8f4" stroke="#d1d0c7" stroke-width="0.5" stroke-dasharray="3,2"/>
+      <text x="8" y="12" class="lbl-sm" fill="#999">DMMA → pipe_fp64 (579 cyc, non-pipelined)</text>
+      <text x="8" y="26" class="unit-d" fill="#999">cuBLAS DGEMM uses DFMA path (0.96 TFLOPS) instead</text>
+    </g>
+
+    <!-- Scaling -->
+    <g transform="translate(14,322)">
+      <text x="0" y="0" class="note-gr">D writeback → RF (512 B/MMA, C=D reuse) · 4 warps saturate SM · Cold start: ~375 cyc (power gating)</text>
+    </g>
+  </g>
+
+  <!-- ═══════════ DATA DELIVERY PATH ═══════════ -->
+  <g transform="translate(36,546)">
+    <rect x="0" y="0" width="1008" height="70" rx="8" fill="#ffffff" stroke="#e6e4da"/>
+    <text x="14" y="16" class="ttl" fill="#5b6679">DATA DELIVERY · DRAM → TC (Full Path: 118 cyc cp.async)</text>
+
+    <g transform="translate(14,28)">
+      <rect x="0" y="0" width="100" height="28" rx="4" fill="#f0fdf4" stroke="#16a34a" stroke-width="0.5"/>
+      <text x="6" y="12" class="unit-t" fill="#16a34a">DRAM</text>
+      <text x="6" y="24" class="unit-d">72GB 1231GB/s</text>
+      <line x1="104" y1="14" x2="124" y2="14" stroke="#5b6679" stroke-width="0.8" marker-end="url(#a1)"/>
+      <text x="106" y="26" class="cyc-val">479c</text>
+
+      <rect x="128" y="0" width="100" height="28" rx="4" fill="#EFF6FF" stroke="#2563eb" stroke-width="0.5"/>
+      <text x="134" y="12" class="unit-t" fill="#2563eb">SMEM</text>
+      <text x="134" y="24" class="unit-d">99KB swizzle</text>
+      <line x1="232" y1="14" x2="252" y2="14" stroke="#5b6679" stroke-width="0.8" marker-end="url(#a1)"/>
+      <text x="234" y="26" class="cyc-val">33c</text>
+
+      <rect x="256" y="0" width="100" height="28" rx="4" fill="#FEF3C7" stroke="#f59e0b" stroke-width="0.5"/>
+      <text x="262" y="12" class="unit-t" fill="#92400e">ldmatrix</text>
+      <text x="262" y="24" class="unit-d">1.68 cyc tput</text>
+      <line x1="360" y1="14" x2="380" y2="14" stroke="#5b6679" stroke-width="0.8" marker-end="url(#a1)"/>
+      <text x="362" y="26" class="cyc-val">+0*</text>
+
+      <rect x="384" y="0" width="80" height="28" rx="4" fill="#FDF4FF" stroke="#9333ea" stroke-width="0.5"/>
+      <text x="390" y="12" class="unit-t" fill="#9333ea">RF</text>
+      <text x="390" y="24" class="unit-d">80.3 B/cyc</text>
+      <line x1="468" y1="14" x2="488" y2="14" stroke="#e11d48" stroke-width="1" marker-end="url(#a2)"/>
+      <text x="470" y="26" class="cyc-val">~16c</text>
+
+      <rect x="492" y="0" width="80" height="28" rx="4" fill="#FFF1F2" stroke="#e11d48" stroke-width="0.5"/>
+      <text x="498" y="12" class="unit-t" fill="#e11d48">TC</text>
+      <text x="498" y="24" class="unit-d">29 cyc exec</text>
+
+      <text x="590" y="12" class="note-em">Starvation 7.4:1</text>
+      <text x="590" y="26" class="note">SW pipe + ×4 reuse → 94-102% peak</text>
+      <text x="800" y="12" class="cyc-val">* ldmatrix hidden in 29-cyc window</text>
+      <text x="800" y="26" class="cyc-val">No TM → all-compute optimal</text>
+    </g>
+  </g>
+
+  <!-- ═══════════ CHIP-LEVEL PERFORMANCE ═══════════ -->
+  <g transform="translate(36,632)">
+    <rect x="0" y="0" width="1008" height="60" rx="8" fill="#f0fdf4" stroke="#16a34a" stroke-width="0.8"/>
+    <text x="14" y="16" class="ttl" fill="#16a34a">CHIP-LEVEL PEAKS (110 SM × 4 SMSP = 440 TC slots @ 2.377 GHz)</text>
+    <text x="14" y="36" class="note">BF16: 268T · FP8: 536T · MXFP4: 1,070T (99.0%) · INT8: 536T · Sparse FP8: 682T · Sparse MX4: 1,318T</text>
+    <text x="14" y="52" class="note">cuBLAS FP8: 551T (102%) · CUTLASS MXFP4: 1,077T (101%) · CUTLASS NVFP4: 1,012T (95%) · Grouped FP8: 521T (97%)</text>
+  </g>
+
+  <!-- ═══════════ RESOURCE CLIFFS ═══════════ -->
+  <g transform="translate(36,706)">
+    <rect x="0" y="0" width="1008" height="50" rx="8" fill="#FEF3C7" stroke="#f59e0b" stroke-width="0.6"/>
+    <text x="14" y="16" class="ttl" fill="#92400e">RESOURCE CLIFFS</text>
+    <g transform="translate(14,28)">
+      <rect x="0" y="0" width="280" height="16" rx="3" fill="#FFF1F2" stroke="#e11d48" stroke-width="0.4"/>
+      <text x="6" y="11" class="note-em">CATASTROPHIC: INT4 24× · Sparse-meta 15× · Cold 13×</text>
+      <rect x="290" y="0" width="360" height="16" rx="3" fill="#ffffff" stroke="#f59e0b" stroke-width="0.4"/>
+      <text x="296" y="11" style="font:600 9.5px 'IBM Plex Sans',sans-serif;fill:#92400e">MODERATE: ILP +71% · Spill +12% · Co-issue -21pp · Switch +6%</text>
+      <rect x="660" y="0" width="330" height="16" rx="3" fill="#f0fdf4" stroke="#16a34a" stroke-width="0.4"/>
+      <text x="666" y="11" class="note-gr">ZERO-COST: accum width · scale gran · block-scale · sparse-meta</text>
+    </g>
+  </g>
+
+  <!-- ═══════════ KEY INSIGHTS ═══════════ -->
+  <g transform="translate(36,772)">
+    <rect x="0" y="0" width="1008" height="140" rx="8" fill="#ffffff" stroke="#e6e4da"/>
+    <text x="14" y="16" class="ttl" fill="#e11d48">KEY INSIGHTS (KI-4.1 – KI-4.10)</text>
+    <g transform="translate(14,28)">
+      <text x="0" y="0" class="note">KI-4.1: All FP formats identical 29/15.88 (format-agnostic) · KI-4.2: Block-scale = 0 overhead</text>
+      <text x="0" y="16" class="note">KI-4.3: Sparse 2:4 exact 2.00× (::ordered_metadata mandatory) · KI-4.4: INT4 emulated 24× (use FP4)</text>
+      <text x="0" y="32" class="note">KI-4.5: 29.3 TFLOPS/SM FP16 via mma.sync · KI-4.6: 4 warps saturate (1 TC/SMSP)</text>
+      <text x="0" y="48" class="note">KI-4.7: TC+FFMA 93.6% (epilogue free) · KI-4.8: MMA rowsum 96× faster than shfl</text>
+      <text x="0" y="64" class="note">KI-4.9: Data starvation 4.4× (SW pipe + ×4 reuse overcomes) · KI-4.10: Depth 1.81 = 2 slots (RF-read ceiling)</text>
+      <line x1="0" y1="78" x2="980" y2="78" stroke="#e6e4da" stroke-width="0.5"/>
+      <text x="0" y="94" class="note-gr">SM_120 TC is a mature production engine: cuBLAS/CUTLASS achieve 94–102% of measured per-SM peaks across all dense formats.</text>
+      <text x="0" y="110" class="note">The sole hardware limitations are the RF read-port bandwidth (15.88 cyc floor) and the absence of Tensor Memory (11 cyc/MMA overhead vs SM_100).</text>
+    </g>
+  </g>
+
+  <!-- Footer -->
+  <g transform="translate(36,922)">
+    <line x1="0" y1="0" x2="1008" y2="0" stroke="#e6e4da" stroke-width="0.8"/>
+    <text x="0" y="14" class="cyc-val">SM_120 · RTX PRO 5000 72GB · 195 test cases (Section 9) · Chapter 04 TensorCore Architecture · 2026</text>
+  </g>
+</svg>

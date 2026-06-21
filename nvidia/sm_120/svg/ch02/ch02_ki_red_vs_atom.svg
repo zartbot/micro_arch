@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 120" role="img"
+     aria-label="KI-2.7: red.add 5x faster than atom.add — fire-and-forget bypasses scoreboard">
+  <defs><style><![CDATA[
+    .ttl{font:600 13px "Fraunces",serif;fill:#0b1220}.lbl{font:600 11px "JetBrains Mono",monospace;fill:#2a3548}.lbl-sm{font:500 10px "JetBrains Mono",monospace;fill:#5b6679}.num{font:700 15px "JetBrains Mono",monospace}.num-lg{font:700 22px "JetBrains Mono",monospace}.stage{font:600 10px "JetBrains Mono",monospace;fill:#fff}.insight{font:600 10.5px "IBM Plex Sans",sans-serif;fill:#9f1239}
+  ]]></style></defs>
+  <rect width="1080" height="120" fill="#ffffff"/>
+  <text x="36" y="22" class="ttl">KI-2.7: Atomic Fire-and-Forget — red.add 5× Faster Throughput (but release ordering negates advantage)</text>
+  <g transform="translate(36,36)">
+    <rect width="300" height="50" rx="8" fill="#F0FDF4" stroke="#059669" stroke-width="1.2"/>
+    <text x="15" y="18" class="lbl" fill="#065F46">red.global.add (fire&amp;forget)</text>
+    <text x="15" y="40" class="num-lg" fill="#059669">10.34 cyc/op</text>
+  </g>
+  <g transform="translate(360,50)">
+    <rect width="60" height="24" rx="4" fill="#059669"/>
+    <text x="30" y="17" class="stage" text-anchor="middle">5×</text>
+  </g>
+  <g transform="translate(440,36)">
+    <rect width="300" height="50" rx="8" fill="#DBEAFE" stroke="#2563EB" stroke-width="1.2"/>
+    <text x="15" y="18" class="lbl" fill="#1D4ED8">atom.global.add (RMW)</text>
+    <text x="15" y="40" class="num-lg" fill="#2563EB">52.17 cyc/op</text>
+  </g>
+  <g transform="translate(764,36)">
+    <rect width="280" height="50" rx="8" fill="#FEF2F2" stroke="#DC2626" stroke-width="1"/>
+    <text x="15" y="18" class="lbl" fill="#DC2626">red.release.sys</text>
+    <text x="15" y="40" class="num" fill="#DC2626">521–947 cyc (69–126× SLOWER)</text>
+  </g>
+  <g transform="translate(36,96)">
+    <text x="0" y="14" class="insight">WARNING: Adding release ordering to red makes it 69–126× slower than plain atomicAdd — MEMBAR overhead negates fire-and-forget.</text>
+  </g>
+</svg>

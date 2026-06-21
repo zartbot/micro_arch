@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 480" role="img" aria-label="Host-Device Bandwidth vs Transfer Size">
+  <defs>
+    <style><![CDATA[
+      .ttl{font:600 15px "Fraunces",serif;fill:#0b1220}
+      .sub{font:italic 11px "Fraunces",serif;fill:#5b6679}
+      .axL{font:500 10px "JetBrains Mono",monospace;fill:#5b6679}
+      .regime-lbl{font:600 10px "Fraunces",serif;fill:#5b6679}
+      .regime-sub{font:italic 9px "Fraunces",serif;fill:#8e97a5}
+      .legend{font:600 10px "JetBrains Mono",monospace;fill:#2a3548}
+      .annot{font:500 9px "JetBrains Mono",monospace;fill:#5b6679}
+    ]]></style>
+  </defs>
+
+  <rect width="1080" height="480" fill="#ffffff"/>
+
+  <!-- Title -->
+  <text x="36" y="28" class="ttl">Host-Device Bandwidth vs Transfer Size</text>
+  <text x="36" y="48" class="sub">Three regimes: latency-dominated → transition → saturated — pageable H2D shows non-monotonic degradation</text>
+
+  <!-- Regime background bands -->
+  <rect x="100" y="80" width="146" height="280" fill="#fee2e2" opacity="0.3"/>
+  <rect x="246" y="80" width="392" height="280" fill="#fef3c7" opacity="0.3"/>
+  <rect x="638" y="80" width="342" height="280" fill="#d1fae5" opacity="0.3"/>
+
+  <!-- Regime labels -->
+  <text x="173" y="74" class="regime-lbl" text-anchor="middle" fill="#dc2626">Regime 1: Latency</text>
+  <text x="442" y="74" class="regime-lbl" text-anchor="middle" fill="#b45309">Regime 2: Transition</text>
+  <text x="809" y="74" class="regime-lbl" text-anchor="middle" fill="#047857">Regime 3: Saturated</text>
+
+  <!-- Axes -->
+  <line x1="100" y1="80" x2="100" y2="360" stroke="#5b6679" stroke-width="1.2"/>
+  <line x1="100" y1="360" x2="980" y2="360" stroke="#5b6679" stroke-width="1.2"/>
+
+  <!-- Y-axis ticks -->
+  <line x1="96" y1="360" x2="100" y2="360" stroke="#5b6679"/>
+  <text x="92" y="364" class="axL" text-anchor="end">0</text>
+  <line x1="96" y1="267" x2="100" y2="267" stroke="#5b6679"/>
+  <text x="92" y="271" class="axL" text-anchor="end">20</text>
+  <line x1="96" y1="173" x2="100" y2="173" stroke="#5b6679"/>
+  <text x="92" y="177" class="axL" text-anchor="end">40</text>
+  <line x1="96" y1="80" x2="100" y2="80" stroke="#5b6679"/>
+  <text x="92" y="84" class="axL" text-anchor="end">60</text>
+  <text x="58" y="220" class="axL" text-anchor="middle" transform="rotate(-90 58 220)">Bandwidth (GB/s)</text>
+
+  <!-- Y gridlines -->
+  <line x1="100" y1="267" x2="980" y2="267" stroke="#e6e4da" stroke-dasharray="3 3"/>
+  <line x1="100" y1="173" x2="980" y2="173" stroke="#e6e4da" stroke-dasharray="3 3"/>
+  <line x1="100" y1="80" x2="980" y2="80" stroke="#e6e4da" stroke-dasharray="3 3"/>
+
+  <!-- Theoretical peak line at 64 GB/s -->
+  <line x1="100" y1="61" x2="980" y2="61" stroke="#8e97a5" stroke-width="1" stroke-dasharray="5 3"/>
+  <text x="976" y="56" class="annot" text-anchor="end">Theoretical 64 GB/s</text>
+
+  <!-- Measured peak line at 56.9 GB/s -->
+  <line x1="100" y1="95" x2="980" y2="95" stroke="#76b900" stroke-width="1" stroke-dasharray="5 3"/>
+  <text x="976" y="91" class="annot" text-anchor="end" fill="#5a8e00">Measured peak 56.9 GB/s</text>
+
+  <!-- X-axis labels (10 points, evenly spaced) -->
+  <!-- Positions: 100, 198, 296, 393, 491, 589, 687, 784, 882, 980 -->
+  <text x="100" y="378" class="axL" text-anchor="middle">4KB</text>
+  <text x="198" y="378" class="axL" text-anchor="middle">16KB</text>
+  <text x="296" y="378" class="axL" text-anchor="middle">64KB</text>
+  <text x="393" y="378" class="axL" text-anchor="middle">256KB</text>
+  <text x="491" y="378" class="axL" text-anchor="middle">1MB</text>
+  <text x="589" y="378" class="axL" text-anchor="middle">4MB</text>
+  <text x="687" y="378" class="axL" text-anchor="middle">16MB</text>
+  <text x="784" y="378" class="axL" text-anchor="middle">64MB</text>
+  <text x="882" y="378" class="axL" text-anchor="middle">256MB</text>
+  <text x="980" y="378" class="axL" text-anchor="middle">1GB</text>
+  <text x="540" y="398" class="axL" text-anchor="middle">Transfer Size (log scale)</text>
+
+  <!-- Pinned H2D line (blue) -->
+  <!-- y = 360 - val * 4.667 -->
+  <polyline points="100,357 198,350 296,323 393,256 491,171 589,119 687,101 784,96 882,95 980,95"
+    fill="none" stroke="#1e40af" stroke-width="2.5"/>
+  <circle cx="100" cy="357" r="3.5" fill="#1e40af"/>
+  <circle cx="198" cy="350" r="3.5" fill="#1e40af"/>
+  <circle cx="296" cy="323" r="3.5" fill="#1e40af"/>
+  <circle cx="393" cy="256" r="3.5" fill="#1e40af"/>
+  <circle cx="491" cy="171" r="3.5" fill="#1e40af"/>
+  <circle cx="589" cy="119" r="3.5" fill="#1e40af"/>
+  <circle cx="687" cy="101" r="3.5" fill="#1e40af"/>
+  <circle cx="784" cy="96" r="3.5" fill="#1e40af"/>
+  <circle cx="882" cy="95" r="3.5" fill="#1e40af"/>
+  <circle cx="980" cy="95" r="3.5" fill="#1e40af"/>
+
+  <!-- Pinned D2H line (green) -->
+  <polyline points="100,357 198,347 296,315 393,242 491,162 589,116 687,101 784,97 882,96 980,96"
+    fill="none" stroke="#16a34a" stroke-width="2.5"/>
+  <circle cx="100" cy="357" r="3.5" fill="#16a34a"/>
+  <circle cx="198" cy="347" r="3.5" fill="#16a34a"/>
+  <circle cx="296" cy="315" r="3.5" fill="#16a34a"/>
+  <circle cx="393" cy="242" r="3.5" fill="#16a34a"/>
+  <circle cx="491" cy="162" r="3.5" fill="#16a34a"/>
+  <circle cx="589" cy="116" r="3.5" fill="#16a34a"/>
+  <circle cx="687" cy="101" r="3.5" fill="#16a34a"/>
+  <circle cx="784" cy="97" r="3.5" fill="#16a34a"/>
+  <circle cx="882" cy="96" r="3.5" fill="#16a34a"/>
+  <circle cx="980" cy="96" r="3.5" fill="#16a34a"/>
+
+  <!-- Pageable H2D line (orange) - non-monotonic! -->
+  <polyline points="100,357 198,349 296,334 393,279 491,233 589,163 687,129 784,186 882,191 980,193"
+    fill="none" stroke="#ea580c" stroke-width="2.5" stroke-dasharray="6 3"/>
+  <circle cx="100" cy="357" r="3.5" fill="#ea580c"/>
+  <circle cx="198" cy="349" r="3.5" fill="#ea580c"/>
+  <circle cx="296" cy="334" r="3.5" fill="#ea580c"/>
+  <circle cx="393" cy="279" r="3.5" fill="#ea580c"/>
+  <circle cx="491" cy="233" r="3.5" fill="#ea580c"/>
+  <circle cx="589" cy="163" r="3.5" fill="#ea580c"/>
+  <circle cx="687" cy="129" r="3.5" fill="#ea580c"/>
+  <circle cx="784" cy="186" r="3.5" fill="#ea580c"/>
+  <circle cx="882" cy="191" r="3.5" fill="#ea580c"/>
+  <circle cx="980" cy="193" r="3.5" fill="#ea580c"/>
+
+  <!-- Pageable D2H line (red) -->
+  <polyline points="100,357 198,350 296,330 393,294 491,259 589,212 687,193 784,190 882,189 980,188"
+    fill="none" stroke="#e11d48" stroke-width="2.5" stroke-dasharray="6 3"/>
+  <circle cx="100" cy="357" r="3.5" fill="#e11d48"/>
+  <circle cx="198" cy="350" r="3.5" fill="#e11d48"/>
+  <circle cx="296" cy="330" r="3.5" fill="#e11d48"/>
+  <circle cx="393" cy="294" r="3.5" fill="#e11d48"/>
+  <circle cx="491" cy="259" r="3.5" fill="#e11d48"/>
+  <circle cx="589" cy="212" r="3.5" fill="#e11d48"/>
+  <circle cx="687" cy="193" r="3.5" fill="#e11d48"/>
+  <circle cx="784" cy="190" r="3.5" fill="#e11d48"/>
+  <circle cx="882" cy="189" r="3.5" fill="#e11d48"/>
+  <circle cx="980" cy="188" r="3.5" fill="#e11d48"/>
+
+  <!-- Pageable H2D peak annotation -->
+  <text x="687" y="121" class="annot" text-anchor="middle" fill="#ea580c">49.4 GB/s peak</text>
+  <line x1="687" y1="125" x2="687" y2="129" stroke="#ea580c" stroke-width="1"/>
+
+  <!-- Pageable H2D degradation annotation -->
+  <text x="920" y="210" class="annot" text-anchor="middle" fill="#ea580c">↓ 35.8 GB/s</text>
+  <text x="920" y="222" class="annot" text-anchor="middle" fill="#ea580c">(degraded)</text>
+
+  <!-- Legend -->
+  <rect x="120" y="420" width="840" height="44" rx="8" fill="#fcfbf6" stroke="#e6e4da"/>
+  <line x1="140" y1="436" x2="170" y2="436" stroke="#1e40af" stroke-width="2.5"/>
+  <circle cx="155" cy="436" r="3.5" fill="#1e40af"/>
+  <text x="178" y="440" class="legend">Pinned H2D</text>
+  <line x1="300" y1="436" x2="330" y2="436" stroke="#16a34a" stroke-width="2.5"/>
+  <circle cx="315" cy="436" r="3.5" fill="#16a34a"/>
+  <text x="338" y="440" class="legend">Pinned D2H</text>
+  <line x1="460" y1="436" x2="490" y2="436" stroke="#ea580c" stroke-width="2.5" stroke-dasharray="6 3"/>
+  <circle cx="475" cy="436" r="3.5" fill="#ea580c"/>
+  <text x="498" y="440" class="legend">Pageable H2D</text>
+  <line x1="640" y1="436" x2="670" y2="436" stroke="#e11d48" stroke-width="2.5" stroke-dasharray="6 3"/>
+  <circle cx="655" cy="436" r="3.5" fill="#e11d48"/>
+  <text x="678" y="440" class="legend">Pageable D2H</text>
+  <text x="820" y="440" class="annot" fill="#5b6679">[source: S14/case_1,2]</text>
+
+</svg>

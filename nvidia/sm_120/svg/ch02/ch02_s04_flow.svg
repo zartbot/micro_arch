@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 600" role="img"
+     aria-label="cp.async pipeline path comparison — .ca (L1 hit) vs .cg (L1 bypass) with measured latencies">
+  <defs>
+    <marker id="aG" markerWidth="7" markerHeight="6" refX="5" refY="3" orient="auto">
+      <polygon points="0,0 7,3 0,6" fill="#5a8e00"/>
+    </marker>
+    <marker id="aO" markerWidth="7" markerHeight="6" refX="5" refY="3" orient="auto">
+      <polygon points="0,0 7,3 0,6" fill="#ea580c"/>
+    </marker>
+    <marker id="aD" markerWidth="7" markerHeight="6" refX="5" refY="3" orient="auto">
+      <polygon points="0,0 7,3 0,6" fill="#5b6679"/>
+    </marker>
+    <style><![CDATA[
+      .ttl{font:600 14px "Fraunces",serif;fill:#0b1220}
+      .sub{font:italic 11px "Fraunces",serif;fill:#5b6679}
+      .col-ttl{font:700 12px "JetBrains Mono",monospace;letter-spacing:0.04em}
+      .col-sub{font:500 10px "JetBrains Mono",monospace;fill:#5b6679}
+      .node{font:600 10.5px "JetBrains Mono",monospace;fill:#2a3548}
+      .node-sm{font:500 9.5px "JetBrains Mono",monospace;fill:#5b6679}
+      .badge{font:700 10px "JetBrains Mono",monospace;fill:#fff}
+      .lat{font:600 11px "JetBrains Mono",monospace}
+      .lat-sm{font:500 10px "JetBrains Mono",monospace;fill:#5b6679}
+      .cmp{font:700 12px "JetBrains Mono",monospace;fill:#9f1239}
+      .cmp-sub{font:italic 10px "Fraunces",serif;fill:#9f1239}
+      .ann{font:italic 10px "Fraunces",serif;fill:#5b6679}
+    ]]></style>
+  </defs>
+  <rect width="1080" height="600" fill="#ffffff"/>
+  <text x="36" y="30" class="ttl">cp.async Pipeline Path Comparison</text>
+  <text x="36" y="48" class="sub">Same-size 16B/thread head-to-head: .ca hits L1 at 87 cyc vs .cg bypasses to L2 at 384 cyc (4.39x slower)</text>
+
+  <!-- Center divider -->
+  <line x1="530" y1="60" x2="530" y2="560" stroke="#e6e4da" stroke-width="1" stroke-dasharray="4 3"/>
+
+  <!-- ═══════════ LEFT COLUMN: cp.async.ca ═══════════ -->
+  <rect x="36" y="60" width="480" height="36" rx="6" fill="#e9f3d2" stroke="#5a8e00" stroke-width="0.8"/>
+  <text x="276" y="82" class="col-ttl" fill="#3d6b00" text-anchor="middle">cp.async.ca (cache-all, L1 hit path)</text>
+  <text x="276" y="106" class="col-sub" text-anchor="middle">PTX: cp.async.ca.shared.global · SASS: LDGSTS.E.128</text>
+
+  <!-- Node 1: Issue -->
+  <rect x="156" y="118" width="240" height="30" rx="6" fill="#f0fde8" stroke="#5a8e00"/>
+  <text x="276" y="137" class="node" text-anchor="middle">cp.async.ca issued</text>
+  <line x1="276" y1="148" x2="276" y2="168" stroke="#5a8e00" stroke-width="1.5" marker-end="url(#aG)"/>
+
+  <!-- Node 2: L1 lookup -->
+  <rect x="156" y="170" width="240" height="30" rx="6" fill="#e9f3d2" stroke="#5a8e00" stroke-width="1.2"/>
+  <text x="276" y="189" class="node" text-anchor="middle">L1 tag lookup (~43 cyc)</text>
+  <!-- Branch: HIT / MISS -->
+  <line x1="216" y1="200" x2="216" y2="230" stroke="#5a8e00" stroke-width="1.2" marker-end="url(#aG)"/>
+  <line x1="336" y1="200" x2="336" y2="230" stroke="#5b6679" stroke-width="1.2" stroke-dasharray="3 2" marker-end="url(#aD)"/>
+  <text x="196" y="218" class="node-sm">HIT</text>
+  <text x="330" y="218" class="node-sm">MISS</text>
+
+  <!-- HIT path -->
+  <rect x="136" y="232" width="120" height="28" rx="5" fill="#d9f99d" stroke="#5a8e00"/>
+  <text x="196" y="250" class="node" text-anchor="middle">→ smem write</text>
+
+  <!-- MISS path -->
+  <rect x="276" y="232" width="160" height="28" rx="5" fill="#fef3c7" stroke="#92400e"/>
+  <text x="356" y="250" class="node" text-anchor="middle">L2 fetch + L1 fill</text>
+  <line x1="356" y1="260" x2="356" y2="278" stroke="#5b6679" stroke-width="1" marker-end="url(#aD)"/>
+  <rect x="296" y="280" width="120" height="24" rx="5" fill="#d9f99d" stroke="#5a8e00"/>
+  <text x="356" y="296" class="node-sm" text-anchor="middle">→ smem write</text>
+
+  <!-- Merge -->
+  <line x1="196" y1="260" x2="196" y2="316" stroke="#5a8e00" stroke-width="1"/>
+  <line x1="356" y1="304" x2="356" y2="316" stroke="#5b6679" stroke-width="1"/>
+  <line x1="196" y1="316" x2="356" y2="316" stroke="#5b6679" stroke-width="1"/>
+  <line x1="276" y1="316" x2="276" y2="334" stroke="#5a8e00" stroke-width="1.5" marker-end="url(#aG)"/>
+
+  <!-- commit_group -->
+  <rect x="196" y="336" width="160" height="26" rx="5" fill="#f6f4ed" stroke="#5b6679"/>
+  <text x="276" y="353" class="node" text-anchor="middle">commit_group</text>
+  <line x1="276" y1="362" x2="276" y2="378" stroke="#5a8e00" stroke-width="1.5" marker-end="url(#aG)"/>
+
+  <!-- wait_group -->
+  <rect x="196" y="380" width="160" height="26" rx="5" fill="#f6f4ed" stroke="#5b6679"/>
+  <text x="276" y="397" class="node" text-anchor="middle">wait_group</text>
+  <line x1="276" y1="406" x2="276" y2="424" stroke="#5a8e00" stroke-width="1.5" marker-end="url(#aG)"/>
+
+  <!-- Latency results -->
+  <rect x="156" y="426" width="240" height="80" rx="8" fill="#e9f3d2" stroke="#5a8e00" stroke-width="1.2"/>
+  <text x="276" y="446" class="lat" fill="#3d6b00" text-anchor="middle">Measured latency (L1 warm)</text>
+  <text x="176" y="466" class="lat" fill="#5a8e00">16B = 87.3 cyc</text>
+  <text x="176" y="482" class="lat-sm">8B = 84.9 cyc</text>
+  <text x="176" y="498" class="lat-sm">4B = 77.8 cyc</text>
+  <rect x="310" y="456" width="76" height="20" rx="10" fill="#5a8e00"/>
+  <text x="348" y="470" class="badge" text-anchor="middle">4.39x ✓</text>
+
+  <!-- ═══════════ RIGHT COLUMN: cp.async.cg ═══════════ -->
+  <rect x="550" y="60" width="494" height="36" rx="6" fill="#ffedd5" stroke="#ea580c" stroke-width="0.8"/>
+  <text x="797" y="82" class="col-ttl" fill="#9a3412" text-anchor="middle">cp.async.cg (cache-global, L1 bypass)</text>
+  <text x="797" y="106" class="col-sub" text-anchor="middle">PTX: cp.async.cg.shared.global · SASS: LDGSTS.E.BYPASS.128</text>
+
+  <!-- Node 1: Issue -->
+  <rect x="667" y="118" width="260" height="30" rx="6" fill="#fff7ed" stroke="#ea580c"/>
+  <text x="797" y="137" class="node" text-anchor="middle">cp.async.cg issued</text>
+  <line x1="797" y1="148" x2="797" y2="168" stroke="#ea580c" stroke-width="1.5" marker-end="url(#aO)"/>
+
+  <!-- Node 2: L1 BYPASS -->
+  <rect x="667" y="170" width="260" height="30" rx="6" fill="#ffe4e6" stroke="#e11d48" stroke-width="1.2"/>
+  <text x="797" y="185" class="node" text-anchor="middle" fill="#9f1239">L1 BYPASS</text>
+  <text x="797" y="197" class="node-sm" text-anchor="middle" fill="#9f1239">explicit BYPASS flag in SASS</text>
+  <line x1="797" y1="200" x2="797" y2="230" stroke="#ea580c" stroke-width="1.5" marker-end="url(#aO)"/>
+
+  <!-- Node 3: L2 access -->
+  <rect x="667" y="232" width="260" height="34" rx="6" fill="#ffedd5" stroke="#ea580c" stroke-width="1.2"/>
+  <text x="797" y="249" class="node" text-anchor="middle">L2 access (~354 cyc)</text>
+  <text x="797" y="263" class="node-sm" text-anchor="middle">Full GXBAR round-trip</text>
+  <line x1="797" y1="266" x2="797" y2="288" stroke="#ea580c" stroke-width="1.5" marker-end="url(#aO)"/>
+
+  <!-- Node 4: smem write -->
+  <rect x="697" y="290" width="200" height="28" rx="5" fill="#fff7ed" stroke="#ea580c"/>
+  <text x="797" y="308" class="node" text-anchor="middle">smem write</text>
+  <line x1="797" y1="318" x2="797" y2="336" stroke="#ea580c" stroke-width="1.5" marker-end="url(#aO)"/>
+
+  <!-- commit_group -->
+  <rect x="717" y="338" width="160" height="26" rx="5" fill="#f6f4ed" stroke="#5b6679"/>
+  <text x="797" y="355" class="node" text-anchor="middle">commit_group</text>
+  <line x1="797" y1="364" x2="797" y2="380" stroke="#ea580c" stroke-width="1.5" marker-end="url(#aO)"/>
+
+  <!-- wait_group -->
+  <rect x="717" y="382" width="160" height="26" rx="5" fill="#f6f4ed" stroke="#5b6679"/>
+  <text x="797" y="399" class="node" text-anchor="middle">wait_group</text>
+  <line x1="797" y1="408" x2="797" y2="424" stroke="#ea580c" stroke-width="1.5" marker-end="url(#aO)"/>
+
+  <!-- Latency results -->
+  <rect x="667" y="426" width="260" height="80" rx="8" fill="#ffedd5" stroke="#ea580c" stroke-width="1.2"/>
+  <text x="797" y="446" class="lat" fill="#9a3412" text-anchor="middle">Measured latency</text>
+  <text x="687" y="466" class="lat" fill="#ea580c">16B = 383.7 cyc</text>
+  <text x="687" y="482" class="lat-sm">2×16B = 428.3 cyc (1024B)</text>
+  <text x="687" y="498" class="lat-sm">8×16B = 640.6 cyc (4096B)</text>
+
+  <!-- ═══════════ CENTER COMPARISON ═══════════ -->
+  <!-- 4.39x callout -->
+  <rect x="470" y="440" width="96" height="52" rx="8" fill="#ffe4e6" stroke="#e11d48" stroke-width="1.2"/>
+  <text x="518" y="462" class="cmp" text-anchor="middle">4.39×</text>
+  <text x="518" y="478" class="cmp-sub" text-anchor="middle">slower at</text>
+  <text x="518" y="490" class="cmp-sub" text-anchor="middle">same 16B</text>
+
+  <!-- Arrows pointing to comparison -->
+  <line x1="396" y1="466" x2="470" y2="466" stroke="#9f1239" stroke-width="1" stroke-dasharray="3 2"/>
+  <line x1="566" y1="466" x2="667" y2="466" stroke="#9f1239" stroke-width="1" stroke-dasharray="3 2"/>
+
+  <!-- Key difference highlight at L1 stage -->
+  <rect x="462" y="172" width="106" height="26" rx="6" fill="#ffe4e6" stroke="#e11d48" stroke-width="0.8"/>
+  <text x="515" y="189" class="cmp-sub" text-anchor="middle">KEY DIFFERENCE</text>
+
+  <!-- Bottom annotation -->
+  <text x="36" y="536" class="ann">The choice is access-pattern dependent: .ca wins on reusable data (L1 hit); .cg avoids L1 pollution for non-reusable/random data.</text>
+  <text x="36" y="552" class="ann">For L1-cacheable same-size comparison, .ca is unconditionally 4.39× faster. Sub-linear .cg scaling: 8× more data → only 1.66× more cycles (effective pipelining).</text>
+
+  <!-- Source -->
+  <text x="36" y="580" class="ann">Sources: S10/case_54,112 · S8/case_28,30</text>
+</svg>

@@ -1,0 +1,366 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 1020" role="img"
+     aria-label="§ 7.4.1 4-Way Divergence Cost Anatomy — why 30.6× not 4×, decomposed into binary-search branching, code explosion / I-cache thrash, and reconvergence sync">
+  <defs>
+    <style><![CDATA[
+      .eyebrow { font: 600 11px "JetBrains Mono", monospace; letter-spacing: 0.16em; text-transform: uppercase }
+      .title   { font: 500 24px "Fraunces", serif; fill: #0b1220; letter-spacing: -0.02em }
+      .sub     { font: italic 12px "Fraunces", serif; fill: #5b6679 }
+      .panel-h { font: 600 13px "JetBrains Mono", monospace; letter-spacing: 0.06em; fill: #0b1220 }
+      .panel-n { font: 700 11px "JetBrains Mono", monospace; letter-spacing: 0.08em }
+      .panel-sub { font: italic 11px "Fraunces", serif; fill: #5b6679 }
+      .lbl-sm  { font: 500 9px "JetBrains Mono", monospace; fill: #5b6679; letter-spacing: 0.05em; text-transform: uppercase }
+      .lbl     { font: 500 11px "IBM Plex Sans", sans-serif; fill: #2a3548 }
+      .lbl-mono{ font: 500 10px "JetBrains Mono", monospace; fill: #2a3548 }
+      .lbl-mono-em { font: 700 10px "JetBrains Mono", monospace; fill: #0b1220 }
+      .lbl-w   { font: 600 10px "IBM Plex Sans", sans-serif; fill: #ffffff }
+      .lbl-w-mono { font: 500 9px "JetBrains Mono", monospace; fill: #ffffff }
+      .big-num { font: 700 28px "Fraunces", serif; letter-spacing: -0.02em }
+      .arrow-d { stroke: #b45309; stroke-width: 2; fill: none }
+      .arrow-g { stroke: #5b6679; stroke-width: 1.2; fill: none }
+    ]]></style>
+    <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#b45309"/>
+    </marker>
+    <marker id="arr-g" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M0,0 L8,4 L0,8 z" fill="#5b6679"/>
+    </marker>
+  </defs>
+
+  <rect width="1280" height="1020" fill="#fcfbf6"/>
+
+  <!-- ============ Header ============ -->
+  <g transform="translate(40,32)">
+    <rect x="0" y="0" width="3" height="80" fill="#b45309"/>
+    <text x="16" y="30" class="title">4-Way Divergence Cost Anatomy — Why 30.6× Not 4×</text>
+    <text x="16" y="54" class="sub">Decomposing the 7.6× excess: binary-search branching · I-cache thrash · ITS reconvergence sync</text>
+    <text x="16" y="72" class="lbl-sm">Source: [S7/case_10] · 128-iter unrolled benchmark · ptxas-generated SASS</text>
+  </g>
+
+  <!-- ============ A: Expected vs Measured ============ -->
+  <g transform="translate(40,134)">
+    <rect x="0" y="0" width="1200" height="190" rx="10" fill="#ffffff" stroke="#e6e4da"/>
+    <rect x="0" y="0" width="1200" height="3" rx="10" fill="#b45309"/>
+    <text x="14" y="22" class="panel-n" fill="#b45309">A · NAIVE MODEL vs ACTUAL MEASUREMENT</text>
+    <text x="14" y="38" class="panel-sub">Where does the 7.6× hidden cost come from?</text>
+
+    <!-- Left: Expected -->
+    <g transform="translate(20,58)">
+      <rect x="0" y="0" width="500" height="116" rx="8" fill="#dcfce7" stroke="#16a34a"/>
+      <text x="14" y="20" class="lbl-sm" fill="#15803d">EXPECTED · NAIVE SERIALIZATION</text>
+      <text x="14" y="44" class="lbl-mono" fill="#166534">4 paths × 2.98 cyc/path =</text>
+      <text x="14" y="76" class="big-num" fill="#16a34a">11.92<tspan font-size="14" fill="#5b6679"> cyc/iter</tspan></text>
+      <!-- 11.92 cyc bar -->
+      <rect x="14" y="86" width="60" height="14" fill="#16a34a"/>
+      <text x="14" y="112" class="lbl-mono" fill="#16a34a" font-weight="700">4.0×<tspan fill="#5b6679" font-weight="500"> baseline</tspan></text>
+      <text x="200" y="86" class="lbl-mono" fill="#5b6679" font-size="9">naive bar (60 px)</text>
+    </g>
+
+    <!-- Middle: Arrow -->
+    <g transform="translate(536,116)">
+      <line x1="0" y1="0" x2="80" y2="0" class="arrow-d" marker-end="url(#arr)"/>
+      <text x="40" y="-10" class="lbl-mono" fill="#b45309" font-weight="700" text-anchor="middle">+ 79.11 cyc</text>
+      <text x="40" y="22" class="lbl-mono" fill="#b45309" font-size="9" text-anchor="middle">where from?</text>
+    </g>
+
+    <!-- Right: Measured -->
+    <g transform="translate(636,58)">
+      <rect x="0" y="0" width="544" height="116" rx="8" fill="#fee2e2" stroke="#dc2626"/>
+      <text x="14" y="20" class="lbl-sm" fill="#991b1b">MEASURED · ACTUAL ON SM_120</text>
+      <text x="14" y="44" class="lbl-mono" fill="#7f1d1d">[S7/case_10] · 4-way switch (tid % 4):</text>
+      <text x="14" y="76" class="big-num" fill="#dc2626">91.03<tspan font-size="14" fill="#5b6679"> cyc/iter</tspan></text>
+      <!-- 91.03 cyc bar (scaled, 91.03 / 11.92 * 60 ≈ 458) -->
+      <rect x="14" y="86" width="458" height="14" fill="#dc2626"/>
+      <text x="14" y="112" class="lbl-mono" fill="#dc2626" font-weight="700">30.6×<tspan fill="#5b6679" font-weight="500"> baseline · 7.6× excess</tspan></text>
+    </g>
+  </g>
+
+  <!-- ============ B: Three Factor Decomposition ============ -->
+  <!-- Factor 1: Binary Search Branching -->
+  <g transform="translate(40,344)">
+    <rect x="0" y="0" width="390" height="430" rx="10" fill="#ffffff" stroke="#e6e4da"/>
+    <rect x="0" y="0" width="390" height="3" rx="10" fill="#0369a1"/>
+    <text x="14" y="22" class="panel-n" fill="#0369a1">B-① · BINARY SEARCH BRANCHING</text>
+    <text x="14" y="38" class="panel-sub">Linear if/else-if chain · 3 BSSY/BSYNC levels</text>
+
+    <!-- ptxas SASS chain visualization -->
+    <g transform="translate(14,58)">
+      <text x="0" y="0" class="lbl-sm" fill="#0369a1">PTXAS-GENERATED SASS</text>
+      <line x1="0" y1="6" x2="362" y2="6" stroke="#dbeafe"/>
+
+      <!-- Level 1 -->
+      <g transform="translate(0,14)">
+        <rect x="0" y="0" width="362" height="42" rx="4" fill="#dbeafe" stroke="#0369a1"/>
+        <text x="8"  y="14" class="lbl-mono-em" fill="#0369a1">LEVEL 1: tid%4 == 0 ?</text>
+        <text x="8"  y="28" class="lbl-mono" fill="#1e3a8a">ISETP.EQ → @P BRA p0  · BSSY/BSYNC</text>
+        <text x="280" y="28" class="lbl-mono" fill="#0369a1" font-weight="700">+7 cyc</text>
+      </g>
+
+      <line x1="20" y1="58" x2="20" y2="68" class="arrow-g" marker-end="url(#arr-g)"/>
+      <text x="30" y="66" class="lbl-mono" fill="#5b6679" font-size="9">¬taken</text>
+
+      <!-- Level 2 -->
+      <g transform="translate(0,72)">
+        <rect x="0" y="0" width="362" height="42" rx="4" fill="#bfdbfe" stroke="#0369a1"/>
+        <text x="8"  y="14" class="lbl-mono-em" fill="#0369a1">LEVEL 2: tid%4 == 1 ?</text>
+        <text x="8"  y="28" class="lbl-mono" fill="#1e3a8a">ISETP.EQ → @P BRA p1  · BSSY/BSYNC</text>
+        <text x="280" y="28" class="lbl-mono" fill="#0369a1" font-weight="700">+7 cyc</text>
+      </g>
+
+      <line x1="20" y1="116" x2="20" y2="126" class="arrow-g" marker-end="url(#arr-g)"/>
+      <text x="30" y="124" class="lbl-mono" fill="#5b6679" font-size="9">¬taken</text>
+
+      <!-- Level 3 -->
+      <g transform="translate(0,130)">
+        <rect x="0" y="0" width="362" height="42" rx="4" fill="#93c5fd" stroke="#0369a1"/>
+        <text x="8"  y="14" class="lbl-mono-em" fill="#0369a1">LEVEL 3: tid%4 == 2 ?</text>
+        <text x="8"  y="28" class="lbl-mono" fill="#1e3a8a">ISETP.EQ → @P BRA p2  · BSSY/BSYNC</text>
+        <text x="280" y="28" class="lbl-mono" fill="#0369a1" font-weight="700">+7 cyc</text>
+      </g>
+
+      <line x1="20" y1="174" x2="20" y2="184" class="arrow-g" marker-end="url(#arr-g)"/>
+
+      <!-- Default branch p3 -->
+      <g transform="translate(0,188)">
+        <rect x="0" y="0" width="362" height="32" rx="4" fill="#f1f5f9" stroke="#94a3b8"/>
+        <text x="8"  y="20" class="lbl-mono" fill="#0b1220">→ default: BRA path 3 (unconditional)</text>
+      </g>
+    </g>
+
+    <!-- Tree summary box -->
+    <g transform="translate(14,290)">
+      <rect x="0" y="0" width="362" height="68" rx="6" fill="#dbeafe" stroke="#0369a1"/>
+      <text x="14" y="18" class="lbl-sm" fill="#0369a1">CONTRIBUTION</text>
+      <text x="14" y="38" class="lbl">3 BSSY/BSYNC levels × ~6-8 cyc each</text>
+      <text x="14" y="58" class="lbl-mono-em" fill="#0369a1" font-size="13">≈ 18-24 cyc total</text>
+    </g>
+
+    <!-- Note -->
+    <g transform="translate(14,370)">
+      <text x="0" y="0" class="lbl-mono" fill="#5b6679" font-size="9">Note: ptxas does NOT balance the tree —</text>
+      <text x="0" y="14" class="lbl-mono" fill="#5b6679" font-size="9">linear chain favors common path 0.</text>
+      <text x="0" y="34" class="lbl-mono" fill="#94a3b8" font-size="9">[S7/case_10] · [S13/case_19,20]</text>
+    </g>
+  </g>
+
+  <!-- Factor 2: Code Explosion / I-cache thrash -->
+  <g transform="translate(445,344)">
+    <rect x="0" y="0" width="390" height="430" rx="10" fill="#ffffff" stroke="#e6e4da"/>
+    <rect x="0" y="0" width="390" height="3" rx="10" fill="#7c3aed"/>
+    <text x="14" y="22" class="panel-n" fill="#7c3aed">B-② · CODE EXPLOSION → I-CACHE THRASH</text>
+    <text x="14" y="38" class="panel-sub">Unrolled body exceeds L0 capacity by 8×</text>
+
+    <!-- Code size calc -->
+    <g transform="translate(14,58)">
+      <text x="0" y="0" class="lbl-sm" fill="#7c3aed">CODE FOOTPRINT MATH</text>
+      <line x1="0" y1="6" x2="362" y2="6" stroke="#f3e8ff"/>
+      <text x="0"   y="22" class="lbl-mono" fill="#5b6679">128 iter</text>
+      <text x="60"  y="22" class="lbl-mono">×</text>
+      <text x="80"  y="22" class="lbl-mono" fill="#5b6679">4 paths</text>
+      <text x="140" y="22" class="lbl-mono">×</text>
+      <text x="160" y="22" class="lbl-mono" fill="#5b6679">4 ops/path</text>
+      <text x="232" y="22" class="lbl-mono">×</text>
+      <text x="252" y="22" class="lbl-mono" fill="#5b6679">16 B/insn</text>
+      <text x="0"   y="44" class="lbl-mono-em" fill="#7c3aed" font-size="13">≈ 32 KB unrolled body</text>
+    </g>
+
+    <!-- L0 capacity vs code size visual -->
+    <g transform="translate(14,118)">
+      <text x="0" y="0" class="lbl-sm" fill="#7c3aed">CAPACITY vs DEMAND</text>
+      <line x1="0" y1="6" x2="362" y2="6" stroke="#f3e8ff"/>
+
+      <!-- L0 4KB -->
+      <text x="0" y="26" class="lbl-mono" fill="#5b6679">L0 cap:</text>
+      <rect x="60" y="14" width="38" height="18" rx="2" fill="#16a34a"/>
+      <text x="79" y="27" class="lbl-w" text-anchor="middle">4 KB</text>
+
+      <!-- Code 32KB (8x larger) -->
+      <text x="0" y="56" class="lbl-mono" fill="#5b6679">Code:</text>
+      <rect x="60" y="44" width="304" height="18" rx="2" fill="#7c3aed"/>
+      <text x="212" y="57" class="lbl-w" text-anchor="middle" font-weight="700">32 KB unrolled body</text>
+
+      <text x="0" y="84" class="lbl-mono-em" fill="#dc2626">→ 8× over L0 capacity → thrashing</text>
+    </g>
+
+    <!-- I-cache cliff cross-ref -->
+    <g transform="translate(14,228)">
+      <text x="0" y="0" class="lbl-sm" fill="#7c3aed">CROSS-REF: §7.8 I-CACHE CLIFF</text>
+      <line x1="0" y1="6" x2="362" y2="6" stroke="#f3e8ff"/>
+
+      <rect x="0"   y="12" width="120" height="22" rx="3" fill="#dcfce7"/>
+      <text x="6"   y="26" class="lbl-mono" fill="#15803d">≤8 KB:</text>
+      <text x="60"  y="26" class="lbl-mono" fill="#15803d" font-weight="700">1.08 c/i</text>
+
+      <rect x="124" y="12" width="120" height="22" rx="3" fill="#fef3c7"/>
+      <text x="130" y="26" class="lbl-mono" fill="#b45309">16 KB:</text>
+      <text x="184" y="26" class="lbl-mono" fill="#b45309" font-weight="700">1.57 c/i</text>
+
+      <rect x="248" y="12" width="116" height="22" rx="3" fill="#fee2e2"/>
+      <text x="254" y="26" class="lbl-mono" fill="#dc2626">32-64 KB:</text>
+      <text x="320" y="26" class="lbl-mono" fill="#dc2626" font-weight="700">4.30</text>
+
+      <text x="0" y="56" class="lbl-mono" fill="#5b6679">→ 32 KB body sits in L1-thrash zone</text>
+    </g>
+
+    <!-- Contribution -->
+    <g transform="translate(14,302)">
+      <rect x="0" y="0" width="362" height="68" rx="6" fill="#f3e8ff" stroke="#7c3aed"/>
+      <text x="14" y="18" class="lbl-sm" fill="#7c3aed">CONTRIBUTION (DOMINANT)</text>
+      <text x="14" y="38" class="lbl">L0 miss + L1 pressure compound</text>
+      <text x="14" y="58" class="lbl-mono-em" fill="#7c3aed" font-size="13">≈ 5-10× of total cost · ~50 cyc</text>
+    </g>
+
+    <!-- Note -->
+    <g transform="translate(14,382)">
+      <text x="0" y="0" class="lbl-mono" fill="#94a3b8" font-size="9">[S21/case_32-35] · [S13/case_5,6]</text>
+    </g>
+  </g>
+
+  <!-- Factor 3: Reconvergence Sync -->
+  <g transform="translate(850,344)">
+    <rect x="0" y="0" width="390" height="430" rx="10" fill="#ffffff" stroke="#e6e4da"/>
+    <rect x="0" y="0" width="390" height="3" rx="10" fill="#dc2626"/>
+    <text x="14" y="22" class="panel-n" fill="#dc2626">B-③ · RECONVERGENCE SYNC (ITS)</text>
+    <text x="14" y="38" class="panel-sub">BSYNC.RECONVERGENT forces all-lane rendezvous</text>
+
+    <!-- 4 lane group timeline -->
+    <g transform="translate(14,58)">
+      <text x="0" y="0" class="lbl-sm" fill="#dc2626">LANE-GROUP EXECUTION TIMELINE</text>
+      <line x1="0" y1="6" x2="362" y2="6" stroke="#fee2e2"/>
+
+      <!-- Lane group 0 -->
+      <g transform="translate(0,14)">
+        <text x="0" y="14" class="lbl-mono" fill="#5b6679">g0 (8 lanes):</text>
+        <rect x="80"  y="2" width="60" height="20" rx="3" fill="#dc2626"/>
+        <text x="110" y="16" class="lbl-w" text-anchor="middle">path 0</text>
+        <rect x="142" y="2" width="222" height="20" rx="3" fill="#fecaca" stroke="#dc2626" stroke-dasharray="2,2"/>
+        <text x="253" y="16" class="lbl-mono" fill="#7f1d1d" text-anchor="middle">━━━ idle wait ━━━</text>
+      </g>
+
+      <!-- Lane group 1 -->
+      <g transform="translate(0,40)">
+        <text x="0" y="14" class="lbl-mono" fill="#5b6679">g1 (8 lanes):</text>
+        <rect x="80"  y="2" width="60" height="20" rx="3" fill="#fecaca" stroke="#dc2626" stroke-dasharray="2,2"/>
+        <text x="110" y="16" class="lbl-mono" fill="#7f1d1d" text-anchor="middle">idle</text>
+        <rect x="142" y="2" width="60" height="20" rx="3" fill="#dc2626"/>
+        <text x="172" y="16" class="lbl-w" text-anchor="middle">path 1</text>
+        <rect x="204" y="2" width="160" height="20" rx="3" fill="#fecaca" stroke="#dc2626" stroke-dasharray="2,2"/>
+        <text x="284" y="16" class="lbl-mono" fill="#7f1d1d" text-anchor="middle">idle wait</text>
+      </g>
+
+      <!-- Lane group 2 -->
+      <g transform="translate(0,66)">
+        <text x="0" y="14" class="lbl-mono" fill="#5b6679">g2 (8 lanes):</text>
+        <rect x="80"  y="2" width="124" height="20" rx="3" fill="#fecaca" stroke="#dc2626" stroke-dasharray="2,2"/>
+        <text x="142" y="16" class="lbl-mono" fill="#7f1d1d" text-anchor="middle">idle wait</text>
+        <rect x="206" y="2" width="60" height="20" rx="3" fill="#dc2626"/>
+        <text x="236" y="16" class="lbl-w" text-anchor="middle">path 2</text>
+        <rect x="268" y="2" width="96" height="20" rx="3" fill="#fecaca" stroke="#dc2626" stroke-dasharray="2,2"/>
+        <text x="316" y="16" class="lbl-mono" fill="#7f1d1d" text-anchor="middle">idle</text>
+      </g>
+
+      <!-- Lane group 3 -->
+      <g transform="translate(0,92)">
+        <text x="0" y="14" class="lbl-mono" fill="#5b6679">g3 (8 lanes):</text>
+        <rect x="80"  y="2" width="222" height="20" rx="3" fill="#fecaca" stroke="#dc2626" stroke-dasharray="2,2"/>
+        <text x="190" y="16" class="lbl-mono" fill="#7f1d1d" text-anchor="middle">━━━ idle wait ━━━</text>
+        <rect x="304" y="2" width="60" height="20" rx="3" fill="#dc2626"/>
+        <text x="334" y="16" class="lbl-w" text-anchor="middle">path 3</text>
+      </g>
+
+      <!-- Time axis -->
+      <line x1="80" y1="124" x2="364" y2="124" stroke="#5b6679" stroke-width="0.6"/>
+      <text x="80"  y="138" class="lbl-mono" fill="#5b6679" font-size="9">t=0</text>
+      <text x="220" y="138" class="lbl-mono" fill="#5b6679" font-size="9">→ time</text>
+      <line x1="364" y1="120" x2="364" y2="146" stroke="#dc2626" stroke-width="2"/>
+      <text x="364" y="160" class="lbl-mono-em" fill="#dc2626" text-anchor="middle" font-size="10">BSYNC</text>
+      <text x="364" y="172" class="lbl-mono" fill="#dc2626" text-anchor="middle" font-size="9">all rendezvous</text>
+    </g>
+
+    <!-- ITS model -->
+    <g transform="translate(14,256)">
+      <text x="0" y="0" class="lbl-sm" fill="#dc2626">ITS RECONVERGENCE MODEL</text>
+      <line x1="0" y1="6" x2="362" y2="6" stroke="#fee2e2"/>
+      <text x="0" y="22" class="lbl-mono">• Each group runs independently</text>
+      <text x="0" y="38" class="lbl-mono">• BSYNC.RECONVERGENT halts each</text>
+      <text x="14" y="52" class="lbl-mono">group until ALL groups arrive</text>
+      <text x="0" y="68" class="lbl-mono">• Reconvergence stack ≥8 levels</text>
+    </g>
+
+    <!-- Contribution -->
+    <g transform="translate(14,338)">
+      <rect x="0" y="0" width="362" height="56" rx="6" fill="#fee2e2" stroke="#dc2626"/>
+      <text x="14" y="18" class="lbl-sm" fill="#dc2626">CONTRIBUTION</text>
+      <text x="14" y="38" class="lbl">~4 cyc/BSSY+BSYNC pair × 3 levels</text>
+      <text x="14" y="52" class="lbl-mono-em" fill="#dc2626" font-size="13">+ ITS group-wait → ~5-7 cyc</text>
+    </g>
+
+    <!-- Note -->
+    <g transform="translate(14,412)">
+      <text x="0" y="0" class="lbl-mono" fill="#94a3b8" font-size="9">[S13/case_20] · stack depth ≥8</text>
+    </g>
+  </g>
+
+  <!-- ============ C: Total cost stack bar ============ -->
+  <g transform="translate(40,794)">
+    <rect x="0" y="0" width="1200" height="186" rx="10" fill="#ffffff" stroke="#e6e4da"/>
+    <rect x="0" y="0" width="1200" height="3" rx="10" fill="#16a34a"/>
+    <text x="14" y="22" class="panel-n" fill="#15803d">C · COST DECOMPOSITION (≈ APPROXIMATE BREAKDOWN)</text>
+    <text x="14" y="38" class="panel-sub">Sum of contributions reconciles to measured 91.03 cyc/iter</text>
+
+    <!-- Stack bar (total ≈ 91 cyc, scale: 1 cyc = 12 px → 91 × 12 ≈ 1092 px wide) -->
+    <g transform="translate(40,68)">
+      <!-- Pure path execution (12 cyc → 144 px) -->
+      <rect x="0"   y="0" width="144" height="48" fill="#16a34a"/>
+      <text x="72"  y="18" class="lbl-w" text-anchor="middle" font-weight="700">Pure exec</text>
+      <text x="72"  y="34" class="lbl-w-mono" text-anchor="middle">11.92 cyc</text>
+      <text x="72"  y="46" class="lbl-w-mono" text-anchor="middle" font-size="8">(13%)</text>
+
+      <!-- Factor 1: Branch tree (22 cyc → 264 px) -->
+      <rect x="144" y="0" width="264" height="48" fill="#0369a1"/>
+      <text x="276" y="18" class="lbl-w" text-anchor="middle" font-weight="700">① Branch tree</text>
+      <text x="276" y="34" class="lbl-w-mono" text-anchor="middle">~22 cyc</text>
+      <text x="276" y="46" class="lbl-w-mono" text-anchor="middle" font-size="8">(24%)</text>
+
+      <!-- Factor 2: I-cache thrash (50 cyc → 600 px) -->
+      <rect x="408" y="0" width="600" height="48" fill="#7c3aed"/>
+      <text x="708" y="18" class="lbl-w" text-anchor="middle" font-weight="700">② I-cache thrash (DOMINANT)</text>
+      <text x="708" y="34" class="lbl-w-mono" text-anchor="middle">~50 cyc</text>
+      <text x="708" y="46" class="lbl-w-mono" text-anchor="middle" font-size="8">(55%)</text>
+
+      <!-- Factor 3: BSYNC wait (7 cyc → 84 px) -->
+      <rect x="1008" y="0" width="84" height="48" fill="#dc2626"/>
+      <text x="1050" y="18" class="lbl-w" text-anchor="middle" font-weight="700" font-size="9">③ Sync</text>
+      <text x="1050" y="34" class="lbl-w-mono" text-anchor="middle" font-size="9">~7 cyc</text>
+      <text x="1050" y="46" class="lbl-w-mono" text-anchor="middle" font-size="8">(8%)</text>
+
+      <!-- Tick marks -->
+      <line x1="0"    y1="48" x2="0"    y2="56" stroke="#5b6679"/>
+      <line x1="120"  y1="48" x2="120"  y2="56" stroke="#5b6679"/>
+      <line x1="240"  y1="48" x2="240"  y2="56" stroke="#5b6679"/>
+      <line x1="360"  y1="48" x2="360"  y2="56" stroke="#5b6679"/>
+      <line x1="480"  y1="48" x2="480"  y2="56" stroke="#5b6679"/>
+      <line x1="600"  y1="48" x2="600"  y2="56" stroke="#5b6679"/>
+      <line x1="720"  y1="48" x2="720"  y2="56" stroke="#5b6679"/>
+      <line x1="840"  y1="48" x2="840"  y2="56" stroke="#5b6679"/>
+      <line x1="960"  y1="48" x2="960"  y2="56" stroke="#5b6679"/>
+      <line x1="1080" y1="48" x2="1080" y2="56" stroke="#5b6679"/>
+      <text x="0"    y="68" class="lbl-mono" fill="#5b6679" font-size="9" text-anchor="middle">0</text>
+      <text x="120"  y="68" class="lbl-mono" fill="#5b6679" font-size="9" text-anchor="middle">10</text>
+      <text x="240"  y="68" class="lbl-mono" fill="#5b6679" font-size="9" text-anchor="middle">20</text>
+      <text x="360"  y="68" class="lbl-mono" fill="#5b6679" font-size="9" text-anchor="middle">30</text>
+      <text x="480"  y="68" class="lbl-mono" fill="#5b6679" font-size="9" text-anchor="middle">40</text>
+      <text x="600"  y="68" class="lbl-mono" fill="#5b6679" font-size="9" text-anchor="middle">50</text>
+      <text x="720"  y="68" class="lbl-mono" fill="#5b6679" font-size="9" text-anchor="middle">60</text>
+      <text x="840"  y="68" class="lbl-mono" fill="#5b6679" font-size="9" text-anchor="middle">70</text>
+      <text x="960"  y="68" class="lbl-mono" fill="#5b6679" font-size="9" text-anchor="middle">80</text>
+      <text x="1080" y="68" class="lbl-mono" fill="#5b6679" font-size="9" text-anchor="middle">90 cyc</text>
+
+      <!-- Sum bracket -->
+      <line x1="0"    y1="88" x2="1092" y2="88" stroke="#0b1220" stroke-width="0.8"/>
+      <line x1="0"    y1="84" x2="0"    y2="92" stroke="#0b1220" stroke-width="0.8"/>
+      <line x1="1092" y1="84" x2="1092" y2="92" stroke="#0b1220" stroke-width="0.8"/>
+      <text x="546" y="106" class="lbl-mono-em" text-anchor="middle">Σ ≈ 91 cyc · matches measured 91.03 cyc/iter (30.6× baseline)</text>
+    </g>
+  </g>
+</svg>

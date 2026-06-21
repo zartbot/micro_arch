@@ -1,0 +1,198 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 880" role="img"
+     aria-label="Chapter 03 Summary: SM_120 Microarchitecture — 4-SMSP single-issue, 16 pipes, compiler-trusted scheduling, deep memory queues">
+  <defs>
+    <marker id="ar" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#5b6679"/></marker>
+    <style><![CDATA[
+      .eyebrow{font:600 11px "JetBrains Mono",monospace;letter-spacing:0.14em;text-transform:uppercase}
+      .title{font:500 24px "Fraunces",serif;fill:#0b1220;letter-spacing:-0.02em}
+      .sub{font:italic 12px "Fraunces",serif;fill:#5b6679}
+      .sect{font:600 13px "Fraunces",serif}
+      .lbl{font:600 11px "JetBrains Mono",monospace}
+      .lbl-sm{font:500 10px "JetBrains Mono",monospace;fill:#5b6679}
+      .kpi-val{font:700 20px "Fraunces",serif;fill:#0b1220}
+      .kpi-unit{font:500 9.5px "JetBrains Mono",monospace;fill:#5b6679}
+      .badge{font:600 9.5px "JetBrains Mono",monospace}
+      .note{font:500 9px "JetBrains Mono",monospace;fill:#8e97a5}
+      .safe{font:600 10px "JetBrains Mono",monospace;fill:#16a34a}
+      .warn{font:600 10px "JetBrains Mono",monospace;fill:#dc2626}
+      .insight{font:500 11px "JetBrains Mono",monospace;fill:#334155}
+    ]]></style>
+  </defs>
+  <rect width="1080" height="880" fill="#fcfbf6"/>
+
+  <!-- Header -->
+  <g transform="translate(36, 32)">
+    <rect x="0" y="0" width="4" height="56" fill="#5a8e00"/>
+    <text x="18" y="18" class="eyebrow" fill="#5a8e00">CHAPTER 03 · SM_120 · GB202 BLACKWELL</text>
+    <text x="18" y="44" class="title">SM Microarchitecture — Complete Characterization</text>
+    <text x="18" y="64" class="sub">4-SMSP single-issue · 16 execution pipes · compiler-trusted scheduling · 249 microbenchmark cases</text>
+  </g>
+
+  <!-- ═══════ ROW 1: Core Architecture KPIs ═══════ -->
+  <g transform="translate(36, 110)">
+    <rect x="0" y="0" width="200" height="80" rx="10" fill="#ffffff" stroke="#e6e4da"/>
+    <rect x="0" y="0" width="200" height="3" rx="10" fill="#5a8e00" opacity="0.7"/>
+    <text x="14" y="22" class="badge" fill="#5a8e00">ISSUE MODEL</text>
+    <text x="14" y="50" class="kpi-val">4 × 1</text>
+    <text x="14" y="68" class="kpi-unit">4 SMSPs × 1 insn/cyc each</text>
+
+    <rect x="214" y="0" width="160" height="80" rx="10" fill="#ffffff" stroke="#e6e4da"/>
+    <rect x="214" y="0" width="160" height="3" rx="10" fill="#5a8e00" opacity="0.7"/>
+    <text x="228" y="22" class="badge" fill="#5a8e00">EXECUTION PIPES</text>
+    <text x="228" y="50" class="kpi-val">16</text>
+    <text x="228" y="68" class="kpi-unit">distinct NCU pipe metrics</text>
+
+    <rect x="388" y="0" width="160" height="80" rx="10" fill="#ffffff" stroke="#e6e4da"/>
+    <rect x="388" y="0" width="160" height="3" rx="10" fill="#5a8e00" opacity="0.7"/>
+    <text x="402" y="22" class="badge" fill="#5a8e00">HW SCOREBOARDS</text>
+    <text x="402" y="50" class="kpi-val">6</text>
+    <text x="402" y="68" class="kpi-unit">SB counters/warp (41 bits)</text>
+
+    <rect x="562" y="0" width="160" height="80" rx="10" fill="#ffffff" stroke="#e6e4da"/>
+    <rect x="562" y="0" width="160" height="3" rx="10" fill="#5a8e00" opacity="0.7"/>
+    <text x="576" y="22" class="badge" fill="#5a8e00">MSHR QUEUE</text>
+    <text x="576" y="50" class="kpi-val">12–13</text>
+    <text x="576" y="68" class="kpi-unit">loads/warp (2× vs SM_90)</text>
+
+    <rect x="736" y="0" width="140" height="80" rx="10" fill="#ffffff" stroke="#e6e4da"/>
+    <rect x="736" y="0" width="140" height="3" rx="10" fill="#5a8e00" opacity="0.7"/>
+    <text x="750" y="22" class="badge" fill="#5a8e00">RFC DEPTH</text>
+    <text x="750" y="50" class="kpi-val">≥24</text>
+    <text x="750" y="68" class="kpi-unit">entries/warp (no cliff)</text>
+
+    <rect x="890" y="0" width="146" height="80" rx="10" fill="#ffffff" stroke="#e6e4da"/>
+    <rect x="890" y="0" width="146" height="3" rx="10" fill="#5a8e00" opacity="0.7"/>
+    <text x="904" y="22" class="badge" fill="#5a8e00">CO-ISSUE PAIRS</text>
+    <text x="904" y="50" class="kpi-val">10/15</text>
+    <text x="904" y="68" class="kpi-unit">≤2.2% overhead</text>
+  </g>
+
+  <!-- ═══════ ROW 2: Three Architectural Pillars ═══════ -->
+  <g transform="translate(36, 210)">
+    <rect x="0" y="0" width="330" height="220" rx="12" fill="#ffffff" stroke="#334155" stroke-width="0.8"/>
+    <rect x="0" y="0" width="330" height="4" rx="12" fill="#2563eb"/>
+    <text x="14" y="24" class="sect" fill="#2563eb">Dispatch Model</text>
+    <text x="14" y="44" class="lbl-sm">Single-issue per SMSP, 4 SMSPs/SM</text>
+    <text x="14" y="66" class="insight">• IPC ceiling: 0.92/SMSP (BRA/ISETP tax)</text>
+    <text x="14" y="84" class="insight">• 4-SMSP aggregate: 3.66 (99.1% of 4.0)</text>
+    <text x="14" y="102" class="insight">• I-buffer: ~4 entries (ILP=4 saturates)</text>
+    <text x="14" y="120" class="insight">• Warp binding: static, round-robin-by-4</text>
+    <text x="14" y="138" class="insight">• Context switch: 0 cycles (RF-resident)</text>
+    <text x="14" y="156" class="insight">• Scheduler: CGGTY (greedy-then-youngest)</text>
+    <rect x="14" y="170" width="300" height="34" rx="6" fill="#EFF6FF" stroke="#2563eb" stroke-width="0.4"/>
+    <text x="24" y="186" class="safe">4 warps hide FFMA latency (4 cyc × 1/cyc)</text>
+    <text x="24" y="200" class="note">Memory-bound: 16-32W needed (L2=354 cyc)</text>
+
+    <rect x="346" y="0" width="330" height="220" rx="12" fill="#ffffff" stroke="#334155" stroke-width="0.8"/>
+    <rect x="346" y="0" width="330" height="4" rx="12" fill="#6d28d9"/>
+    <text x="360" y="24" class="sect" fill="#6d28d9">Two-Mechanism Scheduling</text>
+    <text x="360" y="44" class="lbl-sm">Compiler-trusted stall + HW scoreboard</text>
+    <text x="360" y="66" class="insight">• Stall [4-bit]: fixed-latency (1:1 linear)</text>
+    <text x="360" y="84" class="insight">• SB [6 counters]: variable-latency gate</text>
+    <text x="360" y="102" class="insight">• Yield [1-bit]: inverted! (0=yield)</text>
+    <text x="360" y="120" class="warn">• Wrong stall → SILENT corruption (no trap)</text>
+    <text x="360" y="138" class="insight">• stall=0 → HW fallback (17× penalty)</text>
+    <text x="360" y="156" class="insight">• SB cliff: N=5→6 = 44.8× (L1-cached)</text>
+    <rect x="360" y="170" width="300" height="34" rx="6" fill="#F3E8FF" stroke="#6d28d9" stroke-width="0.4"/>
+    <text x="370" y="186" class="lbl" fill="#6d28d9">41 bits/warp vs 48K CAM entries</text>
+    <text x="370" y="200" class="note">200× less state than full HW scoreboard</text>
+
+    <rect x="692" y="0" width="343" height="220" rx="12" fill="#ffffff" stroke="#334155" stroke-width="0.8"/>
+    <rect x="692" y="0" width="343" height="4" rx="12" fill="#16a34a"/>
+    <text x="706" y="24" class="sect" fill="#16a34a">Operand Delivery (3-Tier)</text>
+    <text x="706" y="44" class="lbl-sm">RFC + 2-bank RF + ptxas co-design</text>
+    <text x="706" y="66" class="insight">• Tier 1: RFC hit → 0-cycle (≥24 entries)</text>
+    <text x="706" y="84" class="insight">• Tier 2: RF mixed parity → 0-cycle</text>
+    <text x="706" y="102" class="insight">• Tier 3: RF conflict → +1 cyc (never!)</text>
+    <text x="706" y="120" class="insight">• Bank = R%2 (contradicts Huerta 4-bank)</text>
+    <text x="706" y="138" class="insight">• .reuse: +85% ALU throughput, 0% TC</text>
+    <text x="706" y="156" class="insight">• ptxas guarantees Tier 1-2 always</text>
+    <rect x="706" y="170" width="300" height="34" rx="6" fill="#DCFCE7" stroke="#16a34a" stroke-width="0.4"/>
+    <text x="716" y="186" class="safe">Production: 1.342 cyc/FFMA (34% faster)</text>
+    <text x="716" y="200" class="note">Zero penalty at application level</text>
+  </g>
+
+  <!-- ═══════ ROW 3: Co-Issue Architecture Summary ═══════ -->
+  <g transform="translate(36, 450)">
+    <rect x="0" y="0" width="1036" height="180" rx="12" fill="#ffffff" stroke="#334155" stroke-width="0.8"/>
+    <rect x="0" y="0" width="1036" height="4" rx="12" fill="#b45309"/>
+    <text x="14" y="24" class="sect" fill="#92400e">Pipe Co-Issue Architecture — 16 Pipes, Remarkably Parallel</text>
+
+    <g transform="translate(14, 44)">
+      <rect x="0" y="0" width="240" height="56" rx="6" fill="#DCFCE7" stroke="#16a34a" stroke-width="0.6"/>
+      <text x="8" y="16" class="safe">FULL OVERLAP (0-2.4%)</text>
+      <text x="8" y="32" class="lbl-sm">FMA+LSU, ALU+LSU, XU+LSU,</text>
+      <text x="8" y="46" class="lbl-sm">FMA+TC, ALU+TC, XU+TC, FMA+FP64</text>
+
+      <rect x="254" y="0" width="240" height="56" rx="6" fill="#FEF3C7" stroke="#b45309" stroke-width="0.6"/>
+      <text x="262" y="16" class="badge" fill="#92400e">PARTIAL (8-17%)</text>
+      <text x="262" y="32" class="lbl-sm">FMA+ALU: 8.3% (shared slot)</text>
+      <text x="262" y="46" class="lbl-sm">LSU+TC: 17.4% (RF write port)</text>
+
+      <rect x="508" y="0" width="240" height="56" rx="6" fill="#FEE2E2" stroke="#dc2626" stroke-width="0.6"/>
+      <text x="516" y="16" class="warn">XU-DOMINATED (132-143%)</text>
+      <text x="516" y="32" class="lbl-sm">FMA+XU, ALU+XU: XU pipeline</text>
+      <text x="516" y="46" class="lbl-sm">latency dominates (not switching)</text>
+
+      <rect x="762" y="0" width="230" height="56" rx="6" fill="#EDE7FB" stroke="#6d28d9" stroke-width="0.6"/>
+      <text x="770" y="16" class="badge" fill="#6d28d9">MMA WINDOW (29 cyc)</text>
+      <text x="770" y="32" class="lbl-sm">27 free dispatch slots per MMA</text>
+      <text x="770" y="46" class="lbl-sm">Epilogue = 0% overhead (free)</text>
+    </g>
+
+    <g transform="translate(14, 112)">
+      <text x="0" y="0" class="lbl" fill="#334155">Optimization Rules:</text>
+      <text x="0" y="18" class="safe">1. TC-dominated loops: ALL other pipes execute for FREE in MMA stall bubbles</text>
+      <text x="0" y="36" class="insight">2. Use ldmatrix (not LDS+FADD) in TC mainloop — avoids 17.4% RF write-port contention</text>
+      <text x="0" y="54" class="insight">3. Finer interleaving always better — 0% switching penalty at any group size (pipe mux &lt;1 cyc)</text>
+    </g>
+  </g>
+
+  <!-- ═══════ ROW 4: Key Insights Summary ═══════ -->
+  <g transform="translate(36, 650)">
+    <rect x="0" y="0" width="1036" height="200" rx="12" fill="#E9F3D2" stroke="#76b900" stroke-width="0.8"/>
+    <text x="14" y="24" class="sect" fill="#5a8e00">7 Key Insights — What Makes SM_120 Unique</text>
+
+    <g transform="translate(14, 44)">
+      <g transform="translate(0, 0)">
+        <circle cx="6" cy="4" r="3" fill="#5a8e00"/>
+        <text x="16" y="8" class="badge" fill="#5a8e00">KI-3.1</text>
+        <text x="62" y="8" class="insight">Single issue port + separate backends — not true dual-issue (warp parallelism substitutes)</text>
+      </g>
+      <g transform="translate(0, 22)">
+        <circle cx="6" cy="4" r="3" fill="#5a8e00"/>
+        <text x="16" y="8" class="badge" fill="#5a8e00">KI-3.2</text>
+        <text x="62" y="8" class="insight">.reuse bits functionally active: +85% ALU throughput via RFC caching; true no-op on TensorCore</text>
+      </g>
+      <g transform="translate(0, 44)">
+        <circle cx="6" cy="4" r="3" fill="#5a8e00"/>
+        <text x="16" y="8" class="badge" fill="#5a8e00">KI-3.3</text>
+        <text x="62" y="8" class="insight">10/15 pipe pairs achieve ≤2.2% overhead — 29-cyc MMA window absorbs entire epilogue for free</text>
+      </g>
+      <g transform="translate(0, 66)">
+        <circle cx="6" cy="4" r="3" fill="#5a8e00"/>
+        <text x="16" y="8" class="badge" fill="#5a8e00">KI-3.4</text>
+        <text x="62" y="8" class="insight">0% switching penalty at all group sizes — pipe mux settles in &lt;1 cycle; finest interleaving optimal</text>
+      </g>
+      <g transform="translate(0, 88)">
+        <circle cx="6" cy="4" r="3" fill="#5a8e00"/>
+        <text x="16" y="8" class="badge" fill="#5a8e00">KI-3.5</text>
+        <text x="62" y="8" class="insight">MSHR queue 12-13 deep (2× generational scaling) — software prefetch counterproductive</text>
+      </g>
+      <g transform="translate(0, 110)">
+        <circle cx="6" cy="4" r="3" fill="#5a8e00"/>
+        <text x="16" y="8" class="badge" fill="#5a8e00">KI-3.6</text>
+        <text x="62" y="8" class="insight">8% dispatch tax from BRA/ISETP sharing issue slot — unrolling fixes at I-cache cost (cliff 8-16KB)</text>
+      </g>
+      <g transform="translate(0, 132)">
+        <circle cx="6" cy="4" r="3" fill="#5a8e00"/>
+        <text x="16" y="8" class="badge" fill="#5a8e00">KI-3.7</text>
+        <text x="62" y="8" class="insight">2-bank RF (R%2) with +1 cyc conflict fully hidden by ptxas parity allocation + RFC — zero app-level penalty</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- Source line -->
+  <text x="36" y="870" class="note">[249 cases: S11 (156), S12 (37), S13 (encoding), S22 (56 NCU pipe verification) · SM_120 RTX PRO 5000 72GB · 2026]</text>
+</svg>

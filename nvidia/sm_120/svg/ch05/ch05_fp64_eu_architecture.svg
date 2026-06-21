@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 560" role="img" aria-label="SM_120 FP64 EU Architecture — 4 Independent Non-Pipelined EUs (one per SMSP)">
+  <defs>
+    <marker id="arr" markerWidth="7" markerHeight="5" refX="7" refY="2.5" orient="auto">
+      <path d="M0,0 L7,2.5 L0,5 Z" fill="#475569"/>
+    </marker>
+  </defs>
+
+  <rect width="1080" height="560" fill="#fafbfc"/>
+
+  <!-- Title -->
+  <text x="540" y="28" text-anchor="middle" style="font:700 15px 'Inter','Segoe UI',sans-serif;fill:#0f172a">SM_120 FP64 EU Architecture — 4 Independent EUs per SM</text>
+  <text x="540" y="48" style="font:italic 11px 'Inter','Segoe UI',sans-serif;fill:#64748b" text-anchor="middle">Each SMSP owns one dedicated non-pipelined DFMA execution unit (64 cyc/op, native hardware)</text>
+
+  <!-- SM outer box -->
+  <rect x="40" y="64" width="1000" height="325" rx="12" fill="#f8fafc" stroke="#64748b" stroke-width="1.2" stroke-dasharray="6,3"/>
+  <text x="60" y="86" style="font:700 11px 'Inter',sans-serif;fill:#475569">SM (Streaming Multiprocessor)</text>
+
+  <!-- SMSP 0 -->
+  <rect x="70" y="100" width="220" height="180" rx="8" fill="#ede9fe" stroke="#7c3aed" stroke-width="1.4"/>
+  <text x="180" y="120" text-anchor="middle" style="font:700 11px 'JetBrains Mono',monospace;fill:#5b21b6">SMSP 0</text>
+  <rect x="90" y="130" width="180" height="28" rx="4" fill="#ddd6fe" stroke="#7c3aed" stroke-width="0.8"/>
+  <text x="180" y="149" text-anchor="middle" style="font:500 10px 'JetBrains Mono',monospace;fill:#5b21b6">Warp Scheduler</text>
+  <line x1="180" y1="158" x2="180" y2="174" stroke="#475569" stroke-width="1.2" marker-end="url(#arr)"/>
+  <rect x="100" y="176" width="160" height="80" rx="6" fill="#ffffff" stroke="#7c3aed" stroke-width="1.5"/>
+  <text x="180" y="198" text-anchor="middle" style="font:700 11px 'JetBrains Mono',monospace;fill:#5b21b6">FP64 EU #0</text>
+  <text x="180" y="218" text-anchor="middle" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#374151">64 cyc / DFMA</text>
+  <text x="180" y="236" text-anchor="middle" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#374151">Non-pipelined</text>
+  <text x="180" y="250" text-anchor="middle" style="font:italic 8.5px 'Inter',sans-serif;fill:#6b7280">Native DFMA HW</text>
+
+  <!-- SMSP 1 -->
+  <rect x="310" y="100" width="220" height="180" rx="8" fill="#ede9fe" stroke="#7c3aed" stroke-width="1.4"/>
+  <text x="420" y="120" text-anchor="middle" style="font:700 11px 'JetBrains Mono',monospace;fill:#5b21b6">SMSP 1</text>
+  <rect x="330" y="130" width="180" height="28" rx="4" fill="#ddd6fe" stroke="#7c3aed" stroke-width="0.8"/>
+  <text x="420" y="149" text-anchor="middle" style="font:500 10px 'JetBrains Mono',monospace;fill:#5b21b6">Warp Scheduler</text>
+  <line x1="420" y1="158" x2="420" y2="174" stroke="#475569" stroke-width="1.2" marker-end="url(#arr)"/>
+  <rect x="340" y="176" width="160" height="80" rx="6" fill="#ffffff" stroke="#7c3aed" stroke-width="1.5"/>
+  <text x="420" y="198" text-anchor="middle" style="font:700 11px 'JetBrains Mono',monospace;fill:#5b21b6">FP64 EU #1</text>
+  <text x="420" y="218" text-anchor="middle" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#374151">64 cyc / DFMA</text>
+  <text x="420" y="236" text-anchor="middle" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#374151">Non-pipelined</text>
+  <text x="420" y="250" text-anchor="middle" style="font:italic 8.5px 'Inter',sans-serif;fill:#6b7280">Native DFMA HW</text>
+
+  <!-- SMSP 2 -->
+  <rect x="550" y="100" width="220" height="180" rx="8" fill="#ede9fe" stroke="#7c3aed" stroke-width="1.4"/>
+  <text x="660" y="120" text-anchor="middle" style="font:700 11px 'JetBrains Mono',monospace;fill:#5b21b6">SMSP 2</text>
+  <rect x="570" y="130" width="180" height="28" rx="4" fill="#ddd6fe" stroke="#7c3aed" stroke-width="0.8"/>
+  <text x="660" y="149" text-anchor="middle" style="font:500 10px 'JetBrains Mono',monospace;fill:#5b21b6">Warp Scheduler</text>
+  <line x1="660" y1="158" x2="660" y2="174" stroke="#475569" stroke-width="1.2" marker-end="url(#arr)"/>
+  <rect x="580" y="176" width="160" height="80" rx="6" fill="#ffffff" stroke="#7c3aed" stroke-width="1.5"/>
+  <text x="660" y="198" text-anchor="middle" style="font:700 11px 'JetBrains Mono',monospace;fill:#5b21b6">FP64 EU #2</text>
+  <text x="660" y="218" text-anchor="middle" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#374151">64 cyc / DFMA</text>
+  <text x="660" y="236" text-anchor="middle" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#374151">Non-pipelined</text>
+  <text x="660" y="250" text-anchor="middle" style="font:italic 8.5px 'Inter',sans-serif;fill:#6b7280">Native DFMA HW</text>
+
+  <!-- SMSP 3 -->
+  <rect x="790" y="100" width="220" height="180" rx="8" fill="#ede9fe" stroke="#7c3aed" stroke-width="1.4"/>
+  <text x="900" y="120" text-anchor="middle" style="font:700 11px 'JetBrains Mono',monospace;fill:#5b21b6">SMSP 3</text>
+  <rect x="810" y="130" width="180" height="28" rx="4" fill="#ddd6fe" stroke="#7c3aed" stroke-width="0.8"/>
+  <text x="900" y="149" text-anchor="middle" style="font:500 10px 'JetBrains Mono',monospace;fill:#5b21b6">Warp Scheduler</text>
+  <line x1="900" y1="158" x2="900" y2="174" stroke="#475569" stroke-width="1.2" marker-end="url(#arr)"/>
+  <rect x="820" y="176" width="160" height="80" rx="6" fill="#ffffff" stroke="#7c3aed" stroke-width="1.5"/>
+  <text x="900" y="198" text-anchor="middle" style="font:700 11px 'JetBrains Mono',monospace;fill:#5b21b6">FP64 EU #3</text>
+  <text x="900" y="218" text-anchor="middle" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#374151">64 cyc / DFMA</text>
+  <text x="900" y="236" text-anchor="middle" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#374151">Non-pipelined</text>
+  <text x="900" y="250" text-anchor="middle" style="font:italic 8.5px 'Inter',sans-serif;fill:#6b7280">Native DFMA HW</text>
+
+  <!-- Throughput annotations -->
+  <rect x="70" y="296" width="960" height="84" rx="6" fill="#f5f3ff" stroke="#c4b5fd" stroke-width="0.8"/>
+  <text x="90" y="316" style="font:700 10.5px 'Inter',sans-serif;fill:#5b21b6">Aggregate Throughput Model</text>
+  <text x="90" y="336" style="font:500 10px 'JetBrains Mono',monospace;fill:#374151">4W (1 warp/SMSP): 4 × (1 DFMA / 64 cyc) = 0.0625 DFMA/cyc/SM  → 0% contention (perfect 4× scaling)</text>
+  <text x="90" y="354" style="font:500 10px 'JetBrains Mono',monospace;fill:#374151">8W (2 warps/SMSP): Each EU time-shares 2 warps → 128 cyc/warp   → Agg stays at 0.0625 (saturated)</text>
+  <text x="90" y="368" style="font:italic 9px 'Inter',sans-serif;fill:#6b7280">FP64:FP32 throughput ratio = 1:32 per SM in real DGEMM workloads (all 32 lanes active)</text>
+
+  <!-- Key properties bottom -->
+  <rect x="40" y="400" width="1000" height="153" rx="8" fill="#eff6ff" stroke="#bfdbfe" stroke-width="1"/>
+  <text x="60" y="422" style="font:700 11px 'Inter',sans-serif;fill:#1d4ed8">Key Architectural Properties</text>
+  <g transform="translate(60,432)">
+    <text x="0" y="14" style="font:500 10px 'Inter',sans-serif;fill:#374151">• <tspan style="font-weight:700">Non-pipelined</tspan>: ILP=2 yields exactly 0% speedup over ILP=1 — the EU is fully occupied for 64 cycles per DFMA with no overlap.</text>
+    <text x="0" y="34" style="font:500 10px 'Inter',sans-serif;fill:#374151">• <tspan style="font-weight:700">No EU sharing</tspan>: Each SMSP owns its FP64 EU exclusively. No cross-SMSP arbitration or contention exists.</text>
+    <text x="0" y="54" style="font:500 10px 'Inter',sans-serif;fill:#374151">• <tspan style="font-weight:700">Full co-issue with P0</tspan>: FFMA (4 cyc) executes freely during the 64-cycle DFMA shadow — FP32 work is "free" alongside FP64.</text>
+    <text x="0" y="74" style="font:500 10px 'Inter',sans-serif;fill:#374151">• <tspan style="font-weight:700">FP64 conversions (F2F.F64)</tspan>: Also route through P1 at ~64 cyc — same hardware as DFMA.</text>
+    <text x="0" y="94" style="font:500 10px 'Inter',sans-serif;fill:#374151">• <tspan style="font-weight:700">Peak at 2.1 GHz</tspan>: 110 SMs × 0.0625 DFMA/cyc × 2 FLOP × 2.1 GHz = 28.9 GFLOPS (dep-chain); cuBLAS achieves 0.96 TFLOPS via ILP.</text>
+    <text x="0" y="114" style="font:500 10px 'Inter',sans-serif;fill:#374151">• <tspan style="font-weight:700">Sparse-lane artifact</tspan>: Tests using <tspan style="font-family:'JetBrains Mono',monospace;font-size:9px">if (lane != 0) return;</tspan> show +19% latency inflation — a dispatch overhead, not EU sharing.</text>
+  </g>
+</svg>

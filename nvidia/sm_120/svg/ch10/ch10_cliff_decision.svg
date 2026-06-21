@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 680" role="img"
+     aria-label="Resource Cliff Detection and Mitigation Decision Matrix">
+  <rect width="1080" height="680" fill="#ffffff"/>
+
+  <!-- Title -->
+  <text x="36" y="32" style="font:600 15px 'Fraunces',serif;fill:#0b1220">Resource Cliff Detection and Mitigation Decision Matrix</text>
+  <text x="36" y="52" style="font:italic 11px 'Fraunces',serif;fill:#5b6679">For each cliff: trigger condition, detection method, and recommended mitigation</text>
+
+  <!-- Column headers -->
+  <rect x="30" y="64" width="1020" height="30" rx="4" fill="#f1f5f9"/>
+  <text x="50" y="84" style="font:600 10px 'JetBrains Mono',monospace;fill:#0b1220">RESOURCE CLIFF</text>
+  <text x="210" y="84" style="font:600 10px 'JetBrains Mono',monospace;fill:#0b1220">TRIGGER CONDITION</text>
+  <text x="460" y="84" style="font:600 10px 'JetBrains Mono',monospace;fill:#0b1220">DETECTION METHOD</text>
+  <text x="720" y="84" style="font:600 10px 'JetBrains Mono',monospace;fill:#0b1220">MITIGATION</text>
+  <text x="970" y="84" style="font:600 10px 'JetBrains Mono',monospace;fill:#0b1220">WARN</text>
+
+  <!-- Row 1: Cross-PCIe CAS -->
+  <rect x="30" y="98" width="1020" height="46" rx="0" fill="#fef2f2"/>
+  <circle cx="45" cy="121" r="6" fill="#e11d48"/>
+  <text x="56" y="116" style="font:600 10px 'JetBrains Mono',monospace;fill:#e11d48">Cross-PCIe CAS</text>
+  <text x="56" y="132" style="font:500 9px 'JetBrains Mono',monospace;fill:#5b6679">15,000x penalty</text>
+  <text x="210" y="116" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#0b1220">atomicCAS on peer GPU memory</text>
+  <text x="210" y="132" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#0b1220">with 32-thread contention</text>
+  <text x="460" y="116" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#0b1220">SASS: ATOMS.STRONG.SYS.CAS</text>
+  <text x="460" y="132" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#0b1220">NCU: L2 atomic throughput near 0</text>
+  <text x="720" y="116" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#0b1220">Replace CAS with commutative ADD</text>
+  <text x="720" y="132" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#0b1220">or move sync logic to single GPU</text>
+  <text x="970" y="121" style="font:700 10px 'JetBrains Mono',monospace;fill:#e11d48">FATAL</text>
+
+  <!-- Row 2: cudaFree -->
+  <rect x="30" y="148" width="1020" height="46" rx="0" fill="#fef2f2"/>
+  <circle cx="45" cy="171" r="6" fill="#e11d48"/>
+  <text x="56" y="166" style="font:600 10px 'JetBrains Mono',monospace;fill:#e11d48">cudaFree (sync)</text>
+  <text x="56" y="182" style="font:500 9px 'JetBrains Mono',monospace;fill:#5b6679">244x penalty</text>
+  <text x="210" y="166" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#0b1220">cudaFree() in hot loop or</text>
+  <text x="210" y="182" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#0b1220">frequent alloc/dealloc cycles</text>
+  <text x="460" y="166" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#0b1220">Timeline: repeated DeviceSync gaps</text>
+  <text x="460" y="182" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#0b1220">Host profiler: 61 us per cudaFree</text>
+  <text x="720" y="166" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#0b1220">Use cudaMallocAsync/FreeAsync</text>
+  <text x="720" y="182" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#0b1220">or pre-allocate buffer pool</text>
+  <text x="970" y="171" style="font:700 10px 'JetBrains Mono',monospace;fill:#e11d48">FATAL</text>
+
+  <!-- Row 3: L2 sync -->
+  <rect x="30" y="198" width="1020" height="46" rx="0" fill="#fff7ed"/>
+  <circle cx="45" cy="221" r="6" fill="#ea580c"/>
+  <text x="56" y="216" style="font:600 10px 'JetBrains Mono',monospace;fill:#ea580c">L2 sync barrier</text>
+  <text x="56" y="232" style="font:500 9px 'JetBrains Mono',monospace;fill:#5b6679">26x penalty</text>
+  <text x="210" y="216" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#0b1220">st.release.gpu + ld.acquire.gpu</text>
+  <text x="210" y="232" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#0b1220">for intra-cluster synchronization</text>
+  <text x="460" y="216" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#0b1220">SASS: MEMBAR.ALL.GPU (549 cyc)</text>
+  <text x="460" y="232" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#0b1220">NCU: high stall_membar %</text>
+  <text x="720" y="216" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#0b1220">Use barrier.cluster.relaxed (86c)</text>
+  <text x="720" y="232" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#0b1220">or st.async + mbarrier (242c)</text>
+  <text x="970" y="221" style="font:700 10px 'JetBrains Mono',monospace;fill:#ea580c">HIGH</text>
+
+  <!-- Row 4: Cold launch -->
+  <rect x="30" y="248" width="1020" height="46" rx="0" fill="#fff7ed"/>
+  <circle cx="45" cy="271" r="6" fill="#ea580c"/>
+  <text x="56" y="266" style="font:600 10px 'JetBrains Mono',monospace;fill:#ea580c">Cold kernel launch</text>
+  <text x="56" y="282" style="font:500 9px 'JetBrains Mono',monospace;fill:#5b6679">20x penalty</text>
+  <text x="210" y="266" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#0b1220">First invocation of any kernel</text>
+  <text x="210" y="282" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#0b1220">function (PTX JIT + module load)</text>
+  <text x="460" y="266" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#0b1220">Timeline: 108 us initial spike</text>
+  <text x="460" y="282" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#0b1220">First-request latency anomaly</text>
+  <text x="720" y="266" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#0b1220">Warmup all kernels at init time</text>
+  <text x="720" y="282" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#0b1220">Use CUDA Graph for hot paths</text>
+  <text x="970" y="271" style="font:700 10px 'JetBrains Mono',monospace;fill:#ea580c">HIGH</text>
+
+  <!-- Row 5: Custom AllReduce -->
+  <rect x="30" y="298" width="1020" height="46" rx="0" fill="#fff7ed"/>
+  <circle cx="45" cy="321" r="6" fill="#ea580c"/>
+  <text x="56" y="316" style="font:600 10px 'JetBrains Mono',monospace;fill:#ea580c">Custom AllReduce</text>
+  <text x="56" y="332" style="font:500 9px 'JetBrains Mono',monospace;fill:#5b6679">14x penalty</text>
+  <text x="210" y="316" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#0b1220">NVLink-optimized kernel on</text>
+  <text x="210" y="332" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#0b1220">PCIe-only topology (no NVLink)</text>
+  <text x="460" y="316" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#0b1220">AllReduce BW &lt;&lt; 35 GB/s</text>
+  <text x="460" y="332" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#0b1220">High MEMBAR.ALL.SYS stalls</text>
+  <text x="720" y="316" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#0b1220">Use NCCL exclusively on PCIe</text>
+  <text x="720" y="332" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#0b1220">Prefer pipeline/expert parallel</text>
+  <text x="970" y="321" style="font:700 10px 'JetBrains Mono',monospace;fill:#ea580c">HIGH</text>
+
+  <!-- Row 6: BAR exhaustion -->
+  <rect x="30" y="348" width="1020" height="46" rx="0" fill="#fff7ed"/>
+  <circle cx="45" cy="371" r="6" fill="#ea580c"/>
+  <text x="56" y="366" style="font:600 10px 'JetBrains Mono',monospace;fill:#ea580c">BAR exhaustion</text>
+  <text x="56" y="382" style="font:500 9px 'JetBrains Mono',monospace;fill:#5b6679">7.8x SILENT</text>
+  <text x="210" y="366" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#0b1220">Sum of P2P BAR1 mappings</text>
+  <text x="210" y="382" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#0b1220">exceeds 256 MB per GPU</text>
+  <text x="460" y="366" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#0b1220">P2P BW drops to ~7 GB/s</text>
+  <text x="460" y="382" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#0b1220">NO error/warning from driver!</text>
+  <text x="720" y="366" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#0b1220">Audit: sum(P2P bufs) &lt; 256 MB</text>
+  <text x="720" y="382" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#0b1220">Enable only needed P2P pairs</text>
+  <text x="970" y="371" style="font:700 10px 'JetBrains Mono',monospace;fill:#e11d48">SILENT</text>
+
+  <!-- Row 7: GDDR7 bank -->
+  <rect x="30" y="398" width="1020" height="46" rx="0" fill="#fff7ed"/>
+  <circle cx="45" cy="421" r="6" fill="#ea580c"/>
+  <text x="56" y="416" style="font:600 10px 'JetBrains Mono',monospace;fill:#ea580c">GDDR7 bank group</text>
+  <text x="56" y="432" style="font:500 9px 'JetBrains Mono',monospace;fill:#5b6679">6.3x penalty</text>
+  <text x="210" y="416" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#0b1220">Access stride = 3x multiples</text>
+  <text x="210" y="432" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#0b1220">of 128B (384, 768, 1536 B)</text>
+  <text x="460" y="416" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#0b1220">NCU: DRAM throughput &lt;&lt; 1150 GB</text>
+  <text x="460" y="432" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#0b1220">at high occupancy</text>
+  <text x="720" y="416" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#0b1220">Use power-of-2 strides (512B+)</text>
+  <text x="720" y="432" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#0b1220">Pad structs to avoid 3x*128B</text>
+  <text x="970" y="421" style="font:700 10px 'JetBrains Mono',monospace;fill:#ea580c">HIGH</text>
+
+  <!-- Row 8: UVM -->
+  <rect x="30" y="448" width="1020" height="46" rx="0" fill="#fefce8"/>
+  <circle cx="45" cy="471" r="6" fill="#ca8a04"/>
+  <text x="56" y="466" style="font:600 10px 'JetBrains Mono',monospace;fill:#ca8a04">UVM no-prefetch</text>
+  <text x="56" y="482" style="font:500 9px 'JetBrains Mono',monospace;fill:#5b6679">4.9x penalty</text>
+  <text x="210" y="466" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#0b1220">First-touch page fault path</text>
+  <text x="210" y="482" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#0b1220">without cudaMemPrefetchAsync</text>
+  <text x="460" y="466" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#0b1220">NCU: high page_fault stalls</text>
+  <text x="460" y="482" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#0b1220">Kernel time &gt;&gt; expected</text>
+  <text x="720" y="466" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#0b1220">Always prefetch before kernel</text>
+  <text x="720" y="482" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#0b1220">or use explicit cudaMalloc path</text>
+  <text x="970" y="471" style="font:700 10px 'JetBrains Mono',monospace;fill:#ca8a04">MED</text>
+
+  <!-- Row 9: Tail effect -->
+  <rect x="30" y="498" width="1020" height="46" rx="0" fill="#fefce8"/>
+  <circle cx="45" cy="521" r="6" fill="#ca8a04"/>
+  <text x="56" y="516" style="font:600 10px 'JetBrains Mono',monospace;fill:#ca8a04">Tail effect</text>
+  <text x="56" y="532" style="font:500 9px 'JetBrains Mono',monospace;fill:#5b6679">~2x worst-case</text>
+  <text x="210" y="516" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#0b1220">Grid = N*110 + 1 (single extra</text>
+  <text x="210" y="532" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#0b1220">CTA nearly doubles exec time)</text>
+  <text x="460" y="516" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#0b1220">grid_size % 110 != 0</text>
+  <text x="460" y="532" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#0b1220">NCU: SM utilization imbalance</text>
+  <text x="720" y="516" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#0b1220">grid = ceil(work/110)*110</text>
+  <text x="720" y="532" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#0b1220">or use Stream-K (3.71x gain)</text>
+  <text x="970" y="521" style="font:700 10px 'JetBrains Mono',monospace;fill:#ca8a04">MED</text>
+
+  <!-- Row 10: Pageable -->
+  <rect x="30" y="548" width="1020" height="46" rx="0" fill="#fefce8"/>
+  <circle cx="45" cy="571" r="6" fill="#ca8a04"/>
+  <text x="56" y="566" style="font:600 10px 'JetBrains Mono',monospace;fill:#ca8a04">Pageable memory</text>
+  <text x="56" y="582" style="font:500 9px 'JetBrains Mono',monospace;fill:#5b6679">1.6x penalty</text>
+  <text x="210" y="566" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#0b1220">Using malloc() instead of</text>
+  <text x="210" y="582" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#0b1220">cudaMallocHost() for transfers</text>
+  <text x="460" y="566" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#0b1220">H2D BW &lt; 50 GB/s at large size</text>
+  <text x="460" y="582" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#0b1220">D2H peaks then degrades &gt;64MB</text>
+  <text x="720" y="566" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#0b1220">Always use pinned memory for</text>
+  <text x="720" y="582" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#0b1220">performance-critical transfers</text>
+  <text x="970" y="571" style="font:700 10px 'JetBrains Mono',monospace;fill:#ca8a04">LOW</text>
+
+  <!-- Row 11: P2P cross-NUMA -->
+  <rect x="30" y="598" width="1020" height="46" rx="0" fill="#fefce8"/>
+  <circle cx="45" cy="621" r="6" fill="#ca8a04"/>
+  <text x="56" y="616" style="font:600 10px 'JetBrains Mono',monospace;fill:#ca8a04">P2P cross-NUMA</text>
+  <text x="56" y="632" style="font:500 9px 'JetBrains Mono',monospace;fill:#5b6679">1.3x (23% loss)</text>
+  <text x="210" y="616" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#0b1220">4+ concurrent P2P pairs cross</text>
+  <text x="210" y="632" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#0b1220">NUMA boundary (QPI/UPI hop)</text>
+  <text x="460" y="616" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#0b1220">nvidia-smi topo: SYS links</text>
+  <text x="460" y="632" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#0b1220">Per-pair BW drops from 48→37</text>
+  <text x="720" y="616" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#0b1220">Partition work within NUMA (4+4)</text>
+  <text x="720" y="632" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#0b1220">Topology-aware collective alg.</text>
+  <text x="970" y="621" style="font:700 10px 'JetBrains Mono',monospace;fill:#ca8a04">LOW</text>
+
+  <!-- Footer note -->
+  <text x="540" y="666" style="font:italic 10px 'Fraunces',serif;fill:#5b6679" text-anchor="middle">SM_120 (GB202) 8-GPU PCIe Gen5 x16 configuration without NVLink. Clock pinned at 2497 MHz.</text>
+</svg>

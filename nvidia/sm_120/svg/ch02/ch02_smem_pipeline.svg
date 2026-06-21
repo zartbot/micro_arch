@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 480" role="img"
+     aria-label="SM_120 shared memory controller — pipelined replay arbiter, 32-way conflict only 1.43× penalty">
+  <defs>
+    <linearGradient id="prevG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFE4E6"/>
+      <stop offset="1" stop-color="#FFF1F2"/>
+    </linearGradient>
+    <linearGradient id="newG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#E9F3D2"/>
+      <stop offset="1" stop-color="#F4FAE2"/>
+    </linearGradient>
+    <style><![CDATA[
+      .ttl{font:600 14px "Fraunces",serif;fill:#0b1220}
+      .sub{font:italic 11px "Fraunces",serif;fill:#5b6679}
+      .lbl{font:600 11px "JetBrains Mono",monospace;fill:#2a3548}
+      .lbl-sm{font:500 10px "JetBrains Mono",monospace;fill:#5b6679}
+      .stage{font:500 10px "JetBrains Mono",monospace}
+      .num{font:600 18px "Fraunces",serif;fill:#0b1220;letter-spacing:-0.01em}
+    ]]></style>
+  </defs>
+  <rect width="1080" height="480" fill="#ffffff"/>
+  <text x="36" y="32" class="ttl">SM_120 Shared Memory Controller · Pipelined Replay Arbiter</text>
+  <text x="36" y="52" class="sub">32-way bank conflict adds only 1.43× throughput penalty (vs ~32× on SM_80–SM_90 serialization)</text>
+
+  <!-- Prior architecture -->
+  <g transform="translate(36,84)">
+    <rect x="0" y="0" width="1008" height="150" rx="12" fill="url(#prevG)" stroke="#e11d48" stroke-width="0.8"/>
+    <text x="20" y="22" class="lbl" fill="#9f1239">Prior architectures (SM_80 / SM_90) — Serialized Conflict</text>
+    <text x="20" y="38" class="lbl-sm">Each N-way bank conflict triggers N sequential replays → throughput penalty proportional to N (32× for 32-way)</text>
+
+    <!-- Timeline showing 32 sequential replays -->
+    <g transform="translate(36,52)">
+      <line x1="0" y1="44" x2="940" y2="44" stroke="#5b6679" stroke-width="1"/>
+      <!-- 32 small boxes representing serialized replays -->
+      <g>
+        <rect x="0"  y="20" width="28" height="20" rx="2" fill="#fff" stroke="#e11d48"/>
+        <rect x="29" y="20" width="28" height="20" rx="2" fill="#fff" stroke="#e11d48"/>
+        <rect x="58" y="20" width="28" height="20" rx="2" fill="#fff" stroke="#e11d48"/>
+        <rect x="87" y="20" width="28" height="20" rx="2" fill="#fff" stroke="#e11d48"/>
+        <rect x="116" y="20" width="28" height="20" rx="2" fill="#fff" stroke="#e11d48"/>
+        <rect x="145" y="20" width="28" height="20" rx="2" fill="#fff" stroke="#e11d48"/>
+        <rect x="174" y="20" width="28" height="20" rx="2" fill="#fff" stroke="#e11d48"/>
+        <rect x="203" y="20" width="28" height="20" rx="2" fill="#fff" stroke="#e11d48"/>
+        <text x="118" y="14" class="stage" fill="#9f1239" text-anchor="middle">replay #1..8 (sequential)</text>
+        <text x="600" y="34" class="stage" fill="#9f1239" text-anchor="middle">… (24 more sequential replays)</text>
+        <text x="0"   y="60" class="lbl-sm">cyc 0</text>
+        <text x="940" y="60" class="lbl-sm" text-anchor="end">cyc ~71 (serialized)</text>
+      </g>
+    </g>
+    <text x="20" y="138" class="lbl" fill="#9f1239">Penalty: 32-way → 32× throughput cost</text>
+  </g>
+
+  <!-- SM_120 -->
+  <g transform="translate(36,250)">
+    <rect x="0" y="0" width="1008" height="180" rx="12" fill="url(#newG)" stroke="#76b900" stroke-width="0.8"/>
+    <text x="20" y="22" class="lbl" fill="#5a8e00">SM_120 — Pipelined Replay Architecture</text>
+    <text x="20" y="38" class="lbl-sm">Replay of conflicting threads OVERLAPS with service of subsequent non-conflicting requests; pipeline never stalls</text>
+
+    <g transform="translate(36,52)">
+      <line x1="0" y1="44" x2="940" y2="44" stroke="#5b6679" stroke-width="1"/>
+      <!-- 4 stage boxes: cycle N, N+1, N+2, N+3 -->
+      <g>
+        <rect x="0"   y="0" width="200" height="20" rx="3" fill="#fff" stroke="#5a8e00"/>
+        <text x="100" y="14" class="stage" fill="#5a8e00" text-anchor="middle">Accept request #N</text>
+        <rect x="206" y="0" width="200" height="20" rx="3" fill="#fff" stroke="#5a8e00"/>
+        <text x="306" y="14" class="stage" fill="#5a8e00" text-anchor="middle">Service non-conflicting</text>
+        <rect x="412" y="0" width="200" height="20" rx="3" fill="#fff" stroke="#5a8e00"/>
+        <text x="512" y="14" class="stage" fill="#5a8e00" text-anchor="middle">Replay conflicts</text>
+        <rect x="618" y="0" width="200" height="20" rx="3" fill="#fff" stroke="#5a8e00"/>
+        <text x="718" y="14" class="stage" fill="#5a8e00" text-anchor="middle">Accept request #N+1 ↺</text>
+
+        <!-- pipeline overlap arrow -->
+        <path d="M412 24 L412 36 L618 36 L618 24" fill="none" stroke="#76b900" stroke-width="1.5" stroke-dasharray="3 2"/>
+        <text x="515" y="58" class="lbl-sm" fill="#5a8e00" text-anchor="middle">overlap: replay #N hides under service of #N+1</text>
+
+        <text x="0" y="80" class="lbl-sm">cyc 0</text>
+        <text x="206" y="80" class="lbl-sm">cyc 1</text>
+        <text x="412" y="80" class="lbl-sm">cyc 2</text>
+        <text x="618" y="80" class="lbl-sm">cyc 3</text>
+        <text x="940" y="95" class="lbl-sm" text-anchor="end">↺ steady-state 2.23 cyc/req base · 3.19 cyc/req @ 32-way</text>
+      </g>
+    </g>
+    <text x="20" y="168" class="lbl" fill="#5a8e00">Penalty: 32-way → 1.43× throughput cost (only +0.96 cyc/req)</text>
+  </g>
+</svg>

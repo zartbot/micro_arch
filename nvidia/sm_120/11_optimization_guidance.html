@@ -1,0 +1,869 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Optimization Guidance · SM_120 Microarch Reference</title>
+<link rel="stylesheet" href="assets/css/style.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" integrity="sha384-nB0miv6/jRmo5UMMR1wu3Gz6NLsoTkbqJghGIsx//Rlm+ZU03BU6SQNC66uf4l5+" crossorigin="anonymous">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/styles/atom-one-light.min.css">
+<style>
+/* protect non-color overrides over hljs theme */
+pre code.hljs { background: transparent !important; padding: 0 !important; }
+</style>
+</head>
+<body>
+<div class="shell">
+<aside class="toc">
+<a class="toc-back" href="index.html">← Index</a>
+<div class="toc-brand">SM_120 <span class="accent">GB202</span> · <em>Microarch</em></div>
+<span class="toc-tag">FINAL REPORT · 2026</span>
+<h4>All Chapters</h4>
+<a href="01_architecture_overview.html">01 · Architecture Overview</a>
+<a href="02_memory_subsystem.html">02 · Memory Subsystem</a>
+<a href="03_sm_microarchitecture.html">03 · SM Microarchitecture</a>
+<a href="04_tensorcore_architecture.html">04 · TensorCore Architecture</a>
+<a href="05_instruction_level_characterization.html">05 · Instruction-Level Characterization</a>
+<a href="06_on_chip_network_async.html">06 · On-Chip Network &amp; Async</a>
+<a href="07_warp_scheduler_control.html">07 · Warp Scheduler &amp; Control</a>
+<a href="08_workload_analysis.html">08 · Workload Analysis</a>
+<a href="09_power_thermal_efficiency.html">09 · Power, Thermal &amp; Efficiency</a>
+<a href="10_system_level_multi_gpu.html">10 · System-Level &amp; Multi-GPU</a>
+<a href="11_optimization_guidance.html" style="font-weight:600;color:var(--ink)">11 · Optimization Guidance</a>
+<a href="12_ptxas_compiler_behavior.html">12 · ptxas Compiler Behavior</a>
+<a href="13_unified_performance_model.html">13 · Unified Performance Model</a>
+<a href="14_sm100_to_sm120_porting_guide.html">14 · SM_100 → SM_120 Porting Guide</a>
+<a href="15_agent_ground_truth.html">15 · Agent Ground Truth</a>
+<a href="16_open_questions.html">16 · Open Questions</a>
+<a href="17_cross_reference_map.html">17 · Cross-Reference Map</a>
+<a href="18_appendix_a_test_coverage.html">18 · Appendix A — Test Coverage</a>
+<a href="19_appendix_b_machine_readable.html">19 · Appendix B — Machine-Readable Parameters</a>
+<a href="20_appendix_c_methodology.html">20 · Appendix C — Measurement Methodology</a>
+</aside>
+<main class="content">
+
+<header class="hero">
+<div class="hero-eyebrow"><span class="pulse"></span>CHAPTER 11 · SM_120 · GB202 BLACKWELL</div>
+<h1 class="hero-title">Optimization Guidance</h1>
+<p class="lede">This chapter synthesizes the measured microarchitectural data from Chapters 1--10 into actionable optimization guidance for three production kernel frameworks: CUTLASS, DeepGeMM, and FlashInfer. Unlike generic GPU optimization guides, every recommendation is backed by cycle-level measurements from the SM_120 (GB202, RTX PRO 5000 72GB) microbenchmark suite, enabling quantitative cost-benefit analysis for each optimization decision. The chapter establishes three distinct performance regimes (TC-bound GEMM, DRAM-bound GEMV, and mixed attention), provides a priority-ordered optimization checklist with expected benefits, and documents framework-specific patterns validated against SM_120 hardware characteristics.</p>
+</header>
+
+<figure class="diagram"><object data="svg/ch11/ch11_summary.svg" type="image/svg+xml" aria-label="Chapter 11 summary — CUTLASS / DeepGeMM / FlashInfer optimization recipes"></object><figcaption><span class="fig-num">FIG 11.0</span>Chapter 11 summary — CUTLASS / DeepGeMM / FlashInfer optimization recipes</figcaption></figure>
+<h2 class="ch-title" id="11-0-sm_120-gemm-data-path-g-s-r-tc">11.0 SM_120 GEMM Data Path (G-S-R-TC)</h2>
+<p>The critical data path for matrix multiplication on SM_120 traverses four stages: Global Memory, Shared Memory, Register File, and Tensor Core. SM_120 lacks Tensor Memory (TM) and wgmma instructions, making this path strictly <code>smem -&gt; ldmatrix -&gt; RF -&gt; mma.sync</code>.</p>
+<figure class="diagram"><object data="svg/ch11/ch11_gemm_path.svg" type="image/svg+xml" aria-label="SM_120 GEMM critical data path G-S-R-TC — DRAM → TMA → SMEM → RF → TC → epilogue"></object><figcaption>SM_120 GEMM critical data path G-S-R-TC — DRAM → TMA → SMEM → RF → TC → epilogue</figcaption></figure>
+<p>[source: <code>S9/case_27-34</code>, <code>S10/case_6,54,82,112</code>, <code>S8/case_142</code>, <code>S18/case_4</code>]</p>
+<hr>
+<h2 class="ch-title" id="11-0-1-optimization-checklist-20-items-priority-ordered">11.0.1 Optimization Checklist (20 Items, Priority-Ordered)</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th style="text-align: center;">#</th>
+<th>Category</th>
+<th>Optimization</th>
+<th style="text-align: center;">Expected Benefit</th>
+<th>Prerequisite</th>
+<th>Source</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: center;">1</td>
+<td>TC</td>
+<td>MMA ILP&gt;=4 (K-unrolling)</td>
+<td style="text-align: center;">1.81x throughput</td>
+<td>k_tile &gt;= 64</td>
+<td><code>S9/case_8</code></td>
+</tr>
+<tr>
+<td style="text-align: center;">2</td>
+<td>Smem</td>
+<td>XOR-swizzle 128B for ldmatrix</td>
+<td style="text-align: center;">4.23x (eliminate bank conflict)</td>
+<td>Swizzled tile layout</td>
+<td><code>S8/case_142</code></td>
+</tr>
+<tr>
+<td style="text-align: center;">3</td>
+<td>Pipeline</td>
+<td>3-stage TMA+mbarrier pipeline</td>
+<td style="text-align: center;">1.92x over serial</td>
+<td>3 smem buffers (&lt;=33KB each)</td>
+<td><code>S10/case_82</code></td>
+</tr>
+<tr>
+<td style="text-align: center;">4</td>
+<td>Precision</td>
+<td>FP8 or MX-FP4 over FP16</td>
+<td style="text-align: center;">2-4x TOPS at same cyc/mma</td>
+<td>Quantization-tolerant model</td>
+<td><code>S9/case_38,60</code></td>
+</tr>
+<tr>
+<td style="text-align: center;">5</td>
+<td>SFU</td>
+<td><code>--use_fast_math</code> for sinf/logf/tanhf</td>
+<td style="text-align: center;">3.95-11.3x per function</td>
+<td>Precision tolerance</td>
+<td><code>S5/case_84-92</code></td>
+</tr>
+<tr>
+<td style="text-align: center;">6</td>
+<td>Memory</td>
+<td>Vectorize to LDG.128 or LDG.256</td>
+<td style="text-align: center;">1.20x at DRAM</td>
+<td>Data alignment</td>
+<td><code>S8/case_176</code></td>
+</tr>
+<tr>
+<td style="text-align: center;">7</td>
+<td>Memory</td>
+<td>Fix stride to 1 (row-major coalescing)</td>
+<td style="text-align: center;">up to 5.1x at stride=16</td>
+<td>Layout choice</td>
+<td><code>S21/case_5</code></td>
+</tr>
+<tr>
+<td style="text-align: center;">8</td>
+<td>Launch</td>
+<td>Persistent kernel + work-stealing</td>
+<td style="text-align: center;">Eliminate 35 us/expert launch</td>
+<td>Grid management</td>
+<td><code>S19/case_38</code></td>
+</tr>
+<tr>
+<td style="text-align: center;">9</td>
+<td>Fusion</td>
+<td>Fuse elementwise kernels</td>
+<td style="text-align: center;">1.3-3.7x (eliminate DRAM RT)</td>
+<td>Kernel restructuring</td>
+<td><code>S19/case_44-47</code></td>
+</tr>
+<tr>
+<td style="text-align: center;">10</td>
+<td>Sync</td>
+<td>Named barrier (not mbarrier) for intra-CTA</td>
+<td style="text-align: center;">14x cheaper (15 vs 211 cyc)</td>
+<td>No TMA tracking needed</td>
+<td><code>S23/case_38</code></td>
+</tr>
+<tr>
+<td style="text-align: center;">11</td>
+<td>Sync</td>
+<td><code>cluster_arrive_relaxed</code> not full barrier</td>
+<td style="text-align: center;">4.4x cheaper (85 vs 371 cyc)</td>
+<td>Relaxed semantics OK</td>
+<td><code>S7/case_53</code></td>
+</tr>
+<tr>
+<td style="text-align: center;">12</td>
+<td>Sync</td>
+<td>CTA-scope fence (not GPU-scope)</td>
+<td style="text-align: center;">40.7x cheaper (7 vs 285 cyc)</td>
+<td>CTA-local data only</td>
+<td><code>S8/case_64-65</code></td>
+</tr>
+<tr>
+<td style="text-align: center;">13</td>
+<td>Memory</td>
+<td>STG.cg (bypass L1) for store throughput</td>
+<td style="text-align: center;">12x faster issue (3.59 vs 42.78 cyc)</td>
+<td>Write-only data</td>
+<td><code>S8/case_95</code></td>
+</tr>
+<tr>
+<td style="text-align: center;">14</td>
+<td>Attention</td>
+<td>MMA-based rowsum (not shfl)</td>
+<td style="text-align: center;">96x per-row (batched 16 rows)</td>
+<td>B=all-ones trick</td>
+<td><code>S9/case_160</code></td>
+</tr>
+<tr>
+<td style="text-align: center;">15</td>
+<td>Attention</td>
+<td>selp causal mask (not additive)</td>
+<td style="text-align: center;">+40.6% overhead eliminated</td>
+<td>Predicated output</td>
+<td><code>S19/case_67</code></td>
+</tr>
+<tr>
+<td style="text-align: center;">16</td>
+<td>Sparsity</td>
+<td>2:4 structured with <code>::ordered_metadata</code></td>
+<td style="text-align: center;">2.00x exact gain</td>
+<td>Pre-pruned weights</td>
+<td><code>S9/case_81</code></td>
+</tr>
+<tr>
+<td style="text-align: center;">17</td>
+<td>Launch</td>
+<td>CUDA Graph for multi-kernel pipeline</td>
+<td style="text-align: center;">1.67x for 10-kernel chain</td>
+<td>Static graph</td>
+<td><code>S14/case_14</code></td>
+</tr>
+<tr>
+<td style="text-align: center;">18</td>
+<td>Memory</td>
+<td>cudaMallocAsync/FreeAsync mempool</td>
+<td style="text-align: center;">244x faster deallocation</td>
+<td>Pool pre-provisioned</td>
+<td><code>S14/case_10</code></td>
+</tr>
+<tr>
+<td style="text-align: center;">19</td>
+<td>Regs</td>
+<td><code>setmaxnreg.dec</code> to release regs for occupancy</td>
+<td style="text-align: center;">+occupancy; 60 cyc one-time</td>
+<td>compute_120a</td>
+<td><code>S12/case_13</code></td>
+</tr>
+<tr>
+<td style="text-align: center;">20</td>
+<td>Tile</td>
+<td>ColMajor swizzle for B-operand L2 reuse</td>
+<td style="text-align: center;">21-35% BW savings</td>
+<td>Tile scheduler aware</td>
+<td><code>S19/case_32</code></td>
+</tr>
+</tbody>
+</table></div>
+<hr>
+<h2 class="ch-title" id="11-1-cutlass-on-sm_120">11.1 CUTLASS on SM_120</h2>
+<h3 class="sub-title" id="11-1-1-best-performing-kernel-paths">11.1.1 Best-Performing Kernel Paths</h3>
+<p>CUTLASS on SM_120 achieves near-theoretical or super-theoretical performance for several format-kernel combinations:</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Kernel Configuration</th>
+<th style="text-align: center;">Peak TFLOPS</th>
+<th style="text-align: center;">Efficiency</th>
+<th style="text-align: center;">Tile Shape</th>
+<th>Source</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>MXFP4 GEMM (BlockScaledGemm, cooperative_o)</td>
+<td style="text-align: center;">1076.5</td>
+<td style="text-align: center;">100.6%</td>
+<td style="text-align: center;">256x128x128</td>
+<td><code>S9/case_136</code></td>
+</tr>
+<tr>
+<td>Grouped GEMM MXFP4</td>
+<td style="text-align: center;">1036.4</td>
+<td style="text-align: center;">96.9%</td>
+<td style="text-align: center;">256x128x128</td>
+<td><code>S9/case_144</code></td>
+</tr>
+<tr>
+<td>Sparse MXFP4</td>
+<td style="text-align: center;">1318</td>
+<td style="text-align: center;">61.7%</td>
+<td style="text-align: center;">--</td>
+<td><code>S9/case_140</code></td>
+</tr>
+<tr>
+<td>Dense FP8 E4M3</td>
+<td style="text-align: center;">--</td>
+<td style="text-align: center;">~90%</td>
+<td style="text-align: center;">--</td>
+<td><code>S9/case_38</code></td>
+</tr>
+<tr>
+<td>Dense BF16</td>
+<td style="text-align: center;">261.8</td>
+<td style="text-align: center;">~95%</td>
+<td style="text-align: center;">--</td>
+<td><code>S9/case_25</code></td>
+</tr>
+</tbody>
+</table></div>
+<p>The 100.6% super-theoretical efficiency for MXFP4 arises from clock boost (2572 vs 2377 MHz nominal). All 588 M/N/K shapes are supported in the OMMA cooperative kernel path.</p>
+<h3 class="sub-title" id="11-1-2-known-limitations-on-sm_120">11.1.2 Known Limitations on SM_120</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Limitation</th>
+<th>Impact</th>
+<th>Workaround</th>
+<th>Source</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>TMA multicast: SW-emulated</td>
+<td>No cluster GEMM A-operand sharing</td>
+<td>Unicast+DSMEM (6.5x slower than local smem)</td>
+<td><code>S10/case_28-32</code></td>
+</tr>
+<tr>
+<td>No wgmma/tcgen05</td>
+<td>Must use mma.sync path; 4x instruction count</td>
+<td>ClusterShape&lt;1,1,1&gt;; accept instruction overhead</td>
+<td><code>S9/case_25</code></td>
+</tr>
+<tr>
+<td>99KB smem limit</td>
+<td>Pipeline depth limited to 3 stages</td>
+<td>Triple-buffer at 33KB/buffer</td>
+<td><code>S10/case_82</code></td>
+</tr>
+</tbody>
+</table></div>
+<h3 class="sub-title" id="11-1-3-sm_120-specific-optimizations">11.1.3 SM_120-Specific Optimizations</h3>
+<p><strong>1. Tile re-partitioning with 128B swizzle.</strong>
+The optimal pipeline for feeding MMA operands from shared memory on SM_120 is: <code>smem (128B swizzled) -&gt; ldmatrix.sync.aligned.x4 -&gt; HMMA</code>. This yields 29.1 cyc/tile with ldmatrix latency fully hidden behind MMA execution. The <code>.trans</code> qualifier on ldmatrix is free (0 cyc overhead), enabling efficient B-matrix transposition without explicit permutation. [source: <code>S10/case_17</code>]</p>
+<p><strong>2. Pipeline depth: 3-stage optimal.</strong>
+Triple-buffered cp.async pipelines achieve 1.92x speedup over serial execution. A 4th stage provides only +5.5% marginal benefit, which is not worth the additional 33KB smem consumption (reducing occupancy from 2 to 1 block/SM in many configurations). [source: <code>S10/case_82</code>]</p>
+<p><strong>3. Warp specialization: marginal benefit without TM.</strong>
+On SM_120, warp specialization (2 producer + 2 consumer warps) provides only 5.8% speedup for TMA-bound tiles (1139 vs 1206 cyc). All-compute configurations achieve 2.5-3.1x better throughput for TC-bound workloads. Specialization adds a constant 259 cyc/iter overhead from mbarrier synchronization between warp roles. Named barriers (15 cyc) should replace mbarriers (211 cyc) for intra-CTA synchronization wherever TMA completion tracking is not required. [source: <code>S23/case_33-38</code>, <code>S9/case_33</code>]</p>
+<p><strong>4. Epilogue conversion.</strong>
+BF16 output packing via <code>F2FP.BF16.F32.PACK_AB</code> costs 11.8 cyc/tile, which can be overlapped with the next tile's prologue when STG fire-and-forget is used (40.9% overlap achieved). [source: <code>S10/case_108</code>]</p>
+<hr>
+<h2 class="ch-title" id="11-2-deepgemm-on-sm_120">11.2 DeepGeMM on SM_120</h2>
+<h3 class="sub-title" id="11-2-1-key-patterns-characterized">11.2.1 Key Patterns Characterized</h3>
+<p>DeepGeMM relies on several low-level primitives whose SM_120 costs are now precisely characterized:</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Primitive</th>
+<th style="text-align: center;">Measured Cost</th>
+<th>Context</th>
+<th>Source</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Grid sync (L2 atomic)</td>
+<td style="text-align: center;">~1242 cyc (~0.59 us)</td>
+<td>Constant across 2-110 SMs</td>
+<td><code>S8/case_131</code></td>
+</tr>
+<tr>
+<td>st.bulk.weak.shared::cta</td>
+<td style="text-align: center;">2 cyc dispatch, 18 cyc complete</td>
+<td>Constant 8-96KB; 533-6322x faster than memset</td>
+<td><code>S8/case_132</code></td>
+</tr>
+<tr>
+<td>cluster_arrive_relaxed</td>
+<td style="text-align: center;">85 cyc</td>
+<td>4.4x faster than full 371 cyc</td>
+<td><code>S7/case_53</code></td>
+</tr>
+<tr>
+<td>tensormap.replace (addr)</td>
+<td style="text-align: center;">2 cyc</td>
+<td>Descriptor address update</td>
+<td><code>S10/case_98</code></td>
+</tr>
+<tr>
+<td>tensormap.replace (dim)</td>
+<td style="text-align: center;">2 cyc</td>
+<td>Dimension update</td>
+<td><code>S10/case_98</code></td>
+</tr>
+<tr>
+<td>tensormap.replace (stride)</td>
+<td style="text-align: center;">43 cyc</td>
+<td>Stride update (expensive)</td>
+<td><code>S10/case_99</code></td>
+</tr>
+<tr>
+<td>tensormap.replace (pair)</td>
+<td style="text-align: center;">34 cyc</td>
+<td>Combined update</td>
+<td><code>S10/case_99</code></td>
+</tr>
+<tr>
+<td>tma_store_fence (CTA scope)</td>
+<td style="text-align: center;">7 cyc</td>
+<td>Ordering guarantee</td>
+<td><code>S7/case_55</code></td>
+</tr>
+</tbody>
+</table></div>
+<h3 class="sub-title" id="11-2-2-sm_120-specific-impact">11.2.2 SM_120-Specific Impact</h3>
+<p>DeepGeMM's NVLink barrier mechanism (<code>red.release.sys.global.add</code>) is designed for NVLink-connected systems where inter-GPU signaling costs approximately 200 ns. On SM_120 (PCIe-only topology), the same pattern costs substantially more:</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Operation</th>
+<th style="text-align: center;">Cost (cyc)</th>
+<th style="text-align: center;">Cost (us @ 2.5 GHz)</th>
+<th>Source</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>red.release.gpu</td>
+<td style="text-align: center;">521</td>
+<td style="text-align: center;">0.21</td>
+<td><code>S8/case_129</code></td>
+</tr>
+<tr>
+<td>red.release.sys</td>
+<td style="text-align: center;">947</td>
+<td style="text-align: center;">0.38</td>
+<td><code>S8/case_129</code></td>
+</tr>
+<tr>
+<td>Round-trip signaling</td>
+<td style="text-align: center;">~14400</td>
+<td style="text-align: center;">5.76</td>
+<td><code>S8/case_130</code></td>
+</tr>
+<tr>
+<td>Custom AllReduce bandwidth</td>
+<td style="text-align: center;">--</td>
+<td style="text-align: center;">2.4 GB/s</td>
+<td><code>S17/case_15</code></td>
+</tr>
+<tr>
+<td>NCCL AllReduce bandwidth</td>
+<td style="text-align: center;">--</td>
+<td style="text-align: center;">35.2 GB/s</td>
+<td><code>S17/case_15</code></td>
+</tr>
+</tbody>
+</table></div>
+<p>The 14x gap between custom AllReduce (2.4 GB/s) and NCCL (35.2 GB/s) makes DeepGeMM's <code>nvlink_barrier.cuh</code> mechanism non-viable on SM_120. NCCL is the only viable collective communication path for this platform.</p>
+<h3 class="sub-title" id="11-2-3-recommended-adaptations">11.2.3 Recommended Adaptations</h3>
+<ol>
+<li><strong>Replace NVLink barriers with NCCL collectives.</strong> The PCIe round-trip cost (5.76 us) makes custom AllReduce infeasible.</li>
+<li><strong>Retain st.bulk.weak for smem initialization.</strong> The 533-6322x speedup over memset is platform-independent.</li>
+<li><strong>Use cluster_arrive_relaxed where semantics allow.</strong> The 4.4x cost reduction (85 vs 371 cyc) is unconditional.</li>
+<li><strong>Prefer tensormap.replace(addr/dim) over stride.</strong> Address and dimension updates (2 cyc) are 21x cheaper than stride updates (43 cyc).</li>
+</ol>
+<hr>
+<h2 class="ch-title" id="11-3-flashinfer-on-sm_120">11.3 FlashInfer on SM_120</h2>
+<h3 class="sub-title" id="11-3-1-attention-pipeline-characterization">11.3.1 Attention Pipeline Characterization</h3>
+<p>The critical-path primitives for FlashAttention-style kernels on SM_120 have been individually measured:</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Operation</th>
+<th style="text-align: center;">Cost</th>
+<th>Condition</th>
+<th>Source</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Online softmax state merge</td>
+<td style="text-align: center;">10 cyc/merge</td>
+<td>Full pipeline, 70% co-issue savings</td>
+<td><code>S5/case_97</code></td>
+</tr>
+<tr>
+<td>MMA-based rowsum (FP8)</td>
+<td style="text-align: center;">7.25 cyc/mma</td>
+<td>96x faster than shfl_down per-row</td>
+<td><code>S9/case_160</code></td>
+</tr>
+<tr>
+<td>Fragment layout swizzle (FP8 16b-&gt;8b)</td>
+<td style="text-align: center;">68 cyc/chain</td>
+<td>Permutation cost</td>
+<td><code>S6/case_49</code></td>
+</tr>
+<tr>
+<td>Fragment layout swizzle (FP4 16b-&gt;4b)</td>
+<td style="text-align: center;">83 cyc/chain</td>
+<td>Permutation cost</td>
+<td><code>S6/case_50</code></td>
+</tr>
+<tr>
+<td>Paged KV access (ps=64)</td>
+<td style="text-align: center;">6.50 GB/s</td>
+<td>3.1x over ps=1; no random penalty</td>
+<td><code>S8/case_148</code></td>
+</tr>
+<tr>
+<td>FP4 KV cache vs FP8</td>
+<td style="text-align: center;">1.64x faster</td>
+<td>Bandwidth-dominated</td>
+<td><code>S8/case_153</code></td>
+</tr>
+</tbody>
+</table></div>
+<h3 class="sub-title" id="11-3-2-sm_120-specific-considerations">11.3.2 SM_120-Specific Considerations</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Feature</th>
+<th>Status</th>
+<th>Implication</th>
+<th>Source</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ldmatrix .b8 (m16n8)</td>
+<td>NOT supported</td>
+<td>Must use m16n16 + .b8 on sm_120a</td>
+<td><code>S9/case_175-180</code></td>
+</tr>
+<tr>
+<td>OMMA.SF m16n8k64 (NVFP4 MLA)</td>
+<td>28.86 cyc/mma</td>
+<td>Pipeline depth 4.0</td>
+<td><code>S9/case_165</code></td>
+</tr>
+<tr>
+<td>Scale factor TMA load</td>
+<td>560 cyc/tile</td>
+<td>Fixed, L2-served</td>
+<td><code>S9/case_167</code></td>
+</tr>
+<tr>
+<td>SF smem layout (swizzled vs linear)</td>
+<td>Zero delta</td>
+<td>SF loads hidden behind MMA</td>
+<td><code>S9/case_168</code></td>
+</tr>
+<tr>
+<td>SFU+MMA concurrent execution</td>
+<td>0 overhead</td>
+<td>Up to 7 free EX2/HMMA cycle</td>
+<td><code>S21/case_44</code></td>
+</tr>
+</tbody>
+</table></div>
+<h3 class="sub-title" id="11-3-3-recommended-optimizations-for-flashinfer-on-sm_120">11.3.3 Recommended Optimizations for FlashInfer on SM_120</h3>
+<ol>
+<li>
+<p><strong>Replace shfl_down-based rowsum with MMA-based rowsum.</strong> Setting B=all-ones and computing a single MMA yields 16 partial sums simultaneously. Per-row cost: 1.81 cyc (MMA) vs 20 cyc (shfl_down) = 11x per row, 96x batched across 16 rows.</p>
+</li>
+<li>
+<p><strong>Exploit SFU+MMA independence for free softmax.</strong> The SFU pipe (EX2, RCP) and TC pipe (HMMA/QMMA/OMMA.SF) are fully independent on SM_120. Up to 7 EX2 operations execute for free during each HMMA cycle, enabling softmax computation at zero additional cost during MMA-bound tiles.</p>
+</li>
+<li>
+<p><strong>Use FP4 KV cache where accuracy permits.</strong> FP4 provides 1.64x speedup over FP8 by reducing bandwidth demand. The MX block-scale format (FP4 E2M1 with UE8M0 scale factors) maintains acceptable accuracy for inference KV caches.</p>
+</li>
+<li>
+<p><strong>Page size 64 for paged KV attention.</strong> Measured optimal throughput occurs at page_size=64 (6.50 GB/s, 3.1x over ps=1). L2 hash-based indexing eliminates conflict misses for random page access patterns.</p>
+</li>
+</ol>
+<hr>
+<h2 class="ch-title" id="11-4-key-insights">11.4 Key Insights</h2>
+<h3 class="sub-title" id="ki-11-1-cutlass-mxfp4-achieves-100-6-efficiency----best-optimized-kernel-path">KI-11.1: CUTLASS MXFP4 Achieves 100.6% Efficiency -- Best-Optimized Kernel Path</h3>
+<ul>
+<li><strong>Empirical Evidence</strong>: CUTLASS <code>block_scaled_gemm</code> OMMA cooperative_o with 256x128x128 tile peaks at 1076.5 TFLOPS (100.6% of 1070 theoretical at nominal 2.377 GHz baseline / <strong>90.8% of 1185 hardware peak at sustained 2.572 GHz boost</strong>, V-02 RESOLVED 2026-06-11). Super-theoretical against the nominal-clock baseline due to clock boost (2572 vs 2377 MHz nominal). All 588 shapes supported with consistent performance. [source: <code>S9/case_136</code>]</li>
+<li><strong>Theoretical Analysis</strong>: Two distinct theoretical baselines exist for SM_120 MXFP4 — (a) <strong>nominal-clock baseline</strong> at 2.377 GHz ≈ <strong>1070 TFLOPS</strong> (CUTLASS published reference, used in vendor literature for cross-generation comparison); (b) <strong>hardware-peak baseline</strong> at sustained boost 2.572 GHz ≈ <strong>1185 TFLOPS</strong> (110 SM × 4 SMSP / 15.59 cyc × 16384 FLOP/MMA × 2.572 GHz, recorded in AppB §B.15 <code>mxfp4_theoretical_at_2572_boost</code>). Use baseline (a) when comparing to CUTLASS published reference points (yields the headline 100.6%); use baseline (b) for hardware-utilization analysis (yields the more conservative 90.8%, which matches FP16 cuBLAS efficiency at 92.4%). The 100.6% "super-theoretical" reading is therefore a clock-baseline artifact, not a measurement anomaly.</li>
+<li><strong>Microarchitecture Speculation</strong> [Confidence: H]: CUTLASS 4.x OMMA cooperative kernel fully exploits SM_120's unified TC pipeline by maintaining ILP&gt;=4 across all MMA formats. The 256x128x128 tile maximizes smem utilization (99KB) and register budget while maintaining sufficient pipeline depth.</li>
+<li><strong>Implication for Optimization</strong>: This kernel represents the achievable ceiling for SM_120 MMA throughput. Any custom kernel should benchmark against CUTLASS MXFP4 cooperative as the reference point. Performance below 90% of this baseline indicates suboptimal pipelining or resource utilization.</li>
+</ul>
+<h3 class="sub-title" id="ki-11-2-deepgemm-nvlink-barrier-costs-521-947-cyc----pcie-bound-on-sm_120">KI-11.2: DeepGeMM NVLink Barrier Costs 521-947 cyc -- PCIe-Bound on SM_120</h3>
+<ul>
+<li><strong>Empirical Evidence</strong>: <code>red.release.gpu</code> = 521 cyc; <code>red.release.sys</code> = 947 cyc. Custom AllReduce achieves only 2.4 GB/s vs NCCL 35.2 GB/s (14x gap). Grid sync via L2 atomic = 224 ns O(1). [source: <code>S8/case_129-130</code>, <code>S17/case_14-15</code>]</li>
+<li><strong>Theoretical Analysis</strong>: DeepGeMM's <code>nvlink_barrier.cuh</code> assumes NVLink signaling latency (~200 ns). On PCIe SM_120, the same pattern costs 5.76 us round-trip due to PCIe protocol overhead and non-coherent memory semantics.</li>
+<li><strong>Microarchitecture Speculation</strong> [Confidence: H]: The 14x performance gap between custom and NCCL AllReduce arises because NCCL uses kernel-level pipelining and GPU Direct RDMA optimizations that amortize PCIe protocol overhead, while DeepGeMM's barrier-based approach serializes the latency.</li>
+<li><strong>Implication for Optimization</strong>: On SM_120, always use NCCL for collective communication. DeepGeMM's NVLink barrier pattern is strictly non-portable to PCIe-only topologies.</li>
+</ul>
+<h3 class="sub-title" id="ki-11-4-flashinfer-mma-based-rowsum-96x-faster-than-shfl_down-per-row">KI-11.4: FlashInfer MMA-Based Rowsum 96x Faster Than shfl_down Per-Row</h3>
+<ul>
+<li><strong>Empirical Evidence</strong>: MMA with B=all-ones: 7.25 cyc/mma for FP8 (1.81 cyc/row across 16 rows per MMA). shfl_down for single row: 174 cyc/warp (log2(32) = 5 shuffle stages). Per-row: MMA 1.81 vs shfl 20 cyc = 11x. Batched 16 rows: 96x. [source: <code>S9/case_160-161</code>]</li>
+<li><strong>Theoretical Analysis</strong>: MMA amortizes the TC pipeline cost across 16xK elements per instruction. Each shfl_down stage costs ~4 cyc/op with 5 stages required for full warp reduction, totaling 20 cyc per row. MMA computes 16 rows in a single 29-cyc instruction.</li>
+<li><strong>Microarchitecture Speculation</strong> [Confidence: H]: The TC pipeline processes the row reduction as a side effect of the standard MMA datapath -- no additional hardware is required. The B=all-ones trick converts the reduction into a matrix-vector multiply where each output element is the sum of the corresponding row.</li>
+<li><strong>Implication for Optimization</strong>: Replace all shfl-based row reductions in attention kernels with MMA-based rowsum. This is particularly impactful for online softmax where row sums must be computed every tile iteration.</li>
+</ul>
+<h3 class="sub-title" id="ki-11-5-warp-specialization-marginal-on-sm_120-without-tm">KI-11.5: Warp Specialization Marginal on SM_120 Without TM</h3>
+<ul>
+<li><strong>Empirical Evidence</strong>: Warp-spec 2+2 configuration: 5.8% faster for TMA-bound tiles (1139 vs 1206 cyc). All-compute configuration: 2.5-3.1x better for TC-bound workloads. Constant 259 cyc/iter sync overhead from mbarrier. [source: <code>S18/case_09</code>, <code>S9/case_33</code>]</li>
+<li><strong>Theoretical Analysis</strong>: Without Tensor Memory, both producer and consumer warps must traverse the same smem-&gt;RF-&gt;TC path. Specialization adds synchronization overhead (mbarrier 211 cyc) without the TM bypass benefit that makes warp specialization profitable on SM_100.</li>
+<li><strong>Microarchitecture Speculation</strong> [Confidence: H]: SM_120 lacks any bypass path from TMA to TC. Without a dedicated operand buffer (such as Tensor Memory on other architectures), the producer warp's contribution is limited to issuing TMA descriptors — a task that can equally well be handled by the same warps that consume the data.</li>
+<li><strong>Implication for Optimization</strong>: On SM_120, prefer all-compute GEMM configurations. Use named barriers (15 cyc) instead of mbarrier (211 cyc) for any remaining intra-CTA synchronization. Reserve warp specialization only for workloads where TMA issue rate is the actual bottleneck (rarely true given the 4.4x data-starvation ratio).</li>
+</ul>
+<h3 class="sub-title" id="ki-11-6-named-barriers-preferred-for-intra-cta-sync">KI-11.6: Named Barriers Preferred for Intra-CTA Sync</h3>
+<ul>
+<li><strong>Empirical Evidence</strong>: Named barrier round-trip: 15 cyc. mbarrier round-trip: 211 cyc. mbarrier.arrive alone: 31 cyc (2x the full named barrier cost). [source: <code>S23/case_38</code>]</li>
+<li><strong>Theoretical Analysis</strong>: Named barriers use the lightweight BAR.SYNC hardware mechanism. mbarrier requires smem-based phase tracking with three distinct operations: SYNCS.EXCH + SYNCS.ARRIVE + SYNCS.PHASECHK.</li>
+<li><strong>Microarchitecture Speculation</strong> [Confidence: H]: The 14x cost differential arises because named barriers use a dedicated hardware unit (the barrier synchronization unit) that resolves in a single scoreboard check, while mbarrier must perform multiple shared memory transactions to update phase counters and check arrival status.</li>
+<li><strong>Implication for Optimization</strong>: Use mbarrier ONLY for TMA completion tracking (where expect_tx semantics are required) or cross-CTA cluster semantics. All other intra-CTA synchronization should use named barriers. This applies particularly to warp-specialized kernels where the synchronization overhead directly impacts mainloop throughput.</li>
+</ul>
+<h3 class="sub-title" id="ki-11-7-sm_120-optimization-has-three-distinct-regimes-with-different-critical-paths">KI-11.7: SM_120 Optimization Has Three Distinct Regimes with Different Critical Paths</h3>
+<ul>
+<li><strong>Empirical Evidence</strong>: GEMM at M=N=K&gt;=2048 is TC-bound (73% efficiency). GEMV at M=1 is DRAM-bound (98% BW efficiency). FlashAttention at d=128 is thin-K-GEMM-bound (46% efficiency). Each has a DIFFERENT optimization priority. [source: <code>S19/case_1,17,62</code>]</li>
+<li><strong>Theoretical Analysis</strong>: The three regimes map to different entries in the optimization checklist:</li>
+<li><strong>TC-bound GEMM</strong>: Priority = ILP&gt;=4 (#1, 1.81x) -&gt; swizzle (#2, 4.23x) -&gt; 3-stage pipeline (#3, 1.92x) -&gt; precision downgrade (#4, 2-4x)</li>
+<li><strong>DRAM-bound GEMV</strong>: Priority = coalescing (#7, 5.1x) -&gt; vectorize LDG.128 (#6, 1.20x) -&gt; quantized weights (2.38x) -&gt; batching (linear amort.)</li>
+<li><strong>Mixed attention</strong>: Priority = MMA-based rowsum (#14, 96x) -&gt; selp mask (#15, free) -&gt; operand reuse -&gt; Br tile optimization</li>
+<li><strong>Microarchitecture Speculation</strong> [Confidence: H]: The regime classification depends on the arithmetic intensity (ops/byte) of the kernel relative to SM_120's roofline: TC peak = 1070 TFLOPS (FP4), DRAM BW = 1231 GB/s. The crossover occurs at ~870 ops/byte for FP4, ~217 ops/byte for FP16. Large GEMM exceeds this threshold; GEMV falls far below.</li>
+<li><strong>Implication for Optimization</strong>: The bottleneck classifier must correctly identify the regime BEFORE selecting optimization strategies. Applying TC-bound optimizations (ILP, swizzle) to a DRAM-bound GEMV wastes effort; applying memory optimizations (coalescing) to a TC-bound GEMM is irrelevant.</li>
+</ul>
+<h3 class="sub-title" id="ki-11-8-the-no-wgmmano-tm-constraint-makes-cutlass-sm_120-kernels-fundamentally-different-from-sm_100">KI-11.8: The "No wgmma/No TM" Constraint Makes CUTLASS SM_120 Kernels Fundamentally Different from SM_100</h3>
+<ul>
+<li><strong>Empirical Evidence</strong>: CUTLASS SM_100 uses <code>sm100_gemm_tma_warpspecialized</code> with wgmma descriptors, TM buffer, and multicast. CUTLASS SM_120 uses <code>sm120_gemm_tma_cooperative</code> with mma.sync, smem buffer, and ClusterShape&lt;1,1,1&gt;. [source: <code>S14/case_13,14</code>, <code>S9/case_33</code>]</li>
+<li><strong>Theoretical Analysis</strong>: The porting delta is NOT incremental -- it requires a full mainloop restructure:</li>
+<li>wgmma -&gt; mma.sync changes tile shape from m64nXk to m16n8k (4x smaller per instruction, 4x instruction count)</li>
+<li>TM (256KB) -&gt; smem (99KB) reduces buffer capacity 2.6x, limiting pipeline depth</li>
+<li>multicast -&gt; unicast+DSMEM adds 220 cyc per cross-CTA tile read</li>
+<li>warp-specialization -&gt; all-compute is 2.5-3.1x better on SM_120</li>
+<li><strong>Microarchitecture Speculation</strong> [Confidence: H]: SM_120's GB202 die is a different physical design from B200's GB202 (SM_100). The absence of Tensor Memory and wgmma is an architectural choice for the desktop/workstation segment, trading peak throughput density for simpler programming model and reduced die area.</li>
+<li><strong>Implication for Optimization</strong>: When porting ref_code/ kernels from SM_100 to SM_120, do NOT attempt incremental changes. Instead: (1) Start from CUTLASS SM_120 cooperative template, (2) port the algorithmic structure (tile sizes, reduction pattern), (3) re-tune ILP, pipeline depth, and tile shape for the mma.sync path. The measured expectation is: CUTLASS MXFP4 SM_120 = 100.6% efficiency, confirming this baseline is achievable.</li>
+</ul>
+<hr>
+<h2 class="ch-title" id="11-5-register-allocation-guidelines">11.5 Register Allocation Guidelines</h2>
+<p>Register pressure is a critical optimization variable on SM_120. The following constraints bound the design space:</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th style="text-align: center;">Value</th>
+<th>Source</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Total RF per SMSP</td>
+<td style="text-align: center;">16384 x 32-bit</td>
+<td>Architecture</td>
+</tr>
+<tr>
+<td>ptxas minimum floor</td>
+<td style="text-align: center;">24 registers</td>
+<td><code>S21/case_111</code></td>
+</tr>
+<tr>
+<td>ptxas exceeds maxreg to avoid spills</td>
+<td style="text-align: center;">Uses 28-30 when maxreg=24</td>
+<td><code>S21/case_112</code></td>
+</tr>
+<tr>
+<td>Spill onset threshold</td>
+<td style="text-align: center;">32 accumulators per thread</td>
+<td><code>S21/case_113</code></td>
+</tr>
+<tr>
+<td>Spill cost</td>
+<td style="text-align: center;">0.32-0.43 cyc/spill-op</td>
+<td><code>S21/case_113-114</code></td>
+</tr>
+<tr>
+<td>Spill penalty (worst case)</td>
+<td style="text-align: center;">5.23x slowdown</td>
+<td><code>S21/case_113</code></td>
+</tr>
+<tr>
+<td>launch_bounds impact</td>
+<td style="text-align: center;">Zero if regs already fit</td>
+<td><code>S11/case_124</code></td>
+</tr>
+<tr>
+<td>setmaxnreg.dec cost</td>
+<td style="text-align: center;">60 cyc one-time</td>
+<td><code>S12/case_13</code></td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Recommendations:</strong></p>
+<ol>
+<li><strong>Target &lt;= 128 registers per thread</strong> for occupancy &gt;= 2 blocks/SM. This leaves headroom for ptxas's 24-register floor and restructuring preferences.</li>
+<li><strong>Avoid exceeding 32 accumulator registers</strong> in any inner loop. Beyond this threshold, ptxas is forced to spill (233 STL + 231 LDL observed), causing 5.23x slowdown.</li>
+<li><strong>Use <code>setmaxnreg.dec</code> in epilogues</strong> where the accumulator register budget is no longer needed. The 60-cyc one-time cost is negligible compared to the occupancy benefit.</li>
+<li><strong>Do not rely on <code>launch_bounds</code> for performance tuning.</strong> If registers already fit within the target, <code>launch_bounds</code> has zero measured impact.</li>
+</ol>
+<hr>
+<h2 class="ch-title" id="11-6-memory-access-pattern-recommendations">11.6 Memory Access Pattern Recommendations</h2>
+<h3 class="sub-title" id="coalescing-and-vectorization">Coalescing and Vectorization</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Pattern</th>
+<th style="text-align: center;">Measured BW / Cost</th>
+<th style="text-align: center;">vs Optimal</th>
+<th>Source</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Stride-1 (fully coalesced)</td>
+<td style="text-align: center;">858 GB/s</td>
+<td style="text-align: center;">100%</td>
+<td><code>S21/case_1,5</code></td>
+</tr>
+<tr>
+<td>Stride-16 (worst case)</td>
+<td style="text-align: center;">169 GB/s</td>
+<td style="text-align: center;">19.6%</td>
+<td><code>S21/case_5</code></td>
+</tr>
+<tr>
+<td>LDG.E.128 (vectorized)</td>
+<td style="text-align: center;">1.27-1.31x L2</td>
+<td style="text-align: center;">--</td>
+<td><code>S21/case_117</code></td>
+</tr>
+<tr>
+<td>Misaligned access penalty</td>
+<td style="text-align: center;">&lt;0.8%</td>
+<td style="text-align: center;">Negligible</td>
+<td><code>S21/case_3</code></td>
+</tr>
+<tr>
+<td>Column-major GEMM tile</td>
+<td style="text-align: center;">6.25% sector util</td>
+<td style="text-align: center;">16x waste</td>
+<td><code>S21/case_4,8</code></td>
+</tr>
+<tr>
+<td>STG.cg (L1 bypass)</td>
+<td style="text-align: center;">3.59 cyc/store</td>
+<td style="text-align: center;">12x vs default</td>
+<td><code>S8/case_95</code></td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Recommendations:</strong></p>
+<ol>
+<li><strong>Always ensure stride-1 (coalesced) access for global loads.</strong> The 5.1x penalty at stride-16 is catastrophic for bandwidth-bound kernels.</li>
+<li><strong>Manually vectorize to float4/int4.</strong> ptxas does NOT auto-vectorize (confirmed: 8 scalar LDG remain 8 separate transactions). Manual float4 provides 1.27-1.31x benefit for L2-resident data.</li>
+<li><strong>Use STG.cg for write-only output.</strong> L1 cache bypass reduces store issue cost by 12x (3.59 vs 42.78 cyc).</li>
+<li><strong>Misalignment is a non-issue on SM_120.</strong> Arbitrary alignment offsets cause less than 0.8% penalty -- no need for alignment padding.</li>
+<li><strong>Stage column-major data through shared memory.</strong> Direct column-major access wastes 87.5-93.75% of L2 bandwidth. Shared memory staging with XOR-swizzle eliminates this waste.</li>
+</ol>
+<hr>
+<h2 class="ch-title" id="11-7-synchronization-cost-hierarchy">11.7 Synchronization Cost Hierarchy</h2>
+<p>Production kernels should select synchronization primitives from cheapest to most expensive:</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Primitive</th>
+<th style="text-align: center;">Cost (cyc)</th>
+<th>Use Case</th>
+<th>Source</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Named barrier</td>
+<td style="text-align: center;">15</td>
+<td>Intra-CTA warp sync</td>
+<td><code>S23/case_38</code></td>
+</tr>
+<tr>
+<td>fence.acq_rel (CTA scope)</td>
+<td style="text-align: center;">7</td>
+<td>CTA-local ordering</td>
+<td><code>S8/case_64</code></td>
+</tr>
+<tr>
+<td>mbarrier.arrive</td>
+<td style="text-align: center;">31</td>
+<td>TMA completion tracking</td>
+<td><code>S23/case_38</code></td>
+</tr>
+<tr>
+<td>cluster_arrive_relaxed</td>
+<td style="text-align: center;">85</td>
+<td>Inter-CTA signal (relaxed)</td>
+<td><code>S7/case_53</code></td>
+</tr>
+<tr>
+<td>mbarrier (full round-trip)</td>
+<td style="text-align: center;">211</td>
+<td>TMA pipeline synchronization</td>
+<td><code>S23/case_38</code></td>
+</tr>
+<tr>
+<td>fence.acq_rel (GPU scope)</td>
+<td style="text-align: center;">285</td>
+<td>Cross-CTA ordering</td>
+<td><code>S8/case_65</code></td>
+</tr>
+<tr>
+<td>cluster_arrive (full)</td>
+<td style="text-align: center;">371</td>
+<td>Inter-CTA signal (ordered)</td>
+<td><code>S7/case_53</code></td>
+</tr>
+<tr>
+<td>Grid sync (L2 atomic)</td>
+<td style="text-align: center;">1242</td>
+<td>Full-grid synchronization</td>
+<td><code>S8/case_131</code></td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Rule of thumb</strong>: Each scope escalation costs approximately 4-14x. Use the narrowest scope that satisfies correctness.</p>
+<hr>
+<h2 class="ch-title" id="11-8-compilation-and-methodology-notes">11.8 Compilation and Methodology Notes</h2>
+<p>All optimization recommendations in this chapter are derived from measurements under the following conditions:</p>
+<ul>
+<li><strong>Platform</strong>: SM_120a (RTX PRO 5000 72GB, GB202, 110 SMs, compute capability 12.0a)</li>
+<li><strong>Toolchain</strong>: nvcc CUDA 13.3, <code>-O3 -std=c++17 -lineinfo -gencode arch=compute_120a,code=sm_120a</code></li>
+<li><strong>Clock pinning</strong>: <code>nvidia-smi -lgc</code> to suppress DVFS; measured clock ~2077-2497 MHz</li>
+<li><strong>Measurement</strong>: Single-warp <code>&lt;&lt;&lt;1, 32&gt;&gt;&gt;</code> for latency; multi-warp/multi-block for throughput</li>
+<li><strong>Timer</strong>: clock64() bracket; median over 1000+ iterations; 100+ warmup</li>
+<li><strong>CuAssembler validation</strong>: Cases involving stall counters used binary patching of control codes</li>
+<li><strong>NCU cross-validation</strong>: Sector counts, L2 BW, and throughput metrics cross-validated with Nsight Compute</li>
+</ul>
+
+<footer class="page-footer">
+<div class="foot-grid">
+<div><strong>SM_120 / GB202 Blackwell</strong> · Microarchitecture Analysis &amp; Reference · 2026</div>
+<div>1542 microbenchmark cases · 26 sections · ~13,400 lines</div>
+<div class="foot-accent">RTX PRO 5000 72GB · CUDA 13.3 · Data source: test_results/SM_120/</div>
+</div>
+</footer>
+
+</main>
+<aside class="toc-right">
+<h4>Chapter Navigation</h4>
+<a href="#11-0-sm_120-gemm-data-path-g-s-r-tc">11.0 SM_120 GEMM Data Path (G-S-R-TC)</a>
+<a href="#11-0-1-optimization-checklist-20-items-priority-ordered">11.0.1 Optimization Checklist (20 Items, Priority-Ordered)</a>
+<a href="#11-1-cutlass-on-sm_120">11.1 CUTLASS on SM_120</a>
+<a class="sub" href="#11-1-1-best-performing-kernel-paths">11.1.1 Best-Performing Kernel Paths</a>
+<a class="sub" href="#11-1-2-known-limitations-on-sm_120">11.1.2 Known Limitations on SM_120</a>
+<a class="sub" href="#11-1-3-sm_120-specific-optimizations">11.1.3 SM_120-Specific Optimizations</a>
+<a href="#11-2-deepgemm-on-sm_120">11.2 DeepGeMM on SM_120</a>
+<a class="sub" href="#11-2-1-key-patterns-characterized">11.2.1 Key Patterns Characterized</a>
+<a class="sub" href="#11-2-2-sm_120-specific-impact">11.2.2 SM_120-Specific Impact</a>
+<a class="sub" href="#11-2-3-recommended-adaptations">11.2.3 Recommended Adaptations</a>
+<a href="#11-3-flashinfer-on-sm_120">11.3 FlashInfer on SM_120</a>
+<a class="sub" href="#11-3-1-attention-pipeline-characterization">11.3.1 Attention Pipeline Characterization</a>
+<a class="sub" href="#11-3-2-sm_120-specific-considerations">11.3.2 SM_120-Specific Considerations</a>
+<a class="sub" href="#11-3-3-recommended-optimizations-for-flashinfer-on-sm_120">11.3.3 Recommended Optimizations for FlashInfer on SM_120</a>
+<a href="#11-4-key-insights">11.4 Key Insights</a>
+<a class="sub" href="#ki-11-1-cutlass-mxfp4-achieves-100-6-efficiency----best-optimized-kernel-path">KI-11.1: CUTLASS MXFP4 Achieves 100.6% Efficiency -- Best-Optimized Kernel Path</a>
+<a class="sub" href="#ki-11-2-deepgemm-nvlink-barrier-costs-521-947-cyc----pcie-bound-on-sm_120">KI-11.2: DeepGeMM NVLink Barrier Costs 521-947 cyc -- PCIe-Bound on SM_120</a>
+<a class="sub" href="#ki-11-4-flashinfer-mma-based-rowsum-96x-faster-than-shfl_down-per-row">KI-11.4: FlashInfer MMA-Based Rowsum 96x Faster Than shfl_down Per-Row</a>
+<a class="sub" href="#ki-11-5-warp-specialization-marginal-on-sm_120-without-tm">KI-11.5: Warp Specialization Marginal on SM_120 Without TM</a>
+<a class="sub" href="#ki-11-6-named-barriers-preferred-for-intra-cta-sync">KI-11.6: Named Barriers Preferred for Intra-CTA Sync</a>
+<a class="sub" href="#ki-11-7-sm_120-optimization-has-three-distinct-regimes-with-different-critical-paths">KI-11.7: SM_120 Optimization Has Three Distinct Regimes with Different Critical Paths</a>
+<a class="sub" href="#ki-11-8-the-no-wgmmano-tm-constraint-makes-cutlass-sm_120-kernels-fundamentally-different-from-sm_100">KI-11.8: The &quot;No wgmma/No TM&quot; Constraint Makes CUTLASS SM_120 Kernels Fundamentally Different from SM_100</a>
+<a href="#11-5-register-allocation-guidelines">11.5 Register Allocation Guidelines</a>
+<a href="#11-6-memory-access-pattern-recommendations">11.6 Memory Access Pattern Recommendations</a>
+<a class="sub" href="#coalescing-and-vectorization">Coalescing and Vectorization</a>
+<a href="#11-7-synchronization-cost-hierarchy">11.7 Synchronization Cost Hierarchy</a>
+<a href="#11-8-compilation-and-methodology-notes">11.8 Compilation and Methodology Notes</a>
+</aside>
+</div>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" integrity="sha384-7zkQWkzuo3B5mTepMUcHkMB5jZaolc2xDwL6VFqjFALcbeS9Ggm/Yr2r3Dy4lfFg" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" integrity="sha384-43gviWU0YVjaDtb/GhzOouOXtZMP/7XUzwPTstBeZFe/+rCMvRwr4yROQP43s0Xk" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/lib/highlight.min.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  if (window.renderMathInElement) {
+    renderMathInElement(document.body, {
+      delimiters: [
+        {left: "$$", right: "$$", display: true},
+        {left: "$", right: "$", display: false}
+      ],
+      throwOnError: false
+    });
+  }
+  if (window.hljs) {
+    document.querySelectorAll("pre code[class^='language-']").forEach(function(el) {
+      try { hljs.highlightElement(el); } catch (e) {}
+    });
+  }
+});
+</script>
+<script src="assets/js/toc.js" defer></script>
+</body>
+</html>

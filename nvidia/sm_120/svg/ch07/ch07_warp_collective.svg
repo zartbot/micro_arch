@@ -1,0 +1,366 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 900" role="img"
+     aria-label="§ 7.3.1 Warp Collective Operation Hierarchy — 4-operation latency bars, redux.sync hardware reduction tree vs shfl_xor software butterfly tree, 3.77x speedup comparison">
+  <defs>
+    <style><![CDATA[
+      .eyebrow { font: 600 11px "JetBrains Mono", monospace; letter-spacing: 0.16em; text-transform: uppercase }
+      .title   { font: 500 24px "Fraunces", serif; fill: #0b1220; letter-spacing: -0.02em }
+      .sub     { font: italic 12px "Fraunces", serif; fill: #5b6679 }
+      .panel-h { font: 600 13px "JetBrains Mono", monospace; letter-spacing: 0.06em; fill: #0b1220 }
+      .panel-n { font: 700 11px "JetBrains Mono", monospace; letter-spacing: 0.08em }
+      .panel-sub { font: italic 11px "Fraunces", serif; fill: #5b6679 }
+      .lbl-sm  { font: 500 9px "JetBrains Mono", monospace; fill: #5b6679; letter-spacing: 0.05em; text-transform: uppercase }
+      .lbl     { font: 500 11px "IBM Plex Sans", sans-serif; fill: #2a3548 }
+      .lbl-mono{ font: 500 10px "JetBrains Mono", monospace; fill: #2a3548 }
+      .lbl-mono-em { font: 700 10px "JetBrains Mono", monospace; fill: #0b1220 }
+      .lbl-w   { font: 600 10px "IBM Plex Sans", sans-serif; fill: #ffffff }
+      .lbl-w-mono { font: 500 9px "JetBrains Mono", monospace; fill: #ffffff }
+      .big-num { font: 700 28px "Fraunces", serif; fill: #0b1220 }
+      .speedup-num { font: 700 42px "Fraunces", serif; fill: #15803d }
+      .arrow-r { stroke: #b45309; stroke-width: 1.6; fill: none }
+      .arrow-g { stroke: #16a34a; stroke-width: 1.6; fill: none }
+      .arrow-d { stroke: #5b6679; stroke-width: 1.2; fill: none; stroke-dasharray: 3,3 }
+      .arrow-p { stroke: #7c3aed; stroke-width: 1.6; fill: none }
+    ]]></style>
+    <marker id="arr-r" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M0,0 L8,4 L0,8 z" fill="#b45309"/>
+    </marker>
+    <marker id="arr-g" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M0,0 L8,4 L0,8 z" fill="#16a34a"/>
+    </marker>
+    <marker id="arr-d" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M0,0 L8,4 L0,8 z" fill="#5b6679"/>
+    </marker>
+    <marker id="arr-p" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M0,0 L8,4 L0,8 z" fill="#7c3aed"/>
+    </marker>
+  </defs>
+
+  <rect width="1280" height="900" fill="#fcfbf6"/>
+
+  <!-- ============ Header ============ -->
+  <g transform="translate(40,32)">
+    <text x="0" y="0" class="eyebrow" fill="#b45309">SECTION 7.3.1 · WARP COLLECTIVE OPERATION HIERARCHY</text>
+    <text x="0" y="28" class="title">Warp Reduction: Hardware vs Software Paths</text>
+    <text x="0" y="50" class="sub">SM_120 SMSP · 4-operation latency hierarchy · redux.sync reduction tree vs shfl_xor butterfly tree · 3.77× speedup</text>
+    <text x="0" y="68" class="lbl-sm">Source: [S7/case_6,8,9,13] · [S6/case_20] · Section 7.3.1</text>
+  </g>
+
+  <!-- ============ Panel A: Latency Hierarchy Bar Chart ============ -->
+  <g transform="translate(40,110)">
+    <rect x="0" y="0" width="1200" height="125" rx="6" fill="#ffffff" stroke="#e2d8c8" stroke-width="0.8"/>
+    <text x="14" y="22" class="panel-h">A · WARP COLLECTIVE OPERATION LATENCY HIERARCHY</text>
+    <text x="14" y="38" class="panel-sub">Four distinct hardware paths — latency spans 7.5× from fastest to slowest</text>
+
+    <!-- Bar 1: elect.sync (6 cyc) -->
+    <g transform="translate(14,50)">
+      <rect x="0" y="0" width="30" height="16" rx="2" fill="#16a34a"/>
+      <text x="38" y="12" class="lbl-mono-em">elect.sync</text>
+      <text x="120" y="12" class="lbl-mono">ELECT · Dedicated leader-select unit</text>
+      <rect x="380" y="2" width="30" height="12" rx="2" fill="#16a34a" opacity="0.8"/>
+      <text x="418" y="12" class="lbl-mono-em" fill="#16a34a">6 cyc</text>
+      <text x="470" y="12" class="lbl-sm">[S7/case_13]</text>
+    </g>
+
+    <!-- Bar 2: vote.ballot (18 cyc) -->
+    <g transform="translate(14,70)">
+      <rect x="0" y="0" width="30" height="16" rx="2" fill="#2563eb"/>
+      <text x="38" y="12" class="lbl-mono-em">vote.ballot.sync</text>
+      <text x="120" y="12" class="lbl-mono">VOTE · Predicate logic unit</text>
+      <rect x="380" y="2" width="90" height="12" rx="2" fill="#2563eb" opacity="0.8"/>
+      <text x="478" y="12" class="lbl-mono-em" fill="#2563eb">18 cyc</text>
+      <text x="530" y="12" class="lbl-sm">[S7/case_6]</text>
+    </g>
+
+    <!-- Bar 3: shfl.sync.bfly (29 cyc) -->
+    <g transform="translate(14,90)">
+      <rect x="0" y="0" width="30" height="16" rx="2" fill="#d97706"/>
+      <text x="38" y="12" class="lbl-mono-em">shfl.sync.bfly</text>
+      <text x="120" y="12" class="lbl-mono">SHFL.BFLY · Warp crossbar + sync</text>
+      <rect x="380" y="2" width="145" height="12" rx="2" fill="#d97706" opacity="0.8"/>
+      <text x="533" y="12" class="lbl-mono-em" fill="#d97706">29 cyc</text>
+      <text x="585" y="12" class="lbl-sm">[S6/case_20]</text>
+    </g>
+
+    <!-- Bar 4: redux.sync.add (45 cyc) -->
+    <g transform="translate(14,110)">
+      <rect x="0" y="0" width="30" height="16" rx="2" fill="#7c3aed"/>
+      <text x="38" y="12" class="lbl-mono-em">redux.sync.add</text>
+      <text x="120" y="12" class="lbl-mono">REDUX.SUM.S32 · Dedicated reduction tree → UR</text>
+      <rect x="380" y="2" width="225" height="12" rx="2" fill="#7c3aed" opacity="0.8"/>
+      <text x="613" y="12" class="lbl-mono-em" fill="#7c3aed">45 cyc</text>
+      <text x="665" y="12" class="lbl-sm">[S7/case_8]</text>
+    </g>
+  </g>
+
+  <!-- ============ Panel B: Hardware Path (redux.sync) ============ -->
+  <g transform="translate(40,255)">
+    <rect x="0" y="0" width="580" height="330" rx="6" fill="#ffffff" stroke="#16a34a" stroke-width="1.2"/>
+    <rect x="0" y="0" width="580" height="32" rx="6" fill="#16a34a"/>
+    <rect x="0" y="26" width="580" height="6" fill="#16a34a"/>
+    <text x="14" y="21" class="lbl-w" font-size="12">B · HARDWARE PATH: redux.sync.add.s32</text>
+    <text x="566" y="21" class="lbl-w-mono" text-anchor="end">1 INSTRUCTION · 45 CYC</text>
+
+    <!-- Instruction box -->
+    <g transform="translate(14,44)">
+      <rect x="0" y="0" width="552" height="28" rx="4" fill="#dcfce7" stroke="#16a34a" stroke-width="0.8"/>
+      <text x="10" y="18" class="lbl-mono-em" fill="#15803d">REDUX.SUM.S32  UR4, R4 ;</text>
+      <text x="260" y="18" class="lbl-mono">← single SASS instruction</text>
+      <text x="440" y="18" class="lbl-sm" fill="#15803d">45 cyc</text>
+    </g>
+
+    <!-- Reduction tree visualization -->
+    <text x="14" y="90" class="panel-h" fill="#15803d">Dedicated Parallel Reduction Tree (SMSP hardware)</text>
+
+    <!-- 32 lanes input -->
+    <g transform="translate(14,98)">
+      <!-- Lane labels -->
+      <text x="0" y="10" class="lbl-sm">32 lanes</text>
+      <!-- Lane dots representing 32 registers -->
+      <g transform="translate(0,14)">
+        <circle cx="10" cy="6" r="3" fill="#7c3aed"/><circle cx="22" cy="6" r="3" fill="#7c3aed"/>
+        <circle cx="34" cy="6" r="3" fill="#7c3aed"/><circle cx="46" cy="6" r="3" fill="#7c3aed"/>
+        <circle cx="58" cy="6" r="3" fill="#7c3aed"/><circle cx="70" cy="6" r="3" fill="#7c3aed"/>
+        <circle cx="82" cy="6" r="3" fill="#7c3aed"/><circle cx="94" cy="6" r="3" fill="#7c3aed"/>
+        <text x="106" y="10" class="lbl-mono" fill="#5b6679">· · ·</text>
+        <circle cx="150" cy="6" r="3" fill="#7c3aed"/><circle cx="162" cy="6" r="3" fill="#7c3aed"/>
+        <circle cx="174" cy="6" r="3" fill="#7c3aed"/><circle cx="186" cy="6" r="3" fill="#7c3aed"/>
+        <circle cx="198" cy="6" r="3" fill="#7c3aed"/><circle cx="210" cy="6" r="3" fill="#7c3aed"/>
+        <circle cx="222" cy="6" r="3" fill="#7c3aed"/><circle cx="234" cy="6" r="3" fill="#7c3aed"/>
+      </g>
+    </g>
+
+    <!-- Tree levels -->
+    <g transform="translate(14,130)">
+      <!-- Level 1: 32 → 16 -->
+      <line x1="10" y1="0" x2="22" y2="30" class="arrow-g" stroke-width="1"/>
+      <line x1="22" y1="0" x2="22" y2="30" class="arrow-g" stroke-width="1"/>
+      <line x1="34" y1="0" x2="22" y2="30" class="arrow-g" stroke-width="1"/>
+      <line x1="46" y1="0" x2="22" y2="30" class="arrow-g" stroke-width="1"/>
+      <line x1="58" y1="0" x2="70" y2="30" class="arrow-g" stroke-width="1"/>
+      <line x1="70" y1="0" x2="70" y2="30" class="arrow-g" stroke-width="1"/>
+      <line x1="82" y1="0" x2="70" y2="30" class="arrow-g" stroke-width="1"/>
+      <line x1="94" y1="0" x2="70" y2="30" class="arrow-g" stroke-width="1"/>
+      <line x1="150" y1="0" x2="162" y2="30" class="arrow-g" stroke-width="1"/>
+      <line x1="162" y1="0" x2="162" y2="30" class="arrow-g" stroke-width="1"/>
+      <line x1="174" y1="0" x2="162" y2="30" class="arrow-g" stroke-width="1"/>
+      <line x1="186" y1="0" x2="162" y2="30" class="arrow-g" stroke-width="1"/>
+      <line x1="198" y1="0" x2="210" y2="30" class="arrow-g" stroke-width="1"/>
+      <line x1="210" y1="0" x2="210" y2="30" class="arrow-g" stroke-width="1"/>
+      <line x1="222" y1="0" x2="210" y2="30" class="arrow-g" stroke-width="1"/>
+      <line x1="234" y1="0" x2="210" y2="30" class="arrow-g" stroke-width="1"/>
+      <text x="260" y="18" class="lbl-sm" fill="#15803d">Level 1: 32→16 (parallel)</text>
+
+      <!-- Level 2: 16 → 8 -->
+      <line x1="22" y1="34" x2="46" y2="60" class="arrow-g" stroke-width="1"/>
+      <line x1="70" y1="34" x2="46" y2="60" class="arrow-g" stroke-width="1"/>
+      <line x1="162" y1="34" x2="186" y2="60" class="arrow-g" stroke-width="1"/>
+      <line x1="210" y1="34" x2="186" y2="60" class="arrow-g" stroke-width="1"/>
+      <text x="260" y="48" class="lbl-sm" fill="#15803d">Level 2: 16→8</text>
+
+      <!-- Level 3: 8 → 4 -->
+      <line x1="46" y1="64" x2="116" y2="90" class="arrow-g" stroke-width="1"/>
+      <line x1="186" y1="64" x2="116" y2="90" class="arrow-g" stroke-width="1"/>
+      <text x="260" y="78" class="lbl-sm" fill="#15803d">Level 3: 8→4</text>
+
+      <!-- Level 4-5: 4 → 2 → 1 -->
+      <line x1="116" y1="94" x2="116" y2="120" class="arrow-g" stroke-width="1.5"/>
+      <text x="130" y="110" class="lbl-sm" fill="#15803d">Levels 4-5: 4→2→1</text>
+    </g>
+
+    <!-- Result box -->
+    <g transform="translate(14,268)">
+      <rect x="0" y="0" width="552" height="50" rx="4" fill="#dcfce7" stroke="#16a34a" stroke-width="0.8"/>
+      <!-- UR4 register -->
+      <rect x="10" y="8" width="80" height="34" rx="4" fill="#16a34a"/>
+      <text x="50" y="22" class="lbl-w-mono" text-anchor="middle">UNIFORM</text>
+      <text x="50" y="35" class="lbl-w-mono" text-anchor="middle">UR4</text>
+      <!-- Arrow -->
+      <path d="M96,25 L120,25" class="arrow-g" stroke-width="1.5" marker-end="url(#arr-g)"/>
+      <!-- Broadcast -->
+      <text x="130" y="16" class="lbl-mono-em" fill="#15803d">→ Broadcast to ALL 32 lanes</text>
+      <text x="130" y="32" class="lbl-mono">Single uniform value, no per-lane variation</text>
+      <text x="130" y="46" class="lbl-sm" fill="#15803d">Zero crossbar traversals — dedicated tree handles everything</text>
+    </g>
+  </g>
+
+  <!-- ============ Panel C: Software Path (shfl_xor tree) ============ -->
+  <g transform="translate(640,255)">
+    <rect x="0" y="0" width="600" height="330" rx="6" fill="#ffffff" stroke="#d97706" stroke-width="1.2"/>
+    <rect x="0" y="0" width="600" height="32" rx="6" fill="#d97706"/>
+    <rect x="0" y="26" width="600" height="6" fill="#d97706"/>
+    <text x="14" y="21" class="lbl-w" font-size="12">C · SOFTWARE PATH: shfl_xor 5-stage butterfly tree</text>
+    <text x="586" y="21" class="lbl-w-mono" text-anchor="end">10 INSTRUCTIONS · 170 CYC</text>
+
+    <!-- Instruction flow -->
+    <g transform="translate(14,44)">
+      <rect x="0" y="0" width="572" height="28" rx="4" fill="#fef3c7" stroke="#d97706" stroke-width="0.8"/>
+      <text x="10" y="18" class="lbl-mono-em" fill="#b45309">5 × (SHFL.BFLY + IADD) = 10 instructions</text>
+      <text x="350" y="18" class="lbl-mono">← manual butterfly reduction</text>
+      <text x="510" y="18" class="lbl-sm" fill="#b45309">170 cyc</text>
+    </g>
+
+    <!-- Butterfly tree visualization -->
+    <text x="14" y="90" class="panel-h" fill="#b45309">5-Stage Butterfly via Warp Crossbar (software)</text>
+
+    <!-- Stage labels and butterfly pattern -->
+    <g transform="translate(14,98)">
+      <!-- Stage headers -->
+      <text x="0" y="10" class="lbl-sm">Lane 0</text>
+      <text x="0" y="30" class="lbl-sm">Lane 1</text>
+      <text x="0" y="50" class="lbl-sm">Lane 2</text>
+      <text x="0" y="70" class="lbl-sm">·</text>
+      <text x="0" y="84" class="lbl-sm">·</text>
+      <text x="0" y="98" class="lbl-sm">·</text>
+      <text x="0" y="112" class="lbl-sm">Lane 30</text>
+      <text x="0" y="132" class="lbl-sm">Lane 31</text>
+
+      <!-- Stage 1: offset=16 -->
+      <g transform="translate(60,0)">
+        <text x="0" y="10" class="lbl-mono-em" fill="#b45309">●</text>
+        <text x="0" y="132" class="lbl-mono-em" fill="#b45309">●</text>
+        <!-- Crossbar arrows for stage 1 -->
+        <path d="M4,6 C60,6 60,128 116,128" stroke="#d97706" stroke-width="1" fill="none" opacity="0.5"/>
+        <path d="M4,128 C60,128 60,6 116,6" stroke="#d97706" stroke-width="1" fill="none" opacity="0.5"/>
+        <text x="50" y="72" class="lbl-sm" text-anchor="middle" fill="#b45309">Stage 1</text>
+        <text x="50" y="84" class="lbl-sm" text-anchor="middle">offset=16</text>
+        <text x="50" y="96" class="lbl-sm" text-anchor="middle" fill="#5b6679">SHFL+IADD</text>
+        <text x="50" y="108" class="lbl-sm" text-anchor="middle" fill="#5b6679">34 cyc</text>
+      </g>
+
+      <!-- Stage 2: offset=8 -->
+      <g transform="translate(160,0)">
+        <text x="0" y="10" class="lbl-mono-em" fill="#b45309">●</text>
+        <text x="0" y="50" class="lbl-mono-em" fill="#b45309">●</text>
+        <path d="M4,6 C50,6 50,46 96,46" stroke="#d97706" stroke-width="1" fill="none" opacity="0.5"/>
+        <path d="M4,46 C50,46 50,6 96,6" stroke="#d97706" stroke-width="1" fill="none" opacity="0.5"/>
+        <text x="40" y="72" class="lbl-sm" text-anchor="middle" fill="#b45309">Stage 2</text>
+        <text x="40" y="84" class="lbl-sm" text-anchor="middle">offset=8</text>
+        <text x="40" y="96" class="lbl-sm" text-anchor="middle" fill="#5b6679">SHFL+IADD</text>
+        <text x="40" y="108" class="lbl-sm" text-anchor="middle" fill="#5b6679">34 cyc</text>
+      </g>
+
+      <!-- Stage 3: offset=4 -->
+      <g transform="translate(260,0)">
+        <text x="0" y="10" class="lbl-mono-em" fill="#b45309">●</text>
+        <text x="0" y="30" class="lbl-mono-em" fill="#b45309">●</text>
+        <path d="M4,6 C40,6 40,26 76,26" stroke="#d97706" stroke-width="1" fill="none" opacity="0.5"/>
+        <path d="M4,26 C40,26 40,6 76,6" stroke="#d97706" stroke-width="1" fill="none" opacity="0.5"/>
+        <text x="30" y="72" class="lbl-sm" text-anchor="middle" fill="#b45309">Stage 3</text>
+        <text x="30" y="84" class="lbl-sm" text-anchor="middle">offset=4</text>
+        <text x="30" y="96" class="lbl-sm" text-anchor="middle" fill="#5b6679">SHFL+IADD</text>
+        <text x="30" y="108" class="lbl-sm" text-anchor="middle" fill="#5b6679">34 cyc</text>
+      </g>
+
+      <!-- Stage 4: offset=2 -->
+      <g transform="translate(340,0)">
+        <text x="0" y="10" class="lbl-mono-em" fill="#b45309">●</text>
+        <text x="0" y="20" class="lbl-mono-em" fill="#b45309">●</text>
+        <path d="M4,6 C30,6 30,16 56,16" stroke="#d97706" stroke-width="1" fill="none" opacity="0.5"/>
+        <path d="M4,16 C30,16 30,6 56,6" stroke="#d97706" stroke-width="1" fill="none" opacity="0.5"/>
+        <text x="24" y="72" class="lbl-sm" text-anchor="middle" fill="#b45309">Stage 4</text>
+        <text x="24" y="84" class="lbl-sm" text-anchor="middle">offset=2</text>
+        <text x="24" y="96" class="lbl-sm" text-anchor="middle" fill="#5b6679">SHFL+IADD</text>
+        <text x="24" y="108" class="lbl-sm" text-anchor="middle" fill="#5b6679">34 cyc</text>
+      </g>
+
+      <!-- Stage 5: offset=1 -->
+      <g transform="translate(410,0)">
+        <text x="0" y="10" class="lbl-mono-em" fill="#b45309">●</text>
+        <text x="0" y="16" class="lbl-mono-em" fill="#b45309">●</text>
+        <path d="M4,8 L50,8" stroke="#d97706" stroke-width="1" fill="none" opacity="0.5"/>
+        <text x="18" y="72" class="lbl-sm" text-anchor="middle" fill="#b45309">Stage 5</text>
+        <text x="18" y="84" class="lbl-sm" text-anchor="middle">offset=1</text>
+        <text x="18" y="96" class="lbl-sm" text-anchor="middle" fill="#5b6679">SHFL+IADD</text>
+        <text x="18" y="108" class="lbl-sm" text-anchor="middle" fill="#5b6679">34 cyc</text>
+      </g>
+
+      <!-- Final result -->
+      <g transform="translate(490,0)">
+        <rect x="0" y="2" width="60" height="20" rx="3" fill="#fef3c7" stroke="#d97706" stroke-width="0.8"/>
+        <text x="30" y="16" class="lbl-mono-em" text-anchor="middle" fill="#b45309">R[n]</text>
+        <text x="30" y="40" class="lbl-sm" text-anchor="middle" fill="#5b6679">per-lane</text>
+        <text x="30" y="52" class="lbl-sm" text-anchor="middle" fill="#5b6679">partial</text>
+      </g>
+    </g>
+
+    <!-- Result box -->
+    <g transform="translate(14,248)">
+      <rect x="0" y="0" width="572" height="70" rx="4" fill="#fef3c7" stroke="#d97706" stroke-width="0.8"/>
+      <!-- Per-lane R registers -->
+      <rect x="10" y="8" width="80" height="54" rx="4" fill="#d97706"/>
+      <text x="50" y="24" class="lbl-w-mono" text-anchor="middle">PER-LANE</text>
+      <text x="50" y="38" class="lbl-w-mono" text-anchor="middle">R0..R31</text>
+      <text x="50" y="54" class="lbl-w-mono" text-anchor="middle" font-size="8">32 copies</text>
+      <!-- Arrow -->
+      <path d="M96,35 L120,35" class="arrow-r" stroke-width="1.5" marker-end="url(#arr-r)"/>
+      <text x="130" y="22" class="lbl-mono-em" fill="#b45309">→ Each lane has the FULL sum</text>
+      <text x="130" y="38" class="lbl-mono">5 crossbar traversals × 34 cyc/stage = 170 cyc</text>
+      <text x="130" y="54" class="lbl-sm" fill="#b45309">Intermediate partial sums available — supports prefix scan</text>
+    </g>
+  </g>
+
+  <!-- ============ Panel D: Comparison Summary ============ -->
+  <g transform="translate(40,605)">
+    <rect x="0" y="0" width="1200" height="275" rx="6" fill="#ffffff" stroke="#e2d8c8" stroke-width="0.8"/>
+    <text x="14" y="22" class="panel-h">D · COMPARISON SUMMARY &amp; USE-CASE GUIDANCE</text>
+
+    <!-- Speedup highlight -->
+    <g transform="translate(14,38)">
+      <rect x="0" y="0" width="200" height="70" rx="6" fill="#dcfce7" stroke="#16a34a" stroke-width="1"/>
+      <text x="100" y="22" class="lbl-sm" text-anchor="middle" fill="#15803d">HARDWARE SPEEDUP</text>
+      <text x="100" y="55" class="speedup-num" text-anchor="middle">3.77×</text>
+    </g>
+
+    <!-- Metrics comparison -->
+    <g transform="translate(230,38)">
+      <text x="0" y="14" class="panel-h" fill="#15803d">HARDWARE (redux.sync)</text>
+      <rect x="0" y="20" width="360" height="50" rx="4" fill="#f0fdf4" stroke="#16a34a" stroke-width="0.6"/>
+      <text x="10" y="36" class="lbl-mono-em" fill="#15803d">1 instruction</text>
+      <text x="120" y="36" class="lbl-mono">·</text>
+      <text x="130" y="36" class="lbl-mono-em" fill="#15803d">45 cyc</text>
+      <text x="190" y="36" class="lbl-mono">·</text>
+      <text x="200" y="36" class="lbl-mono-em" fill="#15803d">→ UR4 (broadcast)</text>
+      <text x="10" y="54" class="lbl-mono">0 crossbar traversals · dedicated reduction tree</text>
+      <text x="10" y="66" class="lbl-sm" fill="#15803d">Best for: warp-wide sum/min/max → single scalar</text>
+    </g>
+
+    <g transform="translate(610,38)">
+      <text x="0" y="14" class="panel-h" fill="#b45309">SOFTWARE (shfl_xor)</text>
+      <rect x="0" y="20" width="360" height="50" rx="4" fill="#fffbeb" stroke="#d97706" stroke-width="0.6"/>
+      <text x="10" y="36" class="lbl-mono-em" fill="#b45309">10 instructions</text>
+      <text x="120" y="36" class="lbl-mono">·</text>
+      <text x="130" y="36" class="lbl-mono-em" fill="#b45309">170 cyc</text>
+      <text x="190" y="36" class="lbl-mono">·</text>
+      <text x="200" y="36" class="lbl-mono-em" fill="#b45309">→ R[n] (per-lane)</text>
+      <text x="10" y="54" class="lbl-mono">5 crossbar traversals × 34 cyc/stage</text>
+      <text x="10" y="66" class="lbl-sm" fill="#b45309">Best for: prefix scan, intermediate partials needed</text>
+    </g>
+
+    <!-- Key distinction callout -->
+    <g transform="translate(14,120)">
+      <rect x="0" y="0" width="1172" height="58" rx="4" fill="#f8fafc" stroke="#cbd5e1" stroke-width="0.6"/>
+      <text x="12" y="18" class="panel-h">KEY ARCHITECTURAL DISTINCTION</text>
+      <text x="12" y="36" class="lbl">redux.sync writes to a <tspan class="lbl-mono-em" fill="#15803d">UNIFORM register (UR)</tspan> — a single scalar broadcast to all lanes. shfl produces <tspan class="lbl-mono-em" fill="#b45309">per-lane R registers</tspan> where each lane independently holds the full reduction result.</text>
+      <text x="12" y="50" class="lbl">If intermediate partial sums are needed (e.g., prefix scan / exclusive scan), <tspan class="lbl-mono-em" fill="#b45309">shfl is still required</tspan> — redux.sync cannot expose intermediate values.</text>
+    </g>
+
+    <!-- Decision guide -->
+    <g transform="translate(14,188)">
+      <text x="0" y="14" class="panel-h">DECISION GUIDE</text>
+      <g transform="translate(0,22)">
+        <rect x="0" y="0" width="570" height="58" rx="4" fill="#dcfce7" stroke="#16a34a" stroke-width="0.6"/>
+        <text x="12" y="18" class="lbl-mono-em" fill="#15803d">USE redux.sync WHEN:</text>
+        <text x="12" y="34" class="lbl-mono">→ Warp-wide reduction to a single scalar (sum, min, max)</text>
+        <text x="12" y="48" class="lbl-mono">→ Result fits in a uniform register (UR) and broadcasts to all lanes</text>
+      </g>
+      <g transform="translate(590,0)">
+        <rect x="0" y="22" width="570" height="58" rx="4" fill="#fef3c7" stroke="#d97706" stroke-width="0.6"/>
+        <text x="12" y="40" class="lbl-mono-em" fill="#b45309">USE shfl_xor WHEN:</text>
+        <text x="12" y="56" class="lbl-mono">→ Prefix scan / exclusive scan needed (intermediate partials)</text>
+        <text x="12" y="70" class="lbl-mono">→ Non-standard reduction pattern (custom combine function)</text>
+      </g>
+    </g>
+  </g>
+
+</svg>

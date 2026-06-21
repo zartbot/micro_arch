@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 756" role="img" aria-label="5.5.6 Pipeline Depth Summary Model">
+  <defs>
+    <marker id="ar" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto">
+      <path d="M0,0 L7,3.5 L0,7 Z" fill="#5b6679"/>
+    </marker>
+  </defs>
+  <rect width="1080" height="756" fill="#ffffff"/>
+  <text x="36" y="32" style="font:600 14px 'Fraunces',serif;fill:#0b1220">5.5.6 Pipeline Depth Summary Model</text>
+  <text x="36" y="52" style="font:italic 11px 'Fraunces',serif;fill:#5b6679">Semantic visualization of measured microarchitectural behavior</text>
+
+    <g transform="translate(40,86)">
+      <rect x="0" y="0" width="1000" height="64" rx="10" fill="#F5F1FF" stroke="#6d28d9" stroke-width="0.8"/>
+      <text x="20" y="22" style="font:600 12px 'Fraunces',serif;fill:#6d28d9">SM_120 Execution Pipeline Internal Structure</text>
+      <text x="20" y="44" style="font:500 10px 'JetBrains Mono',monospace;fill:#5b6679">Pipe          Stages  Latency  Throughput  ILP_sat  Pipelined?  EUs/SM · INT (IADD3)     2       2 cyc    1/cyc      2  </text>
+    </g>    <line x1="540" y1="150" x2="540" y2="172" stroke="#5b6679" stroke-width="1.2" marker-end="url(#ar)"/>
+    <g transform="translate(40,176)">
+      <rect x="0" y="0" width="1000" height="64" rx="10" fill="#F5F1FF" stroke="#6d28d9" stroke-width="0.8"/>
+      <text x="20" y="22" style="font:600 12px 'Fraunces',serif;fill:#6d28d9">FMA (FFMA)      4       4 cyc    1/cyc      4       Yes          4</text>
+      <text x="20" y="44" style="font:500 10px 'JetBrains Mono',monospace;fill:#5b6679">FMA (IMAD)      4       4 cyc    0.5/cyc    2       Yes*         4 · FMA (HFMA2)     4       4 cyc    0.5/cyc    2      </text>
+    </g>    <line x1="540" y1="240" x2="540" y2="262" stroke="#5b6679" stroke-width="1.2" marker-end="url(#ar)"/>
+    <g transform="translate(40,266)">
+      <rect x="0" y="0" width="1000" height="64" rx="10" fill="#F5F1FF" stroke="#6d28d9" stroke-width="0.8"/>
+      <text x="20" y="22" style="font:600 12px 'Fraunces',serif;fill:#6d28d9">IDP.4A (dp4a)   4       4 cyc    0.5/cyc    2       Yes          4</text>
+      <text x="20" y="44" style="font:500 10px 'JetBrains Mono',monospace;fill:#5b6679">SFU (bare)     ~6      18 cyc   ~0.11/cyc   6       Partially    4 · SFU (PTX rcp)  ~5      47 cyc   ~0.11/cyc   5      </text>
+    </g>    <line x1="540" y1="330" x2="540" y2="352" stroke="#5b6679" stroke-width="1.2" marker-end="url(#ar)"/>
+    <g transform="translate(40,356)">
+      <rect x="0" y="0" width="1000" height="64" rx="10" fill="#F5F1FF" stroke="#6d28d9" stroke-width="0.8"/>
+      <text x="20" y="22" style="font:600 12px 'Fraunces',serif;fill:#6d28d9">CVT (F2F/I2FP) var    7-19 cyc  varies      --      Yes          4</text>
+      <text x="20" y="44" style="font:500 10px 'JetBrains Mono',monospace;fill:#5b6679">FP64 (DFMA)     1      63 cyc   0.0625/cyc  4 (RESOLVED) No  4 (1 per SMSP, see §5.2.7) · SHFL            ~7     29 cyc </text>
+    </g>    <line x1="540" y1="420" x2="540" y2="442" stroke="#5b6679" stroke-width="1.2" marker-end="url(#ar)"/>
+    <g transform="translate(40,446)">
+      <rect x="0" y="0" width="1000" height="64" rx="10" fill="#F5F1FF" stroke="#6d28d9" stroke-width="0.8"/>
+      <text x="20" y="22" style="font:600 12px 'Fraunces',serif;fill:#6d28d9">*  IMAD: depth=2 not 4 because it has half-rate issue (2 cyc/issue)</text>
+      <text x="20" y="44" style="font:500 10px 'JetBrains Mono',monospace;fill:#5b6679">** HFMA2: depth=2 because 2-cycle issue occupies pipe for both halves · ***FP64: 2 EUs shared between SMSP pairs (0+1 sh</text>
+    </g>    <line x1="540" y1="510" x2="540" y2="532" stroke="#5b6679" stroke-width="1.2" marker-end="url(#ar)"/>
+    <g transform="translate(40,536)">
+      <rect x="0" y="0" width="1000" height="64" rx="10" fill="#F5F1FF" stroke="#6d28d9" stroke-width="0.8"/>
+      <text x="20" y="22" style="font:600 12px 'Fraunces',serif;fill:#6d28d9">Key insight: Pipeline depth ≠ latency. The number of useful ILP chains</text>
+      <text x="20" y="44" style="font:500 10px 'JetBrains Mono',monospace;fill:#5b6679">is bounded by depth = ceil(latency / issue_interval), which for IMAD · is ceil(4/2) = 2, not 4.</text>
+    </g>    <line x1="540" y1="600" x2="540" y2="622" stroke="#5b6679" stroke-width="1.2" marker-end="url(#ar)"/>
+    <g transform="translate(40,626)">
+      <rect x="0" y="0" width="1000" height="64" rx="10" fill="#F5F1FF" stroke="#6d28d9" stroke-width="0.8"/>
+      <text x="20" y="22" style="font:600 12px 'Fraunces',serif;fill:#6d28d9">Co-issue matrix (subpipes that can execute in parallel within 1 warp):</text>
+      <text x="20" y="44" style="font:500 10px 'JetBrains Mono',monospace;fill:#5b6679">fmalite ↔ fmaheavy: 100% co-issue (MIX/MAX = 1.001)</text>
+    </g>
+</svg>

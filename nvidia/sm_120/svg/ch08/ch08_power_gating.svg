@@ -1,0 +1,309 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 920" font-family="'Inter','Segoe UI',system-ui,sans-serif">
+<defs>
+  <style>
+    .bg{fill:#fcfbf6}
+    .panel{fill:#fff;stroke:#e2dfd8;stroke-width:1.2;rx:10}
+    .eyebrow{font-size:9.5px;font-weight:700;letter-spacing:1.2px;fill:#8b7e6a;text-transform:uppercase}
+    .title{font-size:13px;font-weight:700;fill:#1a1a1a}
+    .lbl{font-size:11px;fill:#444}
+    .lbl-bold{font-size:11px;font-weight:700;fill:#1a1a1a}
+    .lbl-mono{font-size:10.5px;font-family:'JetBrains Mono','Fira Code',monospace;fill:#333}
+    .lbl-mono-em{font-size:10.5px;font-family:'JetBrains Mono','Fira Code',monospace;fill:#b45309;font-weight:700}
+    .lbl-small{font-size:9.5px;fill:#666}
+    .accent-green{fill:#059669}
+    .accent-red{fill:#dc2626}
+    .accent-blue{fill:#2563eb}
+    .accent-amber{fill:#d97706}
+    .bar-tc{fill:#059669;opacity:0.85}
+    .bar-fma{fill:#dc2626;opacity:0.85}
+    .bar-int{fill:#7c3aed;opacity:0.85}
+    .bar-mxfp4{fill:#0891b2;opacity:0.85}
+    .connector{stroke:#94a3b8;stroke-width:1;fill:none;stroke-dasharray:3,2}
+    .divider{stroke:#e2dfd8;stroke-width:0.8}
+    .highlight-box{fill:#fef3c7;stroke:#f59e0b;stroke-width:1;rx:6}
+    .tree-line{stroke:#94a3b8;stroke-width:1.2;fill:none}
+  </style>
+</defs>
+
+<!-- Background -->
+<rect width="1280" height="920" class="bg"/>
+
+<!-- Title -->
+<text x="640" y="32" text-anchor="middle" class="eyebrow">SM_120 · GB202 BLACKWELL — POWER ARCHITECTURE</text>
+<text x="640" y="54" text-anchor="middle" class="title" font-size="15">Power Gating and the TC/CUDA Efficiency Gap</text>
+
+<!-- ═══ Panel 1: Static Power Breakdown (top-left) ═══ -->
+<rect x="30" y="72" width="380" height="280" class="panel"/>
+<text x="50" y="94" class="eyebrow">PANEL A</text>
+<text x="50" y="112" class="title">Power Breakdown (2092 MHz, Full-Chip)</text>
+
+<!-- Static power tree -->
+<text x="50" y="140" class="lbl-bold">Static Power (idle w/ context): 48.4 W</text>
+<text x="50" y="156" class="lbl-small">(14% of 350 W TDP)</text>
+
+<line x1="60" y1="168" x2="60" y2="232" class="tree-line"/>
+<line x1="60" y1="178" x2="75" y2="178" class="tree-line"/>
+<line x1="60" y1="202" x2="75" y2="202" class="tree-line"/>
+<line x1="60" y1="228" x2="75" y2="228" class="tree-line"/>
+
+<text x="80" y="182" class="lbl-mono">GDDR7 memory subsystem   ~20 W</text>
+<text x="80" y="206" class="lbl-mono">L2 cache (96 MB SRAM)    ~15 W</text>
+<text x="80" y="230" class="lbl-mono">Clock distrib + I/O      ~13 W</text>
+
+<!-- GPC incremental -->
+<line x1="50" y1="248" x2="390" y2="248" class="divider"/>
+<text x="50" y="268" class="lbl-bold">Per-GPC Incremental (~14 SMs):</text>
+
+<rect x="55" y="278" width="155" height="24" rx="4" fill="#fee2e2" stroke="#fecaca"/>
+<text x="132" y="294" text-anchor="middle" class="lbl-mono" style="fill:#991b1b">FMA: 10.4 W/GPC</text>
+
+<rect x="220" y="278" width="155" height="24" rx="4" fill="#d1fae5" stroke="#a7f3d0"/>
+<text x="297" y="294" text-anchor="middle" class="lbl-mono" style="fill:#065f46">MMA:  1.6 W/GPC</text>
+
+<text x="50" y="324" class="lbl-mono-em">FMA/MMA = 6.5× per GPC</text>
+<text x="50" y="342" class="lbl-small">Power gating unit = 1 GPC (not per-SM)</text>
+
+<!-- ═══ Panel 2: Full-Chip Dynamic Power (top-right) ═══ -->
+<rect x="425" y="72" width="420" height="280" class="panel"/>
+<text x="445" y="94" class="eyebrow">PANEL B</text>
+<text x="445" y="112" class="title">Full-Chip Dynamic Power (110 SM Active)</text>
+
+<!-- Stacked horizontal bars -->
+<!-- INT32 IMAD: 164W total -->
+<rect x="455" y="130" width="296" height="26" class="bar-int"/>
+<text x="460" y="147" class="lbl-mono" style="fill:#fff">INT32 IMAD</text>
+<text x="758" y="147" class="lbl-mono">164 W</text>
+
+<!-- FP32 FFMA: 143W total -->
+<rect x="455" y="164" width="257" height="26" class="bar-fma"/>
+<text x="460" y="181" class="lbl-mono" style="fill:#fff">FP32 FFMA</text>
+<text x="718" y="181" class="lbl-mono">143 W</text>
+
+<!-- TC FP16 HMMA: 108W total -->
+<rect x="455" y="198" width="194" height="26" class="bar-tc"/>
+<text x="460" y="215" class="lbl-mono" style="fill:#fff">TC FP16 HMMA</text>
+<text x="656" y="215" class="lbl-mono">108 W</text>
+
+<!-- TC FP8 QMMA: ~110W total -->
+<rect x="455" y="232" width="198" height="26" class="bar-tc"/>
+<text x="460" y="249" class="lbl-mono" style="fill:#fff">TC FP8 QMMA</text>
+<text x="660" y="249" class="lbl-mono">~110 W</text>
+
+<!-- TC MX-FP4 OMMA.SF: 89W total -->
+<rect x="455" y="266" width="160" height="26" class="bar-mxfp4"/>
+<text x="460" y="283" class="lbl-mono" style="fill:#fff">TC MX-FP4 OMMA.SF</text>
+<text x="622" y="283" class="lbl-mono">89 W</text>
+
+<!-- Static baseline marker -->
+<line x1="542" y1="125" x2="542" y2="302" stroke="#f59e0b" stroke-width="1.5" stroke-dasharray="4,3"/>
+<text x="544" y="318" class="lbl-small" style="fill:#b45309">48.4 W static</text>
+
+<!-- Annotation -->
+<text x="445" y="342" class="lbl-small">Lower power = more TC precision headroom → better TFLOPS/W</text>
+
+<!-- ═══ Panel 3: TFLOPS/W Efficiency Comparison (top-far-right) ═══ -->
+<rect x="860" y="72" width="390" height="280" class="panel"/>
+<text x="880" y="94" class="eyebrow">PANEL C</text>
+<text x="880" y="112" class="title">TFLOPS/W Efficiency Ladder</text>
+
+<!-- Efficiency bars (vertical) -->
+<text x="900" y="140" class="lbl-mono">Precision</text>
+<text x="1050" y="140" class="lbl-mono">TFLOPS/W</text>
+<text x="1160" y="140" class="lbl-mono">vs FP32</text>
+
+<line x1="880" y1="148" x2="1230" y2="148" class="divider"/>
+
+<!-- MX-FP4: 12.0 -->
+<rect x="900" y="155" width="240" height="20" rx="3" class="bar-mxfp4"/>
+<text x="905" y="169" class="lbl-mono" style="fill:#fff;font-size:9.5px">MX-FP4 OMMA.SF</text>
+<text x="1050" y="169" class="lbl-bold" style="fill:#0891b2">12.0</text>
+<text x="1160" y="169" class="lbl-mono-em">29.3×</text>
+
+<!-- NV-FP4: 11.4 -->
+<rect x="900" y="181" width="228" height="20" rx="3" class="bar-mxfp4" style="opacity:0.65"/>
+<text x="905" y="195" class="lbl-mono" style="fill:#fff;font-size:9.5px">NV-FP4 OMMA.SF</text>
+<text x="1050" y="195" class="lbl-bold" style="fill:#0891b2">11.4</text>
+<text x="1160" y="195" class="lbl-mono-em">27.8×</text>
+
+<!-- Sparse INT8: 9.49 -->
+<rect x="900" y="207" width="190" height="20" rx="3" class="bar-tc" style="opacity:0.7"/>
+<text x="905" y="221" class="lbl-mono" style="fill:#fff;font-size:9.5px">Sparse INT8</text>
+<text x="1050" y="221" class="lbl-bold" style="fill:#059669">9.49</text>
+<text x="1160" y="221" class="lbl-mono">23.1×</text>
+
+<!-- FP8 QMMA: 4.81 -->
+<rect x="900" y="233" width="96" height="20" rx="3" class="bar-tc"/>
+<text x="905" y="247" class="lbl-mono" style="fill:#fff;font-size:9.5px">FP8</text>
+<text x="1050" y="247" class="lbl-bold" style="fill:#059669">4.81</text>
+<text x="1160" y="247" class="lbl-mono">11.7×</text>
+
+<!-- TC FP16: 2.18 -->
+<rect x="900" y="259" width="44" height="20" rx="3" class="bar-tc" style="opacity:0.6"/>
+<text x="950" y="273" class="lbl-mono" style="font-size:9.5px">FP16 TC</text>
+<text x="1050" y="273" class="lbl-bold" style="fill:#059669">2.18</text>
+<text x="1160" y="273" class="lbl-mono">5.3×</text>
+
+<!-- TF32: 1.15 -->
+<rect x="900" y="285" width="23" height="20" rx="3" class="bar-tc" style="opacity:0.4"/>
+<text x="930" y="299" class="lbl-mono" style="font-size:9.5px">TF32</text>
+<text x="1050" y="299" class="lbl-bold" style="fill:#059669">1.15</text>
+<text x="1160" y="299" class="lbl-mono">2.8×</text>
+
+<!-- FP32 FFMA: 0.41 (baseline) -->
+<rect x="900" y="311" width="8" height="20" rx="2" class="bar-fma"/>
+<text x="916" y="325" class="lbl-mono" style="font-size:9.5px">FP32 FFMA</text>
+<text x="1050" y="325" class="lbl-bold accent-red">0.41</text>
+<text x="1160" y="325" class="lbl-mono" style="fill:#666">1.0× (base)</text>
+
+<text x="880" y="348" class="lbl-small">Source: [S20/case_7-17], [S9/case_128-137]</text>
+
+<!-- ═══ Panel 4: The 5.3× Gap Explained (bottom-left) ═══ -->
+<rect x="30" y="370" width="600" height="260" class="panel"/>
+<text x="50" y="392" class="eyebrow">PANEL D</text>
+<text x="50" y="410" class="title">The TC/CUDA Efficiency Gap — Why Tensor Cores Win</text>
+
+<!-- Comparison table -->
+<text x="60" y="440" class="lbl-bold">Metric</text>
+<text x="260" y="440" class="lbl-bold" style="fill:#dc2626">FP32 FFMA (CUDA)</text>
+<text x="450" y="440" class="lbl-bold" style="fill:#059669">FP16 HMMA (TC)</text>
+
+<line x1="50" y1="448" x2="610" y2="448" class="divider"/>
+
+<text x="60" y="468" class="lbl">Peak TFLOPS</text>
+<text x="300" y="468" class="lbl-mono" text-anchor="middle">58</text>
+<text x="490" y="468" class="lbl-mono" text-anchor="middle">235</text>
+
+<text x="60" y="490" class="lbl">Total Power</text>
+<text x="300" y="490" class="lbl-mono" text-anchor="middle">143 W</text>
+<text x="490" y="490" class="lbl-mono" text-anchor="middle">108 W</text>
+
+<text x="60" y="512" class="lbl">TFLOPS/W</text>
+<text x="300" y="512" class="lbl-mono" text-anchor="middle" style="fill:#dc2626;font-weight:700">0.41</text>
+<text x="490" y="512" class="lbl-mono" text-anchor="middle" style="fill:#059669;font-weight:700">2.18</text>
+
+<text x="60" y="534" class="lbl">Per-SM incremental</text>
+<text x="300" y="534" class="lbl-mono" text-anchor="middle">0.74 W/SM</text>
+<text x="490" y="534" class="lbl-mono" text-anchor="middle">0.12 W/SM</text>
+
+<text x="60" y="556" class="lbl">Power ratio</text>
+<text x="300" y="556" class="lbl-mono" text-anchor="middle">6.2× more</text>
+<text x="490" y="556" class="lbl-mono" text-anchor="middle">1.0× (base)</text>
+
+<line x1="50" y1="566" x2="610" y2="566" class="divider"/>
+
+<!-- Result highlight -->
+<rect x="55" y="576" width="560" height="44" class="highlight-box"/>
+<text x="80" y="596" class="lbl-bold" style="font-size:13px">Combined: MMA delivers 4.05× more TFLOPS at 0.76× the power</text>
+<text x="80" y="614" class="lbl-mono-em" style="font-size:12px">= 5.3× total TFLOPS/W advantage for tensor cores</text>
+
+<!-- ═══ Panel 5: GPC Power Gating Model (bottom-center) ═══ -->
+<rect x="645" y="370" width="605" height="260" class="panel"/>
+<text x="665" y="392" class="eyebrow">PANEL E</text>
+<text x="665" y="410" class="title">GPC-Granularity Power Gating</text>
+
+<!-- GPC diagram: 8 GPCs shown as blocks -->
+<text x="665" y="436" class="lbl">Full chip: 8 GPCs × ~14 SMs = 110 SMs active</text>
+
+<!-- GPC row -->
+<rect x="675" y="448" width="66" height="40" rx="4" fill="#dcfce7" stroke="#86efac" stroke-width="1.2"/>
+<text x="708" y="472" text-anchor="middle" class="lbl-mono" style="font-size:9px;fill:#065f46">GPC 0</text>
+
+<rect x="748" y="448" width="66" height="40" rx="4" fill="#dcfce7" stroke="#86efac" stroke-width="1.2"/>
+<text x="781" y="472" text-anchor="middle" class="lbl-mono" style="font-size:9px;fill:#065f46">GPC 1</text>
+
+<rect x="821" y="448" width="66" height="40" rx="4" fill="#dcfce7" stroke="#86efac" stroke-width="1.2"/>
+<text x="854" y="472" text-anchor="middle" class="lbl-mono" style="font-size:9px;fill:#065f46">GPC 2</text>
+
+<rect x="894" y="448" width="66" height="40" rx="4" fill="#dcfce7" stroke="#86efac" stroke-width="1.2"/>
+<text x="927" y="472" text-anchor="middle" class="lbl-mono" style="font-size:9px;fill:#065f46">GPC 3</text>
+
+<rect x="967" y="448" width="66" height="40" rx="4" fill="#dcfce7" stroke="#86efac" stroke-width="1.2"/>
+<text x="1000" y="472" text-anchor="middle" class="lbl-mono" style="font-size:9px;fill:#065f46">GPC 4</text>
+
+<rect x="1040" y="448" width="66" height="40" rx="4" fill="#dcfce7" stroke="#86efac" stroke-width="1.2"/>
+<text x="1073" y="472" text-anchor="middle" class="lbl-mono" style="font-size:9px;fill:#065f46">GPC 5</text>
+
+<rect x="1113" y="448" width="66" height="40" rx="4" fill="#e5e7eb" stroke="#d1d5db" stroke-width="1.2"/>
+<text x="1146" y="472" text-anchor="middle" class="lbl-mono" style="font-size:9px;fill:#6b7280">GPC 6</text>
+
+<rect x="1186" y="448" width="48" height="40" rx="4" fill="#e5e7eb" stroke="#d1d5db" stroke-width="1.2"/>
+<text x="1210" y="472" text-anchor="middle" class="lbl-mono" style="font-size:8px;fill:#6b7280">GPC 7</text>
+
+<!-- Legend for GPC -->
+<rect x="675" y="500" width="12" height="12" rx="2" fill="#dcfce7" stroke="#86efac"/>
+<text x="692" y="510" class="lbl-small">Active (power-on)</text>
+<rect x="790" y="500" width="12" height="12" rx="2" fill="#e5e7eb" stroke="#d1d5db"/>
+<text x="807" y="510" class="lbl-small">Gated (power-off)</text>
+
+<!-- Key findings -->
+<line x1="665" y1="524" x2="1230" y2="524" class="divider"/>
+
+<text x="675" y="545" class="lbl-bold">Key Findings:</text>
+<text x="675" y="565" class="lbl">• Power gating granularity = 1 GPC (not per-SM)</text>
+<text x="675" y="583" class="lbl">• Step size: +10.4 W (FMA) or +1.6 W (MMA) per GPC activated</text>
+<text x="675" y="601" class="lbl">• No thermal throttle: max 53°C at 164 W (39°C below limit)</text>
+<text x="675" y="619" class="lbl-mono-em">Implication: fine-grained SM power control unavailable</text>
+
+<!-- ═══ Panel 6: Optimization Decision Rule (bottom strip) ═══ -->
+<rect x="30" y="648" width="1220" height="255" class="panel"/>
+<text x="50" y="670" class="eyebrow">PANEL F</text>
+<text x="50" y="688" class="title">Optimization Decision: Precision Selection by Power Efficiency</text>
+
+<!-- Decision flowchart -->
+<!-- Arrow path: start → decision → branches -->
+<rect x="80" y="710" width="200" height="36" rx="6" fill="#eff6ff" stroke="#93c5fd"/>
+<text x="180" y="732" text-anchor="middle" class="lbl-bold" style="fill:#1e40af">Workload needs FP32?</text>
+
+<!-- YES branch -->
+<line x1="280" y1="728" x2="340" y2="728" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow)"/>
+<text x="310" y="718" class="lbl-small">Yes</text>
+
+<rect x="340" y="710" width="180" height="36" rx="6" fill="#fef3c7" stroke="#fcd34d"/>
+<text x="430" y="726" text-anchor="middle" class="lbl-mono" style="font-size:10px">Use TF32 (accuracy OK?)</text>
+<text x="430" y="740" text-anchor="middle" class="lbl-small">1.15 TFLOPS/W (2.8× better)</text>
+
+<!-- NO branch from TF32 -->
+<line x1="520" y1="728" x2="570" y2="728" stroke="#64748b" stroke-width="1.5"/>
+<text x="545" y="718" class="lbl-small">No</text>
+<rect x="570" y="710" width="160" height="36" rx="6" fill="#fee2e2" stroke="#fca5a5"/>
+<text x="650" y="726" text-anchor="middle" class="lbl-mono" style="font-size:10px">FP32 FFMA (last resort)</text>
+<text x="650" y="740" text-anchor="middle" class="lbl-small" style="fill:#991b1b">0.41 TFLOPS/W (worst)</text>
+
+<!-- Lower precision path -->
+<rect x="80" y="770" width="200" height="36" rx="6" fill="#eff6ff" stroke="#93c5fd"/>
+<text x="180" y="792" text-anchor="middle" class="lbl-bold" style="fill:#1e40af">Workload tolerates FP8?</text>
+
+<line x1="280" y1="788" x2="340" y2="788" stroke="#64748b" stroke-width="1.5"/>
+<text x="310" y="778" class="lbl-small">Yes</text>
+
+<rect x="340" y="770" width="180" height="36" rx="6" fill="#d1fae5" stroke="#6ee7b7"/>
+<text x="430" y="786" text-anchor="middle" class="lbl-mono" style="font-size:10px">FP8 QMMA</text>
+<text x="430" y="800" text-anchor="middle" class="lbl-small" style="fill:#065f46">4.81 TFLOPS/W (11.7×)</text>
+
+<!-- FP4 path -->
+<rect x="80" y="830" width="200" height="36" rx="6" fill="#eff6ff" stroke="#93c5fd"/>
+<text x="180" y="852" text-anchor="middle" class="lbl-bold" style="fill:#1e40af">Workload tolerates FP4?</text>
+
+<line x1="280" y1="848" x2="340" y2="848" stroke="#64748b" stroke-width="1.5"/>
+<text x="310" y="838" class="lbl-small">Yes</text>
+
+<rect x="340" y="830" width="180" height="36" rx="6" fill="#ecfdf5" stroke="#34d399"/>
+<text x="430" y="846" text-anchor="middle" class="lbl-mono" style="font-size:10px">MX-FP4 OMMA.SF</text>
+<text x="430" y="860" text-anchor="middle" class="lbl-small" style="fill:#065f46">12.0 TFLOPS/W (29.3×)</text>
+
+<!-- Summary box -->
+<rect x="780" y="760" width="440" height="120" rx="8" fill="#f0fdf4" stroke="#86efac" stroke-width="1.5"/>
+<text x="800" y="784" class="lbl-bold" style="font-size:12px;fill:#065f46">Power Efficiency Rule of Thumb</text>
+<text x="800" y="808" class="lbl-mono">Each reduction in precision by one level → TFLOPS/W doubles.</text>
+<text x="800" y="828" class="lbl-mono">FP32→TF32: 2.8×  |  TF32→FP16: 1.9×</text>
+<text x="800" y="848" class="lbl-mono">FP16→FP8:  2.2×  |  FP8→FP4:   2.5×</text>
+<text x="800" y="868" class="lbl-small">Source: [S20/case_5-17], [S9/case_128-137,181-183]</text>
+
+<!-- Arrow marker definition -->
+<defs>
+  <marker id="arrow" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+    <path d="M0,0 L8,3 L0,6 Z" fill="#64748b"/>
+  </marker>
+</defs>
+</svg>

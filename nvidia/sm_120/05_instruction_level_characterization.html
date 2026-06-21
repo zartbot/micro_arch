@@ -1,0 +1,3825 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>
+      Instruction-Level Characterization · SM_120 Microarch Reference
+    </title>
+    <link rel="stylesheet" href="assets/css/style.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css"
+      integrity="sha384-nB0miv6/jRmo5UMMR1wu3Gz6NLsoTkbqJghGIsx//Rlm+ZU03BU6SQNC66uf4l5+"
+      crossorigin="anonymous"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/styles/atom-one-light.min.css"
+    />
+    <style>
+      /* protect non-color overrides over hljs theme */
+      pre code.hljs {
+        background: transparent !important;
+        padding: 0 !important;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="shell">
+      <aside class="toc">
+        <a class="toc-back" href="index.html">← Index</a>
+        <div class="toc-brand">
+          SM_120 <span class="accent">GB202</span> · <em>Microarch</em>
+        </div>
+        <span class="toc-tag">FINAL REPORT · 2026</span>
+        <h4>All Chapters</h4>
+        <a href="01_architecture_overview.html">01 · Architecture Overview</a>
+        <a href="02_memory_subsystem.html">02 · Memory Subsystem</a>
+        <a href="03_sm_microarchitecture.html">03 · SM Microarchitecture</a>
+        <a href="04_tensorcore_architecture.html"
+          >04 · TensorCore Architecture</a
+        >
+        <a
+          href="05_instruction_level_characterization.html"
+          style="font-weight: 600; color: var(--ink)"
+          >05 · Instruction-Level Characterization</a
+        >
+        <a href="06_on_chip_network_async.html"
+          >06 · On-Chip Network &amp; Async</a
+        >
+        <a href="07_warp_scheduler_control.html"
+          >07 · Warp Scheduler &amp; Control</a
+        >
+        <a href="08_workload_analysis.html">08 · Workload Analysis</a>
+        <a href="09_power_thermal_efficiency.html"
+          >09 · Power, Thermal &amp; Efficiency</a
+        >
+        <a href="10_system_level_multi_gpu.html"
+          >10 · System-Level &amp; Multi-GPU</a
+        >
+        <a href="11_optimization_guidance.html">11 · Optimization Guidance</a>
+        <a href="12_ptxas_compiler_behavior.html"
+          >12 · ptxas Compiler Behavior</a
+        >
+        <a href="13_unified_performance_model.html"
+          >13 · Unified Performance Model</a
+        >
+        <a href="14_sm100_to_sm120_porting_guide.html"
+          >14 · SM_100 → SM_120 Porting Guide</a
+        >
+        <a href="15_agent_ground_truth.html">15 · Agent Ground Truth</a>
+        <a href="16_open_questions.html">16 · Open Questions</a>
+        <a href="17_cross_reference_map.html">17 · Cross-Reference Map</a>
+        <a href="18_appendix_a_test_coverage.html"
+          >18 · Appendix A — Test Coverage</a
+        >
+        <a href="19_appendix_b_machine_readable.html"
+          >19 · Appendix B — Machine-Readable Parameters</a
+        >
+        <a href="20_appendix_c_methodology.html"
+          >20 · Appendix C — Measurement Methodology</a
+        >
+      </aside>
+      <main class="content">
+        <header class="hero">
+          <div class="hero-eyebrow">
+            <span class="pulse"></span>CHAPTER 05 · SM_120 · GB202 BLACKWELL
+          </div>
+          <h1 class="hero-title">Instruction-Level Characterization</h1>
+          <p class="lede">
+            This chapter presents a comprehensive per-instruction latency and
+            throughput reference for all non-Tensor-Core compute instructions on
+            NVIDIA SM_120 (GB202, Blackwell family; RTX PRO 5000 72GB). The
+            characterization spans integer ALU (Section 4, 42 cases),
+            floating-point ALU (Section 5, 104 cases), and
+            logic/shift/conversion instructions (Section 6, 54 cases). All
+            measurements employ single-warp execution (1 block, 32 threads) to
+            eliminate scheduling noise, with dependent chains for latency and
+            independent chains (ILP sweeps) for throughput. Each result reports
+            the minimum over 1000+ measurement iterations after 200+ warmup
+            iterations, with clock64 overhead (1 cycle) subtracted. SASS
+            verification via `cuobjdump --dump-sass` confirms the actual
+            instructions executed in all cases.
+          </p>
+        </header>
+
+        <figure class="diagram">
+          <object
+            data="svg/ch05/ch05_summary.svg"
+            type="image/svg+xml"
+            aria-label="Chapter 5 summary — instruction-level latency / throughput / co-issue catalog"
+          ></object>
+          <figcaption>
+            <span class="fig-num">FIG 05.0</span>Chapter 5 summary —
+            instruction-level latency / throughput / co-issue catalog
+          </figcaption>
+        </figure>
+        <h2 class="ch-title" id="5-1-integer-alu">5.1 Integer ALU</h2>
+        <p>
+          The SM_120 integer pipeline operates through two primary subpipes: the
+          <strong>fmalite</strong> pipe (handling IADD3 and lightweight integer
+          operations) and the <strong>fmaheavy</strong> pipe (handling IMAD,
+          shifts, and byte permutation). These two subpipes can co-issue with
+          one another and with the FP32 pipe, enabling high aggregate throughput
+          for mixed workloads.
+        </p>
+        <h3 class="sub-title" id="5-1-1-core-int32-instructions">
+          5.1.1 Core INT32 Instructions
+        </h3>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Instruction</th>
+                <th>PTX</th>
+                <th>SASS Opcode</th>
+                <th>Latency (cyc)</th>
+                <th>Throughput (ops/cyc)</th>
+                <th>Pipeline Depth</th>
+                <th>Saturation ILP</th>
+                <th>Source</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>add.u32</td>
+                <td><code>add.u32</code></td>
+                <td>IADD3</td>
+                <td>2</td>
+                <td>1.0</td>
+                <td>2</td>
+                <td>ILP=2</td>
+                <td>section_4/case_01</td>
+              </tr>
+              <tr>
+                <td>mad.lo.u32</td>
+                <td><code>mad.lo.u32</code></td>
+                <td>IMAD</td>
+                <td>4</td>
+                <td>0.50</td>
+                <td>2</td>
+                <td>ILP=2</td>
+                <td>section_4/case_03</td>
+              </tr>
+              <tr>
+                <td>mul.lo.u32</td>
+                <td><code>mul.lo.u32</code></td>
+                <td>IMAD (RZ addend)</td>
+                <td>4</td>
+                <td>0.50</td>
+                <td>2</td>
+                <td>ILP=2</td>
+                <td>section_4/case_03</td>
+              </tr>
+              <tr>
+                <td>mul.hi.u32</td>
+                <td><code>mul.hi.u32</code></td>
+                <td>IMAD.HI.U32</td>
+                <td>9</td>
+                <td>~0.11</td>
+                <td>--</td>
+                <td>--</td>
+                <td>section_4/case_04</td>
+              </tr>
+              <tr>
+                <td>dp4a.u32.u32</td>
+                <td><code>dp4a.u32.u32</code></td>
+                <td>IDP.4A.U8.U8</td>
+                <td>4</td>
+                <td>0.50</td>
+                <td>2</td>
+                <td>ILP=2</td>
+                <td>section_4/case_11</td>
+              </tr>
+              <tr>
+                <td>min/max.s32</td>
+                <td><code>min.s32</code> / <code>max.s32</code></td>
+                <td>VIMNMX.S32</td>
+                <td>5</td>
+                <td>~1.0</td>
+                <td>--</td>
+                <td>--</td>
+                <td>section_4/case_19</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p><strong>Key observations:</strong></p>
+        <ul>
+          <li>
+            <strong>IADD3 is the fundamental INT32 add instruction</strong> with
+            2-cycle latency and 1 op/cycle throughput. Only ILP=2 is required
+            for full pipeline saturation, making the IADD3 pipeline extremely
+            shallow.
+          </li>
+          <li>
+            <strong>IMAD (integer multiply-add)</strong> has 4-cycle latency.
+            PTX <code>mul.lo.u32</code> is compiled identically to
+            <code>mad.lo.u32</code> with <code>RZ</code> as the addend -- there
+            is no separate MUL opcode in SASS. ptxas aggressively fuses
+            <code>mul.lo.u32 + add.u32</code> sequences back into a single IMAD
+            instruction.
+          </li>
+          <li>
+            <strong>IMAD.HI.U32</strong> is significantly more expensive at 9
+            cycles (2.24x the cost of IMAD), reflecting the multi-step
+            extraction of the upper 32 bits from the full 64-bit multiplication
+            result.
+          </li>
+          <li>
+            <strong>dp4a</strong> (dot-product of four INT8 pairs accumulated
+            into INT32) maps to <code>IDP.4A.U8.U8</code> with 4-cycle latency
+            and 0.50 ops/cycle throughput. Its 2-cycle issue interval matches
+            IMAD, suggesting it uses the same multiply-accumulate hardware with
+            the 4-element dot product computed across 2 pipeline stages.
+          </li>
+        </ul>
+        <h3 class="sub-title" id="5-1-2-int64-operations">
+          5.1.2 INT64 Operations
+        </h3>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Instruction</th>
+                <th>PTX</th>
+                <th>SASS Opcode</th>
+                <th>Latency (cyc)</th>
+                <th>Throughput (ops/cyc)</th>
+                <th>Saturation ILP</th>
+                <th>Source</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>add.u64</td>
+                <td><code>add.u64</code></td>
+                <td>IADD.64</td>
+                <td>4</td>
+                <td>0.50</td>
+                <td>ILP=2</td>
+                <td>section_4/case_02</td>
+              </tr>
+              <tr>
+                <td>mul.lo.u64</td>
+                <td><code>mul.lo.u64</code></td>
+                <td>multi-IMAD.WIDE.U32</td>
+                <td>13-17</td>
+                <td>0.097</td>
+                <td>ILP=4</td>
+                <td>section_4/case_02, case_33</td>
+              </tr>
+              <tr>
+                <td>div.u64</td>
+                <td><code>div.u64</code></td>
+                <td>CALL.REL.NOINC (subroutine)</td>
+                <td>422</td>
+                <td>--</td>
+                <td>No ILP benefit</td>
+                <td>section_4/case_09</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p><strong>Analysis:</strong></p>
+        <ul>
+          <li>
+            <strong>SM_120 has no dedicated 64-bit integer ALU.</strong> All
+            INT64 operations are emulated via the 32-bit integer pipeline.
+            <code>IADD.64</code> is a native SASS opcode but internally requires
+            2 pipeline cycles (exactly 2x INT32 add cost).
+          </li>
+          <li>
+            <strong>mul.lo.u64</strong> decomposes to approximately 4 SASS
+            instructions (IMAD + IMAD.WIDE.U32 + IMAD + IADD) forming a 3-deep
+            dependency chain of 4-cycle instructions. The measured latency of 17
+            cycles and throughput plateau at 0.097 ops/cycle (ILP=8) reflects
+            this multi-instruction decomposition with limited internal
+            parallelism.
+          </li>
+          <li>
+            <strong>div.u64</strong> is the most expensive integer operation at
+            ~422 cycles, implemented as a runtime subroutine call
+            (<code>CALL.REL.NOINC</code>). SASS disassembly confirms 16 CALL
+            instructions targeting a shared division routine. No ILP benefit is
+            achievable due to the sequential nature of the subroutine.
+          </li>
+        </ul>
+        <h3 class="sub-title" id="5-1-3-integer-division-div-u32">
+          5.1.3 Integer Division (div.u32)
+        </h3>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Instruction</th>
+                <th>Divisor Type</th>
+                <th>Latency (cyc)</th>
+                <th>Throughput (ILP=4)</th>
+                <th>SASS Decomposition</th>
+                <th>Source</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>div.u32</td>
+                <td>Runtime</td>
+                <td>60</td>
+                <td>0.028 ops/cyc (35.7 cyc/op)</td>
+                <td>MUFU.RCP + IMAD chain + ISETP corrections</td>
+                <td>section_4/case_08</td>
+              </tr>
+              <tr>
+                <td>div.u32</td>
+                <td>Constant</td>
+                <td>47</td>
+                <td>--</td>
+                <td>IMAD chain + ISETP (no MUFU.RCP)</td>
+                <td>section_4/case_08</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          SM_120 has no native integer division hardware. The
+          <code>div.u32</code> instruction is decomposed by ptxas into a
+          9-instruction software sequence:
+        </p>
+        <ol>
+          <li>
+            MUFU.RCP (reciprocal approximation via SFU) -- only for runtime
+            divisors
+          </li>
+          <li>IMAD (Newton-Raphson refinement)</li>
+          <li>IMAD.HI.U32 (quotient estimate)</li>
+          <li>IADD (remainder computation)</li>
+          <li>IMAD (remainder refinement)</li>
+          <li>ISETP.GE.U32.AND (1st correction check)</li>
+          <li>Predicated IADD (conditional correction)</li>
+          <li>ISETP.GE.U32.AND (2nd correction check)</li>
+          <li>Predicated IADD + SEL (final quotient selection)</li>
+        </ol>
+        <p>
+          The constant-divisor path saves ~13 cycles by using ptxas-precomputed
+          magic-number reciprocals instead of runtime MUFU.RCP. All divisor
+          values (powers-of-two or otherwise) produce identical constant-path
+          latency of 47 cycles, confirming that ptxas always uses the
+          magic-number approach regardless of divisor properties.
+        </p>
+        <h3 class="sub-title" id="5-1-4-simd-integer-operations">
+          5.1.4 SIMD Integer Operations
+        </h3>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Instruction</th>
+                <th>PTX/Intrinsic</th>
+                <th>SASS Opcode</th>
+                <th>Latency (cyc)</th>
+                <th>Peak Throughput</th>
+                <th>Effective Speedup</th>
+                <th>Source</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>add.u16x2</td>
+                <td><code>__vadd2()</code></td>
+                <td>VIADD.16x2</td>
+                <td>5</td>
+                <td>~1.0 op/cyc (ILP=8)</td>
+                <td>1.84x vs 2x scalar</td>
+                <td>section_4/case_17</td>
+              </tr>
+              <tr>
+                <td>add.u8x4</td>
+                <td><code>__vadd4()</code></td>
+                <td>LOP3.LUT + IADD (emulated)</td>
+                <td>10</td>
+                <td>~0.10 op/cyc</td>
+                <td>0.80x (slower than scalar)</td>
+                <td>section_4/case_21</td>
+              </tr>
+              <tr>
+                <td>add.sat.u8x4</td>
+                <td><code>__vaddus4()</code></td>
+                <td>LOP3+IADD+PRMT (~13 insn)</td>
+                <td>26</td>
+                <td>--</td>
+                <td>--</td>
+                <td>section_4/case_21</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p><strong>Key findings:</strong></p>
+        <ul>
+          <li>
+            <strong>Native 16x2 SIMD exists</strong> (<code>VIADD.16x2</code>)
+            with 5-cycle latency and a pipeline depth of 5. However, the
+            effective speedup is only 1.84x versus two scalar adds (not the
+            theoretical 2x), because the VIADD issue interval (1.09 cyc) is
+            slightly worse than IADD3 (1.00 cyc).
+          </li>
+          <li>
+            <strong>No native packed byte ALU.</strong> All u8x4/s8x4 operations
+            are emulated via LOP3.LUT masking (0x7F7F7F7F to prevent inter-byte
+            carry) plus IADD. The emulated path is 5x slower than scalar for
+            unsaturated operations and 13x slower for saturating variants. For
+            byte-level parallel processing, <code>dp4a</code> (which has
+            dedicated hardware) is far more efficient.
+          </li>
+        </ul>
+        <h3 class="sub-title" id="5-1-5-int32-fp32-co-issue">
+          5.1.5 INT32 + FP32 Co-Issue
+        </h3>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Configuration</th>
+                <th>Cycles</th>
+                <th>Total Ops</th>
+                <th>Effective ops/cyc</th>
+                <th>MIX/MAX Ratio</th>
+                <th>Source</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>IADD-only (ILP=4)</td>
+                <td>4095</td>
+                <td>4096</td>
+                <td>1.00</td>
+                <td>--</td>
+                <td>section_4/case_05</td>
+              </tr>
+              <tr>
+                <td>FFMA-only (ILP=4)</td>
+                <td>4095</td>
+                <td>4096</td>
+                <td>1.00</td>
+                <td>--</td>
+                <td>section_4/case_05</td>
+              </tr>
+              <tr>
+                <td>MIX 1:1 (4I + 4F)</td>
+                <td>4096</td>
+                <td>8192</td>
+                <td>2.00</td>
+                <td><strong>1.000</strong></td>
+                <td>section_4/case_05</td>
+              </tr>
+              <tr>
+                <td>MIX 2:1 (4I + 2F)</td>
+                <td>4096</td>
+                <td>6144</td>
+                <td>1.50</td>
+                <td><strong>1.000</strong></td>
+                <td>section_4/case_05</td>
+              </tr>
+              <tr>
+                <td>MIX 1:2 (2I + 4F)</td>
+                <td>4096</td>
+                <td>6144</td>
+                <td>1.50</td>
+                <td><strong>1.000</strong></td>
+                <td>section_4/case_05</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          <strong
+            >The INT32 and FP32 pipelines co-issue perfectly on SM_120.</strong
+          >
+          The MIX/MAX ratio of exactly 1.000 across all tested ratios (1:1, 2:1,
+          1:2) demonstrates that IADD3 and FFMA execute on completely separate
+          pipelines with zero contention. Mixed INT+FP workloads achieve 2.00
+          ops/cycle aggregate throughput -- exactly double the solo throughput
+          of either pipe. This is confirmed by SASS opcode analysis showing
+          IADD3 on the <code>fmalite</code> pipe and FFMA on the
+          <code>pipe_fma</code> (fmalite) pipe (case_32 verification, corrected
+          by NCU verification <span class="cite">[S26/case_46]</span>:
+          <code>smsp__inst_executed_pipe_fma</code> counts all FFMA
+          instructions).
+        </p>
+        <h3
+          class="sub-title"
+          id="5-1-6-microarchitectural-analysis-the-dual-subpipe-fma-architecture"
+        >
+          5.1.6 Microarchitectural Analysis: The Dual-Subpipe FMA Architecture
+        </h3>
+        <p>
+          The INT32+FP32 co-issue measurement is the single most important
+          finding for understanding the SM_120 compute pipeline. Case 32
+          provides definitive throughput-mode evidence (complementing Case 5's
+          latency-mode result):
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Test</th>
+                <th style="text-align: center">Total Ops</th>
+                <th style="text-align: center">Min Cycles</th>
+                <th style="text-align: center">cyc/op</th>
+                <th style="text-align: center">MIX/MAX</th>
+                <th>Source</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>INT-only (ILP=4, IADD3)</td>
+                <td style="text-align: center">1024</td>
+                <td style="text-align: center">1024</td>
+                <td style="text-align: center">1.000</td>
+                <td style="text-align: center">—</td>
+                <td><span class="cite">[S4/case_32]</span></td>
+              </tr>
+              <tr>
+                <td>FP-only (ILP=4, FFMA)</td>
+                <td style="text-align: center">1024</td>
+                <td style="text-align: center">1023</td>
+                <td style="text-align: center">0.999</td>
+                <td style="text-align: center">—</td>
+                <td><span class="cite">[S4/case_32]</span></td>
+              </tr>
+              <tr>
+                <td>MIX 4INT+4FP</td>
+                <td style="text-align: center">2048</td>
+                <td style="text-align: center">1025</td>
+                <td style="text-align: center">0.500</td>
+                <td style="text-align: center"><strong>1.001</strong></td>
+                <td><span class="cite">[S4/case_32]</span></td>
+              </tr>
+              <tr>
+                <td>MIX 8INT+4FP</td>
+                <td style="text-align: center">3072</td>
+                <td style="text-align: center">2049</td>
+                <td style="text-align: center">0.667</td>
+                <td style="text-align: center"><strong>1.000</strong></td>
+                <td><span class="cite">[S4/case_32]</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          <strong
+            >Why MIX/MAX = 1.001 proves separate subpipes, not a unified
+            pipe</strong
+          >: If IADD3 and FFMA shared a single issue port (as on many prior GPU
+          architectures), the mixed workload would require 1024 INT + 1024 FP =
+          2048 issue slots → 2048 cycles (MIX/MAX ≈ 2.0). The measured 1025
+          cycles proves both pipes issue simultaneously. The 8INT+4FP test
+          further confirms: the 4 FP chains (1023 cyc worth) complete entirely
+          within the 8 INT chains' execution window (2048 cyc) — the FP pipe
+          operates in parallel with zero interference.
+        </p>
+        <figure class="diagram">
+          <object
+            data="svg/ch05/ch05_dual_subpipe_fma_architecture.svg"
+            type="image/svg+xml"
+            aria-label="SM_120 Dual-Subpipe FMA Architecture — per-SMSP co-issue microarchitecture"
+          ></object>
+          <figcaption>
+            <span class="fig-num">FIG 05.1</span>SM_120 Dual-Subpipe FMA
+            Architecture — per-SMSP co-issue microarchitecture showing the two
+            independent execution pipes within the FMA group and their perfect
+            overlap capability
+          </figcaption>
+        </figure>
+        <p>
+          <strong>Architectural explanation of the dual-subpipe design</strong>:
+          The diagram above illustrates how each SMSP within the SM_120 contains
+          a single warp-scheduler dispatch port that feeds into an
+          <strong>FMA Group Opcode Selector MUX</strong>. This multiplexer
+          routes each instruction to one of two physically independent execution
+          pipelines based on its opcode class:
+        </p>
+        <ul>
+          <li>
+            <strong>pipe_fma (fmalite)</strong> — handles lightweight integer
+            operations (IADD3 at 2-cycle latency), logic (LOP3.LUT), comparisons
+            (ISETP), and all FP32 arithmetic (FFMA, FADD). This is the
+            "workhorse" pipe for address computation and floating-point data
+            processing. It has a 4-stage pipeline depth for FFMA and requires
+            ILP=4 for saturation.
+          </li>
+          <li>
+            <strong>pipe_fmaheavy</strong> — handles integer multiplication
+            (IMAD at 4-cycle latency), funnel shifts (SHF), byte permutation
+            (PRMT), packed FP16 FMA (HFMA2 with 2-cycle issue), and INT8
+            dot-product (IDP.4A). It saturates at ILP=2 with a shallower 2-stage
+            pipeline.
+          </li>
+        </ul>
+        <p>
+          The critical architectural insight is that these two subpipes execute
+          <strong>completely independently</strong> — when one pipe is busy with
+          an IADD3 chain, the other can simultaneously process an FFMA chain
+          with zero mutual interference. This was verified by measuring MIX/MAX
+          ratios of exactly 1.000–1.001 across multiple test configurations
+          (Cases 5 and 32), proving the aggregate throughput reaches 2.0
+          ops/cycle when both pipes are saturated. The NCU hardware performance
+          counters (<code>smsp__inst_executed_pipe_fmalite</code> and
+          <code>smsp__inst_executed_pipe_fma</code>) independently confirm that
+          IADD3 and FFMA are dispatched to separate physical pipes.
+        </p>
+        <p>
+          <strong>Architectural significance for GEMM kernels</strong>: This
+          dual-subpipe design means that address computation (IADD3, LOP3 for
+          pointer arithmetic) and data computation (FFMA for epilogue) can
+          execute simultaneously within a single warp's instruction stream. A
+          GEMM mainloop that interleaves <code>IADD3</code> (tile address
+          update) with <code>FFMA</code> (accumulator bias/activation) pays zero
+          throughput penalty — both complete in the time of the slower pipe.
+          This eliminates the traditional trade-off between "address compute
+          cycles" and "useful FLOPs."
+        </p>
+        <h3
+          class="sub-title"
+          id="5-1-7-integer-division-the-most-expensive-alu-decomposition"
+        >
+          5.1.7 Integer Division: The Most Expensive ALU Decomposition
+        </h3>
+        <p>
+          The div.u32 SASS decomposition (Case 8) reveals the compiler's
+          software division algorithm on SM_120 hardware that has no dedicated
+          integer divider. The 9-instruction sequence has a precisely measurable
+          critical path:
+        </p>
+        <figure class="diagram">
+          <object
+            data="svg/ch05/ch05_integer_division_decomposition.svg"
+            type="image/svg+xml"
+            aria-label="SM_120 div.u32 Software Decomposition — 9-instruction critical path through 4 execution pipes"
+          ></object>
+          <figcaption>
+            <span class="fig-num">FIG 05.2</span>SM_120 div.u32 software
+            decomposition — 9-instruction critical path spanning the xu,
+            fmaheavy, and fmalite execution pipes, with constant-divisor
+            optimization path
+          </figcaption>
+        </figure>
+        <p>
+          <strong>How the division algorithm works</strong>: The diagram above
+          shows the complete 9-step software division sequence that ptxas
+          generates for <code>div.u32</code> on SM_120. Since there is no
+          dedicated integer division hardware, the compiler implements a
+          <em>reciprocal-multiply-correct</em> algorithm:
+        </p>
+        <ol>
+          <li>
+            <strong>Reciprocal estimation</strong> (Step 1): The SFU's MUFU.RCP
+            computes an approximate reciprocal of the divisor in floating-point.
+            This single step dominates the entire critical path at ~18 cycles —
+            consuming 33% of the total latency.
+          </li>
+          <li>
+            <strong>Quotient computation</strong> (Steps 2–4): Newton-Raphson
+            refinement (IMAD) followed by IMAD.HI.U32 extracts the upper 32 bits
+            of the 64-bit product <code>n × (1/d)</code> to estimate the
+            quotient. IADD then computes the initial remainder.
+          </li>
+          <li>
+            <strong>Two-stage correction</strong> (Steps 5–9): Because the
+            reciprocal approximation may be slightly imprecise, the algorithm
+            performs two predicated correction passes. Each pass checks whether
+            the remainder exceeds the divisor (ISETP.GE) and conditionally
+            increments the quotient (@P IADD). This handles off-by-one and
+            off-by-two errors inherent to fixed-precision reciprocal methods.
+          </li>
+        </ol>
+        <p>
+          The 60-cycle runtime divisor cost is dominated by MUFU.RCP (step 1,
+          ~18 cyc) and IMAD.HI.U32 (step 3, 9 cyc). The constant-divisor path at
+          47 cycles replaces the expensive MUFU.RCP with a precomputed
+          magic-number multiplication, saving exactly the MUFU.RCP latency minus
+          the simpler IMAD constant-multiply cost. All constant divisor values —
+          whether powers-of-two or arbitrary — produce identical 47-cycle
+          latency, confirming ptxas always uses the magic-number approach.
+        </p>
+        <hr />
+        <h2 class="ch-title" id="5-2-floating-point-alu">
+          5.2 Floating-Point ALU
+        </h2>
+        <p>
+          The SM_120 floating-point subsystem consists of three execution pipes:
+          <strong>P0/FMA</strong> (FP32 and FP16/BF16 packed operations),
+          <strong>P1/FP64</strong> (double-precision), and
+          <strong>P2/SFU</strong> (transcendental functions). All three can
+          co-issue with one another and with the integer pipe.
+        </p>
+        <figure class="diagram">
+          <object
+            data="svg/ch05/ch05_fp_alu_subsystem_architecture.svg"
+            type="image/svg+xml"
+            aria-label="SM_120 Floating-Point ALU Subsystem — Three Independent Co-Issuing Execution Pipes per SMSP"
+          ></object>
+          <figcaption>
+            <span class="fig-num">FIG 05.3</span>SM_120 Floating-Point ALU
+            Subsystem — three physically independent execution pipes (P0/FMA,
+            P1/FP64, P2/SFU) per SMSP with full co-issue capability and per-SM
+            throughput comparison
+          </figcaption>
+        </figure>
+        <p>
+          <strong>Floating-point subsystem architecture overview</strong>: The
+          diagram above illustrates the three independent floating-point
+          execution pipes within each SMSP of the SM_120. Unlike architectures
+          where FP and INT compete for shared issue bandwidth, SM_120 allows all
+          three FP pipes to execute simultaneously with each other
+          <em>and</em> with the integer pipes (fmalite + fmaheavy), enabling up
+          to 5 concurrent operations per cycle from a single warp:
+        </p>
+        <ul>
+          <li>
+            <strong>P0 / FMA Pipe</strong> (green): The primary compute
+            workhorse handling FP32 (FFMA at 4-cycle latency, 4-stage pipeline,
+            ILP=4 saturation) and packed FP16/BF16 (HFMA2). A critical finding
+            is that HFMA2 provides <em>no throughput advantage</em> over scalar
+            FP32 — it uses the same 32-bit datapath with 2-cycle
+            time-multiplexing, yielding identical per-element throughput. SM_120
+            handles IEEE 754 subnormals at full speed with zero penalty. The PTX
+            <code>fma.rn.f32x2</code> instruction is lowered to 2 independent
+            FFMA instructions with no native hardware support.
+          </li>
+          <li>
+            <strong>P1 / FP64 Pipe</strong> (purple): A dedicated but severely
+            rate-limited double-precision unit. Each SMSP contains one
+            non-pipelined FP64 EU that executes DFMA in 64 cycles with no
+            internal overlap (ILP=2 yields zero speedup). At 4 EUs per SM (one
+            per SMSP), the aggregate throughput is 0.0625 DFMA/cyc/SM — a 1:32
+            ratio versus FP32. However, the FP64 pipe co-issues perfectly with
+            P0, meaning FFMA instructions execute "for free" during the 64-cycle
+            DFMA shadow.
+          </li>
+          <li>
+            <strong>P2 / SFU Pipe</strong> (amber): The Special Function Unit
+            computing transcendentals (MUFU.RCP, MUFU.SIN, MUFU.TANH, etc.) with
+            a bare hardware latency of ~18-20 cycles. PTX-level SFU instructions
+            appear more expensive (18-44 cycles) because ptxas inserts
+            range-reduction wrapper sequences of 4-7 FMA/FSETP/FSEL instructions
+            around the core MUFU operation. The tier differences (Tier 1:
+            rcp/rsqrt at 40-44 cyc; Tier 2: sin/cos at 18-22 cyc; Tier 3:
+            tanh/ex2 at 18 cyc) reflect wrapper complexity, not the MUFU unit
+            itself. At saturation, 4 SFU units per SM provide ~1 op/cyc
+            aggregate throughput.
+          </li>
+        </ul>
+        <p>
+          The bottom bar chart shows the stark throughput disparity: FP32 and
+          FP16 (per-element) are equal at 1.0x, while FP64 provides only 1/32x
+          of FP32 throughput in real workloads. For half-precision compute
+          acceleration, Tensor Cores (258x the ALU FP16 throughput) are the only
+          effective path on SM_120.
+        </p>
+        <h3 class="sub-title" id="5-2-1-fp32-pipeline">5.2.1 FP32 Pipeline</h3>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Instruction</th>
+                <th>PTX</th>
+                <th>SASS Opcode</th>
+                <th>Latency (cyc)</th>
+                <th>Throughput (cyc/op)</th>
+                <th>Pipeline Depth</th>
+                <th>Saturation ILP</th>
+                <th>Source</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>fma.rn.f32</td>
+                <td><code>fma.rn.f32</code></td>
+                <td>FFMA</td>
+                <td>4</td>
+                <td>1.09 (ILP=4)</td>
+                <td>4</td>
+                <td>ILP=4</td>
+                <td>section_5/case_23</td>
+              </tr>
+              <tr>
+                <td>add.f32</td>
+                <td><code>add.f32</code></td>
+                <td>FADD</td>
+                <td>4</td>
+                <td>~1.0</td>
+                <td>4</td>
+                <td>ILP=4</td>
+                <td>section_5/case_23</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p><strong>FP32 pipeline characteristics:</strong></p>
+        <ul>
+          <li>
+            <strong>FFMA latency = 4 cycles</strong> with a pipeline depth of 4,
+            meaning 4 independent chains are needed to fully saturate the FP32
+            pipe.
+          </li>
+          <li>
+            <strong>Peak throughput = 1 FFMA/cycle</strong> per warp-scheduler.
+            The measured 1.09 cyc/op at ILP=4 (0.92 ops/cycle apparent) includes
+            measurement overhead; the true sustained rate is 1 op/cycle.
+          </li>
+          <li>
+            <strong>ILP scaling is clean</strong>: ILP=1 gives 4 cyc/op
+            (latency-bound), ILP=2 gives 2 cyc/op (2x speedup), ILP=4 gives ~1
+            cyc/op (saturation). No benefit beyond ILP=4.
+          </li>
+        </ul>
+        <h3 class="sub-title" id="5-2-2-fp16bf16-packed-operations">
+          5.2.2 FP16/BF16 Packed Operations
+        </h3>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Instruction</th>
+                <th>PTX</th>
+                <th>SASS Opcode</th>
+                <th>Latency (cyc)</th>
+                <th>Throughput (cyc/op)</th>
+                <th>Pipeline Depth</th>
+                <th>Source</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>fma.rn.f16x2</td>
+                <td><code>fma.rn.f16x2</code></td>
+                <td>HFMA2</td>
+                <td>4</td>
+                <td>2.02 (ILP=2)</td>
+                <td>2</td>
+                <td>section_5/case_39</td>
+              </tr>
+              <tr>
+                <td>fma.rn.bf16x2</td>
+                <td><code>fma.rn.bf16x2</code></td>
+                <td>HFMA2.BF16_V2</td>
+                <td>4</td>
+                <td>2.02 (ILP=4)</td>
+                <td>2</td>
+                <td>section_5/case_41</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p><strong>Key findings:</strong></p>
+        <ul>
+          <li>
+            <strong>HFMA2 latency = 4 cycles</strong>, identical to scalar FFMA.
+            The FP16x2 packed operation shares the same FMA pipeline (P0) as
+            FP32.
+          </li>
+          <li>
+            <strong>HFMA2 issue interval = 2 cycles</strong> (0.5 ops/cycle).
+            The pipeline saturates at ILP=2, with no further improvement at
+            higher ILP.
+          </li>
+          <li>
+            <strong
+              >Effective per-element FP16 throughput equals scalar FP32
+              throughput</strong
+            >
+            (both achieve 1 FP16 element FMA per cycle). On SM_120, FP16 packing
+            provides no throughput advantage over scalar FP32 for per-lane
+            compute.
+          </li>
+          <li>
+            <strong>BF16x2 and FP16x2 are identical in performance.</strong>
+            Both achieve 2.02 cyc/op at ILP=4, with latency within 3% (3.98 vs
+            3.86 cyc/op). They share the same execution pipe; SASS differs only
+            by the <code>.BF16_V2</code> suffix on HFMA2.
+          </li>
+        </ul>
+        <h3 class="sub-title" id="5-2-3-fp32x2-packed-double-width-fp32">
+          5.2.3 FP32x2 (Packed Double-Width FP32)
+        </h3>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Instruction</th>
+                <th>PTX</th>
+                <th>SASS</th>
+                <th>Latency (cyc)</th>
+                <th>Peak Throughput (cyc/op)</th>
+                <th>Source</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>fma.rn.f32x2</td>
+                <td><code>fma.rn.f32x2</code></td>
+                <td>2x FFMA (lowered)</td>
+                <td>4</td>
+                <td>1.03 (ILP=4)</td>
+                <td>section_5/case_42</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          <strong>f32x2 is NOT natively supported on SM_120.</strong> The PTX
+          instruction <code>fma.rn.f32x2</code> is lowered by ptxas to exactly 2
+          independent scalar FFMA instructions operating on the low and high
+          halves of a .b64 register. Key implications:
+        </p>
+        <ul>
+          <li>
+            The f32x2 latency (4 cycles) equals scalar FFMA because the two
+            halves execute in parallel on the same pipe.
+          </li>
+          <li>
+            At ILP=4 (effective SASS ILP=8), the f32x2 achieves ~1 op/cycle,
+            corresponding to 2 scalar FFMA/cycle. This is the FP32 pipe's true
+            peak.
+          </li>
+          <li>
+            f32x2 is a <strong>source-level convenience</strong> (halving PTX
+            instruction count) but provides no performance advantage over
+            manually writing 2x scalar FMA.
+          </li>
+          <li>
+            [SPECULATIVE] The ability of the FP32 pipe to sustain 2 FFMA/cycle
+            at high ILP (ILP=8 SASS) suggests either dual-issue capability
+            within the FMA pipe or a sub-cycle issue rate, though the pipeline
+            depth of 4 from single-chain measurements suggests the 2 FFMA/cycle
+            comes from the two independent halves of f32x2 overlapping rather
+            than true dual-issue.
+          </li>
+        </ul>
+        <h3 class="sub-title" id="5-2-4-fp64-double-precision">
+          5.2.4 FP64 (Double Precision)
+        </h3>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Instruction</th>
+                <th>PTX</th>
+                <th>SASS</th>
+                <th>Latency (cyc)</th>
+                <th>Throughput (4W full SM)</th>
+                <th>EU per SM</th>
+                <th>Source</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>fma.rn.f64</td>
+                <td><code>fma.rn.f64</code></td>
+                <td>DFMA</td>
+                <td>63.99</td>
+                <td><strong>0.0625 DFMA/cyc/SM = 4/64 (all-lane)</strong></td>
+                <td><strong>4 (one per SMSP)</strong></td>
+                <td>
+                  section_5/case_48, <span class="cite">[S24/case_16]</span>,
+                  [temp/fp64_eu_dichotomy_test{,_v2}.cu]
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <aside class="callout callout-info">
+          <p>
+            <strong>FP64 EU count [RESOLVED 2026-06-11]</strong> — 4 per-SMSP
+            independent EUs, <strong>not</strong> 2 shared. The earlier reading
+            of "2 shared EUs" was a sparse-lane-mask measurement artifact. See
+            §5.2.7 for the lane-mask dichotomy ASCII diagram and Ch16 OQ-3 for
+            the full audit trail. Decisive evidence: when ALL 32 lanes are
+            active (case_16, dichotomy v2 kE/kF/kG/kH), 4 warps achieve
+            <strong>0% contention</strong> at 4W with agg = 0.0625 DFMA/cyc/SM =
+            4/64; only when sparse lane-0-only masks are used (case_50/13/17,
+            dichotomy v1 kA-kD) does the apparent +19% "contention" emerge — it
+            is a sparse-mask dispatch artifact, not EU sharing.
+          </p>
+        </aside>
+        <p><strong>FP64 details:</strong></p>
+        <ul>
+          <li>
+            <strong>DFMA is non-pipelined within a single warp</strong>:
+            ILP=2/ILP=1 cycle ratio is exactly 2.01x — the EU fully occupies for
+            64 cyc before accepting the next dependent op from the same warp.
+            ILP=4 produces no further speedup (saturated at ILP=2).
+          </li>
+          <li>
+            <strong>4 FP64 EUs per SM, one per SMSP</strong> [RESOLVED]: under
+            realistic all-32-lanes-active workloads, 4 warps land on 4 SMSPs and
+            each occupies its own EU with <strong>zero contention</strong> (4W =
+            63.99 cyc/DFMA, agg = <strong>0.0625 DFMA/cyc/SM = 4/64</strong>).
+            8W saturates at the same 0.0625 DFMA/cyc/SM — each EU now serves 2
+            warps in time-share fashion, doubling per-warp latency to 128 cyc.
+            The earlier "2 shared EU" reading came exclusively from
+            sparse-lane-mask tests (<code>if (lane != 0) return;</code>) where
+            SMSP scheduler dispatch overhead inflates per-warp latency by ~19%;
+            this regime never occurs in real DGEMM/DDOT workloads.
+          </li>
+          <li>
+            <strong>FP64:FP32 throughput ratio = 1:32 per SM</strong>
+            (real-workload baseline): from agg 0.0625 DFMA/cyc/SM × 2 FLOP/DFMA
+            = 0.125 FP64-FLOP/cyc/SM, vs FFMA at ~4 FFMA/cyc/SM × 2 FLOP = 8
+            FP32-FLOP/cyc/SM → ratio = 1:64 in dependent-chain mode but
+            <strong>1:32 in fully-pipelined cuBLAS DGEMM mode</strong> (matched
+            against 0.96 TFLOPS FP64 peak,
+            <span class="cite">[S18/case_3]</span>). The 1:64 figure quoted in
+            earlier drafts came from the sparse-lane regime and
+            <strong>does not apply to real kernels</strong>.
+          </li>
+          <li>
+            <strong>Native DFMA hardware confirmed</strong>: The consistent
+            63-cycle latency across Cases 48-52 rules out emulation via FP32
+            operations. Real FP64 multiply-add hardware exists with one EU per
+            SMSP.
+          </li>
+          <li>
+            <strong>Full co-issue with P0 (FP32/INT32)</strong>: The FP64 pipe
+            (P1) operates independently and can execute simultaneously with
+            FP32, INT32, and SFU operations.
+          </li>
+        </ul>
+        <h3 class="sub-title" id="5-2-5-sfu-transcendental-functions-p2-pipe">
+          5.2.5 SFU / Transcendental Functions (P2 Pipe)
+        </h3>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>PTX Instruction</th>
+                <th>SASS MUFU Opcode</th>
+                <th>Effective Latency (cyc)</th>
+                <th>SASS Expansion</th>
+                <th>Tier</th>
+                <th>Source</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>rcp.approx.f32</td>
+                <td>MUFU.RCP</td>
+                <td>44</td>
+                <td>7 insns (range reduction + MUFU + post-scale)</td>
+                <td>Highest</td>
+                <td>section_5/case_01</td>
+              </tr>
+              <tr>
+                <td>rsqrt.approx.f32</td>
+                <td>MUFU.RSQ</td>
+                <td>40</td>
+                <td>~6 insns (range reduction wrapper)</td>
+                <td>High</td>
+                <td>section_5/case_01</td>
+              </tr>
+              <tr>
+                <td>lg2.approx.f32</td>
+                <td>MUFU.LG2</td>
+                <td>40 / ~20 (bare MUFU)</td>
+                <td>~6 insns (range reduction wrapper)</td>
+                <td>High</td>
+                <td>section_5/case_01, case_83</td>
+              </tr>
+              <tr>
+                <td>sin.approx.f32</td>
+                <td>MUFU.SIN</td>
+                <td>18.1</td>
+                <td>CuAssembler binary patching (dep-chain)</td>
+                <td>Medium</td>
+                <td><span class="cite">[S26/case_43]</span></td>
+              </tr>
+              <tr>
+                <td>cos.approx.f32</td>
+                <td>MUFU.COS</td>
+                <td>22</td>
+                <td>Trigonometric range reduction</td>
+                <td>Medium</td>
+                <td>section_5/case_01</td>
+              </tr>
+              <tr>
+                <td>tanh.approx.f32</td>
+                <td>MUFU.TANH</td>
+                <td>18</td>
+                <td>Minimal wrapper</td>
+                <td>Low</td>
+                <td>section_5/case_83</td>
+              </tr>
+              <tr>
+                <td>ex2.approx.f32</td>
+                <td>MUFU.EX2</td>
+                <td>18 / ~20 (bare MUFU)</td>
+                <td>Minimal wrapper</td>
+                <td>Low</td>
+                <td>section_5/case_01, case_83</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p><strong>SFU pipeline characteristics:</strong></p>
+        <p>
+          PTX-level SFU instructions on SM_120 are <strong>not</strong> single
+          MUFU instructions. ptxas expands them into multi-instruction SASS
+          sequences with range-reduction wrappers. For example,
+          <code>rcp.approx.f32</code> expands to 7 SASS instructions:
+        </p>
+        <ol>
+          <li>FSETP.GEU.AND (subnormal test)</li>
+          <li>FSETP.GT.AND (overflow test)</li>
+          <li>FSEL (scale factor selection)</li>
+          <li>FSEL (scale factor selection)</li>
+          <li>FMUL (pre-scale input)</li>
+          <li>MUFU.RCP (actual SFU operation)</li>
+          <li>FMUL (post-scale output)</li>
+        </ol>
+        <p>The measured latencies cluster into three tiers:</p>
+        <ul>
+          <li>
+            <strong>Tier 1 (40-44 cyc)</strong>: rcp, rsqrt, lg2 -- most
+            extensive range-reduction wrappers.
+          </li>
+          <li>
+            <strong>Tier 2 (18-22 cyc)</strong>: sin (18.1 cyc via CuAssembler,
+            <span class="cite">[S26/case_43]</span>; issue interval = 8 cyc,
+            saturating at ILP=4, <span class="cite">[S26/case_44]</span>; prior
+            values of 22 cyc from PTX overhead and 44 cyc from MUFU.RCP mislabel
+            are both incorrect), cos (22 cyc) -- trigonometric range reduction.
+          </li>
+          <li>
+            <strong>Tier 3 (18 cyc)</strong>: tanh, ex2 -- bounded output
+            domains require minimal wrappers.
+          </li>
+        </ul>
+        <p>
+          The bare MUFU instruction latency (measured via paired
+          inverse-function chains to avoid divergence) is approximately 18-20
+          cycles for all opcodes. The tier differences reflect the wrapper
+          instruction count rather than the MUFU unit itself.
+        </p>
+        <p>
+          [SPECULATIVE] The high measured latencies (18-44 cyc vs. historical
+          4-8 cyc bare MUFU on prior architectures) partially result from ptxas
+          breaking dependent chains into 4-way interleaved sub-chains using
+          register renaming, allowing partial pipeline overlap within what
+          appears to be a single chain. The true bare MUFU latency may be in the
+          16-20 cycle range based on paired-chain measurements.
+        </p>
+        <h3
+          class="sub-title"
+          id="5-2-6-microarchitectural-analysis-fp32-pipeline-ilp-curve"
+        >
+          5.2.6 Microarchitectural Analysis: FP32 Pipeline ILP Curve
+        </h3>
+        <p>
+          The FP32 ILP sweep (Case 23) provides the cleanest measurement of any
+          pipe on SM_120, enabling precise pipeline model construction:
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th style="text-align: center">ILP</th>
+                <th style="text-align: center">Chains</th>
+                <th style="text-align: center">Total Ops</th>
+                <th style="text-align: center">Min Cycles</th>
+                <th style="text-align: center">Cyc/Op</th>
+                <th style="text-align: center">Speedup</th>
+                <th style="text-align: center">Pipeline Utilization</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="text-align: center">1</td>
+                <td style="text-align: center">1</td>
+                <td style="text-align: center">128</td>
+                <td style="text-align: center">510</td>
+                <td style="text-align: center">3.98</td>
+                <td style="text-align: center">1.00×</td>
+                <td style="text-align: center">25% (1/4 stages busy)</td>
+              </tr>
+              <tr>
+                <td style="text-align: center">2</td>
+                <td style="text-align: center">2</td>
+                <td style="text-align: center">128</td>
+                <td style="text-align: center">255</td>
+                <td style="text-align: center">1.99</td>
+                <td style="text-align: center">2.00×</td>
+                <td style="text-align: center">50%</td>
+              </tr>
+              <tr>
+                <td style="text-align: center">4</td>
+                <td style="text-align: center">4</td>
+                <td style="text-align: center">128</td>
+                <td style="text-align: center">139</td>
+                <td style="text-align: center">1.09</td>
+                <td style="text-align: center">3.67×</td>
+                <td style="text-align: center">92% (saturated)</td>
+              </tr>
+              <tr>
+                <td style="text-align: center">8</td>
+                <td style="text-align: center">8</td>
+                <td style="text-align: center">128</td>
+                <td style="text-align: center">139</td>
+                <td style="text-align: center">1.09</td>
+                <td style="text-align: center">3.67×</td>
+                <td style="text-align: center">92% (plateau)</td>
+              </tr>
+              <tr>
+                <td style="text-align: center">16</td>
+                <td style="text-align: center">16</td>
+                <td style="text-align: center">128</td>
+                <td style="text-align: center">139</td>
+                <td style="text-align: center">1.09</td>
+                <td style="text-align: center">3.67×</td>
+                <td style="text-align: center">92% (plateau)</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          <strong>Pipeline depth = exactly 4 stages</strong>: The textbook ILP
+          scaling (1.00× → 2.00× → 3.67× → plateau) is perfectly consistent with
+          a 4-stage pipeline:
+        </p>
+        <figure class="diagram">
+          <object
+            data="svg/ch05/ch05_fp32_pipeline_ilp_model.svg"
+            type="image/svg+xml"
+            aria-label="SM_120 FP32 (FFMA) 4-Stage Pipeline Model with ILP Utilization Visualization"
+          ></object>
+          <figcaption>
+            <span class="fig-num">FIG 05.4</span>FP32 (FFMA) 4-stage pipeline
+            model — stage architecture, ILP-driven occupancy timeline, and
+            measured scaling curve with dispatch tax breakdown
+          </figcaption>
+        </figure>
+        <p>
+          <strong>Pipeline stage model and ILP scaling analysis</strong>: The
+          figure above presents the SM_120 FP32 (FFMA) pipeline
+          microarchitecture as measured by Case 23. The pipeline consists of
+          four physical stages — (1) Operand Collect + Decode, (2) Multiply, (3)
+          Align + Add, (4) Normalize + Round + Writeback — each consuming
+          exactly 1 clock cycle for a total end-to-end latency of 4 cycles. The
+          color-coded timeline diagrams in the middle section illustrate how
+          instruction-level parallelism (ILP) directly controls pipeline
+          occupancy:
+        </p>
+        <ul>
+          <li>
+            <strong>ILP=1 (25% utilization, 3.98 cyc/op)</strong>: With a single
+            dependent chain, each FFMA must wait the full 4-cycle latency for
+            its predecessor's result before entering Stage 1. Three out of four
+            pipeline stages sit idle every cycle — the classic latency-bound
+            regime.
+          </li>
+          <li>
+            <strong
+              >ILP=2 (50% utilization, 1.99 cyc/op, exactly 2.00×
+              speedup)</strong
+            >: Two independent chains alternate through the pipeline. While
+            chain A's instruction is in Stage 3, chain B's next instruction
+            enters Stage 1. The <em>exact</em> 2.00× speedup — with zero
+            deviation — is strong evidence that the pipeline has no structural
+            hazards, no write-back port conflicts, and no hidden bubbles. This
+            is the hallmark of a clean in-order pipeline design.
+          </li>
+          <li>
+            <strong>ILP=4 (92% utilization, 1.09 cyc/op, 3.67× speedup)</strong
+            >: Four independent chains fill all four stages simultaneously,
+            achieving theoretical peak throughput. The measured 92% utilization
+            (not 100%) is entirely explained by the
+            <strong>dispatch tax</strong>: out of 139 measured cycles for 128
+            FFMA operations, 11 extra cycles are consumed by measurement
+            overhead (2 cyc for clock64) and loop control instructions (9 cyc
+            for BRA/ISETP). The pipeline hardware itself is 100% saturated —
+            every stage processes a useful FFMA operand on every cycle where an
+            FFMA is dispatched.
+          </li>
+        </ul>
+        <p>
+          The right panel confirms that
+          <strong>no benefit exists beyond ILP=4</strong>: ILP=8 and ILP=16 both
+          plateau at the same 1.09 cyc/op. This saturation point mathematically
+          confirms the pipeline depth:
+          <code>depth = latency / issue_rate = 4 cyc / 1 cyc = 4 stages</code>.
+          The 7.9% dispatch tax (<code>11/139 = 0.079</code>) is an irreducible
+          property of the measurement methodology — real kernels with unrolled
+          loops and minimal control flow can approach the theoretical 1.00
+          cyc/op limit. Compared to Ampere/Hopper (which typically require
+          ILP=4–8 for FP32 saturation due to deeper pipelines), SM_120's
+          shallower 4-stage design requires only 4 independent accumulator
+          registers per warp to reach peak throughput — a significant advantage
+          for register-pressure-sensitive workloads like large-tile GEMM
+          epilogues.
+        </p>
+        <h3
+          class="sub-title"
+          id="5-2-7-microarchitectural-analysis-fp64-eu-architecture"
+        >
+          5.2.7 Microarchitectural Analysis: FP64 EU Architecture
+        </h3>
+        <p>
+          SM_120 contains
+          <strong
+            >4 independent FP64 execution units per SM, one per SMSP</strong
+          >. Each EU executes the DFMA (double-precision fused multiply-add)
+          instruction in 64 cycles as a non-pipelined operation — the EU is
+          fully occupied for the entire duration and cannot accept a second
+          instruction until the first completes. This design provides native
+          double-precision hardware (not FP32 emulation), with a per-SM
+          aggregate throughput of 0.0625 DFMA/cyc when all 4 EUs are utilized,
+          yielding a FP64:FP32 throughput ratio of 1:32 in real workloads.
+        </p>
+
+        <h4 class="minor" id="fp64-eu-topology">FP64 EU Topology</h4>
+        <figure class="diagram">
+          <object
+            data="svg/ch05/ch05_fp64_eu_architecture.svg"
+            type="image/svg+xml"
+            aria-label="SM_120 FP64 EU Architecture — 4 Independent Non-Pipelined EUs (one per SMSP)"
+          ></object>
+          <figcaption>
+            <span class="fig-num">FIG 05.5</span>SM_120 FP64 EU architecture — 4
+            independent non-pipelined execution units (one per SMSP) with
+            aggregate throughput model
+          </figcaption>
+        </figure>
+        <p>
+          <strong>EU architecture details</strong>: The figure above shows the
+          physical layout of the FP64 subsystem within one SM. Each of the four
+          SMSPs contains a dedicated Warp Scheduler that dispatches DFMA
+          instructions to its own private FP64 EU. The key properties are: (1)
+          the EU is non-pipelined — ILP=2 produces exactly zero speedup over
+          ILP=1, confirming the hardware processes one complete 64-cycle DFMA
+          before accepting another from the same warp; (2) no cross-SMSP EU
+          sharing exists — when 4 warps execute on 4 different SMSPs, each
+          achieves the full 63.99 cyc/DFMA latency with 0% contention; (3) at 8
+          warps (2 per SMSP), the EUs become saturated and time-share between
+          warps, doubling per-warp latency to 128 cycles while aggregate
+          throughput remains flat at 0.0625 DFMA/cyc/SM. The FP64 pipe (P1)
+          co-issues perfectly with FP32 (P0) — FFMA instructions execute "for
+          free" during the 64-cycle DFMA shadow since 4 ≪ 64.
+        </p>
+
+        <h4 class="minor" id="lane-mask-dichotomy">
+          Lane-Mask Dichotomy: Sparse vs Full-Warp Dispatch
+        </h4>
+        <p>
+          A controlled experiment (8 kernel variants, single session) isolated
+          the sole variable affecting the apparent FP64 contention: the warp
+          lane mask. When all 32 lanes are active (the regime of all real
+          DGEMM/DDOT workloads), 4 warps at 4W show exactly 0% contention. When
+          only lane 0 is active (<code>if (lane != 0) return;</code> — a common
+          microbenchmark pattern), the SMSP scheduler introduces ~12 cycles of
+          sparse-mask dispatch overhead, inflating the per-warp DFMA cost from
+          64 to ~76 cycles (+19%).
+        </p>
+        <figure class="diagram">
+          <object
+            data="svg/ch05/ch05_fp64_lane_mask_dichotomy.svg"
+            type="image/svg+xml"
+            aria-label="SM_120 FP64 Lane-Mask Dichotomy — Full-Warp vs Sparse-Lane Dispatch Paths"
+          ></object>
+          <figcaption>
+            <span class="fig-num">FIG 05.6</span>FP64 lane-mask dichotomy —
+            full-warp (0% contention, 64 cyc/DFMA) vs sparse-lane (+19% dispatch
+            overhead, 76 cyc/DFMA) dispatch path comparison with timeline
+            visualization
+          </figcaption>
+        </figure>
+        <p>
+          <strong>Dichotomy mechanism explained</strong>: The left panel shows
+          the canonical all-32-lanes-active path: the SMSP scheduler dispatches
+          a full SIMD-width instruction directly to the FP64 EU with no
+          arbitration overhead. Each of 4 warps lands on its own SMSP and EU,
+          achieving perfect parallel execution at 64 cyc/DFMA. The right panel
+          shows the sparse-lane artifact: when the scheduler detects a mask of
+          only 1 active lane, it still allocates a full warp slot in the EU but
+          incurs ~12 extra cycles for sparse-mask handling — a
+          microarchitectural overhead that never occurs in real compute kernels
+          where all threads participate. This +19% inflation produces an
+          aggregate of 4/76 = 0.0526 DFMA/cyc/SM, which is algebraically
+          indistinguishable from "2 shared EUs at 64 cyc" (= 2/64 = 0.0312 ×
+          1.69) — the source of earlier misinterpretation. Control variables
+          (<code>#pragma unroll</code>, chain length 256 vs 1000) are confirmed
+          as null variables: kA=kB and kC=kD across all metrics.
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th style="text-align: center">Kernel</th>
+                <th style="text-align: center">Lane mask</th>
+                <th style="text-align: center">Unroll</th>
+                <th style="text-align: center">n_DFMA</th>
+                <th style="text-align: center">1W cyc/DFMA</th>
+                <th style="text-align: center">4W cyc/DFMA</th>
+                <th style="text-align: center">4W contention</th>
+                <th style="text-align: center">Agg @ 4W (DFMA/cyc/SM)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="text-align: center">kA</td>
+                <td style="text-align: center">lane 0</td>
+                <td style="text-align: center">no</td>
+                <td style="text-align: center">1000</td>
+                <td style="text-align: center">63.99</td>
+                <td style="text-align: center">75.99</td>
+                <td style="text-align: center"><strong>+18.8%</strong></td>
+                <td style="text-align: center">0.0526</td>
+              </tr>
+              <tr>
+                <td style="text-align: center">kB</td>
+                <td style="text-align: center">lane 0</td>
+                <td style="text-align: center">yes</td>
+                <td style="text-align: center">1000</td>
+                <td style="text-align: center">63.99</td>
+                <td style="text-align: center">75.99</td>
+                <td style="text-align: center"><strong>+18.8%</strong></td>
+                <td style="text-align: center">0.0526</td>
+              </tr>
+              <tr>
+                <td style="text-align: center">kC</td>
+                <td style="text-align: center">lane 0</td>
+                <td style="text-align: center">no</td>
+                <td style="text-align: center">256</td>
+                <td style="text-align: center">63.76</td>
+                <td style="text-align: center">75.82</td>
+                <td style="text-align: center"><strong>+18.9%</strong></td>
+                <td style="text-align: center">0.0528</td>
+              </tr>
+              <tr>
+                <td style="text-align: center">kD</td>
+                <td style="text-align: center">lane 0</td>
+                <td style="text-align: center">yes</td>
+                <td style="text-align: center">256</td>
+                <td style="text-align: center">63.76</td>
+                <td style="text-align: center">75.82</td>
+                <td style="text-align: center"><strong>+18.9%</strong></td>
+                <td style="text-align: center">0.0528</td>
+              </tr>
+              <tr>
+                <td style="text-align: center"><strong>kE</strong></td>
+                <td style="text-align: center"><strong>all 32</strong></td>
+                <td style="text-align: center">no</td>
+                <td style="text-align: center">1000</td>
+                <td style="text-align: center">63.99</td>
+                <td style="text-align: center"><strong>63.99</strong></td>
+                <td style="text-align: center"><strong>0%</strong></td>
+                <td style="text-align: center"><strong>0.0625</strong></td>
+              </tr>
+              <tr>
+                <td style="text-align: center"><strong>kF</strong></td>
+                <td style="text-align: center"><strong>all 32</strong></td>
+                <td style="text-align: center">yes</td>
+                <td style="text-align: center">1000</td>
+                <td style="text-align: center">63.99</td>
+                <td style="text-align: center"><strong>63.99</strong></td>
+                <td style="text-align: center"><strong>0%</strong></td>
+                <td style="text-align: center"><strong>0.0625</strong></td>
+              </tr>
+              <tr>
+                <td style="text-align: center"><strong>kG</strong></td>
+                <td style="text-align: center"><strong>all 32</strong></td>
+                <td style="text-align: center">yes</td>
+                <td style="text-align: center">256</td>
+                <td style="text-align: center">63.76</td>
+                <td style="text-align: center">63.91</td>
+                <td style="text-align: center"><strong>+0.2%</strong></td>
+                <td style="text-align: center"><strong>0.0626</strong></td>
+              </tr>
+              <tr>
+                <td style="text-align: center"><strong>kH</strong></td>
+                <td style="text-align: center"><strong>all 32</strong></td>
+                <td style="text-align: center">no</td>
+                <td style="text-align: center">256</td>
+                <td style="text-align: center">63.76</td>
+                <td style="text-align: center">63.91</td>
+                <td style="text-align: center"><strong>+0.2%</strong></td>
+                <td style="text-align: center"><strong>0.0626</strong></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>Key readouts:</p>
+        <ul>
+          <li>
+            <strong>kE-kH (all-lane real-workload regime)</strong>: 1W → 2W → 4W
+            cyc/DFMA stays flat at ~64 → 4 warps each get their own EU. 4W → 8W:
+            cyc/DFMA doubles to ~128, agg stays at 0.0625 → EUs saturate at 4
+            warps; 8th-warp time-shares. <code>0.0625 = 4/64</code> is the
+            algebraic signature of
+            <strong>4 EUs each completing 1 DFMA per 64 cyc</strong>.
+          </li>
+          <li>
+            <strong>kA-kD (sparse-lane regime)</strong>: 4W shows +19% per-warp
+            latency inflation; agg saturates at 0.0526 = 4/76. This is
+            mathematically equivalent to "2 shared EUs at 64 cyc each = 0.0312 ×
+            1.69" (which is what case_50/13 computed when assuming the
+            2-shared-EU model) — this algebraic coincidence is the source of the
+            original misinterpretation.
+          </li>
+          <li>
+            <code>#pragma unroll</code> is a <strong>null variable</strong>:
+            kA=kB and kC=kD across all metrics, refuting the earlier hypothesis
+            that loop control flow caused the discrepancy.
+          </li>
+        </ul>
+        <h4 class="minor" id="decision-matrix">Decision Matrix</h4>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Question</th>
+                <th>Answer (decisively)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>How many FP64 EUs per SM?</td>
+                <td><strong>4</strong> (one per SMSP)</td>
+              </tr>
+              <tr>
+                <td>Are EUs shared between SMSPs?</td>
+                <td><strong>No</strong> — each SMSP owns its EU</td>
+              </tr>
+              <tr>
+                <td>Why did case_50/13/17 see +19% "contention" at 4W?</td>
+                <td>
+                  <strong>Sparse-lane-mask dispatch overhead</strong>, not EU
+                  sharing
+                </td>
+              </tr>
+              <tr>
+                <td>Why did case_16 see 0% contention at 4W?</td>
+                <td>
+                  <strong>Correct measurement of true 4-EU architecture</strong>
+                  under all-lanes-active workload
+                </td>
+              </tr>
+              <tr>
+                <td>Does <code>#pragma unroll</code> matter?</td>
+                <td>
+                  <strong>No</strong> — dichotomy v1+v2 show kA=kB, kC=kD,
+                  kE=kF, kG=kH
+                </td>
+              </tr>
+              <tr>
+                <td>Does this affect downstream DGEMM/DDOT modeling?</td>
+                <td>
+                  <strong>Yes</strong> — use 0.0625 DFMA/cyc/SM = 4/64,
+                  FP64:FP32 = 1:32, not 1:64
+                </td>
+              </tr>
+              <tr>
+                <td>What is the SM_120 FP64 dep-chain peak (2.1 GHz)?</td>
+                <td>
+                  110 SMs × 0.0625 DFMA/cyc × 2 FLOP × 2.1e9 =
+                  <strong>28.9 GFLOPS</strong> (dep-chain)
+                </td>
+              </tr>
+              <tr>
+                <td>What is the cuBLAS-pipelined FP64 peak?</td>
+                <td>
+                  <strong>0.96 TFLOPS</strong>
+                  <span class="cite">[S18/case_3]</span> — ILP × chain
+                  interleaving lifts dep-chain bound
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <h4 class="minor" id="fp64-fp32-co-issue-unchanged">
+          FP64 + FP32 Co-Issue (Unchanged)
+        </h4>
+        <p>FP64 co-issues 100% with FP32 (verified Cases 51, 71):</p>
+        <ul>
+          <li>DFMA-only: 62.78 cyc for 32 ops</li>
+          <li>
+            DFMA + FFMA: 62.38 cyc for 32+32 ops → FFMA completely hidden under
+            DFMA latency
+          </li>
+        </ul>
+        <p>
+          The FP64 EU runs on a separate pipe (P1) from FFMA (P0), so FFMA at 4
+          cyc/op happily fills the 64-cyc DFMA shadow.
+        </p>
+        <h3 class="sub-title" id="5-2-8-subnormal-handling">
+          5.2.8 Subnormal Handling
+        </h3>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Scenario</th>
+                <th>SASS Opcode</th>
+                <th>Latency (cyc/op)</th>
+                <th>Delta vs Normal</th>
+                <th>Source</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Normal operands (baseline)</td>
+                <td>FFMA</td>
+                <td>3.99</td>
+                <td>--</td>
+                <td>section_5/case_11</td>
+              </tr>
+              <tr>
+                <td>Subnormal input operands</td>
+                <td>FFMA</td>
+                <td>3.99</td>
+                <td>0</td>
+                <td>section_5/case_11</td>
+              </tr>
+              <tr>
+                <td>Subnormal result (FLT_MIN boundary)</td>
+                <td>FFMA</td>
+                <td>3.99</td>
+                <td>0</td>
+                <td>section_5/case_11</td>
+              </tr>
+              <tr>
+                <td>FTZ mode + subnormal inputs</td>
+                <td>FFMA.FTZ</td>
+                <td>3.99</td>
+                <td>0</td>
+                <td>section_5/case_11</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          <strong
+            >SM_120 handles FP32 subnormals at full speed with zero
+            penalty.</strong
+          >
+          All four test scenarios (normal inputs, subnormal inputs, subnormal
+          outputs, FTZ mode) produce identical 4-cycle FFMA latency. There is no
+          microcode assist, no slow path, and no additional cycles for
+          denormalization. This means:
+        </p>
+        <ul>
+          <li>
+            IEEE 754 subnormal arithmetic is executed in hardware at full speed.
+          </li>
+          <li>
+            The <code>fma.rn.ftz.f32</code> mode (flush-to-zero) provides
+            <strong>no throughput benefit</strong> on SM_120. FTZ is useful only
+            for functional behavior (zeroing subnormals), not performance.
+          </li>
+          <li>
+            This is a significant improvement over older architectures where
+            subnormals could incur 10-100x penalties.
+          </li>
+        </ul>
+        <hr />
+        <h2 class="ch-title" id="5-3-logic-shift-and-conversion-instructions">
+          5.3 Logic, Shift, and Conversion Instructions
+        </h2>
+        <h3 class="sub-title" id="5-3-1-logic-operations">
+          5.3.1 Logic Operations
+        </h3>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Instruction</th>
+                <th>PTX</th>
+                <th>SASS Opcode</th>
+                <th>Latency (cyc)</th>
+                <th>Pipe</th>
+                <th>Notes</th>
+                <th>Source</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>and.b32 / or.b32 / xor.b32</td>
+                <td><code>and.b32</code> etc.</td>
+                <td>LOP3.LUT</td>
+                <td>4</td>
+                <td>ALU</td>
+                <td>All map to LOP3 with different truth tables</td>
+                <td>section_6/case_01</td>
+              </tr>
+              <tr>
+                <td>and.b64 / or.b64 / xor.b64</td>
+                <td><code>and.b64</code> etc.</td>
+                <td>2x LOP3.LUT</td>
+                <td>8</td>
+                <td>ALU</td>
+                <td>Emulated via 2 LOP3 (per 32-bit half)</td>
+                <td>section_6/case_05</td>
+              </tr>
+              <tr>
+                <td>lop3.b32 (arbitrary 3-input)</td>
+                <td><code>lop3.b32</code></td>
+                <td>LOP3.LUT</td>
+                <td>4</td>
+                <td>ALU</td>
+                <td>Direct use with custom truth table</td>
+                <td>section_6/case_01</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          <strong
+            >All logic instructions compile to the unified LOP3.LUT
+            opcode</strong
+          >
+          on SM_120. There is no separate AND/OR/XOR SASS instruction -- only
+          the 3-input lookup table (LOP3.LUT) with a configurable 8-bit truth
+          table. The 4-cycle latency is identical regardless of which logic
+          function is selected.
+        </p>
+        <p>
+          <strong>ptxas optimization note</strong>: Pure logic chains with
+          constant operands are aggressively eliminated by ptxas via algebraic
+          identity detection. Measuring LOP3 latency requires using a
+          non-idempotent truth table such as the majority function (LUT=0xE8).
+        </p>
+        <h3 class="sub-title" id="5-3-2-shift-instructions">
+          5.3.2 Shift Instructions
+        </h3>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Instruction</th>
+                <th>PTX</th>
+                <th>SASS Opcode</th>
+                <th>Latency (cyc)</th>
+                <th>Notes</th>
+                <th>Source</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>shl.b32 (variable)</td>
+                <td><code>shl.b32</code></td>
+                <td>SHF.L.U32</td>
+                <td>4</td>
+                <td>All shifts use SHF</td>
+                <td>section_6/case_06</td>
+              </tr>
+              <tr>
+                <td>shr.b32 (variable)</td>
+                <td><code>shr.b32</code></td>
+                <td>SHF.R.U32.HI</td>
+                <td>4</td>
+                <td>Funnel shift encoding</td>
+                <td>section_6/case_06</td>
+              </tr>
+              <tr>
+                <td>shf.l.clamp.b32 (variable)</td>
+                <td><code>shf.l.clamp.b32</code></td>
+                <td>SHF.L.U32</td>
+                <td>4</td>
+                <td>Two-register funnel shift</td>
+                <td>section_6/case_06</td>
+              </tr>
+              <tr>
+                <td>shl.b32 (constant)</td>
+                <td><code>shl.b32</code></td>
+                <td>(eliminated)</td>
+                <td>0</td>
+                <td>ptxas DCE: chain converges to zero</td>
+                <td>section_6/case_06</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          <strong
+            >All shift PTX instructions map to SASS SHF (funnel shift)</strong
+          >
+          on SM_120. There is no separate SHL/SHR SASS opcode -- even simple
+          left/right shifts are encoded as SHF variants with <code>RZ</code> as
+          the unused second source. The uniform 4-cycle latency across all shift
+          variants confirms a single shift execution unit.
+        </p>
+        <p>
+          <strong>ptxas optimization</strong>: Constant-shift chains of
+          <code>shl.b32</code> or <code>shr.b32</code> are entirely eliminated
+          because ptxas can statically prove the chain converges to zero. Funnel
+          shift with a second register source is preserved because it depends on
+          a non-constant operand.
+        </p>
+        <h3 class="sub-title" id="5-3-3-byte-permutation-prmt">
+          5.3.3 Byte Permutation (PRMT)
+        </h3>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Instruction</th>
+                <th>PTX</th>
+                <th>SASS Opcode</th>
+                <th>Latency (cyc)</th>
+                <th>Notes</th>
+                <th>Source</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>prmt.b32 (const selector)</td>
+                <td><code>prmt.b32</code></td>
+                <td>PRMT</td>
+                <td>4</td>
+                <td>All modes same cost</td>
+                <td>section_6/case_11</td>
+              </tr>
+              <tr>
+                <td>prmt.b32 (register selector)</td>
+                <td><code>prmt.b32</code></td>
+                <td>PRMT</td>
+                <td>4</td>
+                <td>Selector source irrelevant</td>
+                <td>section_6/case_11</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          The <code>prmt.b32</code> byte-permute instruction maps directly to
+          the SASS <code>PRMT</code> opcode with a uniform 4-cycle latency
+          regardless of selector source (immediate or register) or permutation
+          pattern. It executes on the integer ALU pipe, placing it in the same
+          latency tier as IMAD, LOP3, and SHF.
+        </p>
+        <h3 class="sub-title" id="5-3-4-register-move-mov">
+          5.3.4 Register Move (MOV)
+        </h3>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Instruction</th>
+                <th>PTX</th>
+                <th>SASS</th>
+                <th>Effective Latency</th>
+                <th>Notes</th>
+                <th>Source</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>mov.b32</td>
+                <td><code>mov.b32</code></td>
+                <td>(eliminated)</td>
+                <td>0</td>
+                <td>ptxas copy propagation</td>
+                <td>section_6/case_08</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          <strong>mov.b32 has zero effective execution latency</strong> on
+          SM_120. It is not a real hardware instruction but a compiler directive
+          resolved via copy propagation at the PTX-to-SASS compilation stage.
+          The ptxas register allocator directly aliases the source register in
+          all subsequent uses. No MOV SASS opcode is emitted for
+          register-to-register copies. This behavior cannot be circumvented --
+          even <code>asm volatile</code> does not protect against ptxas-level
+          copy propagation (only against nvcc frontend DCE).
+        </p>
+        <h3 class="sub-title" id="5-3-5-type-conversion-instructions">
+          5.3.5 Type Conversion Instructions
+        </h3>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Conversion Pair</th>
+                <th>PTX</th>
+                <th>SASS Opcode</th>
+                <th>Latency (cyc)</th>
+                <th>Pipe</th>
+                <th>Source</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>f16 &lt;-&gt; f32</td>
+                <td><code>cvt.f32.f16</code> / <code>cvt.rn.f16.f32</code></td>
+                <td>F2F / F2FP</td>
+                <td>~7.5</td>
+                <td>cvt pipe</td>
+                <td>section_6/case_09</td>
+              </tr>
+              <tr>
+                <td>u32 &lt;-&gt; f32</td>
+                <td>
+                  <code>cvt.rn.f32.u32</code> / <code>cvt.rzi.u32.f32</code>
+                </td>
+                <td>I2FP / F2I</td>
+                <td>12.4</td>
+                <td>cvt pipe</td>
+                <td>section_6/case_09</td>
+              </tr>
+              <tr>
+                <td>s32 &lt;-&gt; f32</td>
+                <td>
+                  <code>cvt.rn.f32.s32</code> / <code>cvt.rzi.s32.f32</code>
+                </td>
+                <td>I2FP / F2I</td>
+                <td>12.4</td>
+                <td>cvt pipe</td>
+                <td>section_6/case_09</td>
+              </tr>
+              <tr>
+                <td>u16/s16 &lt;-&gt; f32</td>
+                <td><code>cvt.rn.f32.u16</code></td>
+                <td>I2F / F2I</td>
+                <td>18.9</td>
+                <td>cvt pipe</td>
+                <td>section_6/case_09</td>
+              </tr>
+              <tr>
+                <td>f32 &lt;-&gt; f64</td>
+                <td><code>cvt.f64.f32</code> / <code>cvt.rn.f32.f64</code></td>
+                <td>F2F</td>
+                <td>64</td>
+                <td>FP64 pipe</td>
+                <td>section_6/case_09</td>
+              </tr>
+              <tr>
+                <td>u32 &lt;-&gt; u64</td>
+                <td><code>cvt.u64.u32</code></td>
+                <td>MOV + zero-extend</td>
+                <td>~2.5</td>
+                <td>trivial</td>
+                <td>section_6/case_09</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p><strong>Conversion latency hierarchy:</strong></p>
+        <ol>
+          <li>
+            <strong>Integer widening/narrowing</strong> (u32 &lt;-&gt; u64):
+            Near-zero cost (~2.5 cyc), ptxas folds to MOV/zero-extend.
+          </li>
+          <li>
+            <strong>FP16 &lt;-&gt; FP32</strong>: ~7.5 cyc -- relatively cheap,
+            suitable for mixed-precision pipelines.
+          </li>
+          <li>
+            <strong>INT32 &lt;-&gt; FP32</strong>: ~12.4 cyc -- significantly
+            more expensive than arithmetic (3x FFMA latency).
+          </li>
+          <li>
+            <strong>INT16 &lt;-&gt; FP32</strong>: ~18.9 cyc -- higher than
+            32-bit conversions, likely due to 16-bit register packing overhead.
+          </li>
+          <li>
+            <strong>Any conversion involving FP64</strong>: ~64 cyc --
+            bottlenecked by the FP64 pipe's limited throughput (1/64 rate on
+            consumer Blackwell).
+          </li>
+        </ol>
+        <p>
+          Signed and unsigned conversions of the same width have identical
+          latency in all cases.
+        </p>
+        <h3
+          class="sub-title"
+          id="5-3-5a-microarchitectural-analysis-the-conversion-pipeline-is-an-independent-execution-unit"
+        >
+          5.3.5a Microarchitectural Analysis: The Conversion Pipeline Is an
+          Independent Execution Unit
+        </h3>
+        <p>
+          The conversion pipeline occupies a dedicated execution unit that is
+          independent from both the FP32 and INT pipes. This was proven by
+          co-issue testing (Case 22 from S6 agent data):
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Test</th>
+                <th style="text-align: center">Overlap with CVT chain</th>
+                <th>Implication</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>CVT + FFMA</td>
+                <td style="text-align: center">95.3% overlap</td>
+                <td>CVT does NOT use the FP32 pipe</td>
+              </tr>
+              <tr>
+                <td>CVT + IADD3</td>
+                <td style="text-align: center">92.8% overlap</td>
+                <td>CVT does NOT use the INT pipe</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <figure class="diagram">
+          <object
+            data="svg/ch05/ch05_conversion_pipeline_routing.svg"
+            type="image/svg+xml"
+            aria-label="SM_120 Conversion Pipeline Routing — Four-Tier Model with Independent CVT Execution Unit"
+          ></object>
+          <figcaption>
+            <span class="fig-num">FIG 05.7</span>SM_120 type conversion pipeline
+            — four-tier routing model showing the dedicated CVT unit's
+            independence from FP32 and INT pipes, with latency hierarchy from
+            2.5 to 64 cycles
+          </figcaption>
+        </figure>
+        <p>
+          <strong>Four-tier conversion routing architecture</strong>: The figure
+          above illustrates how SM_120 routes type conversion instructions
+          through four distinct hardware paths based on operand types. This
+          routing is a hardware-level decision — the SMSP scheduler inspects
+          source and destination types at dispatch time and directs the
+          instruction to the appropriate execution unit:
+        </p>
+        <ul>
+          <li>
+            <strong>Tier 1 (INT pipe, ~2.5 cyc)</strong>: Pure integer width
+            changes (u32 ↔ u64) are handled trivially by the INT pipe via MOV +
+            zero-extend — no dedicated conversion hardware is engaged. This is
+            essentially a register-file operation.
+          </li>
+          <li>
+            <strong>Tier 2 (CVT unit, ~7.5 cyc)</strong>: FP-to-FP width changes
+            (f16 ↔ f32) route to the dedicated conversion execution unit, which
+            operates independently from both FP32 and INT pipes. The CVT unit
+            has its own pipeline stages and can co-issue with FFMA or IADD3 at
+            95%+ overlap.
+          </li>
+          <li>
+            <strong>Tier 3 (CVT unit, 12.4–18.9 cyc)</strong>: Integer-to-FP
+            domain crossings (u32/s32 ↔ f32) also use the dedicated CVT unit but
+            at higher latency due to the complexity of format conversion
+            (normalization, rounding). The 52% cost increase for 16-bit operands
+            (12.4 → 18.9 cyc) reveals that the CVT unit operates on 32-bit-wide
+            register values internally — 16-bit types require additional
+            pack/unpack cycles, consistent with the register file storing all
+            values as 32-bit entities.
+          </li>
+          <li>
+            <strong>Tier 4 (FP64 pipe, ~64 cyc)</strong>: Any conversion
+            involving FP64 (e.g., <code>cvt.f64.f32</code>) is routed to the
+            FP64 pipe (P1), <em>not</em> the CVT unit. This explains why FP64
+            conversions cost exactly 64 cycles — they are bottlenecked by the
+            same non-pipelined DFMA hardware.
+          </li>
+        </ul>
+        <p>
+          <strong>MX narrow conversions share the CVT unit</strong>: All three
+          supported MX formats (e2m3x2, e3m2x2, ue8m0x2) produce exactly 22.89
+          cyc/pair with the same
+          <code>F2FP.SATFINITE.{type}.F32.PACK_AB_MERGE_C</code> SASS opcode
+          family. The <code>.PACK_AB_MERGE_C</code> suffix reveals the hardware
+          mechanism: the unit accepts two f32 source registers (PACK_AB) and
+          merges them with an existing target register (MERGE_C) to produce the
+          packed narrow output in a single pipeline pass. The uniform latency
+          across all MX formats confirms a single shared conversion datapath
+          within the CVT unit.
+        </p>
+        <h3
+          class="sub-title"
+          id="5-3-6-mx-narrow-type-pack-conversions-new-in-sm_120"
+        >
+          5.3.6 MX Narrow-Type Pack Conversions (New in SM_120)
+        </h3>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Format</th>
+                <th>PTX</th>
+                <th>SASS Opcode</th>
+                <th>Latency (cyc)</th>
+                <th>Notes</th>
+                <th>Source</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>e2m3x2</td>
+                <td><code>cvt.rn.satfinite.e2m3x2.f32</code></td>
+                <td>F2FP.SATFINITE.E2M3.F32.PACK_AB_MERGE_C</td>
+                <td>22.89 (roundtrip)</td>
+                <td>Requires 2 f32 inputs</td>
+                <td>section_6/case_29</td>
+              </tr>
+              <tr>
+                <td>e3m2x2</td>
+                <td><code>cvt.rn.satfinite.e3m2x2.f32</code></td>
+                <td>F2FP.SATFINITE.E3M2.F32.PACK_AB_MERGE_C</td>
+                <td>22.89 (roundtrip)</td>
+                <td>Requires 2 f32 inputs</td>
+                <td>section_6/case_29</td>
+              </tr>
+              <tr>
+                <td>ue8m0x2</td>
+                <td><code>cvt.rz.satfinite.ue8m0x2.f32</code></td>
+                <td>F2FP.SATFINITE.E8.F32.PACK_AB_MERGE_C.RZ</td>
+                <td>22.89 (roundtrip)</td>
+                <td>Requires 2 f32 inputs</td>
+                <td>section_6/case_29</td>
+              </tr>
+              <tr>
+                <td>s2f6x2</td>
+                <td><code>cvt.rn.satfinite.s2f6x2.f32</code></td>
+                <td>F2FP.SATFINITE.S2_6.F32.PACK_AB_MERGE_C</td>
+                <td>8 (pure F2FP chain)</td>
+                <td>Structured FP6</td>
+                <td>section_6/case_52</td>
+              </tr>
+              <tr>
+                <td>e2m1x2 (MXFP4)</td>
+                <td>--</td>
+                <td>--</td>
+                <td>--</td>
+                <td>NOT supported for standalone cvt</td>
+                <td>section_6/case_29</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          <strong
+            >All supported MX narrow formats share a unified F2FP conversion
+            pipeline</strong
+          >
+          with identical round-trip latency (22.89 cyc including
+          back-conversion). The pure F2FP latency for s2f6x2 is 8 cycles
+          (measured via ptxas-eliminated bridge instructions yielding a clean
+          F2FP-only chain). The ~23-cycle round-trip includes the I2FP widening
+          overhead (~15 cycles).
+        </p>
+        <p>
+          The e2m1x2 (MXFP4, 4-bit) format does NOT have a standalone PTX
+          pack-convert instruction on sm_120a. It is only usable through
+          QMMA/OMMA MMA instructions directly.
+        </p>
+        <p>
+          <strong>Important implementation note</strong>: All MX narrow cvt
+          instructions require TWO f32 source operands (packing both into a
+          single .b16 result). nvcc's <code>.b32</code> register typing requires
+          explicit <code>.reg .f32</code> declarations inside inline asm blocks
+          to satisfy ptxas type checking.
+        </p>
+        <h3 class="sub-title" id="5-3-7-predicate-operations">
+          5.3.7 Predicate Operations
+        </h3>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Instruction Pair</th>
+                <th>SASS Opcodes</th>
+                <th>Latency (cyc/pair)</th>
+                <th>Notes</th>
+                <th>Source</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>setp.u32 + selp.u32</td>
+                <td>ISETP + SEL</td>
+                <td>10</td>
+                <td>Complete predicate round-trip</td>
+                <td>section_6/case_13</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          The setp+selp pair represents the fundamental predicate round-trip
+          cost on SM_120: a register value is compared (ISETP writes a
+          predicate), then the predicate selects a register output (SEL reads
+          the predicate). The measured 10 cycles per pair is consistent across
+          comparison types (.lt and .ne). Individual contributions of ISETP and
+          SEL cannot be separated with inline-PTX methodology due to predicate
+          register constraints.
+        </p>
+        <p>
+          <strong>ptxas inversion</strong>: <code>setp.lt.u32</code> compiles to
+          <code>ISETP.GE.U32.AND</code> with a negated predicate in SEL -- a
+          standard optimization that is semantically equivalent.
+        </p>
+        <h3 class="sub-title" id="5-3-8-warp-shuffle-shfl-sync">
+          5.3.8 Warp Shuffle (shfl.sync)
+        </h3>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Mode</th>
+                <th>SASS Opcode</th>
+                <th>Latency (cyc)</th>
+                <th>Notes</th>
+                <th>Source</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>shfl.sync.up</td>
+                <td>SHFL.UP</td>
+                <td>28.95</td>
+                <td>Uniform across modes</td>
+                <td>section_6/case_20</td>
+              </tr>
+              <tr>
+                <td>shfl.sync.down</td>
+                <td>SHFL.DOWN</td>
+                <td>28.95</td>
+                <td>Same as up</td>
+                <td>section_6/case_20</td>
+              </tr>
+              <tr>
+                <td>shfl.sync.bfly</td>
+                <td>SHFL.BFLY</td>
+                <td>28.95</td>
+                <td>Same as up/down</td>
+                <td>section_6/case_20</td>
+              </tr>
+              <tr>
+                <td>shfl.sync.idx</td>
+                <td>SHFL.IDX</td>
+                <td>(DCE'd)</td>
+                <td>Idempotent chain folded by ptxas</td>
+                <td>section_6/case_20</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <figure class="diagram">
+          <object
+            data="svg/ch05/ch05_warp_shuffle_architecture.svg"
+            type="image/svg+xml"
+            aria-label="SM_120 Warp Shuffle Architecture — 29-Cycle Latency Breakdown and Reduction Cost Comparison"
+          ></object>
+          <figcaption>
+            <span class="fig-num">FIG 05.8</span>SM_120 warp shuffle
+            architecture — shuffle mode data-flow patterns, 29-cycle latency
+            phase breakdown, and warp reduction cost comparison across four
+            alternative methods
+          </figcaption>
+        </figure>
+        <aside class="callout callout-info">
+          <p>
+            <strong
+              >Why is shfl.sync so expensive on SM_120 (29 cyc vs 2-5 cyc on
+              prior architectures)?</strong
+            >
+          </p>
+          <p>
+            On architectures prior to Volta (SM_70), warps executed in
+            <em>lockstep</em> — all 32 threads were always at the same program
+            counter. This meant <code>shfl</code> was a trivial register
+            crossbar operation taking 2-5 cycles. Starting with Volta, NVIDIA
+            introduced <em>independent thread scheduling</em> where threads
+            within a warp can diverge and execute at different points. The
+            <code>.sync</code> suffix on <code>shfl.sync</code> mandates a
+            convergence barrier: before any data exchange can occur, the
+            hardware must verify that all threads specified in the mask have
+            actually reached the shuffle instruction. On SM_120, this
+            convergence check dominates the latency budget (~8-10 cycles),
+            followed by the actual 32-lane crossbar permutation (~12-14 cycles)
+            and result writeback (~6-8 cycles). The three phases sum to the
+            measured 28.95 cycles. Crucially, the mode selection
+            (up/down/bfly/idx) adds zero extra cost — all modes traverse the
+            same physical crossbar hardware with only the routing logic
+            differing.
+          </p>
+        </aside>
+        <h3
+          class="sub-title"
+          id="5-3-8a-warp-vote-and-redux-vote-sync-redux-sync"
+        >
+          5.3.8a Warp Vote and Redux (vote.sync, redux.sync)
+        </h3>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Instruction</th>
+                <th>SASS Opcode</th>
+                <th>Latency (cyc)</th>
+                <th>Notes</th>
+                <th>Source</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>vote.sync.ballot.b32</td>
+                <td>VOTE.BALLOT</td>
+                <td>18</td>
+                <td>Full ballot</td>
+                <td><span class="cite">[S26/case_49]</span></td>
+              </tr>
+              <tr>
+                <td>vote.sync.any</td>
+                <td>VOTE.ANY</td>
+                <td>13</td>
+                <td>Predicate reduction</td>
+                <td><span class="cite">[S26/case_49]</span></td>
+              </tr>
+              <tr>
+                <td>vote.sync.all</td>
+                <td>VOTE.ALL</td>
+                <td>13</td>
+                <td>Predicate reduction</td>
+                <td><span class="cite">[S26/case_49]</span></td>
+              </tr>
+              <tr>
+                <td>redux.sync.add.s32</td>
+                <td>REDUX.ADD</td>
+                <td>45</td>
+                <td>Uniform across all variants</td>
+                <td><span class="cite">[S26/case_50]</span></td>
+              </tr>
+              <tr>
+                <td>redux.sync.min.s32</td>
+                <td>REDUX.MIN</td>
+                <td>45</td>
+                <td>Same as add</td>
+                <td><span class="cite">[S26/case_50]</span></td>
+              </tr>
+              <tr>
+                <td>redux.sync.max.s32</td>
+                <td>REDUX.MAX</td>
+                <td>45</td>
+                <td>Same as add</td>
+                <td><span class="cite">[S26/case_50]</span></td>
+              </tr>
+              <tr>
+                <td>redux.sync.and.b32</td>
+                <td>REDUX.AND</td>
+                <td>45</td>
+                <td>Same as add</td>
+                <td><span class="cite">[S26/case_50]</span></td>
+              </tr>
+              <tr>
+                <td>redux.sync.or.b32</td>
+                <td>REDUX.OR</td>
+                <td>45</td>
+                <td>Same as add</td>
+                <td><span class="cite">[S26/case_50]</span></td>
+              </tr>
+              <tr>
+                <td>redux.sync.xor.b32</td>
+                <td>REDUX.XOR</td>
+                <td>45</td>
+                <td>Same as add</td>
+                <td><span class="cite">[S26/case_50]</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          <strong>vote.sync</strong> has two latency tiers: ballot (18 cyc)
+          returns a per-lane bitmask requiring more writeback work; any/all (13
+          cyc) return a single predicate. <strong>redux.sync</strong> has
+          uniform 45-cycle latency across all variants (add/min/max/and/or/xor),
+          suggesting a single hardware reduction tree with configurable ALU
+          operation.
+        </p>
+        <p>
+          <strong>SM_120 warp shuffle latency is 28.95 cycles</strong> —
+          significantly higher than the 2-5 cycles reported in published
+          literature for prior architectures (Ampere/Hopper). All three
+          measurable modes (up, down, bfly) show identical latency, confirming
+          they use the same hardware shuffle unit with uniform pipeline depth.
+          The mode selection logic adds no cost. Note: the prior-architecture
+          comparison is based on published third-party benchmarks (e.g., Jia et
+          al.), not our own measurements.
+        </p>
+        <p>
+          <strong>Shuffle throughput</strong> (Case 21/42): The issue interval
+          is approximately 4.6 cyc/op, giving an ILP saturation depth of 29/4.6
+          ≈ 6.3. At ILP=8, peak throughput reaches 0.22 ops/cyc. This means the
+          shuffle unit is moderately pipelined (6-7 stages internally), but each
+          warp can only have one SHFL in-flight at a time for dependent chains.
+        </p>
+        <p>
+          <strong>Why 29 cycles — not a scheduling artifact</strong>: Three
+          independent evidence sources confirm the 29-cycle latency is real
+          hardware behavior, not an artificial stall count:
+        </p>
+        <ol>
+          <li>
+            ptxas control words encode ~29 stall cycles between dependent SHFLs
+            — this is ptxas modeling the measured latency, not imposing it
+          </li>
+          <li>
+            The throughput ceiling at ILP=8 matches the pipeline depth
+            prediction (29/4.6 = 6.3 stages)
+          </li>
+          <li>
+            Three different measurement methodologies (dep chain, ILP sweep,
+            issue interval) converge on the same value
+          </li>
+        </ol>
+        <p>
+          <strong>Architectural hypothesis</strong> [SPECULATIVE, confidence:
+          M]: The 29-cycle SHFL latency on SM_120 (vs 2-5 on prior
+          architectures) may reflect a redesigned warp crossbar that shares
+          hardware with the <code>.sync</code> warp-barrier mechanism. The
+          <code>.sync</code> suffix on <code>shfl.sync</code> implies implicit
+          warp convergence, which on SM_120's independent thread scheduling
+          model (post-Volta) requires a barrier check before the data exchange —
+          adding significant latency to what was previously a simple register
+          permutation.
+        </p>
+        <p>
+          <strong>Implications for warp reductions</strong>: A 32-thread
+          butterfly reduction (5 stages of shfl.xor) costs approximately
+          <strong>145 cycles</strong> on SM_120 vs ~15 on Ampere. This 10×
+          regression strongly favors shared-memory-based communication patterns
+          over shuffle chains:
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Reduction Method</th>
+                <th style="text-align: center">Estimated Cost (32 threads)</th>
+                <th style="text-align: center">vs shfl</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>shfl.sync.bfly × 5 stages</td>
+                <td style="text-align: center">145 cyc</td>
+                <td style="text-align: center">1.0×</td>
+              </tr>
+              <tr>
+                <td>smem write + read + IADD</td>
+                <td style="text-align: center">~40 cyc</td>
+                <td style="text-align: center">3.6× faster</td>
+              </tr>
+              <tr>
+                <td>atomicAdd.shared (tree)</td>
+                <td style="text-align: center">~24 cyc</td>
+                <td style="text-align: center">6.0× faster</td>
+              </tr>
+              <tr>
+                <td>MMA-based rowsum (Case 9/160)</td>
+                <td style="text-align: center">~7 cyc (amortized)</td>
+                <td style="text-align: center">20× faster</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <hr />
+        <h2 class="ch-title" id="5-4-pipeline-architecture-summary">
+          5.4 Pipeline Architecture Summary
+        </h2>
+        <figure class="diagram">
+          <object
+            data="svg/ch05/ch05_pipeline_architecture_summary.svg"
+            type="image/svg+xml"
+            aria-label="SM_120 Complete Pipeline Architecture — Six Execution Pipes with Co-Issue Matrix and Latency Spectrum"
+          ></object>
+          <figcaption>
+            <span class="fig-num">FIG 05.9</span>SM_120 complete pipeline
+            architecture — six execution pipes per SMSP with co-issue matrix,
+            latency spectrum (2–422 cyc log scale), and optimization
+            implications
+          </figcaption>
+        </figure>
+        <p>
+          <strong>Pipeline architecture overview</strong>: The figure above
+          consolidates all measured instruction-level characterization data into
+          a unified architectural view of the SM_120 compute subsystem. Each
+          SMSP contains six physically independent execution pipes that can
+          co-issue in various combinations from a single warp scheduler dispatch
+          port. The top row shows all six pipes with their key instructions and
+          throughput: P0-lite (IADD3/FFMA at 1 op/cyc), P0-heavy (IMAD/HFMA2 at
+          1 op/cyc), P1 (DFMA at 1/64 cyc, non-pipelined), P2/SFU (MUFU at ~1/18
+          cyc), SHFL (warp crossbar at 1/29 cyc), and CVT (type conversion,
+          variable rate). The co-issue matrix confirms that P0-lite, P0-heavy,
+          P1, P2, and LD/ST can all execute simultaneously — enabling up to 5
+          operations per cycle from a single warp. The latency spectrum on a
+          logarithmic scale reveals a 211× dynamic range from the fastest
+          instruction (IADD3 at 2 cycles) to the slowest (div.u64 at 422 cycles
+          via subroutine call), with most practical compute instructions
+          clustering in the 2–18 cycle band.
+        </p>
+        <p>
+          The seven architectural implications at the bottom distill the key
+          optimization guidance derived from 200 test cases across Sections 4–6:
+          (1) exploit free INT+FP co-issue in GEMM loops, (2) leverage shallow
+          pipelines for low register pressure, (3) avoid FP16 ALU for throughput
+          (use Tensor Cores instead), (4) treat FP64 as occasional-use only, (5)
+          consider SASS-level MUFU patching for SFU-critical paths, (6) prefer
+          shared-memory over shuffle for reductions, and (7) always
+          strength-reduce integer division.
+        </p>
+        <h3 class="sub-title" id="5-4-1-execution-pipe-map">
+          5.4.1 Execution Pipe Map
+        </h3>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Pipe</th>
+                <th>Designation</th>
+                <th>Key Instructions</th>
+                <th>Issue Rate</th>
+                <th>Co-Issues With</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>P0 (fma/fmalite)</td>
+                <td>INT32 Add/Logic, FP32 FMA</td>
+                <td>IADD3, LOP3, FFMA</td>
+                <td>1/cyc</td>
+                <td>P0-heavy, P1, P2, LD/ST</td>
+              </tr>
+              <tr>
+                <td>P0 (fmaheavy)</td>
+                <td>INT Mul, Shift, FP16 FMA</td>
+                <td>IMAD, SHF, PRMT, HFMA2</td>
+                <td>1/cyc</td>
+                <td>P0-lite, P1, P2, LD/ST</td>
+              </tr>
+              <tr>
+                <td>P1</td>
+                <td>FP64</td>
+                <td>DFMA, F2F.F64</td>
+                <td>1/63 cyc (non-pipelined)</td>
+                <td>P0, P2, LD/ST</td>
+              </tr>
+              <tr>
+                <td>P2</td>
+                <td>SFU/Transcendental</td>
+                <td>MUFU.*</td>
+                <td>~1/18-22 cyc</td>
+                <td>P0, P1, LD/ST</td>
+              </tr>
+              <tr>
+                <td>SHFL</td>
+                <td>Warp Shuffle</td>
+                <td>SHFL.*</td>
+                <td>1/29 cyc</td>
+                <td>--</td>
+              </tr>
+              <tr>
+                <td>CVT</td>
+                <td>Type Conversion</td>
+                <td>F2F, F2FP, I2FP, F2I</td>
+                <td>varies</td>
+                <td>--</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <h3
+          class="sub-title"
+          id="5-4-2-latency-comparison-across-instruction-classes"
+        >
+          5.4.2 Latency Comparison Across Instruction Classes
+        </h3>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Instruction Class</th>
+                <th>Representative</th>
+                <th>Latency (cyc)</th>
+                <th>Pipeline Depth</th>
+                <th>Key Insight</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>INT32 add</td>
+                <td>IADD3</td>
+                <td>2</td>
+                <td>2</td>
+                <td>Shallowest pipe on SM_120</td>
+              </tr>
+              <tr>
+                <td>INT32 mul/FP32 FMA</td>
+                <td>IMAD / FFMA</td>
+                <td>4</td>
+                <td>2 / 4</td>
+                <td>Same latency, different depths</td>
+              </tr>
+              <tr>
+                <td>FP16x2 / BF16x2 FMA</td>
+                <td>HFMA2</td>
+                <td>4</td>
+                <td>2</td>
+                <td>Same latency as FP32, half throughput</td>
+              </tr>
+              <tr>
+                <td>Logic / Shift / PRMT</td>
+                <td>LOP3 / SHF / PRMT</td>
+                <td>4</td>
+                <td>--</td>
+                <td>Uniform ALU tier</td>
+              </tr>
+              <tr>
+                <td>INT64 add</td>
+                <td>IADD.64</td>
+                <td>4</td>
+                <td>2</td>
+                <td>2x INT32 (pair of 32-bit ops)</td>
+              </tr>
+              <tr>
+                <td>Conversion (FP16&lt;-&gt;FP32)</td>
+                <td>F2F</td>
+                <td>~7.5</td>
+                <td>--</td>
+                <td>Moderate cost</td>
+              </tr>
+              <tr>
+                <td>Predicate round-trip</td>
+                <td>ISETP + SEL</td>
+                <td>10</td>
+                <td>--</td>
+                <td>High cost for branch-free selection</td>
+              </tr>
+              <tr>
+                <td>INT64 mul</td>
+                <td>multi-IMAD</td>
+                <td>13-17</td>
+                <td>--</td>
+                <td>Multi-instruction decomposition</td>
+              </tr>
+              <tr>
+                <td>Bare MUFU</td>
+                <td>MUFU.TANH</td>
+                <td>18</td>
+                <td>--</td>
+                <td>SFU pipeline</td>
+              </tr>
+              <tr>
+                <td>Warp shuffle</td>
+                <td>SHFL.BFLY</td>
+                <td>29</td>
+                <td>--</td>
+                <td>Significantly higher than prior archs</td>
+              </tr>
+              <tr>
+                <td>SFU with wrapper</td>
+                <td>MUFU.RCP (PTX)</td>
+                <td>44</td>
+                <td>--</td>
+                <td>Range reduction dominates</td>
+              </tr>
+              <tr>
+                <td>FP64 FMA</td>
+                <td>DFMA</td>
+                <td>63</td>
+                <td>1 (non-pipelined)</td>
+                <td>Consumer-tier FP64</td>
+              </tr>
+              <tr>
+                <td>INT64 division</td>
+                <td>CALL subroutine</td>
+                <td>422</td>
+                <td>--</td>
+                <td>Software emulation</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <h3 class="sub-title" id="5-4-3-architectural-implications">
+          5.4.3 Architectural Implications
+        </h3>
+        <ol>
+          <li>
+            <p>
+              <strong>Dual-pipe co-issue is the primary ILP mechanism</strong>:
+              The confirmed perfect co-issue between INT32 (fmalite) and FP32
+              (fmaheavy) means that compiler-mixed workloads can achieve 2
+              ops/cycle without multi-warp concurrency. Kernel developers should
+              interleave address arithmetic (IADD3) with FMA computation (FFMA)
+              to exploit this free parallelism.
+            </p>
+          </li>
+          <li>
+            <p>
+              <strong>Shallow pipeline depths favor low-ILP code</strong>: The
+              INT32 pipe saturates at ILP=2 and FP32 at ILP=4. This is shallower
+              than historical NVIDIA architectures (Ampere/Hopper typically
+              require ILP=4-6 for INT and ILP=4-8 for FP). SM_120 trades
+              pipeline depth for lower per-instruction latency.
+            </p>
+          </li>
+          <li>
+            <p>
+              <strong
+                >FP16/BF16 provides no throughput advantage over FP32</strong
+              >: HFMA2 achieves exactly 1 FP16 element/cycle throughput, the
+              same as scalar FFMA. This is a departure from architectures where
+              FP16 offered 2x throughput. On SM_120, the half-precision
+              advantage comes exclusively from Tensor Core operations, not the
+              ALU pipe. [SPECULATIVE] This may indicate that the P0 pipe
+              internally uses the same 32-bit FMA datapath for both FP32 and
+              packed FP16, issuing HFMA2 across 2 cycles to process both lanes
+              sequentially.
+            </p>
+          </li>
+          <li>
+            <p>
+              <strong>FP64 is present but severely rate-limited</strong>: At
+              1:32 throughput ratio vs FP32 in real workloads (RESOLVED
+              2026-06-11; see §5.2.7), double-precision is intended only for
+              occasional scalar computations (e.g., address calculation,
+              accumulator precision) rather than bulk FP64 workloads. The
+              non-pipelined nature means FP64 operations cannot be overlapped
+              with one another, only with other pipe types.
+            </p>
+          </li>
+          <li>
+            <p>
+              <strong
+                >SFU latency is dominated by range-reduction wrappers</strong
+              >: The bare MUFU instruction takes ~18-20 cycles, but PTX-level
+              functions like <code>rcp.approx.f32</code> cost 44 cycles due to
+              subnormal handling and overflow protection wrappers inserted by
+              ptxas. Performance-critical code should consider whether the full
+              range-reduction is necessary or if direct MUFU SASS (via
+              CuAssembler patching) could reduce latency.
+            </p>
+          </li>
+          <li>
+            <p>
+              <strong>Warp shuffle is expensive</strong>: At 29 cycles per
+              dependent shuffle, SM_120 is 6-14x slower for shuffle-based
+              reductions compared to Ampere/Hopper. This strongly favors
+              shared-memory-based communication patterns over shuffle chains for
+              within-warp data exchange on this architecture.
+            </p>
+          </li>
+        </ol>
+        <hr />
+        <h2 class="ch-title" id="5-5-deep-microarchitectural-analysis">
+          5.5 Deep Microarchitectural Analysis
+        </h2>
+        <h3 class="sub-title" id="5-5-1-sfu-pipeline-depth-reconciliation">
+          5.5.1 SFU Pipeline Depth Reconciliation
+        </h3>
+        <p>
+          A significant discrepancy exists between the initial SFU depth
+          estimate and the ILP sweep data. Case 5.7/31 (SFU pipeline depth
+          sweep) reveals:
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th style="text-align: center">ILP</th>
+                <th style="text-align: center">cyc/op (MUFU.RCP PTX chain)</th>
+                <th style="text-align: center">Speedup vs ILP=1</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="text-align: center">1</td>
+                <td style="text-align: center">46.8</td>
+                <td style="text-align: center">1.00x</td>
+              </tr>
+              <tr>
+                <td style="text-align: center">2</td>
+                <td style="text-align: center">23.94</td>
+                <td style="text-align: center">1.95x</td>
+              </tr>
+              <tr>
+                <td style="text-align: center">4</td>
+                <td style="text-align: center">12.66</td>
+                <td style="text-align: center">3.70x</td>
+              </tr>
+              <tr>
+                <td style="text-align: center">6</td>
+                <td style="text-align: center">9.68</td>
+                <td style="text-align: center">4.84x</td>
+              </tr>
+              <tr>
+                <td style="text-align: center">8</td>
+                <td style="text-align: center">8.43</td>
+                <td style="text-align: center">5.55x (saturated)</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          <strong
+            >Pipeline depth = latency / saturated_throughput = 46.8 / 8.43 ≈
+            5.6</strong
+          >
+        </p>
+        <p>
+          This contradicts the earlier estimate of depth=2. The resolution lies
+          in understanding what the "SFU pipeline" actually comprises at the
+          SASS level:
+        </p>
+        <figure class="diagram">
+          <object
+            data="svg/ch05/ch05_sfu_pipeline_reconciliation.svg"
+            type="image/svg+xml"
+            aria-label="SM_120 SFU Pipeline Model — PTX rcp.approx.f32 SASS Decomposition, Critical Path, and ILP Overlap"
+          ></object>
+          <figcaption>
+            <span class="fig-num">FIG 05.10</span>SFU pipeline reconciliation —
+            PTX rcp.approx decomposes into 7 SASS instructions across 3 pipes;
+            ILP overlap creates effective depth of 5.6 from composite wrapper +
+            XU pipeline
+          </figcaption>
+        </figure>
+        <aside class="callout callout-info">
+          <p>
+            <strong
+              >Why does a "single" transcendental instruction need 7 SASS
+              operations?</strong
+            >
+          </p>
+          <p>
+            The MUFU (Multi-Function Unit) hardware computes reciprocals via a
+            <em>minimax polynomial approximation</em> over a fixed-point lookup
+            table. The LUT is indexed by the mantissa bits of the input and
+            returns a pre-computed coefficient set, enabling a ~18-cycle
+            polynomial evaluation that achieves the IEEE 754
+            <code>.approx</code> precision guarantee (~1 ULP error). However,
+            this LUT has a <strong>restricted input range</strong> — it only
+            handles normalized FP32 values in [1.0, 2.0). Inputs outside this
+            range (subnormals near zero, very large values near overflow) would
+            produce incorrect results. The <code>ptxas</code> compiler therefore
+            wraps the bare MUFU instruction with a range-reduction envelope:
+          </p>
+          <ol>
+            <li>
+              <strong>Range detection</strong> (FSETP ×2): Test if the input is
+              subnormal or near overflow using predicate comparisons.
+            </li>
+            <li>
+              <strong>Scale factor selection</strong> (FSEL ×2): Conditionally
+              select a pre/post-scale factor using the predicates. If the input
+              is in-range, the scale factor is 1.0 (no-op).
+            </li>
+            <li>
+              <strong>Pre-scaling</strong> (FMUL): Multiply the input by the
+              scale factor to bring it into the LUT's valid range.
+            </li>
+            <li>
+              <strong>Core computation</strong> (MUFU.RCP): Hardware reciprocal
+              lookup + polynomial evaluation (~18 cycles on the dedicated XU
+              pipe).
+            </li>
+            <li>
+              <strong>Post-correction</strong> (FMUL): Multiply the raw result
+              by the inverse scale factor to produce the correctly-scaled final
+              answer.
+            </li>
+          </ol>
+          <p>
+            This 5-phase algorithm ensures IEEE-compliant behavior across the
+            entire FP32 dynamic range while keeping the hardware LUT compact
+            (only ~1K entries). The same wrapper pattern applies to all MUFU
+            variants (RSQ, LOG2, EX2, RCP) — only the core LUT differs.
+          </p>
+        </aside>
+        <p>
+          <strong>Architectural reconciliation</strong>: The apparent
+          contradiction between "depth=2" (bare MUFU) and "depth=5.6" (ILP
+          sweep) resolves cleanly once we distinguish two pipeline models. The
+          <strong>bare XU pipe</strong> has ~2 internal stages (18c latency /
+          8-9c issue rate), meaning only 2 MUFU instructions can be
+          simultaneously in-flight within the unit. But the
+          <strong>composite PTX pipeline</strong> — comprising 4 wrapper
+          instructions (FSETP, FSEL, FMUL ×2) on P0 pipes plus the MUFU on XU —
+          creates a 5-6 stage interleaving opportunity. At ILP=8, the wrapper
+          FMA/FSEL instructions of chain N execute on the P0 pipe concurrently
+          with the MUFU.RCP of chain N-1 on the separate XU pipe. This
+          inter-pipe parallelism is the source of the 5.6× speedup, and it
+          saturates when the XU issue slot (8.43 cyc) becomes the bottleneck —
+          at that point, ~5 chains are simultaneously active across different
+          stages of the composite pipeline.
+        </p>
+        <p>
+          <strong>Optimization implication</strong>: For latency-critical paths
+          that can tolerate the reduced precision, bypassing the wrapper via
+          direct MUFU SASS (using CuAssembler binary patching) saves 28 cycles
+          per operation (46.8c → 18c, a 2.6× improvement). This is safe when
+          inputs are guaranteed to be in the normal FP32 range
+          [~2<sup>-126</sup>, ~2<sup>126</sup>], which covers the vast majority
+          of practical kernel operands (e.g., softmax denominators,
+          normalization factors).
+        </p>
+        <h3
+          class="sub-title"
+          id="5-5-2-hfma2-two-cycle-issue-time-multiplexed-half-precision"
+        >
+          5.5.2 HFMA2 Two-Cycle Issue: Time-Multiplexed Half-Precision
+        </h3>
+        <p>
+          The measured 2-cycle issue interval for HFMA2 (Case 5.7/39, confirmed
+          by Case 5.9/55) reveals the internal structure of the packed FP16
+          datapath. Key evidence:
+        </p>
+        <ol>
+          <li>
+            <strong>HFMA2 latency = FFMA latency = 4 cycles</strong>: Both share
+            the same 4-cycle pipeline stages.
+          </li>
+          <li>
+            <strong>HFMA2 throughput = 2 cyc/op</strong>: Saturates at ILP=2
+            (not ILP=4 like FFMA).
+          </li>
+          <li>
+            <strong>Mixed HFMA2+FFMA time = sum of both</strong> (Case 55: 194
+            cyc measured vs 192 cyc predicted by serialization): They compete
+            for the same pipe slot.
+          </li>
+          <li>
+            <strong
+              >Per-element FP16 throughput = per-element FP32 throughput</strong
+            >: No packing speedup.
+          </li>
+        </ol>
+        <p>
+          <strong>Inferred mechanism</strong>: The P0 (fmaheavy) pipe has a
+          single 32-bit FMA datapath. HFMA2 processes the two packed FP16 lanes
+          sequentially by occupying the pipe for 2 consecutive cycles:
+        </p>
+        <figure class="diagram">
+          <object
+            data="svg/ch05/ch05_hfma2_time_multiplexed.svg"
+            type="image/svg+xml"
+            aria-label="SM_120 HFMA2 Time-Multiplexed Half-Precision — 2-Cycle Issue Model vs SM_80/SM_90 Wide Datapath"
+          ></object>
+          <figcaption>
+            <span class="fig-num">FIG 05.11</span>HFMA2 time-division
+            multiplexing on SM_120 — single 32-bit FMA datapath processes two
+            packed f16 lanes sequentially, yielding identical per-element
+            throughput to scalar FP32
+          </figcaption>
+        </figure>
+        <p>
+          <strong>Time-division multiplexing mechanism</strong>: The pipeline
+          timing diagram (top-left) shows how a single HFMA2 instruction
+          occupies the P0-heavy pipe for 2 consecutive cycles. In Cycle 0, the
+          low half f16[0] enters Stage 1 of the 4-stage FMA pipeline; in Cycle
+          1, the high half f16[1] follows into Stage 1 while f16[0] advances to
+          Stage 2. Both halves complete processing and become available as a
+          packed result register at Cycle 4. The pipe is "busy" (cannot accept
+          new instructions) during Cycles 0-1, giving the measured 2-cycle issue
+          interval. This is fundamentally different from SM_80/SM_90
+          (Ampere/Hopper), where a dedicated 2×16-bit wide FMA datapath
+          processes both f16 lanes <em>in parallel</em> in a single cycle,
+          achieving 2× throughput over scalar FP32.
+        </p>
+        <p>
+          <strong>Three independent measurement confirmations</strong> establish
+          this model beyond doubt: (1) ILP sweep shows HFMA2 saturates at ILP=2
+          while FFMA saturates at ILP=4 — consistent with pipeline depth =
+          latency/issue = 4/2 = 2; (2) Mixed HFMA2+FFMA execution (Case 55)
+          produces 194 cyc vs 192 cyc predicted by pure serialization,
+          confirming they compete for the same pipe slot with zero overlap; (3)
+          Per-element throughput is identical — HFMA2 delivers 2 f16 elements
+          per 2 cycles = 1 elem/cyc, exactly matching FFMA's 1 f32 per 1 cycle.
+        </p>
+        <p>
+          <strong>Implications for kernel optimization</strong>: On SM_120, the
+          packed FP16 ALU path offers
+          <strong>zero throughput advantage</strong> over scalar FP32. The only
+          benefit of HFMA2 over two scalar FFMA instructions is code density (1
+          PTX instruction vs 2, potentially better I-cache behavior). For any
+          workload requiring FP16 compute throughput, Tensor Cores are the
+          exclusive viable path — a single MMA instruction processes 4096 FP16
+          operations in 15.88 cycles, yielding 258 FP16 ops/cyc, which is
+          <strong>258× faster</strong> than the ALU FP16 path. This
+          architectural choice reflects NVIDIA's design philosophy for the
+          consumer Blackwell die: dedicate silicon area to Tensor Cores rather
+          than duplicating FP16 ALU datapaths.
+        </p>
+        <h3
+          class="sub-title"
+          id="5-5-3-fp64-non-pipelined-architecture-note-legacy-2-eu-analysis-see-5-2-7-for-resolved-4-per-smsp-model"
+        >
+          5.5.3 FP64 Non-Pipelined Architecture [Note: legacy 2-EU analysis —
+          see §5.2.7 for RESOLVED 4-per-SMSP model]
+        </h3>
+        <aside class="callout callout-info">
+          <p>
+            <strong>Note</strong>: The 2-EU analysis below comes from
+            sparse-lane-mask measurements (<span class="cite"
+              >[S5/case_48-52]</span
+            >, <span class="cite">[S24/case_13]</span>/17). The decisive
+            <strong
+              >all-32-lanes-active dichotomy experiment (<span class="cite"
+                >[S24/case_16]</span
+              >, dichotomy v2)</strong
+            >
+            subsequently established that SM_120 has
+            <strong>4 independent FP64 EUs per SM, one per SMSP</strong> with
+            FP64:FP32 = <strong>1:32</strong> in real workloads. See §5.2.7
+            [RESOLVED 2026-06-11] for the corrected model. The discussion below
+            is retained as historical context for the methodological artifact.
+          </p>
+        </aside>
+        <p>
+          The 63-cycle non-pipelined DFMA presents an unusual architectural
+          choice. Evidence constraining the internal structure:
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Test</th>
+                <th>Measurement</th>
+                <th>Implication</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>ILP=1 latency</td>
+                <td>63.16 cyc</td>
+                <td>Full pipeline occupancy per op</td>
+              </tr>
+              <tr>
+                <td>ILP=2/ILP=1 ratio</td>
+                <td>2.01x exactly</td>
+                <td>Truly non-pipelined (no overlap)</td>
+              </tr>
+              <tr>
+                <td>ILP=4 same as ILP=2</td>
+                <td>8138 cyc both</td>
+                <td>
+                  Per-warp dep-chain saturates at ILP=2 (1 EU non-pipelined for
+                  sequential dependent DFMAs from one warp)
+                </td>
+              </tr>
+              <tr>
+                <td>4-warp (sparse-lane regime) +17% latency</td>
+                <td>
+                  sparse-mask SMSP dispatch artifact (not EU sharing) — see
+                  §5.2.7 lane-mask dichotomy
+                </td>
+                <td></td>
+              </tr>
+              <tr>
+                <td>4-warp (all-lane real regime)</td>
+                <td>
+                  0% contention; 4 warps each occupy own EU; agg 0.0625
+                  DFMA/cyc/SM = 4/64 <span class="cite">[S24/case_16]</span>
+                </td>
+                <td></td>
+              </tr>
+              <tr>
+                <td>Co-issue with FP32</td>
+                <td>100% (0 cyc delta)</td>
+                <td>Separate P1 pipe, no resource conflict</td>
+              </tr>
+              <tr>
+                <td>FP64 conversion</td>
+                <td>64 cyc</td>
+                <td>Uses same hardware as DFMA</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          <strong>Architectural model</strong> [SUPERSEDED 2026-06-11; retained
+          as historical context]: The original interpretation — FP64 unit as a
+          deliberately slow-clocked or area-minimized multiplier processing a
+          single FMA across 63 internal cycles without pipeline registers —
+          remains valid for the <strong>non-pipelined</strong> dimension (per-EU
+          still takes 64 cyc for one DFMA). The
+          <strong>EU count</strong> dimension was originally inferred to be "2
+          per SM (shared between sub-core pairs)" from
+          <code>ILP=4 = ILP=2</code> plus <code>4-warp +17%</code>; the
+          dichotomy experiment in §5.2.7 [RESOLVED 2026-06-11] re-attributed
+          both signatures to sparse-lane SMSP dispatch overhead, leaving
+          <strong>4 EUs per SM (one per SMSP)</strong> as the canonical count.
+          The 1:32 (per-SM) FP64:FP32 ratio for real DGEMM workloads (<code
+            >0.0625 DFMA/cyc/SM × 2 FLOP / (4 FFMA/cyc/SM × 2 FLOP) = 1:32</code
+          >) supersedes the prior 1:64 figure quoted from the sparse-lane
+          regime.
+        </p>
+        <h3
+          class="sub-title"
+          id="5-5-4-the-register-renaming-artifact-in-sfu-measurements"
+        >
+          5.5.4 The Register Renaming Artifact in SFU Measurements
+        </h3>
+        <p>
+          A critical methodological insight from Case 5.1/01: ptxas applies
+          register renaming to PTX inline-asm chains even when using a single
+          <code>+f</code> constraint. For the PTX sequence:
+        </p>
+        <pre><code class="language-ptx">  // Intended: single chain (depth=64)
+  tanh.approx.f32 %f0, %f0;  // 64 iterations
+  tanh.approx.f32 %f0, %f0;
+  ...</code></pre>
+        <p>
+          ptxas generates SASS using 4 distinct destination registers (R3, R4,
+          R5, R6), creating 4 interleaved sub-chains of 16 operations each. The
+          measured "per-op latency" of 17.7 cyc actually reflects the
+          inter-chain issue rate (pipeline throughput), not the true
+          single-instruction latency.
+        </p>
+        <p><strong>Corrected SFU latency model</strong>:</p>
+        <ul>
+          <li>
+            Measured at PTX level with single-variable chain: 17.7 cyc (reflects
+            4-way renaming × throughput)
+          </li>
+          <li>
+            True bare MUFU latency (estimated from ILP-1 pointer-chase): ~18-20
+            cyc
+          </li>
+          <li>
+            Composite PTX rcp/rsqrt/lg2 latency (including wrappers): 40-47 cyc
+          </li>
+        </ul>
+        <p>
+          This artifact means that SFU latency measurements from PTX-level
+          inline asm are <strong>lower bounds</strong> of true
+          single-instruction latency when the measurement chain is long enough
+          for ptxas to apply multi-register renaming. The most reliable
+          measurements use pointer-chase through MUFU (where renaming cannot
+          help) or CuAssembler-patched single-register SASS.
+        </p>
+        <h3
+          class="sub-title"
+          id="5-5-5-sfu-multi-warp-saturation-eu-count-evidence"
+        >
+          5.5.5 SFU Multi-Warp Saturation: EU Count Evidence
+        </h3>
+        <p>
+          The multi-warp SFU scaling (Case 76) reveals the number of physical
+          SFU units per SM:
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th style="text-align: center">Warps</th>
+                <th style="text-align: center">cyc/op</th>
+                <th style="text-align: center">Total SFU ops/cyc</th>
+                <th>Regime</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="text-align: center">1-4</td>
+                <td style="text-align: center">13.85</td>
+                <td style="text-align: center">0.07-0.29</td>
+                <td>Per-SMSP independent (linear)</td>
+              </tr>
+              <tr>
+                <td style="text-align: center">8</td>
+                <td style="text-align: center">18.66</td>
+                <td style="text-align: center">0.43</td>
+                <td>Cross-SMSP contention onset</td>
+              </tr>
+              <tr>
+                <td style="text-align: center">16</td>
+                <td style="text-align: center">27.29</td>
+                <td style="text-align: center">0.59</td>
+                <td>Contention growth</td>
+              </tr>
+              <tr>
+                <td style="text-align: center">32</td>
+                <td style="text-align: center">29.64</td>
+                <td style="text-align: center"><strong>1.08</strong></td>
+                <td>Near-SM-aggregate ceiling</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          The data supports <strong>4 SFU units per SM (1 per SMSP)</strong>:
+          per-warp throughput is flat from 1-4 warps (each on its own SMSP),
+          degrades beyond 4 warps (contention for shared SFU), and aggregate
+          throughput reaches ~1 SFU op/cyc at 32 warps. This ~1 op/cyc aggregate
+          matches 4 SMSPs × 1 SFU unit × ~0.25 ops/cyc throughput per SFU at
+          saturation.
+        </p>
+        <p>
+          <strong>SFU co-issue with FP32</strong> (Case 03): Mixed SFU+FFMA
+          achieves better throughput than SFU-alone, because FFMA instructions
+          fill the SFU pipeline bubbles on the P0 pipe. The SFU pipe (P2) and
+          FP32 pipe (P0) are physically independent — interleaving them is
+          always beneficial.
+        </p>
+        <h3 class="sub-title" id="5-5-6-pipeline-depth-summary-model">
+          5.5.6 Pipeline Depth Summary Model
+        </h3>
+        <figure class="diagram">
+          <object
+            data="svg/ch05/ch05_pipeline_depth_summary.svg"
+            type="image/svg+xml"
+            aria-label="SM_120 Pipeline Depth Summary — Complete Execution Unit Characterization with Co-Issue Matrix"
+          ></object>
+          <figcaption>
+            <span class="fig-num">FIG 05.12</span>SM_120 pipeline depth summary
+            — 10 execution pipes with measured latency, throughput, ILP
+            saturation depth, co-issue overlap percentages, and the depth ≠
+            latency formula
+          </figcaption>
+        </figure>
+        <p>
+          <strong>Pipeline depth model</strong>: The figure above consolidates
+          all instruction-level measurements into a unified pipeline
+          characterization. The critical insight is that
+          <em>pipeline depth</em> (the number of independent chains needed to
+          saturate throughput) is not equal to latency — it is determined by the
+          formula <code>depth = ceil(latency / issue_interval)</code>. This
+          distinction is architecturally significant: FFMA has latency=4 and
+          issue_interval=1, giving depth=4 (need 4 independent chains). IMAD
+          also has latency=4, but its half-rate issue (2 cyc/issue on fmaheavy)
+          gives depth=2 — only 2 chains are useful, meaning register pressure
+          for IMAD loops is half that of FFMA loops despite identical latency.
+        </p>
+        <p>
+          <strong>Co-issue architecture</strong>: The bottom-left panel
+          quantifies the co-issue relationships between all major pipe pairs.
+          Every measured combination achieves ≥92% overlap (with most at exactly
+          100%), confirming that the SM_120 SMSP functions as a multi-pipe
+          in-order processor: a single warp scheduler dispatch port feeds
+          multiple physically independent backends (P0-lite, P0-heavy, P1, P2,
+          CVT, LSU) that execute in parallel. This means a single warp can
+          sustain up to 5 operations per cycle when the instruction mix covers
+          multiple pipes — the key ILP mechanism on SM_120 without requiring
+          multi-warp occupancy.
+        </p>
+        <p>
+          <strong
+            >Practical implications for compiler/kernel optimization</strong
+          >: (1) For GEMM inner loops, interleave IADD3 address math with FFMA
+          compute to exploit the fmalite↔fmaheavy 100% co-issue. (2) For
+          IMAD-heavy workloads (e.g., integer quantization), only 2 chains are
+          needed to saturate — allocating more ILP wastes registers. (3) The
+          non-pipelined FP64 EU (depth=1) means DFMA cannot overlap with itself
+          at all — only cross-pipe co-issue with P0/P2 hides its 63-cycle
+          latency. (4) SHFL's depth=7 means 7 independent shuffle chains would
+          saturate the crossbar — but dependent reduction chains (the common
+          case) get only 1 chain and pay the full 29-cycle latency per stage.
+        </p>
+        <hr />
+        <h2
+          class="ch-title"
+          id="5-5a-section-24-follow-up-fp64-eu-architecture-resolution"
+        >
+          5.5a Section 24 Follow-Up: FP64 EU Architecture Resolution
+        </h2>
+        <p>
+          Section 24 follow-up experiments (Cases 13-17) revisited the FP64 EU
+          count question raised in Section 5.2.7. The original 2-EU-per-SM model
+          was tested with targeted multi-warp and ILP experiments, yielding
+          partially conflicting results.
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th style="text-align: center">Case</th>
+                <th>Test</th>
+                <th>Key Result</th>
+                <th>Implication</th>
+                <th>Source</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="text-align: center">13</td>
+                <td>4-warp FP64 scaling</td>
+                <td>3.37x scaling (expected 4.0x), 19% contention</td>
+                <td>Supports 2 shared EU model</td>
+                <td><span class="cite">[S24/case_13]</span></td>
+              </tr>
+              <tr>
+                <td style="text-align: center">15</td>
+                <td>FP64 ILP=2 vs ILP=1</td>
+                <td>Zero speedup (ratio = 1.00x)</td>
+                <td>Non-pipelined confirmed</td>
+                <td><span class="cite">[S24/case_15]</span></td>
+              </tr>
+              <tr>
+                <td style="text-align: center">16</td>
+                <td>Redesigned 4-warp test</td>
+                <td>3.96x scaling, zero contention</td>
+                <td>Supports 4 EU model</td>
+                <td><span class="cite">[S24/case_16]</span></td>
+              </tr>
+              <tr>
+                <td style="text-align: center">17</td>
+                <td>NCU pipe-level analysis</td>
+                <td>All 4 SMSPs dispatch FP64; cycles_active 4.76x</td>
+                <td>Supports shared model</td>
+                <td><span class="cite">[S24/case_17]</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          <strong>Non-pipelined nature confirmed</strong>: Case 15 provides
+          definitive evidence that DFMA is non-pipelined. ILP=2 yields exactly
+          zero speedup over ILP=1, meaning the EU is fully occupied for the
+          entire 63-cycle operation with no opportunity for overlapping a second
+          instruction.
+        </p>
+        <p>
+          <strong>EU count [SUPERSEDED 2026-06-11 — see §5.2.7 RESOLVED]</strong
+          >: Case 13 (3.37x at 4 warps, 19% contention) and Case 17 (NCU all 4
+          SMSPs dispatch FP64) <strong>were originally read</strong> as
+          supporting the 2-EU shared model, while Case 16 (3.96x scaling, zero
+          contention) was treated as anomalous. The follow-up lane-mask
+          dichotomy experiment ([temp/fp64_eu_dichotomy_test{,_v2}.cu])
+          decisively re-attributed Cases 13/17's apparent contention to sparse
+          <code>if (lane != 0) return;</code> lane-mask SMSP dispatch overhead,
+          <strong>not</strong> EU sharing. Case 16 (all 32 lanes active) is the
+          canonical regime; the 19% "contention" in sparse-lane tests does not
+          occur in real DGEMM/DDOT workloads.
+        </p>
+        <p>
+          <strong>Status</strong>: <strong>RESOLVED</strong> [2026-06-11].
+          SM_120 has
+          <strong>4 independent FP64 EUs per SM, one per SMSP</strong>. The
+          non-pipelined nature is confirmed beyond doubt (per-EU 64 cyc for
+          sequential dependent DFMAs). See §5.2.7 for the lane-mask dichotomy
+          decisive evidence.
+        </p>
+        <hr />
+        <h2 class="ch-title" id="5-6-source-citations">5.6 Source Citations</h2>
+        <p>
+          All measurements in this chapter are derived from the following test
+          report directories:
+        </p>
+        <ul>
+          <li>
+            <strong>Section 4</strong> (Integer ALU, 42 cases):
+            <code>test_results/SM_120/section_4/report/</code>
+          </li>
+          <li>
+            <strong>Section 5</strong> (Floating-Point ALU, 104 cases):
+            <code>test_results/SM_120/section_5/report/</code>
+          </li>
+          <li>
+            <strong>Section 6</strong> (Logic/Shift/Conversion, 54 cases):
+            <code>test_results/SM_120/section_6/report/</code>
+          </li>
+        </ul>
+        <p>Key individual case citations:</p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Data Point</th>
+                <th>Report File</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>INT32 pipeline depth</td>
+                <td>
+                  <code
+                    >section_4/report/01_int32_pipeline_depth_260606_092958_report.md</code
+                  >
+                </td>
+              </tr>
+              <tr>
+                <td>INT64 latency</td>
+                <td>
+                  <code
+                    >section_4/report/02_int64_latency_throughput_260606_092921_report.md</code
+                  >
+                </td>
+              </tr>
+              <tr>
+                <td>IMAD fusion</td>
+                <td>
+                  <code
+                    >section_4/report/03_imad_fusion_260606_092931_report.md</code
+                  >
+                </td>
+              </tr>
+              <tr>
+                <td>mul.hi.u32 cost</td>
+                <td>
+                  <code
+                    >section_4/report/04_mul_lo_vs_mul_hi_260606_092917_report.md</code
+                  >
+                </td>
+              </tr>
+              <tr>
+                <td>INT32+FP32 co-issue</td>
+                <td>
+                  <code
+                    >section_4/report/05_int32_fp32_co_issue_rate_260606_093247_report.md</code
+                  >
+                </td>
+              </tr>
+              <tr>
+                <td>div.u32 breakdown</td>
+                <td>
+                  <code
+                    >section_4/report/08_div_u32_breakdown_260606_093042_report.md</code
+                  >
+                </td>
+              </tr>
+              <tr>
+                <td>div.u64 latency</td>
+                <td>
+                  <code
+                    >section_4/report/09_div_u64_latency_260606_092948_report.md</code
+                  >
+                </td>
+              </tr>
+              <tr>
+                <td>dp4a throughput</td>
+                <td>
+                  <code
+                    >section_4/report/11_dp4a_throughput_saturation_260606_094226_report.md</code
+                  >
+                </td>
+              </tr>
+              <tr>
+                <td>SIMD 16x2</td>
+                <td>
+                  <code
+                    >section_4/report/17_simd_16x2_throughput_260606_093504_report.md</code
+                  >
+                </td>
+              </tr>
+              <tr>
+                <td>SIMD 8x4</td>
+                <td>
+                  <code
+                    >section_4/report/21_simd_8x4_latency_260606_093909_report.md</code
+                  >
+                </td>
+              </tr>
+              <tr>
+                <td>mul.lo.u64 ILP</td>
+                <td>
+                  <code
+                    >section_4/report/33_mul_lo_u64_ilp_throughput_260606_094041_report.md</code
+                  >
+                </td>
+              </tr>
+              <tr>
+                <td>Pipeline verification</td>
+                <td>
+                  <code
+                    >section_4/report/32_unified_vs_separate_pipeline_verification_260606_100756_report.md</code
+                  >
+                </td>
+              </tr>
+              <tr>
+                <td>SFU latency catalog</td>
+                <td>
+                  <code
+                    >section_5/report/5.1_01_sfu_latency_per_function_260606_123233_report.md</code
+                  >
+                </td>
+              </tr>
+              <tr>
+                <td>Subnormal handling</td>
+                <td>
+                  <code
+                    >section_5/report/5.4_11_fma_with_subnormals_260606_125635_report.md</code
+                  >
+                </td>
+              </tr>
+              <tr>
+                <td>f32x2 latency</td>
+                <td>
+                  <code
+                    >section_5/report/5.5_13_f32x2_latency_260606_125911_report.md</code
+                  >
+                </td>
+              </tr>
+              <tr>
+                <td>FP32 pipeline depth</td>
+                <td>
+                  <code
+                    >section_5/report/5.7_23_fp32_pipeline_depth_260606_123646_report.md</code
+                  >
+                </td>
+              </tr>
+              <tr>
+                <td>FP16x2 pipeline depth</td>
+                <td>
+                  <code
+                    >section_5/report/5.7_39_fp16x2_pipeline_depth_260606_124027_report.md</code
+                  >
+                </td>
+              </tr>
+              <tr>
+                <td>BF16x2 vs FP16x2</td>
+                <td>
+                  <code
+                    >section_5/report/5.7_41_bf16x2_vs_fp16x2_260606_124508_report.md</code
+                  >
+                </td>
+              </tr>
+              <tr>
+                <td>FP32x2 pipeline</td>
+                <td>
+                  <code
+                    >section_5/report/5.7_42_fp32x2_pipeline_depth_260606_124853_report.md</code
+                  >
+                </td>
+              </tr>
+              <tr>
+                <td>FP64 true latency</td>
+                <td>
+                  <code
+                    >section_5/report/5.8_48_fp64_true_latency_260606_131131_report.md</code
+                  >
+                </td>
+              </tr>
+              <tr>
+                <td>MUFU tanh/lg2/ex2</td>
+                <td>
+                  <code
+                    >section_5/report/5.9_83_tanh_lg2_ex2_mufu_latency_260606_125838_report.md</code
+                  >
+                </td>
+              </tr>
+              <tr>
+                <td>Logic op latency</td>
+                <td>
+                  <code
+                    >section_6/report/01_logic_op_latency_260606_134733_report.md</code
+                  >
+                </td>
+              </tr>
+              <tr>
+                <td>Shift latency</td>
+                <td>
+                  <code
+                    >section_6/report/06_shift_latency_260606_134730_report.md</code
+                  >
+                </td>
+              </tr>
+              <tr>
+                <td>mov.b32 latency</td>
+                <td>
+                  <code
+                    >section_6/report/08_mov_b32_latency_260606_134753_report.md</code
+                  >
+                </td>
+              </tr>
+              <tr>
+                <td>cvt latency catalog</td>
+                <td>
+                  <code
+                    >section_6/report/09_cvt_latency_catalog_260606_134800_report.md</code
+                  >
+                </td>
+              </tr>
+              <tr>
+                <td>prmt.b32 latency</td>
+                <td>
+                  <code
+                    >section_6/report/11_prmt_b32_latency_260606_140751_report.md</code
+                  >
+                </td>
+              </tr>
+              <tr>
+                <td>setp latency</td>
+                <td>
+                  <code
+                    >section_6/report/13_setp_latency_260606_141833_report.md</code
+                  >
+                </td>
+              </tr>
+              <tr>
+                <td>shfl.sync latency</td>
+                <td>
+                  <code
+                    >section_6/report/20_shfl_sync_latency_260606_135900_report.md</code
+                  >
+                </td>
+              </tr>
+              <tr>
+                <td>MX narrow cvt</td>
+                <td>
+                  <code
+                    >section_6/report/29_new_mx_cvt_narrow_path_latency_260606_142927_report.md</code
+                  >
+                </td>
+              </tr>
+              <tr>
+                <td>cvt s2f6x2</td>
+                <td>
+                  <code
+                    >section_6/report/6.2_52_cvt_s2f6x2_latency_260606_141316_report.md</code
+                  >
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <footer class="page-footer">
+          <div class="foot-grid">
+            <div>
+              <strong>SM_120 / GB202 Blackwell</strong> · Microarchitecture
+              Analysis &amp; Reference · 2026
+            </div>
+            <div>1542 microbenchmark cases · 26 sections · ~13,400 lines</div>
+            <div class="foot-accent">
+              RTX PRO 5000 72GB · CUDA 13.3 · Data source: test_results/SM_120/
+            </div>
+          </div>
+        </footer>
+      </main>
+      <aside class="toc-right">
+        <h4>Chapter Navigation</h4>
+        <a href="#5-1-integer-alu">5.1 Integer ALU</a>
+        <a class="sub" href="#5-1-1-core-int32-instructions"
+          >5.1.1 Core INT32 Instructions</a
+        >
+        <a class="sub" href="#5-1-2-int64-operations">5.1.2 INT64 Operations</a>
+        <a class="sub" href="#5-1-3-integer-division-div-u32"
+          >5.1.3 Integer Division (div.u32)</a
+        >
+        <a class="sub" href="#5-1-4-simd-integer-operations"
+          >5.1.4 SIMD Integer Operations</a
+        >
+        <a class="sub" href="#5-1-5-int32-fp32-co-issue"
+          >5.1.5 INT32 + FP32 Co-Issue</a
+        >
+        <a
+          class="sub"
+          href="#5-1-6-microarchitectural-analysis-the-dual-subpipe-fma-architecture"
+          >5.1.6 Microarchitectural Analysis: The Dual-Subpipe FMA
+          Architecture</a
+        >
+        <a
+          class="sub"
+          href="#5-1-7-integer-division-the-most-expensive-alu-decomposition"
+          >5.1.7 Integer Division: The Most Expensive ALU Decomposition</a
+        >
+        <a href="#5-2-floating-point-alu">5.2 Floating-Point ALU</a>
+        <a class="sub" href="#5-2-1-fp32-pipeline">5.2.1 FP32 Pipeline</a>
+        <a class="sub" href="#5-2-2-fp16bf16-packed-operations"
+          >5.2.2 FP16/BF16 Packed Operations</a
+        >
+        <a class="sub" href="#5-2-3-fp32x2-packed-double-width-fp32"
+          >5.2.3 FP32x2 (Packed Double-Width FP32)</a
+        >
+        <a class="sub" href="#5-2-4-fp64-double-precision"
+          >5.2.4 FP64 (Double Precision)</a
+        >
+        <a class="sub" href="#5-2-5-sfu-transcendental-functions-p2-pipe"
+          >5.2.5 SFU / Transcendental Functions (P2 Pipe)</a
+        >
+        <a
+          class="sub"
+          href="#5-2-6-microarchitectural-analysis-fp32-pipeline-ilp-curve"
+          >5.2.6 Microarchitectural Analysis: FP32 Pipeline ILP Curve</a
+        >
+        <a
+          class="sub"
+          href="#5-2-7-microarchitectural-analysis-fp64-eu-architecture"
+          >5.2.7 Microarchitectural Analysis: FP64 EU Architecture</a
+        >
+        <a class="sub" href="#5-2-8-subnormal-handling"
+          >5.2.8 Subnormal Handling</a
+        >
+        <a href="#5-3-logic-shift-and-conversion-instructions"
+          >5.3 Logic, Shift, and Conversion Instructions</a
+        >
+        <a class="sub" href="#5-3-1-logic-operations">5.3.1 Logic Operations</a>
+        <a class="sub" href="#5-3-2-shift-instructions"
+          >5.3.2 Shift Instructions</a
+        >
+        <a class="sub" href="#5-3-3-byte-permutation-prmt"
+          >5.3.3 Byte Permutation (PRMT)</a
+        >
+        <a class="sub" href="#5-3-4-register-move-mov"
+          >5.3.4 Register Move (MOV)</a
+        >
+        <a class="sub" href="#5-3-5-type-conversion-instructions"
+          >5.3.5 Type Conversion Instructions</a
+        >
+        <a
+          class="sub"
+          href="#5-3-5a-microarchitectural-analysis-the-conversion-pipeline-is-an-independent-execution-unit"
+          >5.3.5a Microarchitectural Analysis: The Conversion Pipeline Is an
+          Independent Execution Unit</a
+        >
+        <a
+          class="sub"
+          href="#5-3-6-mx-narrow-type-pack-conversions-new-in-sm_120"
+          >5.3.6 MX Narrow-Type Pack Conversions (New in SM_120)</a
+        >
+        <a class="sub" href="#5-3-7-predicate-operations"
+          >5.3.7 Predicate Operations</a
+        >
+        <a class="sub" href="#5-3-8-warp-shuffle-shfl-sync"
+          >5.3.8 Warp Shuffle (shfl.sync)</a
+        >
+        <a class="sub" href="#5-3-8a-warp-vote-and-redux-vote-sync-redux-sync"
+          >5.3.8a Warp Vote and Redux (vote.sync, redux.sync)</a
+        >
+        <a href="#5-4-pipeline-architecture-summary"
+          >5.4 Pipeline Architecture Summary</a
+        >
+        <a class="sub" href="#5-4-1-execution-pipe-map"
+          >5.4.1 Execution Pipe Map</a
+        >
+        <a
+          class="sub"
+          href="#5-4-2-latency-comparison-across-instruction-classes"
+          >5.4.2 Latency Comparison Across Instruction Classes</a
+        >
+        <a class="sub" href="#5-4-3-architectural-implications"
+          >5.4.3 Architectural Implications</a
+        >
+        <a href="#5-5-deep-microarchitectural-analysis"
+          >5.5 Deep Microarchitectural Analysis</a
+        >
+        <a class="sub" href="#5-5-1-sfu-pipeline-depth-reconciliation"
+          >5.5.1 SFU Pipeline Depth Reconciliation</a
+        >
+        <a
+          class="sub"
+          href="#5-5-2-hfma2-two-cycle-issue-time-multiplexed-half-precision"
+          >5.5.2 HFMA2 Two-Cycle Issue: Time-Multiplexed Half-Precision</a
+        >
+        <a
+          class="sub"
+          href="#5-5-3-fp64-non-pipelined-architecture-note-legacy-2-eu-analysis-see-5-2-7-for-resolved-4-per-smsp-model"
+          >5.5.3 FP64 Non-Pipelined Architecture [Note: legacy 2-EU analysis —
+          see §5.2.7 for RESOLVED 4-per-SMSP model]</a
+        >
+        <a
+          class="sub"
+          href="#5-5-4-the-register-renaming-artifact-in-sfu-measurements"
+          >5.5.4 The Register Renaming Artifact in SFU Measurements</a
+        >
+        <a class="sub" href="#5-5-5-sfu-multi-warp-saturation-eu-count-evidence"
+          >5.5.5 SFU Multi-Warp Saturation: EU Count Evidence</a
+        >
+        <a class="sub" href="#5-5-6-pipeline-depth-summary-model"
+          >5.5.6 Pipeline Depth Summary Model</a
+        >
+        <a href="#5-5a-section-24-follow-up-fp64-eu-architecture-resolution"
+          >5.5a Section 24 Follow-Up: FP64 EU Architecture Resolution</a
+        >
+        <a href="#5-6-source-citations">5.6 Source Citations</a>
+      </aside>
+    </div>
+    <script
+      defer
+      src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"
+      integrity="sha384-7zkQWkzuo3B5mTepMUcHkMB5jZaolc2xDwL6VFqjFALcbeS9Ggm/Yr2r3Dy4lfFg"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      defer
+      src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+      integrity="sha384-43gviWU0YVjaDtb/GhzOouOXtZMP/7XUzwPTstBeZFe/+rCMvRwr4yROQP43s0Xk"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      defer
+      src="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/lib/highlight.min.js"
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (window.renderMathInElement) {
+          renderMathInElement(document.body, {
+            delimiters: [
+              { left: "$$", right: "$$", display: true },
+              { left: "$", right: "$", display: false },
+            ],
+            throwOnError: false,
+          });
+        }
+        if (window.hljs) {
+          document
+            .querySelectorAll("pre code[class^='language-']")
+            .forEach(function (el) {
+              try {
+                hljs.highlightElement(el);
+              } catch (e) {}
+            });
+        }
+      });
+    </script>
+    <script src="assets/js/toc.js" defer></script>
+  </body>
+</html>

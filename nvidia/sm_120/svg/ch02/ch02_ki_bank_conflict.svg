@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 200" role="img"
+     aria-label="KI-2.1: Bank conflicts pipelined — 32-way only 1.43x throughput penalty vs 32x on prior architectures">
+  <defs>
+    <style><![CDATA[
+      .ttl{font:600 13px "Fraunces",serif;fill:#0b1220}
+      .lbl{font:600 11px "JetBrains Mono",monospace;fill:#2a3548}
+      .lbl-sm{font:500 10px "JetBrains Mono",monospace;fill:#5b6679}
+      .num{font:700 15px "JetBrains Mono",monospace}
+      .num-lg{font:700 28px "JetBrains Mono",monospace}
+      .stage{font:600 10px "JetBrains Mono",monospace;fill:#fff}
+    ]]></style>
+  </defs>
+  <rect width="1080" height="200" fill="#ffffff"/>
+  <text x="36" y="24" class="ttl">KI-2.1 Summary: SM_80/90 Serial Replay (32x) → SM_120 Pipelined Resolve (1.43x)</text>
+
+  <!-- Prior: 32x bar -->
+  <g transform="translate(36,40)">
+    <text x="0" y="14" class="lbl">Prior (SM_80–90):</text>
+    <rect x="140" y="0" width="800" height="28" rx="4" fill="#DC2626" opacity="0.8"/>
+    <text x="540" y="19" class="stage" text-anchor="middle">32-way → 32× throughput penalty (serialized replay)</text>
+    <text x="950" y="19" class="num" fill="#DC2626">32.0x</text>
+  </g>
+
+  <!-- SM_120: 1.43x bar -->
+  <g transform="translate(36,80)">
+    <text x="0" y="14" class="lbl">SM_120:</text>
+    <rect x="140" y="0" width="36" height="28" rx="4" fill="#059669"/>
+    <text x="158" y="19" class="stage" text-anchor="middle">1.43x</text>
+    <text x="190" y="19" class="num" fill="#059669">1.43x</text>
+    <text x="250" y="19" class="lbl-sm">← 22× improvement (decoupled accept-resolve pipeline)</text>
+  </g>
+
+  <!-- Key numbers -->
+  <g transform="translate(36,125)">
+    <rect width="240" height="55" rx="8" fill="#F0FDF4" stroke="#059669" stroke-width="1"/>
+    <text x="15" y="20" class="lbl" fill="#065F46">Throughput (32-way)</text>
+    <text x="15" y="42" class="num" fill="#059669">2.23 → 3.19 cyc/op</text>
+  </g>
+  <g transform="translate(296,125)">
+    <rect width="240" height="55" rx="8" fill="#FFFBEB" stroke="#D97706" stroke-width="1"/>
+    <text x="15" y="20" class="lbl" fill="#92400E">Latency (32-way)</text>
+    <text x="15" y="42" class="num" fill="#D97706">38.3 → 100.3 cyc</text>
+  </g>
+  <g transform="translate(556,125)">
+    <rect width="240" height="55" rx="8" fill="#EFF6FF" stroke="#2563EB" stroke-width="1"/>
+    <text x="15" y="20" class="lbl" fill="#1D4ED8">ILP=1 penalty</text>
+    <text x="15" y="42" class="num" fill="#1D4ED8">1.00x (ZERO)</text>
+  </g>
+  <g transform="translate(816,125)">
+    <rect width="228" height="55" rx="8" fill="#F3E8FF" stroke="#7C3AED" stroke-width="1"/>
+    <text x="15" y="20" class="lbl" fill="#6D28D9">Cross-warp</text>
+    <text x="15" y="42" class="num" fill="#6D28D9">0% interference</text>
+  </g>
+</svg>

@@ -1,0 +1,189 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 760" role="img"
+     aria-label="Bottleneck classification decision tree: AI → memory/compute/dual → specific bottleneck → optimization strategy">
+  <defs>
+    <linearGradient id="memG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFE4E6"/><stop offset="1" stop-color="#FFF1F2"/>
+    </linearGradient>
+    <linearGradient id="cmpG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#E0E7FF"/><stop offset="1" stop-color="#EEF2FF"/>
+    </linearGradient>
+    <linearGradient id="dualG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FEF3C7"/><stop offset="1" stop-color="#FFFBEB"/>
+    </linearGradient>
+    <linearGradient id="cstG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#EDE7FB"/><stop offset="1" stop-color="#F5F1FF"/>
+    </linearGradient>
+    <linearGradient id="resG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#D1FAE5"/><stop offset="1" stop-color="#ECFDF5"/>
+    </linearGradient>
+    <marker id="ar" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#5b6679"/>
+    </marker>
+    <style><![CDATA[
+      .ttl{font:600 14px "Fraunces",serif;fill:#0b1220}
+      .sub{font:italic 11.5px "Fraunces",serif;fill:#5b6679}
+      .stage{font:600 12.5px "Fraunces",serif;fill:#0b1220}
+      .lbl{font:600 11px "JetBrains Mono",monospace;fill:#2a3548}
+      .lbl-sm{font:500 10px "JetBrains Mono",monospace;fill:#5b6679}
+      .lbl-xs{font:500 9.5px "JetBrains Mono",monospace;fill:#5b6679}
+      .pill{font:600 10px "JetBrains Mono",monospace;letter-spacing:0.04em;text-transform:uppercase}
+      .edge{font:500 10px "JetBrains Mono",monospace;fill:#5b6679}
+    ]]></style>
+  </defs>
+  <rect width="1100" height="760" fill="#ffffff"/>
+  <text x="36" y="32" class="ttl">§15.3 Bottleneck Classification Decision Tree</text>
+  <text x="36" y="52" class="sub">START → AI vs crossover → branch into memory / compute / mixed regimes → specific bottleneck → optimization strategy</text>
+
+  <!-- Step 1 root: AI compute -->
+  <g transform="translate(420,86)">
+    <rect x="0" y="0" width="260" height="68" rx="10" fill="rgba(227,230,236,0.835)"/>
+    <text x="130" y="22" class="stage" fill="#ffffff" text-anchor="middle">START · Step 1</text>
+    <text x="130" y="42" class="lbl-sm" fill="#cbd5e1" text-anchor="middle">AI = total_FLOPs / total_bytes</text>
+    <text x="130" y="58" class="lbl-sm" fill="#cbd5e1" text-anchor="middle">compare with precision crossover</text>
+  </g>
+
+  <!-- 3 branch arrows from root -->
+  <line x1="500" y1="154" x2="220" y2="190" stroke="#e11d48" stroke-width="1.4" marker-end="url(#ar)" opacity="0.7"/>
+  <line x1="550" y1="154" x2="550" y2="190" stroke="#b45309" stroke-width="1.4" marker-end="url(#ar)" opacity="0.7"/>
+  <line x1="600" y1="154" x2="880" y2="190" stroke="#1e40af" stroke-width="1.4" marker-end="url(#ar)" opacity="0.7"/>
+  <text x="320" y="168" class="edge" fill="#9f1239" text-anchor="middle">AI &lt; 0.5× crossover</text>
+  <text x="558" y="178" class="edge" fill="#92400e" text-anchor="middle">otherwise</text>
+  <text x="780" y="168" class="edge" fill="#1e40af" text-anchor="middle">AI &gt; 2× crossover</text>
+
+  <!-- Step 2a: MEMORY-BOUND column -->
+  <g transform="translate(40,200)">
+    <rect x="0" y="0" width="340" height="216" rx="12" fill="url(#memG)" stroke="#e11d48" stroke-width="0.9"/>
+    <text x="170" y="24" class="stage" fill="#9f1239" text-anchor="middle">Step 2a · MEMORY-BOUND</text>
+    <g transform="translate(14,40)">
+      <rect x="0" y="0" width="312" height="36" rx="6" fill="#ffffff" stroke="#e11d48" stroke-width="0.6"/>
+      <text x="10" y="16" class="lbl" fill="#9f1239">L2-CACHED · WS &lt; 96 MB</text>
+      <text x="10" y="30" class="lbl-xs" fill="#9f1239">→ tiling · prefetch · persistence</text>
+
+      <g transform="translate(0,42)">
+        <rect x="0" y="0" width="312" height="36" rx="6" fill="#ffffff" stroke="#e11d48" stroke-width="0.6"/>
+        <text x="10" y="16" class="lbl" fill="#9f1239">DRAM-BOUND · WS &gt; 96 MB</text>
+        <text x="10" y="30" class="lbl-xs" fill="#9f1239">→ coalescing · vectorization · compression</text>
+      </g>
+      <g transform="translate(0,84)">
+        <rect x="0" y="0" width="312" height="36" rx="6" fill="#ffffff" stroke="#e11d48" stroke-width="0.6"/>
+        <text x="10" y="16" class="lbl" fill="#9f1239">COALESCING-LOSS · stride &gt; 1</text>
+        <text x="10" y="30" class="lbl-xs" fill="#9f1239">→ apply stride→BW curve (Table 2)</text>
+      </g>
+      <g transform="translate(0,126)">
+        <rect x="0" y="0" width="312" height="36" rx="6" fill="#ffffff" stroke="#e11d48" stroke-width="0.6"/>
+        <text x="10" y="16" class="lbl" fill="#9f1239">RANDOM · 0.7 % of peak</text>
+        <text x="10" y="30" class="lbl-xs" fill="#9f1239">→ restructure · gather batching</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- Step 2c: DUAL/MIXED column (center) -->
+  <g transform="translate(400,200)">
+    <rect x="0" y="0" width="340" height="216" rx="12" fill="url(#dualG)" stroke="#b45309" stroke-width="0.9"/>
+    <text x="170" y="24" class="stage" fill="#92400e" text-anchor="middle">Step 2c · DUAL / MIXED</text>
+    <g transform="translate(14,40)">
+      <rect x="0" y="0" width="312" height="36" rx="6" fill="#ffffff" stroke="#b45309" stroke-width="0.6"/>
+      <text x="10" y="16" class="lbl" fill="#92400e">TC + SFU · attention softmax</text>
+      <text x="10" y="30" class="lbl-xs" fill="#92400e">77.5 % overlap · SFU marginal</text>
+
+      <g transform="translate(0,42)">
+        <rect x="0" y="0" width="312" height="36" rx="6" fill="#ffffff" stroke="#b45309" stroke-width="0.6"/>
+        <text x="10" y="16" class="lbl" fill="#92400e">TC + LSU · data feeding</text>
+        <text x="10" y="30" class="lbl-xs" fill="#92400e">17.4 % penalty · check ldmatrix path</text>
+      </g>
+      <g transform="translate(0,84)">
+        <rect x="0" y="0" width="312" height="36" rx="6" fill="#ffffff" stroke="#b45309" stroke-width="0.6"/>
+        <text x="10" y="16" class="lbl" fill="#92400e">ALU + LSU · elementwise</text>
+        <text x="10" y="30" class="lbl-xs" fill="#92400e">overlap 0.17 · near-serial</text>
+      </g>
+      <g transform="translate(0,126)">
+        <rect x="0" y="0" width="312" height="36" rx="6" fill="#ffffff" stroke="#b45309" stroke-width="0.6"/>
+        <text x="10" y="16" class="lbl" fill="#92400e">TC + sync · pipeline stall</text>
+        <text x="10" y="30" class="lbl-xs" fill="#92400e">fence.proxy.async dominates</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- Step 2b: COMPUTE-BOUND column (right) -->
+  <g transform="translate(760,200)">
+    <rect x="0" y="0" width="300" height="216" rx="12" fill="url(#cmpG)" stroke="#1e40af" stroke-width="0.9"/>
+    <text x="150" y="24" class="stage" fill="#1e40af" text-anchor="middle">Step 2b · COMPUTE-BOUND</text>
+    <g transform="translate(14,40)">
+      <rect x="0" y="0" width="272" height="36" rx="6" fill="#ffffff" stroke="#1e40af" stroke-width="0.6"/>
+      <text x="10" y="16" class="lbl" fill="#1e40af">TC-BOUND · &gt;80 % MMA</text>
+      <text x="10" y="30" class="lbl-xs" fill="#1e40af">→ ILP≥2 · operand reuse · tile</text>
+
+      <g transform="translate(0,42)">
+        <rect x="0" y="0" width="272" height="36" rx="6" fill="#ffffff" stroke="#1e40af" stroke-width="0.6"/>
+        <text x="10" y="16" class="lbl" fill="#1e40af">ALU-BOUND · &gt;50 % FFMA</text>
+        <text x="10" y="30" class="lbl-xs" fill="#1e40af">→ ILP≥4 · 16+ warps</text>
+      </g>
+      <g transform="translate(0,84)">
+        <rect x="0" y="0" width="272" height="36" rx="6" fill="#ffffff" stroke="#1e40af" stroke-width="0.6"/>
+        <text x="10" y="16" class="lbl" fill="#1e40af">SFU-BOUND · &gt;20 % MUFU</text>
+        <text x="10" y="30" class="lbl-xs" fill="#1e40af">→ fast_math · poly approx · batch</text>
+      </g>
+      <g transform="translate(0,126)">
+        <rect x="0" y="0" width="272" height="36" rx="6" fill="#ffffff" stroke="#1e40af" stroke-width="0.6"/>
+        <text x="10" y="16" class="lbl" fill="#1e40af">FP64-BOUND · 1:32 ratio</text>
+        <text x="10" y="30" class="lbl-xs" fill="#1e40af">→ consider FP32 + error correction</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- Step 3: secondary constraints -->
+  <g transform="translate(40,460)">
+    <rect x="0" y="0" width="1020" height="148" rx="12" fill="url(#cstG)" stroke="#6d28d9" stroke-width="0.9"/>
+    <text x="20" y="26" class="stage" fill="#6d28d9">Step 3 · Secondary Constraints (apply to any branch above)</text>
+    <g transform="translate(20,40)">
+      <g>
+        <rect x="0" y="0" width="190" height="46" rx="8" fill="#ffffff" stroke="#6d28d9" stroke-width="0.6"/>
+        <text x="10" y="18" class="lbl" fill="#6d28d9">Reg pressure &gt; 128 / thread</text>
+        <text x="10" y="36" class="lbl-xs" fill="#6d28d9">→ spill risk · setmaxnreg / ↓ILP</text>
+      </g>
+      <g transform="translate(198,0)">
+        <rect x="0" y="0" width="190" height="46" rx="8" fill="#ffffff" stroke="#6d28d9" stroke-width="0.6"/>
+        <text x="10" y="18" class="lbl" fill="#6d28d9">Smem &gt; 48 KB / block</text>
+        <text x="10" y="36" class="lbl-xs" fill="#6d28d9">→ opt-in · occupancy may drop</text>
+      </g>
+      <g transform="translate(396,0)">
+        <rect x="0" y="0" width="190" height="46" rx="8" fill="#ffffff" stroke="#6d28d9" stroke-width="0.6"/>
+        <text x="10" y="18" class="lbl" fill="#6d28d9">I-cache &gt; 8 KB</text>
+        <text x="10" y="36" class="lbl-xs" fill="#6d28d9">→ unroll cliff · limit unroll</text>
+      </g>
+      <g transform="translate(594,0)">
+        <rect x="0" y="0" width="190" height="46" rx="8" fill="#ffffff" stroke="#6d28d9" stroke-width="0.6"/>
+        <text x="10" y="18" class="lbl" fill="#6d28d9">SB pressure &gt; 6 LDG</text>
+        <text x="10" y="36" class="lbl-xs" fill="#6d28d9">→ batch loads · cp.async</text>
+      </g>
+      <g transform="translate(792,0)">
+        <rect x="0" y="0" width="190" height="46" rx="8" fill="#ffffff" stroke="#6d28d9" stroke-width="0.6"/>
+        <text x="10" y="18" class="lbl" fill="#6d28d9">Grid &lt; 220 blocks</text>
+        <text x="10" y="36" class="lbl-xs" fill="#6d28d9">→ tail effect · persistent kernel</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- Step 4: optimization headroom -->
+  <g transform="translate(40,628)">
+    <rect x="0" y="0" width="1020" height="100" rx="12" fill="url(#resG)" stroke="#047857" stroke-width="0.9"/>
+    <text x="20" y="26" class="stage" fill="#047857">Step 4 · Quantify Optimization Headroom</text>
+    <text x="20" y="48" class="lbl-sm" fill="#047857">current_efficiency = measured_TFLOPS / theoretical_peak  ·  gap = 1.0 − current_efficiency</text>
+    <g transform="translate(20,60)">
+      <rect x="0" y="0" width="500" height="32" rx="6" fill="#ffffff" stroke="#047857" stroke-width="0.6"/>
+      <text x="14" y="20" class="lbl" fill="#047857">gap &gt; 30 % → significant headroom · apply §15.4 strategies</text>
+      <g transform="translate(508,0)">
+        <rect x="0" y="0" width="472" height="32" rx="6" fill="#ffffff" stroke="#047857" stroke-width="0.6"/>
+        <text x="14" y="20" class="lbl" fill="#047857">gap &lt; 10 % → near-optimal · only micro-optimizations available</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- connecting arrows: 2a/2b/2c → step3 -->
+  <line x1="210" y1="416" x2="320" y2="460" stroke="#5b6679" stroke-width="1" stroke-dasharray="3 3" opacity="0.5"/>
+  <line x1="570" y1="416" x2="550" y2="460" stroke="#5b6679" stroke-width="1" stroke-dasharray="3 3" opacity="0.5"/>
+  <line x1="910" y1="416" x2="780" y2="460" stroke="#5b6679" stroke-width="1" stroke-dasharray="3 3" opacity="0.5"/>
+  <!-- step3 → step4 -->
+  <line x1="540" y1="608" x2="540" y2="628" stroke="#5b6679" stroke-width="1.4" marker-end="url(#ar)"/>
+</svg>

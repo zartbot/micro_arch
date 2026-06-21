@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 222" role="img" aria-label="6.5 Cluster Architecture">
+  <rect width="1080" height="222" fill="#ffffff"/>
+  <text x="36" y="32" style="font:600 14px 'Fraunces',serif;fill:#0b1220">6.5 Cluster Architecture</text>
+  <text x="36" y="52" style="font:italic 11px 'Fraunces',serif;fill:#5b6679">Measured microarchitectural parameters and structure</text>
+
+    <g transform="translate(40,86)">
+      <rect x="0" y="0" width="480" height="90" rx="10" fill="#EEF2FF" stroke="#1e40af" stroke-width="0.8"/>
+      <text x="16" y="22" style="font:600 11.5px 'JetBrains Mono',monospace;fill:#1e40af">+------------------ Cluster (2-8 CTAs, portable max 8) -----</text>
+      <text x="16" y="44" style="font:500 10px 'JetBrains Mono',monospace;fill:#5b6679">+---- SM_i (CTA 0) ------+        +---- SM_j (CTA 1) ------+ · |  +----+  +----------+  | </text>
+      <text x="16" y="62" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#8e97a5">|  |Warp|  |Shared Mem|  | 220 cyc|  |Warp|  |Shared Mem|  | · |  |Pool|  |  99 KB   |&lt;===</text>
+    </g>
+</svg>

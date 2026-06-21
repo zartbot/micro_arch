@@ -1,0 +1,224 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 880" role="img"
+     aria-label="§ 8.5.1 Roofline Three Workload Classes — compute-bound, memory-bound, mixed/thin-K, crossover AI scaling">
+  <defs>
+    <style><![CDATA[
+      .eyebrow { font: 600 11px "JetBrains Mono", monospace; letter-spacing: 0.16em; text-transform: uppercase }
+      .title   { font: 500 24px "Fraunces", serif; fill: #0b1220; letter-spacing: -0.02em }
+      .sub     { font: italic 12px "Fraunces", serif; fill: #5b6679 }
+      .panel-h { font: 600 13px "JetBrains Mono", monospace; letter-spacing: 0.06em; fill: #0b1220 }
+      .panel-sub { font: italic 11px "Fraunces", serif; fill: #5b6679 }
+      .lbl-sm  { font: 500 9px "JetBrains Mono", monospace; fill: #5b6679; letter-spacing: 0.05em; text-transform: uppercase }
+      .lbl-mono{ font: 500 10px "JetBrains Mono", monospace; fill: #2a3548 }
+      .lbl-mono-em { font: 700 10px "JetBrains Mono", monospace; fill: #0b1220 }
+      .lbl-w-mono { font: 500 9px "JetBrains Mono", monospace; fill: #ffffff }
+    ]]></style>
+  </defs>
+
+  <rect width="1280" height="880" fill="#fcfbf6"/>
+
+  <!-- ============ Header ============ -->
+  <g transform="translate(40,32)">
+    <text x="0" y="0" class="eyebrow" fill="#2563eb">SECTION 8.5.1 · ROOFLINE DEFINES THREE WORKLOAD CLASSES</text>
+    <text x="0" y="28" class="title">SM_120 Workload Classification via Multi-Precision Roofline</text>
+    <text x="0" y="50" class="sub">Compute-bound vs Memory-bound vs Mixed/Thin-K — each requires a distinct optimization strategy</text>
+    <text x="0" y="68" class="lbl-sm">Source: [S19/case_25] · [S9/case_128-136] · [S19/case_17,62] · AppB §B.15 crossover AI</text>
+  </g>
+
+  <!-- ============ Panel A: Class 1 — Compute-Bound ============ -->
+  <g transform="translate(40,108)">
+    <rect x="0" y="0" width="380" height="290" rx="6" fill="#ffffff" stroke="#16a34a" stroke-width="1.2"/>
+    <rect x="0" y="0" width="380" height="28" rx="6" fill="#16a34a"/>
+    <rect x="0" y="14" width="380" height="14" fill="#16a34a"/>
+    <text x="14" y="18" class="lbl-w-mono" font-size="11">CLASS 1 · COMPUTE-BOUND (AI &gt; CROSSOVER)</text>
+
+    <g transform="translate(14,42)">
+      <text x="0" y="14" class="lbl-sm" fill="#15803d">EXAMPLES</text>
+      <text x="0" y="30" class="lbl-mono">Large GEMM (M,N,K ≥ 1024)</text>
+      <text x="0" y="46" class="lbl-mono">MX-FP4 convolutions, full-batch prefill</text>
+
+      <text x="0" y="70" class="lbl-sm" fill="#15803d">BOTTLENECK</text>
+      <text x="0" y="86" class="lbl-mono-em">TC throughput: 15.88 cyc/MMA</text>
+
+      <text x="0" y="110" class="lbl-sm" fill="#15803d">EVIDENCE</text>
+      <text x="0" y="126" class="lbl-mono">CUTLASS MXFP4: 1076.5T = 100.6% peak</text>
+      <text x="0" y="142" class="lbl-mono" fill="#5b6679">[S9/case_136]</text>
+
+      <text x="0" y="166" class="lbl-sm" fill="#15803d">OPTIMIZATION LEVERS</text>
+      <text x="0" y="182" class="lbl-mono">ILP ≥ 4, operand reuse (x4)</text>
+      <text x="0" y="198" class="lbl-mono">Tile size selection, precision choice</text>
+
+      <text x="0" y="222" class="lbl-sm" fill="#dc2626">IRRELEVANT</text>
+      <text x="0" y="238" class="lbl-mono" fill="#5b6679">Memory BW, prefetch, L2 caching</text>
+    </g>
+  </g>
+
+  <!-- ============ Panel B: Class 2 — Memory-Bound ============ -->
+  <g transform="translate(440,108)">
+    <rect x="0" y="0" width="380" height="290" rx="6" fill="#ffffff" stroke="#2563eb" stroke-width="1.2"/>
+    <rect x="0" y="0" width="380" height="28" rx="6" fill="#2563eb"/>
+    <rect x="0" y="14" width="380" height="14" fill="#2563eb"/>
+    <text x="14" y="18" class="lbl-w-mono" font-size="11">CLASS 2 · MEMORY-BOUND (AI &lt; CROSSOVER)</text>
+
+    <g transform="translate(14,42)">
+      <text x="0" y="14" class="lbl-sm" fill="#2563eb">EXAMPLES</text>
+      <text x="0" y="30" class="lbl-mono">GEMV (M=1), decode inference</text>
+      <text x="0" y="46" class="lbl-mono">Weight-bound layers, large embedding</text>
+
+      <text x="0" y="70" class="lbl-sm" fill="#2563eb">BOTTLENECK</text>
+      <text x="0" y="86" class="lbl-mono-em">DRAM BW: ~1231 GB/s (860 sustained)</text>
+
+      <text x="0" y="110" class="lbl-sm" fill="#2563eb">EVIDENCE</text>
+      <text x="0" y="126" class="lbl-mono">GEMV FP16: 1832 GB/s = 2.1x DRAM (L2)</text>
+      <text x="0" y="142" class="lbl-mono" fill="#5b6679">[S19/case_17]</text>
+
+      <text x="0" y="166" class="lbl-sm" fill="#2563eb">OPTIMIZATION LEVERS</text>
+      <text x="0" y="182" class="lbl-mono">Weight quantization (W4/W8)</text>
+      <text x="0" y="198" class="lbl-mono">L2 caching, batching, prefetch</text>
+
+      <text x="0" y="222" class="lbl-sm" fill="#dc2626">IRRELEVANT</text>
+      <text x="0" y="238" class="lbl-mono" fill="#5b6679">TC precision, pipeline depth, co-issue</text>
+    </g>
+  </g>
+
+  <!-- ============ Panel C: Class 3 — Mixed/Thin-K ============ -->
+  <g transform="translate(840,108)">
+    <rect x="0" y="0" width="400" height="290" rx="6" fill="#ffffff" stroke="#d97706" stroke-width="1.2"/>
+    <rect x="0" y="0" width="400" height="28" rx="6" fill="#d97706"/>
+    <rect x="0" y="14" width="400" height="14" fill="#d97706"/>
+    <text x="14" y="18" class="lbl-w-mono" font-size="11">CLASS 3 · MIXED / THIN-DIMENSION</text>
+
+    <g transform="translate(14,42)">
+      <text x="0" y="14" class="lbl-sm" fill="#b45309">EXAMPLES</text>
+      <text x="0" y="30" class="lbl-mono">FlashAttention (K=128), MoE per-expert</text>
+      <text x="0" y="46" class="lbl-mono">Small-K layers, GQA at short seq</text>
+
+      <text x="0" y="70" class="lbl-sm" fill="#b45309">BOTTLENECK</text>
+      <text x="0" y="86" class="lbl-mono-em">Neither TC nor DRAM fully utilized</text>
+
+      <text x="0" y="110" class="lbl-sm" fill="#b45309">EVIDENCE</text>
+      <text x="0" y="126" class="lbl-mono">Q×K^T: 107.5T = 46% efficiency</text>
+      <text x="0" y="142" class="lbl-mono" fill="#5b6679">[S19/case_62]</text>
+
+      <text x="0" y="166" class="lbl-sm" fill="#b45309">ROOT CAUSE</text>
+      <text x="0" y="182" class="lbl-mono">Thin K → insufficient K-loop iters</text>
+      <text x="0" y="198" class="lbl-mono">Thin M×N → insufficient tile parallelism</text>
+
+      <text x="0" y="222" class="lbl-sm" fill="#b45309">OPTIMIZATION LEVERS</text>
+      <text x="0" y="238" class="lbl-mono">Kernel fusion, batching, tile shape tuning</text>
+    </g>
+  </g>
+
+  <!-- ============ Panel D: Crossover AI Scaling ============ -->
+  <g transform="translate(40,408)">
+    <rect x="0" y="0" width="600" height="240" rx="6" fill="#ffffff" stroke="#e2d8c8" stroke-width="0.8"/>
+    <text x="14" y="22" class="panel-h">D · CROSSOVER AI SCALES WITH PRECISION</text>
+    <text x="14" y="38" class="panel-sub">Higher precision → lower peak → compute-bound at smaller shapes</text>
+
+    <!-- Crossover bars -->
+    <g transform="translate(14,56)">
+      <!-- FP32 -->
+      <text x="0" y="14" class="lbl-mono">FP32:</text>
+      <rect x="70" y="2" width="24" height="16" rx="2" fill="#cbd5e1"/>
+      <text x="100" y="14" class="lbl-mono">AI* = 47 (M=N=K ~ 98)</text>
+
+      <!-- FP16/BF16 -->
+      <text x="0" y="38" class="lbl-mono">FP16:</text>
+      <rect x="70" y="26" width="110" height="16" rx="2" fill="#2563eb" opacity="0.6"/>
+      <text x="186" y="38" class="lbl-mono">AI* = 220 (M=N=K ~ 610)</text>
+
+      <!-- FP8 -->
+      <text x="0" y="62" class="lbl-mono">FP8:</text>
+      <rect x="70" y="50" width="215" height="16" rx="2" fill="#7c3aed" opacity="0.6"/>
+      <text x="291" y="62" class="lbl-mono">AI* = 430 (M=N=K ~ 1024)</text>
+
+      <!-- MX-FP4 -->
+      <text x="0" y="86" class="lbl-mono-em">MXFP4:</text>
+      <rect x="70" y="74" width="435" height="16" rx="2" fill="#16a34a" opacity="0.6"/>
+      <text x="351" y="86" class="lbl-mono-em" fill="#15803d">AI* = 869 (M=N=K ~ 2048)</text>
+    </g>
+
+    <!-- Explanation -->
+    <g transform="translate(14,162)">
+      <rect x="0" y="0" width="572" height="62" rx="4" fill="#f8fafc" stroke="#cbd5e1" stroke-width="0.6"/>
+      <text x="12" y="18" class="lbl-sm" fill="#5b6679">SCALING RULE</text>
+      <text x="12" y="36" class="lbl-mono">Higher precision → lower peak → compute-bound at SMALLER shapes</text>
+      <text x="12" y="52" class="lbl-mono">Lower precision → higher peak → needs LARGER shapes to saturate TC</text>
+    </g>
+  </g>
+
+  <!-- ============ Panel E: The Attention Paradox ============ -->
+  <g transform="translate(660,408)">
+    <rect x="0" y="0" width="580" height="240" rx="6" fill="#ffffff" stroke="#e2d8c8" stroke-width="0.8"/>
+    <text x="14" y="22" class="panel-h">E · THE ATTENTION PARADOX</text>
+    <text x="14" y="38" class="panel-sub">FlashAttention appears memory-bound but is actually structurally inefficient</text>
+
+    <!-- Paradox breakdown -->
+    <g transform="translate(14,56)">
+      <rect x="0" y="0" width="552" height="168" rx="4" fill="#fef2f2" stroke="#dc2626" stroke-width="0.6"/>
+      <text x="12" y="18" class="lbl-sm" fill="#dc2626">NAIVE ROOFLINE CLASSIFICATION (WRONG)</text>
+      <text x="12" y="36" class="lbl-mono">FlashAttn AI ~ 50 FLOP/byte</text>
+      <text x="12" y="52" class="lbl-mono">FP16 crossover = 220 → AI &lt; crossover → "memory-bound"?</text>
+
+      <line x1="12" y1="64" x2="540" y2="64" stroke="#fecaca" stroke-width="0.5"/>
+      <text x="12" y="80" class="lbl-sm" fill="#dc2626">CORRECT CLASSIFICATION</text>
+      <text x="12" y="96" class="lbl-mono">TC utilization = 46% (thin-K constraint)</text>
+      <text x="12" y="112" class="lbl-mono">Effective ceiling = 0.46 × 271 = 125 TFLOPS</text>
+      <text x="12" y="128" class="lbl-mono">Effective crossover shifts to AI ~ 102</text>
+      <text x="12" y="144" class="lbl-mono-em" fill="#dc2626">At AI=50: operating at ~50% of (reduced) ceiling</text>
+      <text x="12" y="162" class="lbl-mono-em" fill="#dc2626">→ "Structurally inefficient" (NOT simply memory-bound)</text>
+    </g>
+  </g>
+
+  <!-- ============ Panel F: Decision Flowchart ============ -->
+  <g transform="translate(40,668)">
+    <rect x="0" y="0" width="1200" height="188" rx="6" fill="#ffffff" stroke="#e2d8c8" stroke-width="0.8"/>
+    <text x="14" y="22" class="panel-h">F · OPTIMIZATION DECISION FLOWCHART</text>
+
+    <!-- Flow boxes -->
+    <g transform="translate(14,42)">
+      <!-- Step 1: Compute AI -->
+      <rect x="0" y="0" width="180" height="50" rx="4" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="0.6"/>
+      <text x="90" y="18" class="lbl-mono-em" text-anchor="middle">Compute AI</text>
+      <text x="90" y="36" class="lbl-mono" text-anchor="middle" fill="#5b6679">2MNK / data_bytes</text>
+
+      <!-- Arrow -->
+      <line x1="180" y1="25" x2="210" y2="25" stroke="#5b6679" stroke-width="1.2"/>
+      <text x="195" y="18" class="lbl-sm">→</text>
+
+      <!-- Step 2: Compare to crossover -->
+      <rect x="210" y="0" width="200" height="50" rx="4" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="0.6"/>
+      <text x="310" y="18" class="lbl-mono-em" text-anchor="middle">AI vs Crossover?</text>
+      <text x="310" y="36" class="lbl-mono" text-anchor="middle" fill="#5b6679">precision-specific AI*</text>
+
+      <!-- Branch: compute-bound -->
+      <line x1="410" y1="15" x2="460" y2="15" stroke="#16a34a" stroke-width="1.2"/>
+      <rect x="460" y="0" width="220" height="50" rx="4" fill="#ecfdf5" stroke="#16a34a" stroke-width="0.8"/>
+      <text x="570" y="18" class="lbl-mono-em" text-anchor="middle" fill="#15803d">AI &gt; AI* → COMPUTE</text>
+      <text x="570" y="36" class="lbl-mono" text-anchor="middle" fill="#15803d">→ ILP, tile, precision</text>
+
+      <!-- Branch: memory-bound -->
+      <line x1="410" y1="35" x2="460" y2="85" stroke="#2563eb" stroke-width="1.2"/>
+      <rect x="460" y="70" width="220" height="50" rx="4" fill="#eff6ff" stroke="#2563eb" stroke-width="0.8"/>
+      <text x="570" y="88" class="lbl-mono-em" text-anchor="middle" fill="#2563eb">AI &lt; AI* → MEMORY</text>
+      <text x="570" y="106" class="lbl-mono" text-anchor="middle" fill="#2563eb">→ quant, L2, batch</text>
+
+      <!-- Branch: check TC eff -->
+      <line x1="680" y1="95" x2="720" y2="95" stroke="#d97706" stroke-width="1.2"/>
+      <rect x="720" y="70" width="250" height="50" rx="4" fill="#fffbeb" stroke="#d97706" stroke-width="0.8"/>
+      <text x="845" y="88" class="lbl-mono-em" text-anchor="middle" fill="#b45309">TC eff &lt; 70%? → MIXED</text>
+      <text x="845" y="106" class="lbl-mono" text-anchor="middle" fill="#b45309">→ fuse, tile-tune, batch</text>
+
+      <!-- Note -->
+      <rect x="990" y="0" width="180" height="120" rx="4" fill="#f8fafc" stroke="#cbd5e1" stroke-width="0.6"/>
+      <text x="1002" y="18" class="lbl-sm" fill="#5b6679">KEY CROSSOVERS</text>
+      <text x="1002" y="36" class="lbl-mono">FP32: 47</text>
+      <text x="1002" y="52" class="lbl-mono">FP16: 220</text>
+      <text x="1002" y="68" class="lbl-mono">FP8: 430</text>
+      <text x="1002" y="84" class="lbl-mono">INT8: 427</text>
+      <text x="1002" y="100" class="lbl-mono">MXFP4: 869</text>
+      <text x="1002" y="116" class="lbl-mono" fill="#5b6679">= Peak / 1.231 TB/s</text>
+    </g>
+  </g>
+
+</svg>

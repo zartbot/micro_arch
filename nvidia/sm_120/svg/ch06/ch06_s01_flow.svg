@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 576" role="img" aria-label="6.2.3a Microarchitectural Analysis: Cluster Barrier Hardware Decomposition">
+  <defs>
+    <marker id="ar" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto">
+      <path d="M0,0 L7,3.5 L0,7 Z" fill="#5b6679"/>
+    </marker>
+  </defs>
+  <rect width="1080" height="576" fill="#ffffff"/>
+  <text x="36" y="32" style="font:600 14px 'Fraunces',serif;fill:#0b1220">6.2.3a Microarchitectural Analysis: Cluster Barrier Hardware Decomposition</text>
+  <text x="36" y="52" style="font:italic 11px 'Fraunces',serif;fill:#5b6679">Semantic visualization of measured microarchitectural behavior</text>
+
+    <g transform="translate(40,86)">
+      <rect x="0" y="0" width="1000" height="64" rx="10" fill="#EEF2FF" stroke="#1e40af" stroke-width="0.8"/>
+      <text x="20" y="22" style="font:600 12px 'Fraunces',serif;fill:#1e40af">Full barrier.cluster SASS Decomposition</text>
+      <text x="20" y="44" style="font:500 10px 'JetBrains Mono',monospace;fill:#5b6679">MEMBAR.ALL.GPU       ~286 cyc   ← L2 coherence drain (GXBAR round-trip) · ERRBAR               ~1 cyc     ← Warp-level e</text>
+    </g>    <line x1="540" y1="150" x2="540" y2="172" stroke="#5b6679" stroke-width="1.2" marker-end="url(#ar)"/>
+    <g transform="translate(40,176)">
+      <rect x="0" y="0" width="1000" height="64" rx="10" fill="#EEF2FF" stroke="#1e40af" stroke-width="0.8"/>
+      <text x="20" y="22" style="font:600 12px 'Fraunces',serif;fill:#1e40af">CGAERRBAR            ~1 cyc     ← Cluster-level error barrier</text>
+      <text x="20" y="44" style="font:500 10px 'JetBrains Mono',monospace;fill:#5b6679">UCGABAR_ARV          ~40 cyc    ← CGA controller arrive notification · UCGABAR_WAIT         ~40 cyc    ← CGA controller </text>
+    </g>    <line x1="540" y1="240" x2="540" y2="262" stroke="#5b6679" stroke-width="1.2" marker-end="url(#ar)"/>
+    <g transform="translate(40,266)">
+      <rect x="0" y="0" width="1000" height="64" rx="10" fill="#EEF2FF" stroke="#1e40af" stroke-width="0.8"/>
+      <text x="20" y="22" style="font:600 12px 'Fraunces',serif;fill:#1e40af">CCTL.IVALL           ~2 cyc     ← L1 cache invalidation (0 marginal)</text>
+      <text x="20" y="44" style="font:500 10px 'JetBrains Mono',monospace;fill:#5b6679">Total:               ~371 cyc · Relaxed barrier.cluster SASS Decomposition</text>
+    </g>    <line x1="540" y1="330" x2="540" y2="352" stroke="#5b6679" stroke-width="1.2" marker-end="url(#ar)"/>
+    <g transform="translate(40,356)">
+      <rect x="0" y="0" width="1000" height="64" rx="10" fill="#EEF2FF" stroke="#1e40af" stroke-width="0.8"/>
+      <text x="20" y="22" style="font:600 12px 'Fraunces',serif;fill:#1e40af">UCGABAR_ARV          ~40 cyc    ← CGA controller arrive</text>
+      <text x="20" y="44" style="font:500 10px 'JetBrains Mono',monospace;fill:#5b6679">UCGABAR_WAIT         ~40 cyc    ← CGA controller wait · CCTL.IVALL           ~2 cyc     ← L1 invalidation</text>
+    </g>    <line x1="540" y1="420" x2="540" y2="442" stroke="#5b6679" stroke-width="1.2" marker-end="url(#ar)"/>
+    <g transform="translate(40,446)">
+      <rect x="0" y="0" width="1000" height="64" rx="10" fill="#EEF2FF" stroke="#1e40af" stroke-width="0.8"/>
+      <text x="20" y="22" style="font:600 12px 'Fraunces',serif;fill:#1e40af">Total:               ~85 cyc    (4.4× cheaper — no MEMBAR)</text>
+      <text x="20" y="44" style="font:500 10px 'JetBrains Mono',monospace;fill:#5b6679"></text>
+    </g>
+</svg>

@@ -1,0 +1,304 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 920" role="img"
+     aria-label="§ 7.8.1 Instruction Fetch Pipeline — 3-level hierarchy, bandwidth model, stream prefetcher, per-SMSP isolation, key findings">
+  <defs>
+    <style><![CDATA[
+      .eyebrow { font: 600 11px "JetBrains Mono", monospace; letter-spacing: 0.16em; text-transform: uppercase }
+      .title   { font: 500 24px "Fraunces", serif; fill: #0b1220; letter-spacing: -0.02em }
+      .sub     { font: italic 12px "Fraunces", serif; fill: #5b6679 }
+      .panel-h { font: 600 13px "JetBrains Mono", monospace; letter-spacing: 0.06em; fill: #0b1220 }
+      .panel-sub { font: italic 11px "Fraunces", serif; fill: #5b6679 }
+      .lbl-sm  { font: 500 9px "JetBrains Mono", monospace; fill: #5b6679; letter-spacing: 0.05em; text-transform: uppercase }
+      .lbl     { font: 500 11px "IBM Plex Sans", sans-serif; fill: #2a3548 }
+      .lbl-mono{ font: 500 10px "JetBrains Mono", monospace; fill: #2a3548 }
+      .lbl-mono-em { font: 700 10px "JetBrains Mono", monospace; fill: #0b1220 }
+      .lbl-w   { font: 600 10px "IBM Plex Sans", sans-serif; fill: #ffffff }
+      .lbl-w-mono { font: 500 9px "JetBrains Mono", monospace; fill: #ffffff }
+      .big-num { font: 700 23px "Fraunces", serif; fill: #0b1220 }
+      .code    { font: 500 10px "JetBrains Mono", monospace; fill: #2a3548 }
+    ]]></style>
+    <marker id="arr-r" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M0,0 L8,4 L0,8 z" fill="#b45309"/>
+    </marker>
+    <marker id="arr-g" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M0,0 L8,4 L0,8 z" fill="#16a34a"/>
+    </marker>
+    <marker id="arr-d" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M0,0 L8,4 L0,8 z" fill="#5b6679"/>
+    </marker>
+    <marker id="arr-b" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M0,0 L8,4 L0,8 z" fill="#2563eb"/>
+    </marker>
+  </defs>
+
+  <rect width="1280" height="920" fill="#fcfbf6"/>
+
+  <!-- ============ Header ============ -->
+  <g transform="translate(40,32)">
+    <text x="0" y="0" class="eyebrow" fill="#b45309">SECTION 7.8.1 · INSTRUCTION FETCH PIPELINE</text>
+    <text x="0" y="28" class="title">SM_120 Instruction Fetch Pipeline Model</text>
+    <text x="0" y="50" class="sub">3-level hierarchy (L0/L1/L2) · stream prefetcher · bandwidth model · per-SMSP isolation · cold-start fill</text>
+    <text x="0" y="68" class="lbl-sm">Source: [S13/case_6,17] · [S21/case_32-35] · [S11/case_67,68] · Section 7.8.1</text>
+  </g>
+
+  <!-- ============ Panel A: Three-Level Fetch Hierarchy ============ -->
+  <g transform="translate(40,110)">
+    <rect x="0" y="0" width="1200" height="280" rx="6" fill="#ffffff" stroke="#e2d8c8" stroke-width="0.8"/>
+    <text x="14" y="22" class="panel-h">A · THREE-LEVEL INSTRUCTION FETCH HIERARCHY — PC → PREFETCHER → L0 → L1 → L2/DRAM</text>
+    <text x="14" y="38" class="panel-sub">Per-SMSP fetch path with hit/miss routing and measured cycle penalties</text>
+
+    <!-- PC Register -->
+    <g transform="translate(14,56)">
+      <rect x="0" y="0" width="100" height="50" rx="4" fill="#f1f5f9" stroke="#5b6679" stroke-width="1"/>
+      <text x="50" y="20" class="lbl-mono-em" text-anchor="middle">PC Register</text>
+      <text x="50" y="36" class="lbl-sm" text-anchor="middle">per warp</text>
+    </g>
+
+    <!-- Arrow PC → Prefetcher -->
+    <path d="M118,81 L148,81" stroke="#5b6679" stroke-width="1.5" fill="none" marker-end="url(#arr-d)"/>
+
+    <!-- Stream Prefetcher -->
+    <g transform="translate(152,56)">
+      <rect x="0" y="0" width="140" height="50" rx="4" fill="#eff6ff" stroke="#2563eb" stroke-width="1"/>
+      <text x="70" y="20" class="lbl-mono-em" text-anchor="middle" fill="#2563eb">Stream Prefetcher</text>
+      <text x="70" y="36" class="lbl-sm" text-anchor="middle" fill="#2563eb">≥256 insn lookahead</text>
+    </g>
+
+    <!-- Arrow Prefetcher → L0 -->
+    <path d="M296,81 L326,81" stroke="#2563eb" stroke-width="1.5" fill="none" marker-end="url(#arr-b)"/>
+
+    <!-- L0 I-Cache -->
+    <g transform="translate(330,46)">
+      <rect x="0" y="0" width="180" height="70" rx="4" fill="#dcfce7" stroke="#16a34a" stroke-width="1.2"/>
+      <text x="90" y="20" class="lbl-w-mono4" text-anchor="middle" fill="#15803d" font-weight="700">L0 I-CACHE</text>
+      <text x="90" y="36" class="lbl-mono-em" text-anchor="middle" fill="#15803d">~4 KB / SMSP</text>
+      <text x="90" y="52" class="lbl-sm" text-anchor="middle" fill="#15803d">Private, per-SMSP</text>
+      <text x="90" y="64" class="lbl-sm" text-anchor="middle" fill="#15803d">~256 instructions</text>
+    </g>
+
+    <!-- L0 HIT arrow → Decode -->
+    <path d="M514,70 L560,70" stroke="#16a34a" stroke-width="2" fill="none" marker-end="url(#arr-g)"/>
+    <text x="537" y="62" class="lbl-sm" text-anchor="middle" fill="#15803d" font-weight="700">HIT</text>
+    <text x="537" y="84" class="lbl-mono-em" text-anchor="middle" fill="#15803d">1.0 cyc</text>
+
+    <!-- Decode box -->
+    <g transform="translate(564,50)">
+      <rect x="0" y="0" width="100" height="40" rx="4" fill="#f8fafc" stroke="#cbd5e1" stroke-width="0.8"/>
+      <text x="50" y="18" class="lbl-mono-em" text-anchor="middle">Decode</text>
+      <text x="50" y="32" class="lbl-sm" text-anchor="middle">1 cyc</text>
+    </g>
+
+    <!-- L0 MISS arrow ↓ to L1 -->
+    <path d="M420,120 L420,150" stroke="#d97706" stroke-width="2" fill="none" marker-end="url(#arr-r)"/>
+    <text x="440" y="138" class="lbl-sm" fill="#d97706" font-weight="700">MISS</text>
+    <text x="440" y="150" class="lbl-mono-em" text-anchor="middle" fill="#d97706">+0.06 c/i</text>
+
+    <!-- L1 I-Cache -->
+    <g transform="translate(330,154)">
+      <rect x="0" y="0" width="180" height="60" rx="4" fill="#fef3c7" stroke="#d97706" stroke-width="1.2"/>
+      <text x="90" y="18" class="lbl-w-mono" text-anchor="middle" fill="#b45309" font-weight="700">L1 I-CACHE</text>
+      <text x="90" y="34" class="lbl-mono-em" text-anchor="middle" fill="#b45309">~64 KB / SM</text>
+      <text x="90" y="50" class="lbl-sm" text-anchor="middle" fill="#b45309">Shared, 4 SMSPs · 128B lines</text>
+    </g>
+
+    <!-- L1 HIT arrow → Decode (curved back up) -->
+    <path d="M330,184 C300,184 300,70 564,70" stroke="#16a34a" stroke-width="1.5" fill="none" marker-end="url(#arr-g)" stroke-dasharray="4,3" opacity="0.6"/>
+    <text x="280" y="130" class="lbl-sm" fill="#15803d" font-weight="700">HIT</text>
+
+    <!-- L1 MISS arrow ↓ to L2 -->
+    <path d="M420,218 L420,248" stroke="#dc2626" stroke-width="2" fill="none" marker-end="url(#arr-r)"/>
+    <text x="440" y="238" class="lbl-sm" fill="#dc2626" font-weight="700">MISS</text>
+
+    <!-- L2 / DRAM -->
+    <g transform="translate(670,154)">
+      <rect x="0" y="0" width="160" height="60" rx="4" fill="#fee2e2" stroke="#dc2626" stroke-width="1.2"/>
+      <text x="80" y="18" class="lbl-w-mono4" text-anchor="middle" fill="#dc2626" font-weight="700">L2 / DRAM</text>
+      <text x="80" y="34" class="lbl-mono-em" text-anchor="middle" fill="#dc2626">3.46 cyc/insn</text>
+      <text x="80" y="50" class="lbl-sm" text-anchor="middle" fill="#dc2626">+220% penalty</text>
+    </g>
+
+    <!-- L2 → L1 fill arrow -->
+    <path d="M670,184 L514,184" stroke="#dc2626" stroke-width="1.5" fill="none" marker-end="url(#arr-r)" stroke-dasharray="4,3" opacity="0.6"/>
+    <text x="592" y="176" class="lbl-sm" text-anchor="middle" fill="#dc2626">fill: 50.6 B/cyc</text>
+
+    <!-- Right side: Summary metrics -->
+    <g transform="translate(860,56)">
+      <rect x="0" y="0" width="326" height="160" rx="4" fill="#f8fafc" stroke="#cbd5e1" stroke-width="0.6"/>
+      <text x="12" y="18" class="panel-h" font-size="11">FETCH PATH SUMMARY</text>
+      <line x1="12" y1="24" x2="314" y2="24" stroke="#cbd5e1" stroke-width="0.5"/>
+
+      <text x="12" y="42" class="lbl-mono-em" fill="#15803d">L0 HIT (optimal):</text>
+      <text x="180" y="42" class="lbl-mono">1.0 insn/cyc · 16 B/cyc</text>
+
+      <text x="12" y="60" class="lbl-mono-em" fill="#b45309">L0 MISS → L1 HIT:</text>
+      <text x="180" y="60" class="lbl-mono">+0.06 c/i (+6% penalty)</text>
+
+      <text x="12" y="78" class="lbl-mono-em" fill="#dc2626">L1 MISS → L2:</text>
+      <text x="180" y="78" class="lbl-mono">+0.31 c/i (+30% penalty)</text>
+
+      <text x="12" y="96" class="lbl-mono-em" fill="#dc2626">L2/DRAM (cold):</text>
+      <text x="180" y="96" class="lbl-mono">3.46 c/i (+220% penalty)</text>
+
+      <line x1="12" y1="108" x2="314" y2="108" stroke="#cbd5e1" stroke-width="0.5"/>
+      <text x="12" y="126" class="lbl-mono-em" fill="#2563eb">Prefetcher lookahead:</text>
+      <text x="180" y="126" class="lbl-mono">≥256 instructions</text>
+
+      <text x="12" y="144" class="lbl-mono-em" fill="#dc2626">Switch penalty:</text>
+      <text x="180" y="144" class="lbl-mono">+18.5 cyc/redirect</text>
+    </g>
+  </g>
+
+  <!-- ============ Panel B: Stream Prefetcher Characteristics ============ -->
+  <g transform="translate(40,405)">
+    <rect x="0" y="0" width="580" height="250" rx="6" fill="#ffffff" stroke="#e2d8c8" stroke-width="0.8"/>
+    <text x="14" y="22" class="panel-h">B · STREAM PREFETCHER — BOUNDARY MASKING &amp; SWITCH PENALTY</text>
+    <text x="14" y="38" class="panel-sub">Sequential code: zero boundary effect. Branch redirects: +18.5 cyc fixed penalty.</text>
+
+    <!-- Sequential sweep visualization -->
+    <g transform="translate(14,52)">
+      <text x="0" y="10" class="lbl-mono-em" fill="#15803d">Sequential sweep (64B – 2048B):</text>
+      <text x="240" y="10" class="lbl-mono-em" fill="#15803d">ALL 1.000 cyc/FFMA</text>
+
+      <!-- Bar chart showing flat 1.000 for all sizes -->
+      <g transform="translate(50,20)">
+        <line x1="0" y1="50" x2="400" y2="50" stroke="#cbd5e1" stroke-width="0.5"/>
+        <text x="-4" y="54" class="lbl-sm" text-anchor="end">1.0</text>
+        <text x="-4" y="14" class="lbl-sm" text-anchor="end">1.1</text>
+
+        <!-- Flat line at 1.000 -->
+        <line x1="0" y1="50" x2="400" y2="50" stroke="#16a34a" stroke-width="2"/>
+        <circle cx="30" cy="50" r="3" fill="#16a34a"/>
+        <circle cx="100" cy="50" r="3" fill="#16a34a"/>
+        <circle cx="170" cy="50" r="3" fill="#16a34a"/>
+        <circle cx="240" cy="50" r="3" fill="#16a34a"/>
+        <circle cx="310" cy="50" r="3" fill="#16a34a"/>
+        <circle cx="380" cy="50" r="3" fill="#16a34a"/>
+
+        <text x="30" y="66" class="lbl-sm" text-anchor="middle">64B</text>
+        <text x="100" y="66" class="lbl-sm" text-anchor="middle">256B</text>
+        <text x="170" y="66" class="lbl-sm" text-anchor="middle">512B</text>
+        <text x="240" y="66" class="lbl-sm" text-anchor="middle">1024B</text>
+        <text x="310" y="66" class="lbl-sm" text-anchor="middle">1536B</text>
+        <text x="380" y="66" class="lbl-sm" text-anchor="middle">2048B</text>
+
+        <text x="200" y="86" class="lbl-sm" text-anchor="middle" fill="#15803d">→ ZERO variation — prefetcher fully masks cache line boundaries</text>
+      </g>
+    </g>
+
+    <!-- Code-location switch penalty -->
+    <g transform="translate(14,170)">
+      <rect x="0" y="0" width="552" height="64" rx="4" fill="#fef3c7" stroke="#d97706" stroke-width="0.6"/>
+      <text x="12" y="18" class="lbl-mono-em" fill="#b45309">CODE-LOCATION SWITCH PENALTY</text>
+      <text x="12" y="36" class="lbl-mono">Each branch to a non-prefetched address: +18.5 cyc redirect</text>
+      <text x="12" y="52" class="lbl-mono">→ Prefetcher optimized for SINGLE LINEAR STREAM only</text>
+      <text x="380" y="36" class="lbl-mono-em" fill="#b45309" font-size="14">+18.5 cyc</text>
+    </g>
+  </g>
+
+  <!-- ============ Panel C: Key Findings ============ -->
+  <g transform="translate(640,405)">
+    <rect x="0" y="0" width="600" height="250" rx="6" fill="#ffffff" stroke="#e2d8c8" stroke-width="0.8"/>
+    <text x="14" y="22" class="panel-h">C · KEY FINDINGS — COLD-START, ISOLATION, BANDWIDTH</text>
+    <text x="14" y="38" class="panel-sub">Three micro-experiments isolating specific fetch subsystem behaviors</text>
+
+    <!-- Cold-start fill -->
+    <g transform="translate(14,52)">
+      <rect x="0" y="0" width="572" height="56" rx="4" fill="#dcfce7" stroke="#16a34a" stroke-width="0.6"/>
+      <text x="12" y="18" class="lbl-mono-em" fill="#15803d">COLD-START FILL (Case 33)</text>
+      <text x="12" y="36" class="lbl-mono">32KB body: 632 extra cyc (+30.5%) vs warm → fill rate ~50.6 B/cyc from L2</text>
+      <text x="12" y="50" class="lbl-mono">Fully amortized by 2nd launch — warm IPC returns to 1.01 cyc/FFMA</text>
+      <text x="500" y="30" class="big-num" text-anchor="middle" fill="#15803d" font-size="20">50.6</text>
+      <text x="500" y="46" class="lbl-sm" text-anchor="middle" fill="#15803d">B/cyc</text>
+    </g>
+
+    <!-- Per-SMSP isolation -->
+    <g transform="translate(14,116)">
+      <rect x="0" y="0" width="572" height="56" rx="4" fill="#eff6ff" stroke="#2563eb" stroke-width="0.6"/>
+      <text x="12" y="18" class="lbl-mono-em" fill="#2563eb">PER-SMSP ISOLATION (Case 35)</text>
+      <text x="12" y="36" class="lbl-mono">4 warps on 4 SMSPs, different ~8KB functions: only 31% overhead (NOT 4×)</text>
+      <text x="12" y="50" class="lbl-mono">Each SMSP has own L0 fetch unit; warp specialization has minimal I-cache cost</text>
+      <text x="500" y="30" class="big-num" text-anchor="middle" fill="#2563eb" font-size="20">31%</text>
+      <text x="500" y="46" class="lbl-sm" text-anchor="middle" fill="#2563eb">overhead</text>
+    </g>
+
+    <!-- Fetch bandwidth per sub-core -->
+    <g transform="translate(14,180)">
+      <rect x="0" y="0" width="572" height="56" rx="4" fill="#fef3c7" stroke="#d97706" stroke-width="0.6"/>
+      <text x="12" y="18" class="lbl-mono-em" fill="#b45309">FETCH BW PER SUB-CORE (Case 68)</text>
+      <text x="12" y="36" class="lbl-mono">≤8 warps: zero contention · 16 warps: 1.7× slowdown from fetch queue</text>
+      <text x="12" y="50" class="lbl-mono">Per-SMSP fetch rate ~1-2 insn/cyc — sufficient for 8 concurrent warps</text>
+      <text x="500" y="30" class="big-num" text-anchor="middle" fill="#b45309" font-size="20">8W</text>
+      <text x="500" y="46" class="lbl-sm" text-anchor="middle" fill="#b45309">zero contention</text>
+    </g>
+  </g>
+
+  <!-- ============ Panel D: Bandwidth Model Table ============ -->
+  <g transform="translate(40,675)">
+    <rect x="0" y="0" width="1200" height="225" rx="6" fill="#ffffff" stroke="#e2d8c8" stroke-width="0.8"/>
+    <text x="14" y="22" class="panel-h">D · BANDWIDTH MODEL &amp; ARCHITECTURAL IMPLICATIONS</text>
+
+    <!-- Bandwidth table -->
+    <g transform="translate(14,38)">
+      <rect x="0" y="0" width="560" height="172" rx="4" fill="#f8fafc" stroke="#cbd5e1" stroke-width="0.6"/>
+      <text x="12" y="18" class="panel-h" font-size="11">FETCH BANDWIDTH MODEL</text>
+      <line x1="12" y1="24" x2="548" y2="24" stroke="#cbd5e1" stroke-width="0.5"/>
+
+      <text x="12" y="42" class="lbl-mono-em" fill="#15803d">L0 hit</text>
+      <text x="180" y="42" class="lbl-mono">1.0 insn/cyc</text>
+      <text x="320" y="42" class="lbl-mono">16 B/cyc fetch rate</text>
+      <text x="480" y="42" class="lbl-sm" fill="#15803d">baseline</text>
+
+      <text x="12" y="62" class="lbl-mono-em" fill="#b45309">L0 miss → L1</text>
+      <text x="180" y="62" class="lbl-mono">1/1.06 insn/cyc</text>
+      <text x="320" y="62" class="lbl-mono">+6% penalty</text>
+      <text x="480" y="62" class="lbl-sm" fill="#b45309">+0.06 c/i</text>
+
+      <text x="12" y="82" class="lbl-mono-em" fill="#dc2626">L1 miss → L2</text>
+      <text x="180" y="82" class="lbl-mono">1/1.37 insn/cyc</text>
+      <text x="320" y="82" class="lbl-mono">+30% penalty</text>
+      <text x="480" y="82" class="lbl-sm" fill="#dc2626">+0.31 c/i</text>
+
+      <text x="12" y="102" class="lbl-mono-em" fill="#dc2626">Cold start</text>
+      <text x="180" y="102" class="lbl-mono">~50.6 B/cyc fill</text>
+      <text x="320" y="102" class="lbl-mono">from L2 → I-cache</text>
+      <text x="480" y="102" class="lbl-sm" fill="#dc2626">+220%</text>
+
+      <text x="12" y="122" class="lbl-mono-em" fill="#2563eb">Prefetcher</text>
+      <text x="180" y="122" class="lbl-mono">≥256 insn lookahead</text>
+      <text x="320" y="122" class="lbl-mono">masks L0 boundaries</text>
+      <text x="480" y="122" class="lbl-sm" fill="#2563eb">0 variation</text>
+
+      <text x="12" y="142" class="lbl-mono-em" fill="#dc2626">Switch penalty</text>
+      <text x="180" y="142" class="lbl-mono">+18.5 cyc/redirect</text>
+      <text x="320" y="142" class="lbl-mono">non-prefetched addr</text>
+      <text x="480" y="142" class="lbl-sm" fill="#dc2626">fixed cost</text>
+
+      <text x="12" y="162" class="lbl-mono-em">Line size</text>
+      <text x="180" y="162" class="lbl-mono">indeterminate</text>
+      <text x="320" y="162" class="lbl-mono">prefetcher masks it</text>
+      <text x="480" y="162" class="lbl-sm">N/A from SW</text>
+    </g>
+
+    <!-- Architectural implications -->
+    <g transform="translate(590,38)">
+      <rect x="0" y="0" width="596" height="172" rx="4" fill="#fffbeb" stroke="#d97706" stroke-width="0.6"/>
+      <text x="12" y="18" class="panel-h" font-size="11" fill="#b45309">ARCHITECTURAL IMPLICATIONS</text>
+      <line x1="12" y1="24" x2="584" y2="24" stroke="#d97706" stroke-width="0.5" opacity="0.4"/>
+
+      <!-- Benefits sub-section -->
+      <text x="12" y="42" class="lbl-sm1" fill="#15803d">▶ BENEFITS</text>
+      <text x="28" y="58" class="lbl-mono" fill="#2a3548">• Eliminates cache-line boundary effects</text>
+      <text x="28" y="78" class="lbl-mono" fill="#2a3548">• Flat 1.000 cyc/FFMA across 64B–2048B</text>
+      <text x="28" y="96" class="lbl-mono" fill="#2a3548">• Most critical fetch-subsystem component</text>
+
+      <line x1="12" y1="108" x2="584" y2="98" stroke="#d97706" stroke-width="0.3" opacity="0.3"/>
+
+      <!-- Limitation sub-section -->
+      <text x="12" y="124" class="lbl-sm2" fill="#dc2626">▶ LIMITATION</text>
+      <text x="28" y="140" class="lbl-mono" fill="#2a3548">• +18.5 cyc per code-location switch (branch to non-prefetched address = fixed penalty)</text>
+      <text x="28" y="158" class="lbl-mono" fill="#2a3548">• Branching code cannot benefit from prefetch → compounds divergence w/ I-cache misses </text>
+      
+    </g>
+  </g>
+
+</svg>

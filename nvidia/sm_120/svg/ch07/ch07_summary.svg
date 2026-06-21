@@ -1,0 +1,483 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 1260" role="img"
+     aria-label="Chapter 07 overview: SM_120 Warp Scheduler &amp; Control — CGGTY flow, stall/SB, pipeline, divergence, RF/I-cache">
+  <defs>
+    <style><![CDATA[
+      .eyebrow { font: 600 11px "JetBrains Mono", monospace; letter-spacing: 0.16em; text-transform: uppercase }
+      .title   { font: 500 28px "Fraunces", serif; fill: #0b1220; letter-spacing: -0.02em }
+      .sub     { font: italic 13px "Fraunces", serif; fill: #5b6679 }
+      .panel-h { font: 600 14px "JetBrains Mono", monospace; letter-spacing: 0.06em; fill: #0b1220 }
+      .panel-n { font: 700 11px "JetBrains Mono", monospace; letter-spacing: 0.06em; fill: #b45309 }
+      .lbl-sm  { font: 500 10px "JetBrains Mono", monospace; fill: #5b6679; letter-spacing: 0.05em; text-transform: uppercase }
+      .lbl     { font: 500 11px "IBM Plex Sans", sans-serif; fill: #2a3548 }
+      .lbl-w   { font: 600 11px "IBM Plex Sans", sans-serif; fill: #ffffff }
+      .lbl-mono{ font: 500 10px "JetBrains Mono", monospace; fill: #2a3548 }
+      .kpi-val { font: 700 22px "Fraunces", serif; fill: #0b1220; letter-spacing: -0.01em }
+      .kpi-unit{ font: 500 10px "JetBrains Mono", monospace; fill: #5b6679; letter-spacing: 0.05em; text-transform: uppercase }
+      .insight { font: 500 12px "IBM Plex Sans", sans-serif; fill: #2a3548 }
+      .stage   { font: 600 12px "IBM Plex Sans", sans-serif; fill: #ffffff }
+      .stage-l { font: 500 10px "JetBrains Mono", monospace; fill: #2a3548 }
+      .arrow   { stroke: #5b6679; stroke-width: 1.2; fill: none }
+      .arrow-b { stroke: #0369a1; stroke-width: 1.5; fill: none }
+      .arrow-r { stroke: #b45309; stroke-width: 1.5; fill: none }
+      .div-bar { stroke: #ffffff; stroke-width: 0.5 }
+    ]]></style>
+    <marker id="arr" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M0,0 L8,4 L0,8 z" fill="#5b6679"/>
+    </marker>
+    <marker id="arr-b" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M0,0 L8,4 L0,8 z" fill="#0369a1"/>
+    </marker>
+    <marker id="arr-r" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M0,0 L8,4 L0,8 z" fill="#b45309"/>
+    </marker>
+  </defs>
+
+  <rect width="1280" height="1260" fill="#fcfbf6"/>
+
+  <!-- ============ Header ============ -->
+  <g transform="translate(40,32)">
+    <rect x="0" y="0" width="3" height="80" fill="#b45309"/>
+    <text x="16" y="32" class="title">Warp Scheduler &amp; Control — Architectural Overview</text>
+    <text x="16" y="58" class="sub">CGGTY policy · stall/yield/scoreboard · 6-stage pipeline · divergence O(2^D) · RF &amp; I-cache hierarchy</text>
+    <text x="16" y="82" class="lbl-sm">Source: Section 11 (156) · Section 12 (37) · Section 13 (23) · Section 21 (20)</text>
+  </g>
+
+  <!-- ============ ① 6-Stage Instruction Pipeline ============ -->
+  <g transform="translate(40,148)">
+    <rect x="0" y="0" width="1200" height="148" rx="12" fill="#ffffff" stroke="#e6e4da"/>
+    <rect x="0" y="0" width="1200" height="3" rx="12" fill="#0369a1"/>
+    <text x="20" y="26" class="panel-n">① INSTRUCTION PIPELINE</text>
+    <text x="20" y="46" class="panel-h">6-Stage Per-SMSP Pipeline Model</text>
+    <text x="20" y="64" class="lbl-sm">Fetch → Decode → Schedule → Operand Collect → Execute → Writeback</text>
+
+    <!-- 6 stage blocks -->
+    <g transform="translate(28,82)">
+      <rect x="0"   y="0" width="170" height="42" rx="6" fill="#0369a1"/>
+      <text x="85"  y="20" class="stage" text-anchor="middle">FETCH</text>
+      <text x="85"  y="35" class="lbl-w" text-anchor="middle" font-size="9">L0 4KB/SMSP · L1 64KB/SM</text>
+      <line x1="172" y1="21" x2="186" y2="21" class="arrow" marker-end="url(#arr)"/>
+
+      <rect x="188" y="0" width="170" height="42" rx="6" fill="#0284c7"/>
+      <text x="273" y="20" class="stage" text-anchor="middle">DECODE</text>
+      <text x="273" y="35" class="lbl-w" text-anchor="middle" font-size="9">128-bit · ctrl word</text>
+      <line x1="360" y1="21" x2="374" y2="21" class="arrow" marker-end="url(#arr)"/>
+
+      <rect x="376" y="0" width="170" height="42" rx="6" fill="#0891b2"/>
+      <text x="461" y="20" class="stage" text-anchor="middle">SCHEDULE</text>
+      <text x="461" y="35" class="lbl-w" text-anchor="middle" font-size="9">CGGTY · 1 insn/cyc</text>
+      <line x1="548" y1="21" x2="562" y2="21" class="arrow" marker-end="url(#arr)"/>
+
+      <rect x="564" y="0" width="170" height="42" rx="6" fill="#0d9488"/>
+      <text x="649" y="20" class="stage" text-anchor="middle">OPERAND COLLECT</text>
+      <text x="649" y="35" class="lbl-w" text-anchor="middle" font-size="9">≥3 ports · 0-cyc bank</text>
+      <line x1="736" y1="21" x2="750" y2="21" class="arrow" marker-end="url(#arr)"/>
+
+      <rect x="752" y="0" width="170" height="42" rx="6" fill="#059669"/>
+      <text x="837" y="20" class="stage" text-anchor="middle">EXECUTE</text>
+      <text x="837" y="35" class="lbl-w" text-anchor="middle" font-size="9">FMA/ALU/SFU/LSU/TC</text>
+      <line x1="924" y1="21" x2="938" y2="21" class="arrow" marker-end="url(#arr)"/>
+
+      <rect x="940" y="0" width="170" height="42" rx="6" fill="#16a34a"/>
+      <text x="1025" y="20" class="stage" text-anchor="middle">WRITEBACK</text>
+      <text x="1025" y="35" class="lbl-w" text-anchor="middle" font-size="9">RF write · 1 cyc</text>
+    </g>
+
+    <!-- Per-pipe latency table at bottom -->
+    <g transform="translate(28,134)">
+      <text x="0"   y="0" class="lbl-mono" fill="#5b6679">FMA: 4 cyc</text>
+      <text x="120" y="0" class="lbl-mono" fill="#5b6679">ALU: 2 cyc</text>
+      <text x="240" y="0" class="lbl-mono" fill="#5b6679">TC: 29 cyc</text>
+      <text x="360" y="0" class="lbl-mono" fill="#5b6679">SFU: 18-44 cyc</text>
+      <text x="500" y="0" class="lbl-mono" fill="#5b6679">L1: 44 cyc · L2: 354 cyc · DRAM: 470+ cyc</text>
+      <text x="900" y="0" class="lbl-mono" fill="#5b6679">FP64: 64 cyc (non-pipelined)</text>
+    </g>
+  </g>
+
+  <!-- ============ ② CGGTY Decision Flow (left) ============ -->
+  <g transform="translate(40,316)">
+    <rect x="0" y="0" width="590" height="500" rx="12" fill="#ffffff" stroke="#e6e4da"/>
+    <rect x="0" y="0" width="590" height="3" rx="12" fill="#b45309"/>
+    <text x="20" y="26" class="panel-n">② CGGTY SCHEDULING POLICY</text>
+    <text x="20" y="46" class="panel-h">Compiler-Guided Greedy-Then-Youngest Decision Flow</text>
+    <text x="20" y="64" class="lbl-sm">Per-cycle: 1 instruction max · Context switch = 0 cyc · I-buffer ~4 entries/warp</text>
+
+    <!-- Start -->
+    <g>
+      <rect x="220" y="84" width="150" height="32" rx="16" fill="#0b1220"/>
+      <text x="295" y="105" class="lbl-w" text-anchor="middle">Start of Cycle</text>
+    </g>
+    <line x1="295" y1="116" x2="295" y2="132" class="arrow-r" marker-end="url(#arr-r)"/>
+
+    <!-- Step 1: decrement stall -->
+    <g>
+      <rect x="170" y="138" width="250" height="38" rx="6" fill="#fef3c7" stroke="#d97706"/>
+      <text x="295" y="156" class="lbl" text-anchor="middle" font-weight="600">① Decrement all stall counters</text>
+      <text x="295" y="170" class="lbl-mono" text-anchor="middle" fill="#5b6679">stall[3:0] -= 1 (if &gt; 0)</text>
+    </g>
+    <line x1="295" y1="176" x2="295" y2="192" class="arrow-r" marker-end="url(#arr-r)"/>
+
+    <!-- Step 2: eligible set -->
+    <g>
+      <rect x="130" y="198" width="330" height="48" rx="6" fill="#fef3c7" stroke="#d97706"/>
+      <text x="295" y="216" class="lbl" text-anchor="middle" font-weight="600">② Build eligible warp set</text>
+      <text x="295" y="232" class="lbl-mono" text-anchor="middle" fill="#5b6679">stall==0 ∧ SB-wait clear ∧ ¬yield ∧ ¬barrier</text>
+    </g>
+    <line x1="295" y1="246" x2="295" y2="262" class="arrow-r" marker-end="url(#arr-r)"/>
+
+    <!-- Step 3: empty? diamond -->
+    <g>
+      <polygon points="295,266 380,300 295,334 210,300" fill="#fef3c7" stroke="#d97706"/>
+      <text x="295" y="297" class="lbl" text-anchor="middle" font-weight="600">Eligible</text>
+      <text x="295" y="312" class="lbl" text-anchor="middle">empty?</text>
+    </g>
+    <!-- Yes → Idle -->
+    <line x1="380" y1="300" x2="490" y2="300" class="arrow-r" marker-end="url(#arr-r)"/>
+    <text x="430" y="294" class="lbl-mono" text-anchor="middle" fill="#b45309">YES</text>
+    <rect x="490" y="282" width="80" height="36" rx="6" fill="#fee2e2" stroke="#dc2626"/>
+    <text x="530" y="304" class="lbl" text-anchor="middle">Idle / NOP</text>
+    <!-- No → continue down -->
+    <line x1="295" y1="334" x2="295" y2="350" class="arrow-r" marker-end="url(#arr-r)"/>
+    <text x="305" y="346" class="lbl-mono" fill="#b45309">NO</text>
+
+    <!-- Step 4: Greedy diamond -->
+    <g>
+      <polygon points="295,354 415,388 295,422 175,388" fill="#fed7aa" stroke="#b45309"/>
+      <text x="295" y="382" class="lbl" text-anchor="middle" font-weight="600">GREEDY:</text>
+      <text x="295" y="397" class="lbl" text-anchor="middle">same warp eligible?</text>
+    </g>
+    <!-- YES → continue same warp -->
+    <line x1="175" y1="388" x2="68" y2="388" class="arrow-r" marker-end="url(#arr-r)"/>
+    <text x="120" y="382" class="lbl-mono" text-anchor="middle" fill="#b45309">YES</text>
+    <rect x="20" y="368" width="48" height="42" rx="6" fill="#dcfce7" stroke="#16a34a"/>
+    <text x="44" y="385" class="lbl" text-anchor="middle">Continue</text>
+    <text x="44" y="399" class="lbl" text-anchor="middle">same W</text>
+    <!-- NO → youngest -->
+    <line x1="415" y1="388" x2="500" y2="388" class="arrow-r" marker-end="url(#arr-r)"/>
+    <text x="460" y="382" class="lbl-mono" text-anchor="middle" fill="#b45309">NO</text>
+    <rect x="500" y="368" width="80" height="42" rx="6" fill="#dbeafe" stroke="#0369a1"/>
+    <text x="540" y="385" class="lbl" text-anchor="middle">YOUNGEST:</text>
+    <text x="540" y="399" class="lbl" text-anchor="middle">min warpID</text>
+
+    <!-- Dispatch convergence -->
+    <line x1="44"  y1="410" x2="44"  y2="432" class="arrow"/>
+    <line x1="540" y1="410" x2="540" y2="432" class="arrow"/>
+    <line x1="44"  y1="432" x2="540" y2="432" class="arrow"/>
+    <line x1="295" y1="432" x2="295" y2="448" class="arrow" marker-end="url(#arr)"/>
+
+    <!-- Dispatch box -->
+    <rect x="195" y="448" width="200" height="28" rx="4" fill="#0b1220"/>
+    <text x="295" y="466" class="lbl-w" text-anchor="middle">Dispatch to pipe backend</text>
+
+    <!-- Bottom evidence chips (moved DOWN to avoid overlap) -->
+    <g transform="translate(20,484)" font-size="10">
+      <rect x="0"   y="0" width="180" height="14" rx="3" fill="#f1f5f9"/>
+      <text x="6"   y="11" class="lbl-mono" font-size="9">Greedy ratio W3/W0 = 3.96 </text>
+
+      <rect x="190" y="0" width="180" height="14" rx="3" fill="#f1f5f9"/>
+      <text x="196" y="11" class="lbl-mono" font-size="9">Hot-warp 1.0×→2.0× </text>
+
+      <rect x="380" y="0" width="180" height="14" rx="3" fill="#f1f5f9"/>
+      <text x="386" y="11" class="lbl-mono" font-size="9">SC=⌊warpid/4⌋ static </text>
+    </g>
+  </g>
+
+  <!-- ============ ③ Stall + Scoreboard Dual Mechanism (right) ============ -->
+  <g transform="translate(650,316)">
+    <rect x="0" y="0" width="590" height="500" rx="12" fill="#ffffff" stroke="#e6e4da"/>
+    <rect x="0" y="0" width="590" height="3" rx="12" fill="#7c3aed"/>
+    <text x="20" y="26" class="panel-n">③ DEPENDENCE MANAGEMENT — DUAL MECHANISM</text>
+    <text x="20" y="46" class="panel-h">Stall Counter (compiler) ‖ Scoreboard (hardware)</text>
+    <text x="20" y="64" class="lbl-sm">Software trust ↔ HW interlock · two parallel paths · 41 bits/warp ctrl word</text>
+
+    <!-- Left: Stall Counter -->
+    <g transform="translate(20,84)">
+      <rect x="0" y="0" width="270" height="390" rx="10" fill="#fef3c7" stroke="#d97706"/>
+      <rect x="0" y="0" width="270" height="3" rx="10" fill="#b45309"/>
+      <text x="14" y="22" class="lbl-mono" font-weight="700" fill="#b45309">STALL COUNTER (4-bit)</text>
+      <text x="14" y="38" class="lbl-sm">Range [0..15]·ctrl[3:0]·compiler-set</text>
+
+      <!-- Stall value -> behavior table -->
+      <g transform="translate(14,56)">
+        <rect x="0"   y="0"  width="240" height="40" rx="4" fill="#fee2e2" stroke="#dc2626"/>
+        <text x="8"   y="15" class="lbl-mono" font-weight="700" fill="#dc2626">stall = 1..3 (&lt; lat)</text>
+        <text x="8"   y="31" class="lbl-mono" fill="#7f1d1d">SILENT STALE READ · no trap</text>
+
+        <rect x="0"   y="46" width="240" height="40" rx="4" fill="#dcfce7" stroke="#16a34a"/>
+        <text x="8"   y="61" class="lbl-mono" font-weight="700" fill="#15803d">stall = 4 (= FFMA lat)</text>
+        <text x="8"   y="77" class="lbl-mono" fill="#166534">Sharp boundary · correct read</text>
+
+        <rect x="0"   y="92" width="240" height="40" rx="4" fill="#dbeafe" stroke="#0369a1"/>
+        <text x="8"   y="107" class="lbl-mono" font-weight="700" fill="#0369a1">stall = 0 → HW fallback</text>
+        <text x="8"   y="123" class="lbl-mono" fill="#1e3a8a">31-34 cyc/inst (always safe)</text>
+
+        <rect x="0"   y="138" width="240" height="40" rx="4" fill="#f3e8ff" stroke="#7c3aed"/>
+        <text x="8"   y="153" class="lbl-mono" font-weight="700" fill="#6d28d9">stall = 15 (max)</text>
+        <text x="8"   y="169" class="lbl-mono" fill="#4c1d95">14.61 cyc/op · 1:1 linear</text>
+      </g>
+
+      <!-- Use cases -->
+      <g transform="translate(14,256)">
+        <text x="0" y="0" class="lbl-sm" fill="#b45309">HANDLES (FIXED-LATENCY):</text>
+        <text x="0" y="20" class="lbl-mono">• ALU: IADD3, FFMA, HFMA2</text>
+        <text x="0" y="38" class="lbl-mono">• FP: FMUL, FADD, FSEL</text>
+        <text x="0" y="56" class="lbl-mono">• TC: HMMA, QMMA, OMMA</text>
+        <text x="0" y="74" class="lbl-mono">• SFU: MUFU.RCP/RSQ</text>
+        <text x="0" y="98" class="lbl-mono" fill="#b45309" font-weight="600">→ Compiler trust required</text>
+      </g>
+    </g>
+
+    <!-- Right: Scoreboard -->
+    <g transform="translate(300,84)">
+      <rect x="0" y="0" width="270" height="390" rx="10" fill="#dbeafe" stroke="#0369a1"/>
+      <rect x="0" y="0" width="270" height="3" rx="10" fill="#0369a1"/>
+      <text x="14" y="22" class="lbl-mono" font-weight="700" fill="#0369a1">SCOREBOARD (6 SB)</text>
+      <text x="14" y="38" class="lbl-sm">one-hot 6-bit mask · HW-managed</text>
+
+      <!-- 6 SB slots visualization -->
+      <g transform="translate(14,52)">
+        <rect x="0"   y="0" width="36" height="22" rx="3" fill="#0369a1"/>
+        <text x="18"  y="15" class="lbl-w" text-anchor="middle" font-size="10">SB0</text>
+        <rect x="40"  y="0" width="36" height="22" rx="3" fill="#0369a1"/>
+        <text x="58"  y="15" class="lbl-w" text-anchor="middle" font-size="10">SB1</text>
+        <rect x="80"  y="0" width="36" height="22" rx="3" fill="#0369a1"/>
+        <text x="98"  y="15" class="lbl-w" text-anchor="middle" font-size="10">SB2</text>
+        <rect x="120" y="0" width="36" height="22" rx="3" fill="#0369a1"/>
+        <text x="138" y="15" class="lbl-w" text-anchor="middle" font-size="10">SB3</text>
+        <rect x="160" y="0" width="36" height="22" rx="3" fill="#0369a1"/>
+        <text x="178" y="15" class="lbl-w" text-anchor="middle" font-size="10">SB4</text>
+        <rect x="200" y="0" width="36" height="22" rx="3" fill="#0369a1"/>
+        <text x="218" y="15" class="lbl-w" text-anchor="middle" font-size="10">SB5</text>
+      </g>
+
+      <!-- Cliff visualization -->
+      <g transform="translate(14,96)">
+        <text x="0" y="0" class="lbl-sm" fill="#0369a1">SB EXHAUSTION CLIFF:</text>
+
+        <rect x="0"   y="14" width="50" height="14" fill="#16a34a"/>
+        <text x="58"  y="25" class="lbl-mono">N=1..5: 17 cyc</text>
+
+        <rect x="0"   y="36" width="240" height="14" fill="#dc2626"/>
+        <text x="0"   y="64" class="lbl-mono" fill="#7f1d1d" font-weight="700">N=6: 761 cyc (44.8× cliff)</text>
+
+        <rect x="0"   y="76" width="120" height="14" fill="#f59e0b"/>
+        <text x="0"   y="104" class="lbl-mono" fill="#b45309">N=10-11→12: 2× counter-mode</text>
+      </g>
+
+      <!-- Use cases -->
+      <g transform="translate(14,256)">
+        <text x="0" y="0" class="lbl-sm" fill="#0369a1">HANDLES (VARIABLE-LATENCY):</text>
+        <text x="0" y="20" class="lbl-mono">• Global: LDG, STG</text>
+        <text x="0" y="38" class="lbl-mono">• Shared: LDS, STS, LDSM</text>
+        <text x="0" y="56" class="lbl-mono">• Async: cp.async, TMA</text>
+        <text x="0" y="74" class="lbl-mono">• Atomic: ATOMS, ATOMG</text>
+        <text x="0" y="98" class="lbl-mono" fill="#0369a1" font-weight="600">→ HW interlock automatic</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- ============ ④ Register File (left) ============ -->
+  <g transform="translate(40,836)">
+    <rect x="0" y="0" width="390" height="330" rx="12" fill="#ffffff" stroke="#e6e4da"/>
+    <rect x="0" y="0" width="390" height="3" rx="12" fill="#059669"/>
+    <text x="20" y="26" class="panel-n">④ REGISTER FILE</text>
+    <text x="20" y="46" class="panel-h">256 KB / SM · 4 SMSPs · 2-bank R%2</text>
+
+    <!-- 4 SMSP layout (no overlapping label) -->
+    <g transform="translate(20,72)">
+      <!-- Frame -->
+      <rect x="0" y="0" width="350" height="124" rx="6" fill="#dcfce7" stroke="#16a34a"/>
+      <text x="10" y="14" class="lbl-mono" fill="#15803d" font-weight="700" font-size="9">SM RF · 65,536 × 32-bit · OC absorbs 0-cyc bank conflict</text>
+
+      <!-- 4 SMSPs (slightly lowered to give room for label) -->
+      <g>
+        <rect x="10"  y="22" width="78" height="92" rx="4" fill="#ffffff" stroke="#16a34a"/>
+        <text x="49"  y="38" class="lbl-mono" text-anchor="middle" font-weight="700">SMSP 0</text>
+        <text x="49"  y="52" class="lbl-mono" text-anchor="middle" fill="#5b6679">16,384 r</text>
+        <line x1="14" y1="60" x2="84" y2="60" stroke="#bbf7d0"/>
+        <text x="49"  y="74" class="lbl-mono" text-anchor="middle" fill="#5b6679" font-size="9">Bank0 even</text>
+        <text x="49"  y="86" class="lbl-mono" text-anchor="middle" fill="#5b6679" font-size="9">Bank1 odd</text>
+        <text x="49"  y="106" class="lbl-mono" text-anchor="middle" fill="#16a34a">12 warps</text>
+      </g>
+      <g>
+        <rect x="92"  y="22" width="78" height="92" rx="4" fill="#ffffff" stroke="#16a34a"/>
+        <text x="131" y="38" class="lbl-mono" text-anchor="middle" font-weight="700">SMSP 1</text>
+        <text x="131" y="52" class="lbl-mono" text-anchor="middle" fill="#5b6679">16,384 r</text>
+        <line x1="96" y1="60" x2="166" y2="60" stroke="#bbf7d0"/>
+        <text x="131" y="74" class="lbl-mono" text-anchor="middle" fill="#5b6679" font-size="9">Bank0 even</text>
+        <text x="131" y="86" class="lbl-mono" text-anchor="middle" fill="#5b6679" font-size="9">Bank1 odd</text>
+        <text x="131" y="106" class="lbl-mono" text-anchor="middle" fill="#16a34a">12 warps</text>
+      </g>
+      <g>
+        <rect x="174" y="22" width="78" height="92" rx="4" fill="#ffffff" stroke="#16a34a"/>
+        <text x="213" y="38" class="lbl-mono" text-anchor="middle" font-weight="700">SMSP 2</text>
+        <text x="213" y="52" class="lbl-mono" text-anchor="middle" fill="#5b6679">16,384 r</text>
+        <line x1="178" y1="60" x2="248" y2="60" stroke="#bbf7d0"/>
+        <text x="213" y="74" class="lbl-mono" text-anchor="middle" fill="#5b6679" font-size="9">Bank0 even</text>
+        <text x="213" y="86" class="lbl-mono" text-anchor="middle" fill="#5b6679" font-size="9">Bank1 odd</text>
+        <text x="213" y="106" class="lbl-mono" text-anchor="middle" fill="#16a34a">12 warps</text>
+      </g>
+      <g>
+        <rect x="256" y="22" width="78" height="92" rx="4" fill="#ffffff" stroke="#16a34a"/>
+        <text x="295" y="38" class="lbl-mono" text-anchor="middle" font-weight="700">SMSP 3</text>
+        <text x="295" y="52" class="lbl-mono" text-anchor="middle" fill="#5b6679">16,384 r</text>
+        <line x1="260" y1="60" x2="330" y2="60" stroke="#bbf7d0"/>
+        <text x="295" y="74" class="lbl-mono" text-anchor="middle" fill="#5b6679" font-size="9">Bank0 even</text>
+        <text x="295" y="86" class="lbl-mono" text-anchor="middle" fill="#5b6679" font-size="9">Bank1 odd</text>
+        <text x="295" y="106" class="lbl-mono" text-anchor="middle" fill="#16a34a">12 warps</text>
+      </g>
+    </g>
+
+    <!-- OC layer -->
+    <g transform="translate(20,212)">
+      <rect x="0" y="0" width="350" height="32" rx="4" fill="#0d9488"/>
+      <text x="175" y="20" class="lbl-w" text-anchor="middle" font-weight="600">Operand Collector · ≥3 read ports · bypass d=0..2</text>
+    </g>
+
+    <!-- Spill cliff -->
+    <g transform="translate(20,256)">
+      <text x="0" y="0" class="lbl-sm" fill="#dc2626">SPILL CLIFF (regs/thread):</text>
+      <text x="0" y="18" class="lbl-mono">maxreg=24 + 32 acc → 5.23× slowdown</text>
+      <text x="0" y="34" class="lbl-mono" fill="#5b6679">24-reg floor enforced by ptxas (silent raise)</text>
+      <text x="0" y="50" class="lbl-mono" fill="#5b6679">setmaxnreg.dec/inc = 60/31 cyc</text>
+    </g>
+  </g>
+
+  <!-- ============ ⑤ I-Cache Hierarchy (middle) ============ -->
+  <g transform="translate(445,836)">
+    <rect x="0" y="0" width="390" height="330" rx="12" fill="#ffffff" stroke="#e6e4da"/>
+    <rect x="0" y="0" width="390" height="3" rx="12" fill="#0369a1"/>
+    <text x="20" y="26" class="panel-n">⑤ I-CACHE HIERARCHY</text>
+    <text x="20" y="46" class="panel-h">3-Level: L0 → L1 → L2/DRAM</text>
+    <text x="20" y="64" class="lbl-sm">Stream prefetcher hides sequential boundaries</text>
+
+    <!-- Hierarchy boxes -->
+    <g transform="translate(20,84)">
+      <rect x="0" y="0" width="350" height="42" rx="6" fill="#dbeafe" stroke="#0369a1"/>
+      <text x="14" y="20" class="lbl" font-weight="700" fill="#0369a1">L0 I-Cache · ~4 KB / SMSP</text>
+      <text x="14" y="35" class="lbl-mono" fill="#1e3a8a">1.08 cyc/FFMA · per-SMSP isolated</text>
+
+      <line x1="60" y1="44" x2="60" y2="58" class="arrow-b" marker-end="url(#arr-b)"/>
+      <text x="76" y="56" class="lbl-mono" fill="#0369a1">L0 miss: +6%</text>
+
+      <rect x="0" y="62" width="350" height="42" rx="6" fill="#bfdbfe" stroke="#0369a1"/>
+      <text x="14" y="82" class="lbl" font-weight="700" fill="#0369a1">L1 I-Cache · ~64 KB / SM (shared by 4 SMSP)</text>
+      <text x="14" y="97" class="lbl-mono" fill="#1e3a8a">1.57 cyc/FFMA · 128B line</text>
+
+      <line x1="60" y1="106" x2="60" y2="120" class="arrow-b" marker-end="url(#arr-b)"/>
+      <text x="76" y="118" class="lbl-mono" fill="#0369a1">L1 miss: +30%</text>
+
+      <rect x="0" y="124" width="350" height="42" rx="6" fill="#0369a1"/>
+      <text x="14" y="144" class="lbl-w" font-weight="700">L2 / DRAM · ~50.6 B/cyc fill rate</text>
+      <text x="14" y="159" class="lbl-w" font-size="10">Cold start 632 cyc (32 KB body)</text>
+    </g>
+
+    <!-- Cliff bar chart -->
+    <g transform="translate(20,266)">
+      <text x="0"   y="0" class="lbl-sm" fill="#0369a1">CODE FOOTPRINT CLIFF:</text>
+      <rect x="0"   y="10" width="50" height="12" fill="#16a34a"/>
+      <text x="58"  y="20" class="lbl-mono" font-size="9">≤8 KB: 1.08 c/i (optimal)</text>
+      <rect x="0"   y="26" width="80" height="12" fill="#f59e0b"/>
+      <text x="88"  y="36" class="lbl-mono" font-size="9">16 KB: 1.57 (-31%)</text>
+      <rect x="0"   y="42" width="160" height="12" fill="#dc2626"/>
+      <text x="168" y="52" class="lbl-mono" font-size="9" fill="#7f1d1d" font-weight="700">32-64 KB: 4.30 (-75%)</text>
+    </g>
+  </g>
+
+  <!-- ============ ⑥ Divergence Cost Model (right) ============ -->
+  <g transform="translate(850,836)">
+    <rect x="0" y="0" width="390" height="330" rx="12" fill="#ffffff" stroke="#e6e4da"/>
+    <rect x="0" y="0" width="390" height="3" rx="12" fill="#dc2626"/>
+    <text x="20" y="26" class="panel-n">⑥ BRANCH DIVERGENCE COST</text>
+    <text x="20" y="46" class="panel-h">O(2^D) Exponential Cost Scaling</text>
+    <text x="20" y="64" class="lbl-sm">ITS model · BSSY/BSYNC · stack depth ≥8</text>
+
+    <!-- Divergence bar chart -->
+    <g transform="translate(20,90)">
+      <text x="0"  y="14" class="lbl-mono" fill="#5b6679">Uniform</text>
+      <text x="0"  y="38" class="lbl-mono" fill="#5b6679">2-way</text>
+      <text x="0"  y="62" class="lbl-mono" fill="#5b6679">4-way</text>
+      <text x="0"  y="86" class="lbl-mono" fill="#5b6679">8-way</text>
+      <text x="0"  y="110" class="lbl-mono" fill="#5b6679">16-way</text>
+      <text x="0"  y="134" class="lbl-mono" fill="#5b6679">32-way</text>
+
+      <rect x="64"  y="6" width="6"   height="14" fill="#16a34a"/>
+      <text x="76"  y="18" class="lbl-mono" font-size="9">2.98 cyc · 1.0×</text>
+
+      <rect x="64"  y="30" width="18"  height="14" fill="#a3e635"/>
+      <text x="88"  y="42" class="lbl-mono" font-size="9">8.91 cyc · 3.0×</text>
+
+      <rect x="64"  y="54" width="160" height="14" fill="#f59e0b"/>
+      <text x="230" y="66" class="lbl-mono" font-size="9" fill="#b45309" font-weight="700">91 cyc · 30.6×</text>
+
+      <rect x="64"  y="78" width="80"  height="14" fill="#fb923c"/>
+      <text x="150" y="90" class="lbl-mono" font-size="9">188 cyc · 8.9×*</text>
+
+      <rect x="64"  y="102" width="180" height="14" fill="#dc2626"/>
+      <text x="250" y="114" class="lbl-mono" font-size="9" fill="#7f1d1d">424 cyc · 20×</text>
+
+      <rect x="64"  y="126" width="280" height="14" fill="#7f1d1d"/>
+      <text x="343" y="138" class="lbl-w" text-anchor="end" font-size="9" font-weight="700">589 / 902 cyc · 198×</text>
+    </g>
+
+    <!-- Cost formula -->
+    <g transform="translate(20,238)">
+      <rect x="0" y="0" width="350" height="64" rx="6" fill="#fef3c7" stroke="#d97706"/>
+      <text x="14"  y="20" class="lbl-mono" font-weight="700" fill="#b45309">COST FORMULA (D ≥ 2):</text>
+      <text x="14"  y="38" class="lbl" fill="#0b1220">cost ≈ 50 × 2^(D−1) cycles</text>
+      <text x="14"  y="56" class="lbl-mono" fill="#5b6679">Predication ≠ divergence (1.92× any split-ratio)</text>
+    </g>
+  </g>
+
+  <!-- ============ KPI Strip (bottom) ============ -->
+  <g transform="translate(40,1180)">
+    <rect x="0" y="0" width="1200" height="55" rx="10" fill="rgba(167,186,223,0.257)"/>
+    
+    <g transform="translate(20,8)">
+      <text x="0" y="14" class="lbl-sm" fill="#9ca3af">STALL</text>
+      <text x="0" y="32" class="kpi-val" fill="#fbbf24" font-size="14">[0,15]</text>
+    </g>
+    <line x1="148" y1="8" x2="148" y2="36" stroke="#374151"/>
+
+    <g transform="translate(168,8)">
+      <text x="0" y="14" class="lbl-sm" fill="#9ca3af">SB COUNTERS</text>
+      <text x="0" y="32" class="kpi-val" fill="#60a5fa" font-size="16">6</text>
+    </g>
+    <line x1="296" y1="8" x2="296" y2="36" stroke="#374151"/>
+
+    <g transform="translate(316,8)">
+      <text x="0" y="14" class="lbl-sm" fill="#9ca3af">SMSP/SM</text>
+      <text x="0" y="32" class="kpi-val" fill="#34d399" font-size="16">4</text>
+    </g>
+    <line x1="444" y1="8" x2="444" y2="36" stroke="#374151"/>
+
+    <g transform="translate(464,8)">
+      <text x="0" y="14" class="lbl-sm" fill="#9ca3af">CTX SWITCH</text>
+      <text x="0" y="32" class="kpi-val" fill="#34d399" font-size="16">0 cyc</text>
+    </g>
+    <line x1="592" y1="8" x2="592" y2="36" stroke="#374151"/>
+
+    <g transform="translate(612,8)">
+      <text x="0" y="14" class="lbl-sm" fill="#9ca3af">ILP=4 PEAK</text>
+      <text x="0" y="32" class="kpi-val" fill="#fbbf24" font-size="16">92%</text>
+    </g>
+    <line x1="740" y1="8" x2="740" y2="36" stroke="#374151"/>
+
+    <g transform="translate(760,8)">
+      <text x="0" y="14" class="lbl-sm" fill="#9ca3af">L0 / L1 I$</text>
+      <text x="0" y="32" class="kpi-val" fill="#60a5fa" font-size="16">4 / 64 KB</text>
+    </g>
+    <line x1="888" y1="8" x2="888" y2="36" stroke="#374151"/>
+
+    <g transform="translate(908,8)">
+      <text x="0" y="14" class="lbl-sm" fill="#9ca3af">REG/SM</text>
+      <text x="0" y="32" class="kpi-val" fill="#34d399" font-size="16">256 KB</text>
+    </g>
+    <line x1="1036" y1="8" x2="1036" y2="36" stroke="#374151"/>
+
+    <g transform="translate(1056,8)">
+      <text x="0" y="14" class="lbl-sm" fill="#9ca3af">SB CLIFF</text>
+      <text x="0" y="32" class="kpi-val" fill="#f87171" font-size="16">44.8×</text>
+    </g>
+  </g>
+</svg>

@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 440" role="img"
+     aria-label="KI-1.3: 4-SMSP Single-Issue Architecture — IPC ceiling and warp-level throughput scaling">
+<defs>
+  <marker id="ar" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto">
+    <path d="M0,0 L7,3.5 L0,7 z" fill="#475569"/>
+  </marker>
+  <style><![CDATA[
+    .ttl{font:700 14px "Fraunces",serif;fill:#0b1220}
+    .sub{font:italic 11px "Fraunces",serif;fill:#5b6679}
+    .lbl{font:600 11px "JetBrains Mono",monospace;fill:#2a3548}
+    .lbl-sm{font:500 9.5px "JetBrains Mono",monospace;fill:#5b6679}
+    .lbl-xs{font:400 8.5px "JetBrains Mono",monospace;fill:#6b7280}
+    .perf{font:700 10px "JetBrains Mono",monospace;fill:#9f1239}
+    .badge{font:700 9px "JetBrains Mono",monospace;fill:#ffffff}
+    .section{font:600 12px "IBM Plex Sans",sans-serif}
+  ]]></style>
+</defs>
+<rect width="1100" height="440" fill="#ffffff"/>
+<text x="36" y="28" class="ttl">KI-1.3: Strict 4-SMSP Single-Issue Architecture — IPC Model and Throughput Scaling</text>
+<text x="36" y="46" class="sub">Source: S22/case_1-4, S3/case_9 · Only smsp__issue_inst0 and inst1 exist (no dual-issue)</text>
+
+<!-- === 4 SMSP Dispatch Model === -->
+<g transform="translate(36,66)">
+  <rect x="0" y="0" width="580" height="350" rx="10" fill="#eff6ff" stroke="#1d4ed8" stroke-width="1.2"/>
+  <text x="290" y="22" class="section" text-anchor="middle" fill="#1d4ed8">SM_120 Dispatch Architecture (per SM)</text>
+
+  <!-- 4 SMSP columns -->
+  <g transform="translate(20,40)">
+    <!-- SMSP 0 -->
+    <rect x="0" y="0" width="125" height="180" rx="6" fill="#ffffff" stroke="#3b82f6" stroke-width="1"/>
+    <rect x="0" y="0" width="125" height="22" rx="6" fill="#3b82f6"/>
+    <rect x="0" y="11" width="125" height="11" fill="#3b82f6"/>
+    <text x="62" y="16" class="badge" text-anchor="middle">SMSP 0</text>
+    <text x="62" y="42" class="lbl-sm" text-anchor="middle">12 warps</text>
+    <rect x="10" y="52" width="105" height="18" rx="3" fill="#dbeafe" stroke="#3b82f6" stroke-width="0.5"/>
+    <text x="62" y="65" class="lbl-xs" text-anchor="middle">1 insn/cyc max</text>
+    <rect x="10" y="76" width="105" height="18" rx="3" fill="#dbeafe" stroke="#3b82f6" stroke-width="0.5"/>
+    <text x="62" y="89" class="lbl-xs" text-anchor="middle">I-buf ≈4 entries</text>
+    <rect x="10" y="100" width="105" height="18" rx="3" fill="#dbeafe" stroke="#3b82f6" stroke-width="0.5"/>
+    <text x="62" y="113" class="lbl-xs" text-anchor="middle">2-stage front-end</text>
+    <text x="62" y="140" class="perf" text-anchor="middle">IPC: 0.92</text>
+    <text x="62" y="158" class="lbl-xs" text-anchor="middle">(theoretical 1.0)</text>
+    <text x="62" y="174" class="lbl-xs" text-anchor="middle">ILP=2 saturates</text>
+
+    <!-- SMSP 1 -->
+    <g transform="translate(135,0)">
+      <rect x="0" y="0" width="125" height="180" rx="6" fill="#ffffff" stroke="#3b82f6" stroke-width="1"/>
+      <rect x="0" y="0" width="125" height="22" rx="6" fill="#3b82f6"/>
+      <rect x="0" y="11" width="125" height="11" fill="#3b82f6"/>
+      <text x="62" y="16" class="badge" text-anchor="middle">SMSP 1</text>
+      <text x="62" y="42" class="lbl-sm" text-anchor="middle">12 warps</text>
+      <rect x="10" y="52" width="105" height="18" rx="3" fill="#dbeafe" stroke="#3b82f6" stroke-width="0.5"/>
+      <text x="62" y="65" class="lbl-xs" text-anchor="middle">1 insn/cyc max</text>
+      <rect x="10" y="76" width="105" height="18" rx="3" fill="#dbeafe" stroke="#3b82f6" stroke-width="0.5"/>
+      <text x="62" y="89" class="lbl-xs" text-anchor="middle">I-buf ≈4 entries</text>
+      <rect x="10" y="100" width="105" height="18" rx="3" fill="#dbeafe" stroke="#3b82f6" stroke-width="0.5"/>
+      <text x="62" y="113" class="lbl-xs" text-anchor="middle">2-stage front-end</text>
+      <text x="62" y="140" class="perf" text-anchor="middle">IPC: 0.92</text>
+      <text x="62" y="158" class="lbl-xs" text-anchor="middle">(theoretical 1.0)</text>
+      <text x="62" y="174" class="lbl-xs" text-anchor="middle">ILP=2 saturates</text>
+    </g>
+
+    <!-- SMSP 2 -->
+    <g transform="translate(270,0)">
+      <rect x="0" y="0" width="125" height="180" rx="6" fill="#ffffff" stroke="#3b82f6" stroke-width="1" stroke-dasharray="4 2" opacity="0.8"/>
+      <rect x="0" y="0" width="125" height="22" rx="6" fill="#60a5fa"/>
+      <rect x="0" y="11" width="125" height="11" fill="#60a5fa"/>
+      <text x="62" y="16" class="badge" text-anchor="middle">SMSP 2</text>
+      <text x="62" y="80" class="lbl" text-anchor="middle" fill="#3b82f6">(identical)</text>
+      <text x="62" y="140" class="perf" text-anchor="middle">IPC: 0.92</text>
+    </g>
+
+    <!-- SMSP 3 -->
+    <g transform="translate(405,0)">
+      <rect x="0" y="0" width="125" height="180" rx="6" fill="#ffffff" stroke="#3b82f6" stroke-width="1" stroke-dasharray="4 2" opacity="0.8"/>
+      <rect x="0" y="0" width="125" height="22" rx="6" fill="#60a5fa"/>
+      <rect x="0" y="11" width="125" height="11" fill="#60a5fa"/>
+      <text x="62" y="16" class="badge" text-anchor="middle">SMSP 3</text>
+      <text x="62" y="80" class="lbl" text-anchor="middle" fill="#3b82f6">(identical)</text>
+      <text x="62" y="140" class="perf" text-anchor="middle">IPC: 0.92</text>
+    </g>
+  </g>
+
+  <!-- Aggregate IPC -->
+  <rect x="20" y="240" width="540" height="44" rx="6" fill="#dbeafe" stroke="#1d4ed8" stroke-width="1"/>
+  <text x="290" y="260" class="lbl" text-anchor="middle" fill="#1d4ed8">Aggregate SM IPC = 4 × 0.92 = 3.66 (measured) / 4.0 (theoretical ceiling)</text>
+  <text x="290" y="276" class="lbl-sm" text-anchor="middle">Only warp-level parallelism (WLP) scales throughput — not ILP beyond 2</text>
+
+  <!-- Key rules -->
+  <g transform="translate(20,296)">
+    <text x="0" y="12" class="lbl-sm">• Unrolling beyond ILP=2 is wasteful (no throughput gain)</text>
+    <text x="0" y="28" class="lbl-sm">• Throughput-critical → maximize active warps, not per-warp ILP</text>
+    <text x="0" y="44" class="lbl-sm">• Latency-critical single-warp → cannot exceed 1 useful insn/cyc</text>
+  </g>
+</g>
+
+<!-- === IPC Scaling Chart === -->
+<g transform="translate(650,66)">
+  <rect x="0" y="0" width="410" height="350" rx="10" fill="#f8fafc" stroke="#334155" stroke-width="1"/>
+  <text x="205" y="22" class="section" text-anchor="middle" fill="#1e3a5f">IPC Scaling vs Warp Count</text>
+
+  <!-- Y axis -->
+  <path d="M50 50 L50 300" stroke="#94a3b8" stroke-width="0.8"/>
+  <text x="30" y="56" class="lbl-xs" text-anchor="end">4.0</text>
+  <path d="M48 55 L52 55" stroke="#94a3b8" stroke-width="0.5"/>
+  <text x="30" y="118" class="lbl-xs" text-anchor="end">3.0</text>
+  <path d="M48 117 L52 117" stroke="#94a3b8" stroke-width="0.5"/>
+  <text x="30" y="180" class="lbl-xs" text-anchor="end">2.0</text>
+  <path d="M48 179 L52 179" stroke="#94a3b8" stroke-width="0.5"/>
+  <text x="30" y="242" class="lbl-xs" text-anchor="end">1.0</text>
+  <path d="M48 241 L52 241" stroke="#94a3b8" stroke-width="0.5"/>
+
+  <!-- X axis -->
+  <path d="M50 300 L380 300" stroke="#94a3b8" stroke-width="0.8"/>
+  <text x="50" y="316" class="lbl-xs">1</text>
+  <text x="120" y="316" class="lbl-xs">4</text>
+  <text x="190" y="316" class="lbl-xs">8</text>
+  <text x="260" y="316" class="lbl-xs">16</text>
+  <text x="330" y="316" class="lbl-xs">32</text>
+  <text x="370" y="316" class="lbl-xs">48</text>
+  <text x="200" y="336" class="lbl-sm" text-anchor="middle">Active Warps</text>
+
+  <!-- Theoretical ceiling (dashed) -->
+  <path d="M50 55 L380 55" stroke="#dc2626" stroke-width="1" stroke-dasharray="4 2"/>
+  <text x="385" y="59" class="lbl-xs" fill="#dc2626">4.0 ceil</text>
+
+  <!-- Measured IPC curve (staircase) -->
+  <polyline points="50,241 120,62 190,62 260,62 330,68 370,73" fill="none" stroke="#1d4ed8" stroke-width="2.5"/>
+  <circle cx="50" cy="241" r="4" fill="#1d4ed8"/>
+  <circle cx="120" cy="62" r="4" fill="#1d4ed8"/>
+  <circle cx="190" cy="62" r="4" fill="#1d4ed8"/>
+  <circle cx="260" cy="62" r="4" fill="#1d4ed8"/>
+  <circle cx="330" cy="68" r="4" fill="#1d4ed8"/>
+  <circle cx="370" cy="73" r="4" fill="#1d4ed8"/>
+
+  <!-- Annotations -->
+  <text x="55" y="236" class="lbl-xs" fill="#1d4ed8">1W: IPC=0.25</text>
+  <text x="125" y="80" class="lbl-xs" fill="#1d4ed8">4W: IPC=0.99</text>
+  <text x="300" y="90" class="lbl-xs" fill="#1d4ed8">48W: 3.66</text>
+
+  <!-- 4-warp saturation line -->
+  <path d="M120 55 L120 300" stroke="#16a34a" stroke-width="1" stroke-dasharray="3 2"/>
+  <text x="125" y="294" class="lbl-xs" fill="#16a34a">4W = 1/SMSP</text>
+</g>
+</svg>

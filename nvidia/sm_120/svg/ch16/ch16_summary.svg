@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 920" role="img"
+     aria-label="Chapter 16 Summary: Open Questions — Resolution Status and Architectural Discoveries">
+  <rect width="1080" height="920" fill="#fcfbf6"/>
+
+  <!-- ═══════════════ HEADER ═══════════════ -->
+  <rect x="0" y="0" width="1080" height="4" fill="#6d28d9"/>
+  <g transform="translate(36,28)">
+    <text x="0" y="16" style="font:600 11px 'JetBrains Mono',monospace;letter-spacing:0.16em;fill:#6d28d9">CHAPTER 16 · SM_120 / GB202 · SECTION 24 FOLLOW-UP (31 CASES)</text>
+    <text x="0" y="46" style="font:500 24px 'Fraunces',serif;fill:#0b1220;letter-spacing:-0.02em">Open Questions — Resolution Status &amp; Discoveries</text>
+    <text x="0" y="68" style="font:italic 12px 'Fraunces',serif;fill:#5b6679">8/8 testable OQs resolved · 31 follow-up cases · updates Ch.2, 3, 5, 7, 9, 10</text>
+  </g>
+
+  <!-- ═══════════════ STATUS DASHBOARD ═══════════════ -->
+  <rect x="36" y="86" width="1008" height="72" rx="8" fill="#ffffff" stroke="#e6e4da"/>
+  <text x="56" y="108" style="font:600 9px 'JetBrains Mono',monospace;letter-spacing:0.08em;fill:#6d28d9">RESOLUTION DASHBOARD</text>
+
+  <!-- 4 status KPIs -->
+  <rect x="56" y="116" width="180" height="30" rx="5" fill="#d9f99d" stroke="#76b900" stroke-width="0.6"/>
+  <text x="70" y="136" style="font:600 14px 'Fraunces',serif;fill:#76b900">8 / 8</text>
+  <text x="120" y="136" style="font:500 10px 'JetBrains Mono',monospace;fill:#0b1220">Testable RESOLVED</text>
+
+  <rect x="256" y="116" width="180" height="30" rx="5" fill="#fef08a" stroke="#ca8a04" stroke-width="0.6"/>
+  <text x="270" y="136" style="font:600 14px 'Fraunces',serif;fill:#ca8a04">2</text>
+  <text x="288" y="136" style="font:500 10px 'JetBrains Mono',monospace;fill:#0b1220">BLOCKED (no HW)</text>
+
+  <rect x="456" y="116" width="180" height="30" rx="5" fill="#f1f5f9" stroke="#5b6679" stroke-width="0.6"/>
+  <text x="470" y="136" style="font:600 14px 'Fraunces',serif;fill:#0b1220">31</text>
+  <text x="498" y="136" style="font:500 10px 'JetBrains Mono',monospace;fill:#0b1220">Follow-up cases</text>
+
+  <rect x="656" y="116" width="180" height="30" rx="5" fill="#ede7fb" stroke="#6d28d9" stroke-width="0.6"/>
+  <text x="670" y="136" style="font:600 14px 'Fraunces',serif;fill:#6d28d9">6</text>
+  <text x="688" y="136" style="font:500 10px 'JetBrains Mono',monospace;fill:#0b1220">Chapters updated</text>
+
+  <rect x="856" y="116" width="170" height="30" rx="5" fill="#fecaca" stroke="#e11d48" stroke-width="0.6"/>
+  <text x="870" y="136" style="font:600 14px 'Fraunces',serif;fill:#e11d48">8</text>
+  <text x="888" y="136" style="font:500 10px 'JetBrains Mono',monospace;fill:#0b1220">Failed/blocked cases</text>
+
+  <!-- ═══════════════ RESOLVED OQ TABLE ═══════════════ -->
+  <rect x="36" y="172" width="1008" height="370" rx="8" fill="#ffffff" stroke="#e6e4da"/>
+  <text x="56" y="194" style="font:600 11px 'JetBrains Mono',monospace;letter-spacing:0.08em;fill:#76b900">RESOLVED OPEN QUESTIONS (8/8)</text>
+
+  <!-- Column headers -->
+  <rect x="50" y="204" width="980" height="22" rx="3" fill="#f1f5f9"/>
+  <text x="66" y="219" style="font:600 9px 'JetBrains Mono',monospace;fill:#0b1220">OQ</text>
+  <text x="110" y="219" style="font:600 9px 'JetBrains Mono',monospace;fill:#0b1220">QUESTION</text>
+  <text x="450" y="219" style="font:600 9px 'JetBrains Mono',monospace;fill:#0b1220">RESOLUTION</text>
+  <text x="850" y="219" style="font:600 9px 'JetBrains Mono',monospace;fill:#0b1220">IMPACT</text>
+
+  <!-- OQ-1 -->
+  <circle cx="72" cy="244" r="5" fill="#76b900"/>
+  <text x="84" y="248" style="font:600 9.5px 'JetBrains Mono',monospace;fill:#76b900">1</text>
+  <text x="110" y="248" style="font:500 10px 'JetBrains Mono',monospace;fill:#0b1220">L1 Cache Capacity</text>
+  <text x="450" y="248" style="font:500 10px 'JetBrains Mono',monospace;fill:#0b1220">89 KB effective (100 KB SRAM, fully-assoc)</text>
+  <text x="850" y="248" style="font:500 9px 'JetBrains Mono',monospace;fill:#6d28d9">Ch.2</text>
+
+  <!-- OQ-2 -->
+  <circle cx="72" cy="272" r="5" fill="#76b900"/>
+  <text x="84" y="276" style="font:600 9.5px 'JetBrains Mono',monospace;fill:#76b900">2</text>
+  <text x="110" y="276" style="font:500 10px 'JetBrains Mono',monospace;fill:#0b1220">GDDR7 Bank Groups</text>
+  <text x="450" y="276" style="font:500 10px 'JetBrains Mono',monospace;fill:#0b1220">4-way @ 128B, closed-page auto-precharge</text>
+  <text x="850" y="276" style="font:500 9px 'JetBrains Mono',monospace;fill:#6d28d9">Ch.2,10</text>
+
+  <!-- OQ-3 -->
+  <circle cx="72" cy="300" r="5" fill="#76b900"/>
+  <text x="84" y="304" style="font:600 9.5px 'JetBrains Mono',monospace;fill:#76b900">3</text>
+  <text x="110" y="304" style="font:500 10px 'JetBrains Mono',monospace;fill:#0b1220">FP64 EU Placement</text>
+  <text x="450" y="304" style="font:500 10px 'JetBrains Mono',monospace;fill:#0b1220">4 per-SMSP (lane-mask dichotomy decisive)</text>
+  <text x="850" y="304" style="font:500 9px 'JetBrains Mono',monospace;fill:#6d28d9">Ch.3,5,9</text>
+
+  <!-- OQ-4 -->
+  <circle cx="72" cy="328" r="5" fill="#76b900"/>
+  <text x="84" y="332" style="font:600 9.5px 'JetBrains Mono',monospace;fill:#76b900">4</text>
+  <text x="110" y="332" style="font:500 10px 'JetBrains Mono',monospace;fill:#0b1220">Scheduler Priority</text>
+  <text x="450" y="332" style="font:500 10px 'JetBrains Mono',monospace;fill:#0b1220">CGGTY + DEFER_BLOCKING + instant SB switch</text>
+  <text x="850" y="332" style="font:500 9px 'JetBrains Mono',monospace;fill:#6d28d9">Ch.7</text>
+
+  <!-- OQ-5 -->
+  <circle cx="72" cy="356" r="5" fill="#76b900"/>
+  <text x="84" y="360" style="font:600 9.5px 'JetBrains Mono',monospace;fill:#76b900">5</text>
+  <text x="110" y="360" style="font:500 10px 'JetBrains Mono',monospace;fill:#0b1220">L2 Hash Function</text>
+  <text x="450" y="360" style="font:500 10px 'JetBrains Mono',monospace;fill:#0b1220">XOR, bit 10 (1024B), 12 partitions, 4.77x worst</text>
+  <text x="850" y="360" style="font:500 9px 'JetBrains Mono',monospace;fill:#6d28d9">Ch.2</text>
+
+  <!-- OQ-7 -->
+  <circle cx="72" cy="384" r="5" fill="#76b900"/>
+  <text x="84" y="388" style="font:600 9.5px 'JetBrains Mono',monospace;fill:#76b900">7</text>
+  <text x="110" y="388" style="font:500 10px 'JetBrains Mono',monospace;fill:#0b1220">Const/I-Cache Sharing</text>
+  <text x="450" y="388" style="font:500 10px 'JetBrains Mono',monospace;fill:#0b1220">Separate SRAM (zero interference in 3 tests)</text>
+  <text x="850" y="388" style="font:500 9px 'JetBrains Mono',monospace;fill:#6d28d9">Ch.7</text>
+
+  <!-- OQ-8 -->
+  <circle cx="72" cy="412" r="5" fill="#76b900"/>
+  <text x="84" y="416" style="font:600 9.5px 'JetBrains Mono',monospace;fill:#76b900">8</text>
+  <text x="110" y="416" style="font:500 10px 'JetBrains Mono',monospace;fill:#0b1220">Power Gating Granularity</text>
+  <text x="450" y="416" style="font:500 10px 'JetBrains Mono',monospace;fill:#0b1220">Clock gating (not power), 0 startup latency</text>
+  <text x="850" y="416" style="font:500 9px 'JetBrains Mono',monospace;fill:#6d28d9">Ch.9</text>
+
+  <!-- Separator -->
+  <line x1="50" y1="432" x2="1030" y2="432" stroke="#e6e4da" stroke-width="0.5"/>
+
+  <!-- BLOCKED -->
+  <text x="56" y="452" style="font:600 9px 'JetBrains Mono',monospace;fill:#e11d48">BLOCKED (NOT TESTABLE ON SM_120)</text>
+
+  <circle cx="72" cy="472" r="5" fill="#fecaca" stroke="#e11d48" stroke-width="0.8"/>
+  <text x="84" y="476" style="font:600 9.5px 'JetBrains Mono',monospace;fill:#e11d48">6</text>
+  <text x="110" y="476" style="font:500 10px 'JetBrains Mono',monospace;fill:#0b1220">TMA Multicast HW Status</text>
+  <text x="450" y="476" style="font:500 10px 'JetBrains Mono',monospace;fill:#5b6679">Non-functional confirmed; requires die analysis</text>
+
+  <circle cx="72" cy="500" r="5" fill="#fecaca" stroke="#e11d48" stroke-width="0.8"/>
+  <text x="84" y="504" style="font:600 9.5px 'JetBrains Mono',monospace;fill:#e11d48">9</text>
+  <text x="110" y="504" style="font:500 10px 'JetBrains Mono',monospace;fill:#0b1220">SM_120 vs SM_100 Comparison</text>
+  <text x="450" y="504" style="font:500 10px 'JetBrains Mono',monospace;fill:#5b6679">Requires B200 hardware (not available)</text>
+
+  <!-- Separator -->
+  <line x1="50" y1="520" x2="1030" y2="520" stroke="#e6e4da" stroke-width="0.5"/>
+  <text x="56" y="537" style="font:italic 9px 'JetBrains Mono',monospace;fill:#5b6679">OQ-3 reclassified PARTIALLY→RESOLVED on 2026-06-11 after lane-mask dichotomy experiment</text>
+
+  <!-- ═══════════════ KEY DISCOVERIES PANEL ═══════════════ -->
+  <rect x="36" y="556" width="500" height="190" rx="8" fill="#ffffff" stroke="#e6e4da"/>
+  <text x="56" y="578" style="font:600 9px 'JetBrains Mono',monospace;letter-spacing:0.08em;fill:#1e40af">KEY ARCHITECTURAL DISCOVERIES</text>
+
+  <text x="56" y="600" style="font:500 10px 'JetBrains Mono',monospace;fill:#0b1220">L1: 89 KB default, fully associative (710+ way)</text>
+  <text x="56" y="618" style="font:500 10px 'JetBrains Mono',monospace;fill:#0b1220">L1 + Tex: 1:1 byte displacement (24KB tex = -24KB L1)</text>
+  <text x="56" y="636" style="font:500 10px 'JetBrains Mono',monospace;fill:#0b1220">Carveout: functional, 64+ KB smem disables L1</text>
+  <text x="56" y="654" style="font:500 10px 'JetBrains Mono',monospace;fill:#0b1220">FP64: 4 EU/SM (1 per-SMSP), 0.0625 DFMA/cyc/SM</text>
+  <text x="56" y="672" style="font:500 10px 'JetBrains Mono',monospace;fill:#0b1220">Scheduler: DEFER_BLOCKING + instant SB switch</text>
+  <text x="56" y="690" style="font:500 10px 'JetBrains Mono',monospace;fill:#0b1220">L2 hash: bit 10, period 8, 4.77x worst adversarial</text>
+  <text x="56" y="708" style="font:500 10px 'JetBrains Mono',monospace;fill:#0b1220">Power: clock-gated pipes, 0 ns startup latency</text>
+  <text x="56" y="726" style="font:500 10px 'JetBrains Mono',monospace;fill:#0b1220">Const cache: ~4-8 KB effective, separate from I$</text>
+
+  <!-- ═══════════════ FP64 LANE-MASK DICHOTOMY ═══════════════ -->
+  <rect x="550" y="556" width="494" height="190" rx="8" fill="#ffffff" stroke="#e6e4da"/>
+  <text x="570" y="578" style="font:600 9px 'JetBrains Mono',monospace;letter-spacing:0.08em;fill:#ea580c">OQ-3 DECISIVE EXPERIMENT: LANE-MASK DICHOTOMY</text>
+
+  <!-- Mini table -->
+  <rect x="570" y="590" width="454" height="20" rx="3" fill="#f1f5f9"/>
+  <text x="580" y="604" style="font:600 8.5px 'JetBrains Mono',monospace;fill:#0b1220">LANE MASK</text>
+  <text x="720" y="604" style="font:600 8.5px 'JetBrains Mono',monospace;fill:#0b1220">1W cyc</text>
+  <text x="800" y="604" style="font:600 8.5px 'JetBrains Mono',monospace;fill:#0b1220">4W cyc</text>
+  <text x="880" y="604" style="font:600 8.5px 'JetBrains Mono',monospace;fill:#0b1220">CONTENTION</text>
+
+  <text x="580" y="626" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#e11d48">lane==0 only</text>
+  <text x="720" y="626" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#0b1220">63.99</text>
+  <text x="800" y="626" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#e11d48">75.99</text>
+  <text x="880" y="626" style="font:700 9.5px 'JetBrains Mono',monospace;fill:#e11d48">+18.8%</text>
+
+  <text x="580" y="648" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#76b900">all 32 lanes</text>
+  <text x="720" y="648" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#0b1220">63.99</text>
+  <text x="800" y="648" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#76b900">63.99</text>
+  <text x="880" y="648" style="font:700 9.5px 'JetBrains Mono',monospace;fill:#76b900">0%</text>
+
+  <line x1="570" y1="660" x2="1024" y2="660" stroke="#e6e4da" stroke-width="0.5"/>
+  <text x="570" y="680" style="font:500 10px 'JetBrains Mono',monospace;fill:#0b1220">Conclusion: 4 independent EU per SM (1/SMSP)</text>
+  <text x="570" y="698" style="font:500 10px 'JetBrains Mono',monospace;fill:#0b1220">Prior "2-shared" was sparse-mask artifact</text>
+  <text x="570" y="716" style="font:500 10px 'JetBrains Mono',monospace;fill:#0b1220">Agg throughput: 0.0625 DFMA/cyc/SM = 4/64</text>
+  <text x="570" y="734" style="font:italic 9px 'JetBrains Mono',monospace;fill:#5b6679">8 kernels tested, #pragma unroll is null variable</text>
+
+  <!-- ═══════════════ KEY INSIGHTS PANEL ═══════════════ -->
+  <rect x="36" y="752" width="1008" height="162" rx="10" fill="#EDE7FB" stroke="#8b5cf6" stroke-width="0.8"/>
+  <text x="56" y="774" style="font:600 11px 'JetBrains Mono',monospace;letter-spacing:0.08em;fill:#6d28d9">KEY INSIGHTS &amp; MODEL UPDATES</text>
+
+  <circle cx="60" cy="796" r="3" fill="#6d28d9"/>
+  <text x="72" y="800" style="font:500 11px 'IBM Plex Sans',sans-serif;fill:#2a3548">L1 capacity = 89 KB (not 48 or 96) — use this for ALL analytical models and roofline</text>
+  <circle cx="60" cy="818" r="3" fill="#6d28d9"/>
+  <text x="72" y="822" style="font:500 11px 'IBM Plex Sans',sans-serif;fill:#2a3548">GDDR7 is closed-page — no row-buffer hit benefit exists; "3x conflict" is 4-way bank group effect</text>
+  <circle cx="60" cy="840" r="3" fill="#6d28d9"/>
+  <text x="72" y="844" style="font:500 11px 'IBM Plex Sans',sans-serif;fill:#2a3548">FP64: 4 EU/SM confirmed — prior 2-EU reading was sparse-lane-mask dispatch artifact, not real sharing</text>
+  <circle cx="60" cy="862" r="3" fill="#6d28d9"/>
+  <text x="72" y="866" style="font:500 11px 'IBM Plex Sans',sans-serif;fill:#2a3548">Scheduler DEFER_BLOCKING: barrier-blocked warps never impede ready-warp dispatch (7 cyc barrier)</text>
+  <circle cx="60" cy="884" r="3" fill="#6d28d9"/>
+  <text x="72" y="888" style="font:500 11px 'IBM Plex Sans',sans-serif;fill:#2a3548">Power model: clock gating (not power gating) at pipe level — zero startup, FMA+TC co-issue = +0.004 W/SM</text>
+  <circle cx="60" cy="906" r="3" fill="#6d28d9"/>
+  <text x="72" y="910" style="font:500 11px 'IBM Plex Sans',sans-serif;fill:#2a3548">L2 XOR hash granularity = 1024B — power-of-2 strides always safe; worst adversarial only 4.77x (not 12x)</text>
+</svg>

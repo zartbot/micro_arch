@@ -1,0 +1,254 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 780" role="img"
+     aria-label="SM_120 Multi-Warp Throughput Scaling Model: three-phase scaling from latency-bound to SM saturation">
+  <defs>
+    <marker id="ar" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto">
+      <path d="M0,0 L7,3.5 L0,7 Z" fill="#5b6679"/>
+    </marker>
+    <marker id="ar-blue" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto">
+      <path d="M0,0 L7,3.5 L0,7 Z" fill="#2563eb"/>
+    </marker>
+    <linearGradient id="phase1G" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#DCFCE7"/><stop offset="1" stop-color="#F0FDF4"/>
+    </linearGradient>
+    <linearGradient id="phase2G" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FEF3C7"/><stop offset="1" stop-color="#FFFBEB"/>
+    </linearGradient>
+    <linearGradient id="phase3G" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#E0E7FF"/><stop offset="1" stop-color="#EEF2FF"/>
+    </linearGradient>
+    <style><![CDATA[
+      .ttl{font:600 15px "Fraunces",serif;fill:#0b1220}
+      .sub{font:italic 11.5px "Fraunces",serif;fill:#5b6679}
+      .sect{font:600 13px "Fraunces",serif}
+      .lbl{font:600 11.5px "JetBrains Mono",monospace}
+      .lbl-sm{font:500 10px "JetBrains Mono",monospace;fill:#5b6679}
+      .desc{font:500 10px "JetBrains Mono",monospace;fill:#5b6679}
+      .badge{font:600 9.5px "JetBrains Mono",monospace}
+      .note{font:500 9.5px "JetBrains Mono",monospace;fill:#8e97a5}
+      .warn{font:600 10px "JetBrains Mono",monospace;fill:#dc2626}
+      .safe{font:600 10px "JetBrains Mono",monospace;fill:#16a34a}
+      .zone-t{font:600 12px "Fraunces",serif}
+      .axis{font:500 9px "JetBrains Mono",monospace;fill:#64748b}
+      .data-pt{font:600 9px "JetBrains Mono",monospace}
+    ]]></style>
+  </defs>
+
+  <rect width="1080" height="780" fill="#ffffff"/>
+
+  <!-- Title -->
+  <text x="36" y="32" class="ttl">SM_120 Multi-Warp Throughput Scaling — Three-Phase Model</text>
+  <text x="36" y="52" class="sub">Aggregate IPC scales linearly to 4 warps (1/SC), then sub-linearly as sub-cores saturate, recovering at 48W via cross-SC distribution [S22/case_55]</text>
+
+  <!-- ═══════ LEFT: Scaling Chart ═══════ -->
+  <g transform="translate(50, 80)">
+    <rect x="0" y="0" width="540" height="380" rx="12" fill="#f8fafc" stroke="#334155" stroke-width="1"/>
+    <text x="16" y="24" class="sect" fill="#334155">Aggregate IPC vs Active Warps (IMAD 4-cyc dep chain)</text>
+
+    <!-- Chart area -->
+    <g transform="translate(60, 50)">
+      <!-- Y-axis -->
+      <line x1="0" y1="0" x2="0" y2="280" stroke="#e2e8f0" stroke-width="1"/>
+      <text x="-8" y="6" class="axis" text-anchor="end">4.0</text>
+      <line x1="-4" y1="0" x2="0" y2="0" stroke="#94a3b8" stroke-width="0.8"/>
+      <text x="-8" y="76" class="axis" text-anchor="end">3.0</text>
+      <line x1="-4" y1="70" x2="440" y2="70" stroke="#f1f5f9" stroke-width="0.5"/>
+      <text x="-8" y="146" class="axis" text-anchor="end">2.0</text>
+      <line x1="-4" y1="140" x2="440" y2="140" stroke="#f1f5f9" stroke-width="0.5"/>
+      <text x="-8" y="216" class="axis" text-anchor="end">1.0</text>
+      <line x1="-4" y1="210" x2="440" y2="210" stroke="#f1f5f9" stroke-width="0.5"/>
+      <text x="-8" y="286" class="axis" text-anchor="end">0</text>
+      <text x="-40" y="140" class="axis" text-anchor="middle" transform="rotate(-90,-40,140)">Aggregate IPC</text>
+
+      <!-- X-axis -->
+      <line x1="0" y1="280" x2="440" y2="280" stroke="#e2e8f0" stroke-width="1"/>
+      <text x="220" y="306" class="axis" text-anchor="middle">Active Warps</text>
+
+      <!-- X-axis labels -->
+      <text x="0" y="296" class="axis" text-anchor="middle">0</text>
+      <text x="37" y="296" class="axis" text-anchor="middle">4</text>
+      <text x="73" y="296" class="axis" text-anchor="middle">8</text>
+      <text x="110" y="296" class="axis" text-anchor="middle">12</text>
+      <text x="293" y="296" class="axis" text-anchor="middle">32</text>
+      <text x="440" y="296" class="axis" text-anchor="middle">48</text>
+
+      <!-- Phase background bands -->
+      <rect x="0" y="0" width="37" height="280" fill="#16a34a" opacity="0.04"/>
+      <rect x="37" y="0" width="110" height="280" fill="#f59e0b" opacity="0.04"/>
+      <rect x="147" y="0" width="293" height="280" fill="#4f46e5" opacity="0.03"/>
+
+      <!-- Ideal linear (dashed) -->
+      <line x1="0" y1="280" x2="440" y2="0" stroke="#94a3b8" stroke-width="0.8" stroke-dasharray="4,4"/>
+      <text x="330" y="20" class="note">ideal linear</text>
+
+      <!-- Aggregate IPC curve (measured data points) -->
+      <!-- 1W=0.25, 4W=0.99, 8W=1.92, 12W=2.05, 32W=2.46, 48W=3.69 -->
+      <polyline points="9,262 37,211 73,146 110,137 293,108 440,22"
+                fill="none" stroke="#2563eb" stroke-width="2.5" stroke-linejoin="round"/>
+
+      <!-- Data points -->
+      <circle cx="9" cy="262" r="4" fill="#2563eb"/>
+      <text x="18" y="258" class="data-pt" fill="#2563eb">0.25</text>
+
+      <circle cx="37" cy="211" r="4" fill="#2563eb"/>
+      <text x="46" y="207" class="data-pt" fill="#2563eb">0.99</text>
+
+      <circle cx="73" cy="146" r="4" fill="#2563eb"/>
+      <text x="62" y="135" class="data-pt" fill="#2563eb">1.92</text>
+
+      <circle cx="110" cy="137" r="4" fill="#2563eb"/>
+      <text x="119" y="131" class="data-pt" fill="#2563eb">2.05</text>
+
+      <circle cx="293" cy="108" r="4" fill="#2563eb"/>
+      <text x="303" y="111" class="data-pt" fill="#2563eb">2.46</text>
+
+      <circle cx="440" cy="22" r="4" fill="#2563eb"/>
+      <text x="410" y="18" class="data-pt" fill="#2563eb">3.69</text>
+
+      <!-- Per-warp IPC curve (secondary, orange) -->
+      <polyline points="9,212 37,213 73,213 110,232 293,259 440,259"
+                fill="none" stroke="#ea580c" stroke-width="1.5" stroke-dasharray="6,3"/>
+
+      <!-- Per-warp data labels -->
+      <text x="50" y="228" class="data-pt" fill="#ea580c">per-warp: 0.246</text>
+      <text x="240" y="272" class="data-pt" fill="#ea580c">per-warp: 0.077</text>
+
+      <!-- Phase labels at top -->
+      <text x="18" y="-8" class="badge" fill="#16a34a" text-anchor="middle">Phase 1</text>
+      <text x="92" y="-8" class="badge" fill="#b45309" text-anchor="middle">Phase 2</text>
+      <text x="310" y="-8" class="badge" fill="#4f46e5" text-anchor="middle">Phase 3</text>
+    </g>
+  </g>
+
+  <!-- ═══════ RIGHT: Three-Phase Explanation ═══════ -->
+  <g transform="translate(610, 80)">
+    <!-- Phase 1 -->
+    <rect x="0" y="0" width="440" height="110" rx="10" fill="url(#phase1G)" stroke="#16a34a" stroke-width="1"/>
+    <rect x="10" y="8" width="100" height="20" rx="10" fill="#16a34a" opacity="0.15"/>
+    <text x="60" y="22" class="badge" fill="#16a34a" text-anchor="middle">PHASE 1</text>
+    <text x="120" y="22" class="zone-t" fill="#16a34a">Linear Scaling (1–4 warps)</text>
+    <text x="14" y="44" class="lbl-sm">• Each warp fills dep-chain stall cycles on its sub-core</text>
+    <text x="14" y="60" class="lbl-sm">• Perfect: +0.25 IPC per warp (IMAD 4-cyc latency)</text>
+    <text x="14" y="76" class="lbl-sm">• At 4W: 1 warp/SC → each SC fully utilized</text>
+    <text x="14" y="96" class="safe">0.25 → 0.99 IPC (4× linear, matches theory exactly)</text>
+
+    <!-- Phase 2 -->
+    <rect x="0" y="122" width="440" height="124" rx="10" fill="url(#phase2G)" stroke="#b45309" stroke-width="1"/>
+    <rect x="10" y="130" width="100" height="20" rx="10" fill="#b45309" opacity="0.12"/>
+    <text x="60" y="144" class="badge" fill="#92400e" text-anchor="middle">PHASE 2</text>
+    <text x="120" y="144" class="zone-t" fill="#92400e">Sub-Core Saturation (5–16 warps)</text>
+    <text x="14" y="166" class="lbl-sm">• Multiple warps compete for same SC's single issue slot</text>
+    <text x="14" y="182" class="lbl-sm">• Per-warp IPC drops: 0.246 → 0.171 (sharing overhead)</text>
+    <text x="14" y="198" class="lbl-sm">• Aggregate still grows but sub-linearly</text>
+    <text x="14" y="214" class="lbl-sm">• At 8W: 2W/SC, aggregate=1.92 (96% of 2.0 ideal)</text>
+    <text x="14" y="234" class="badge" fill="#92400e">Diminishing returns onset: each new warp adds less</text>
+
+    <!-- Phase 3 -->
+    <rect x="0" y="258" width="440" height="120" rx="10" fill="url(#phase3G)" stroke="#4f46e5" stroke-width="1"/>
+    <rect x="10" y="266" width="100" height="20" rx="10" fill="#4f46e5" opacity="0.12"/>
+    <text x="60" y="280" class="badge" fill="#4f46e5" text-anchor="middle">PHASE 3</text>
+    <text x="120" y="280" class="zone-t" fill="#4f46e5">SM Saturation (17–48 warps)</text>
+    <text x="14" y="302" class="lbl-sm">• Per-warp IPC plateaus at throughput floor (0.077)</text>
+    <text x="14" y="318" class="lbl-sm">• Aggregate grows ONLY by activating more sub-cores</text>
+    <text x="14" y="334" class="lbl-sm">• 32W→48W: 2.46→3.69 (+50% from cross-SC distribution)</text>
+    <text x="14" y="354" class="lbl-sm">• Round-robin binding: warps 0-3→SC0, 4-7→SC1, etc.</text>
+    <text x="14" y="370" class="badge" fill="#4f46e5">Recovery via 4-SMSP parallelism (not per-SC improvement)</text>
+  </g>
+
+  <!-- ═══════ BOTTOM: 4-SMSP Architecture Diagram ═══════ -->
+  <g transform="translate(50, 490)">
+    <rect x="0" y="0" width="990" height="260" rx="12" fill="#f8fafc" stroke="#334155" stroke-width="1"/>
+    <text x="16" y="24" class="sect" fill="#334155">4-SMSP Warp Distribution — Static Binding Model</text>
+    <text x="16" y="42" class="desc">Warps are assigned round-robin-by-4 at block launch and NEVER migrate. Each SC has independent pipe backends.</text>
+
+    <!-- 4 sub-core boxes -->
+    <g transform="translate(20, 58)">
+      <!-- SC0 -->
+      <rect x="0" y="0" width="220" height="140" rx="8" fill="url(#phase1G)" stroke="#16a34a" stroke-width="0.8"/>
+      <text x="110" y="18" class="lbl" fill="#16a34a" text-anchor="middle">SMSP 0 (Sub-Core 0)</text>
+      <text x="110" y="36" class="desc" text-anchor="middle">warps 0, 4, 8, 12, ... (mod 4 = 0)</text>
+      <g transform="translate(10, 46)">
+        <rect x="0" y="0" width="44" height="18" rx="3" fill="#16a34a" opacity="0.2" stroke="#16a34a" stroke-width="0.4"/>
+        <text x="22" y="13" class="badge" fill="#16a34a" text-anchor="middle">W0</text>
+        <rect x="50" y="0" width="44" height="18" rx="3" fill="#16a34a" opacity="0.2" stroke="#16a34a" stroke-width="0.4"/>
+        <text x="72" y="13" class="badge" fill="#16a34a" text-anchor="middle">W4</text>
+        <rect x="100" y="0" width="44" height="18" rx="3" fill="#16a34a" opacity="0.2" stroke="#16a34a" stroke-width="0.4"/>
+        <text x="122" y="13" class="badge" fill="#16a34a" text-anchor="middle">W8</text>
+        <rect x="150" y="0" width="44" height="18" rx="3" fill="#8e97a5" opacity="0.15" stroke="#8e97a5" stroke-width="0.4"/>
+        <text x="172" y="13" class="badge" fill="#8e97a5" text-anchor="middle">...</text>
+      </g>
+      <text x="14" y="84" class="desc">IPC ceiling: 1.0/SC</text>
+      <text x="14" y="100" class="desc">4-cyc IMAD: needs 4W to fill</text>
+      <text x="14" y="116" class="desc">Pipeline: FMA+ALU+XU+LSU+TC</text>
+      <text x="14" y="132" class="note">max 12 warps/SC (48 total/SM)</text>
+
+      <!-- SC1 -->
+      <rect x="240" y="0" width="220" height="140" rx="8" fill="url(#phase2G)" stroke="#b45309" stroke-width="0.8"/>
+      <text x="350" y="18" class="lbl" fill="#92400e" text-anchor="middle">SMSP 1 (Sub-Core 1)</text>
+      <text x="350" y="36" class="desc" text-anchor="middle">warps 1, 5, 9, 13, ... (mod 4 = 1)</text>
+      <g transform="translate(250, 46)">
+        <rect x="0" y="0" width="44" height="18" rx="3" fill="#b45309" opacity="0.15" stroke="#b45309" stroke-width="0.4"/>
+        <text x="22" y="13" class="badge" fill="#92400e" text-anchor="middle">W1</text>
+        <rect x="50" y="0" width="44" height="18" rx="3" fill="#b45309" opacity="0.15" stroke="#b45309" stroke-width="0.4"/>
+        <text x="72" y="13" class="badge" fill="#92400e" text-anchor="middle">W5</text>
+        <rect x="100" y="0" width="44" height="18" rx="3" fill="#b45309" opacity="0.15" stroke="#b45309" stroke-width="0.4"/>
+        <text x="122" y="13" class="badge" fill="#92400e" text-anchor="middle">W9</text>
+        <rect x="150" y="0" width="44" height="18" rx="3" fill="#8e97a5" opacity="0.15" stroke="#8e97a5" stroke-width="0.4"/>
+        <text x="172" y="13" class="badge" fill="#8e97a5" text-anchor="middle">...</text>
+      </g>
+      <text x="254" y="84" class="desc">Independent pipe copy</text>
+      <text x="254" y="100" class="desc">0% cross-SC contention</text>
+      <text x="254" y="116" class="desc">&lt;0.2% intra-pipe variance</text>
+      <text x="254" y="132" class="note">verified: S22/case_27-28</text>
+
+      <!-- SC2 -->
+      <rect x="480" y="0" width="220" height="140" rx="8" fill="url(#phase3G)" stroke="#4f46e5" stroke-width="0.8"/>
+      <text x="590" y="18" class="lbl" fill="#4f46e5" text-anchor="middle">SMSP 2 (Sub-Core 2)</text>
+      <text x="590" y="36" class="desc" text-anchor="middle">warps 2, 6, 10, 14, ... (mod 4 = 2)</text>
+      <g transform="translate(490, 46)">
+        <rect x="0" y="0" width="44" height="18" rx="3" fill="#4f46e5" opacity="0.12" stroke="#4f46e5" stroke-width="0.4"/>
+        <text x="22" y="13" class="badge" fill="#4f46e5" text-anchor="middle">W2</text>
+        <rect x="50" y="0" width="44" height="18" rx="3" fill="#4f46e5" opacity="0.12" stroke="#4f46e5" stroke-width="0.4"/>
+        <text x="72" y="13" class="badge" fill="#4f46e5" text-anchor="middle">W6</text>
+        <rect x="100" y="0" width="44" height="18" rx="3" fill="#4f46e5" opacity="0.12" stroke="#4f46e5" stroke-width="0.4"/>
+        <text x="122" y="13" class="badge" fill="#4f46e5" text-anchor="middle">W10</text>
+        <rect x="150" y="0" width="44" height="18" rx="3" fill="#8e97a5" opacity="0.15" stroke="#8e97a5" stroke-width="0.4"/>
+        <text x="172" y="13" class="badge" fill="#8e97a5" text-anchor="middle">...</text>
+      </g>
+      <text x="494" y="84" class="desc">Same architecture as SC0</text>
+      <text x="494" y="100" class="desc">Linear scaling to 4 SCs</text>
+      <text x="494" y="116" class="desc">No shared datapath</text>
+      <text x="494" y="132" class="note">each SC: private RF, OC, pipes</text>
+
+      <!-- SC3 -->
+      <rect x="720" y="0" width="220" height="140" rx="8" fill="#f8fafc" stroke="#64748b" stroke-width="0.8"/>
+      <text x="830" y="18" class="lbl" fill="#334155" text-anchor="middle">SMSP 3 (Sub-Core 3)</text>
+      <text x="830" y="36" class="desc" text-anchor="middle">warps 3, 7, 11, 15, ... (mod 4 = 3)</text>
+      <g transform="translate(730, 46)">
+        <rect x="0" y="0" width="44" height="18" rx="3" fill="#64748b" opacity="0.12" stroke="#64748b" stroke-width="0.4"/>
+        <text x="22" y="13" class="badge" fill="#334155" text-anchor="middle">W3</text>
+        <rect x="50" y="0" width="44" height="18" rx="3" fill="#64748b" opacity="0.12" stroke="#64748b" stroke-width="0.4"/>
+        <text x="72" y="13" class="badge" fill="#334155" text-anchor="middle">W7</text>
+        <rect x="100" y="0" width="44" height="18" rx="3" fill="#64748b" opacity="0.12" stroke="#64748b" stroke-width="0.4"/>
+        <text x="122" y="13" class="badge" fill="#334155" text-anchor="middle">W11</text>
+        <rect x="150" y="0" width="44" height="18" rx="3" fill="#8e97a5" opacity="0.15" stroke="#8e97a5" stroke-width="0.4"/>
+        <text x="172" y="13" class="badge" fill="#8e97a5" text-anchor="middle">...</text>
+      </g>
+      <text x="734" y="84" class="desc">48W total / 4 SC = 12W max/SC</text>
+      <text x="734" y="100" class="desc">At 48W: agg IPC = 3.69</text>
+      <text x="734" y="116" class="desc">(92% of theoretical 4.0)</text>
+      <text x="734" y="132" class="note">0-cycle context-switch (RF-resident)</text>
+    </g>
+
+    <!-- Key insight -->
+    <g transform="translate(20, 210)">
+      <rect x="0" y="0" width="950" height="36" rx="6" fill="#EDE7FB" stroke="#6d28d9" stroke-width="0.6"/>
+      <text x="14" y="14" class="lbl" fill="#6d28d9">Occupancy Rule of Thumb:</text>
+      <text x="210" y="14" class="lbl-sm">FFMA (4-cyc): 4 warps saturate 1 SC | L2 load (354-cyc): never saturates (&gt;100W needed)</text>
+      <text x="14" y="30" class="note">Practical minimum: 4W/SM for compute-bound, 16-32W/SM for memory-bound (per S11/case_37-39)</text>
+    </g>
+  </g>
+
+  <!-- Source -->
+  <text x="36" y="770" class="note">[source: S22/case_55 (IMAD scaling), S22/case_27-28 (cross-SMSP), S11/case_33 (static binding), S11/case_37-39 (stall turnaround)]</text>
+</svg>

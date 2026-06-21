@@ -1,0 +1,211 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 960" role="img"
+     aria-label="Chapter 15 Summary: Agent Ground Truth — Knowledge Base, Decision Tree, and Optimization Framework">
+  <rect width="1080" height="960" fill="#fcfbf6"/>
+
+  <!-- ═══════════════ HEADER ═══════════════ -->
+  <rect x="0" y="0" width="1080" height="4" fill="#047857"/>
+  <g transform="translate(36,28)">
+    <text x="0" y="16" style="font:600 11px 'JetBrains Mono',monospace;letter-spacing:0.16em;fill:#047857">CHAPTER 15 · SM_120 / GB202 · LLM-POWERED OPTIMIZATION AGENT</text>
+    <text x="0" y="46" style="font:500 24px 'Fraunces',serif;fill:#0b1220;letter-spacing:-0.02em">Agent Ground Truth — Knowledge Base &amp; Decision Framework</text>
+    <text x="0" y="68" style="font:italic 12px 'Fraunces',serif;fill:#5b6679">8 queryable tables · 26 strategies · 14 hard constraints · 6 code patterns · 3-phase workflow</text>
+  </g>
+
+  <!-- ═══════════════ THREE-PHASE WORKFLOW ═══════════════ -->
+  <rect x="36" y="86" width="1008" height="90" rx="8" fill="#ffffff" stroke="#e6e4da"/>
+  <text x="56" y="108" style="font:600 9px 'JetBrains Mono',monospace;letter-spacing:0.08em;fill:#047857">THREE-PHASE AGENT WORKFLOW</text>
+
+  <!-- Phase 1: Profile -->
+  <rect x="60" y="118" width="280" height="44" rx="6" fill="#d1fae5" stroke="#10b981" stroke-width="0.7"/>
+  <text x="76" y="136" style="font:600 11px 'JetBrains Mono',monospace;fill:#047857">1. PROFILE</text>
+  <text x="76" y="152" style="font:500 9px 'JetBrains Mono',monospace;fill:#0b1220">Kernel src + NCU → characterization vector</text>
+
+  <text x="350" y="142" style="font:600 16px 'Fraunces',serif;fill:#5b6679">→</text>
+
+  <!-- Phase 2: Diagnose -->
+  <rect x="380" y="118" width="280" height="44" rx="6" fill="#fef3c7" stroke="#d97706" stroke-width="0.7"/>
+  <text x="396" y="136" style="font:600 11px 'JetBrains Mono',monospace;fill:#92400e">2. DIAGNOSE</text>
+  <text x="396" y="152" style="font:500 9px 'JetBrains Mono',monospace;fill:#0b1220">Decision tree → bottleneck + predicted gap</text>
+
+  <text x="670" y="142" style="font:600 16px 'Fraunces',serif;fill:#5b6679">→</text>
+
+  <!-- Phase 3: Optimize -->
+  <rect x="700" y="118" width="280" height="44" rx="6" fill="#ede9fe" stroke="#7c3aed" stroke-width="0.7"/>
+  <text x="716" y="136" style="font:600 11px 'JetBrains Mono',monospace;fill:#5b21b6">3. OPTIMIZE</text>
+  <text x="716" y="152" style="font:500 9px 'JetBrains Mono',monospace;fill:#0b1220">Strategy → code gen → validate → commit</text>
+
+  <!-- ═══════════════ KNOWLEDGE BASE (8 TABLES) ═══════════════ -->
+  <rect x="36" y="190" width="500" height="260" rx="8" fill="#ffffff" stroke="#e6e4da"/>
+  <text x="56" y="212" style="font:600 9px 'JetBrains Mono',monospace;letter-spacing:0.08em;fill:#047857">GROUND TRUTH KNOWLEDGE BASE (8 TABLES)</text>
+
+  <!-- Table list -->
+  <rect x="56" y="224" width="16" height="16" rx="3" fill="#d1fae5"/>
+  <text x="64" y="236" style="font:700 9px 'JetBrains Mono',monospace;fill:#047857" text-anchor="middle">1</text>
+  <text x="80" y="236" style="font:500 10px 'JetBrains Mono',monospace;fill:#0b1220">Instruction Latency/Throughput (20+ entries)</text>
+
+  <rect x="56" y="246" width="16" height="16" rx="3" fill="#d1fae5"/>
+  <text x="64" y="258" style="font:700 9px 'JetBrains Mono',monospace;fill:#047857" text-anchor="middle">2</text>
+  <text x="80" y="258" style="font:500 10px 'JetBrains Mono',monospace;fill:#0b1220">Memory Hierarchy Cost Model (7 levels)</text>
+
+  <rect x="56" y="268" width="16" height="16" rx="3" fill="#d1fae5"/>
+  <text x="64" y="280" style="font:700 9px 'JetBrains Mono',monospace;fill:#047857" text-anchor="middle">3</text>
+  <text x="80" y="280" style="font:500 10px 'JetBrains Mono',monospace;fill:#0b1220">Synchronization Cost Lookup (16 primitives)</text>
+
+  <rect x="56" y="290" width="16" height="16" rx="3" fill="#d1fae5"/>
+  <text x="64" y="302" style="font:700 9px 'JetBrains Mono',monospace;fill:#047857" text-anchor="middle">4</text>
+  <text x="80" y="302" style="font:500 10px 'JetBrains Mono',monospace;fill:#0b1220">Co-Issue Compatibility Matrix (14 pairs)</text>
+
+  <rect x="56" y="312" width="16" height="16" rx="3" fill="#d1fae5"/>
+  <text x="64" y="324" style="font:700 9px 'JetBrains Mono',monospace;fill:#047857" text-anchor="middle">5</text>
+  <text x="80" y="324" style="font:500 10px 'JetBrains Mono',monospace;fill:#0b1220">Roofline Parameters (7 precisions)</text>
+
+  <rect x="56" y="334" width="16" height="16" rx="3" fill="#d1fae5"/>
+  <text x="64" y="346" style="font:700 9px 'JetBrains Mono',monospace;fill:#047857" text-anchor="middle">6</text>
+  <text x="80" y="346" style="font:500 10px 'JetBrains Mono',monospace;fill:#0b1220">Bottleneck Decision Tree (§15.3)</text>
+
+  <rect x="56" y="356" width="16" height="16" rx="3" fill="#d1fae5"/>
+  <text x="64" y="368" style="font:700 9px 'JetBrains Mono',monospace;fill:#047857" text-anchor="middle">7</text>
+  <text x="80" y="368" style="font:500 10px 'JetBrains Mono',monospace;fill:#0b1220">Strategy Lookup (26 strategies, P0-P2)</text>
+
+  <rect x="56" y="378" width="16" height="16" rx="3" fill="#d1fae5"/>
+  <text x="64" y="390" style="font:700 9px 'JetBrains Mono',monospace;fill:#047857" text-anchor="middle">8</text>
+  <text x="80" y="390" style="font:500 10px 'JetBrains Mono',monospace;fill:#0b1220">Constraint DB (14 hard + 8 soft guardrails)</text>
+
+  <line x1="56" y1="402" x2="520" y2="402" stroke="#e6e4da" stroke-width="0.5"/>
+  <text x="56" y="420" style="font:italic 9px 'JetBrains Mono',monospace;fill:#e11d48">Rule: Agent must NOT fall back to training-data</text>
+  <text x="56" y="434" style="font:italic 9px 'JetBrains Mono',monospace;fill:#e11d48">priors when a measured value exists in this DB</text>
+
+  <!-- ═══════════════ ROOFLINE PARAMETERS ═══════════════ -->
+  <rect x="550" y="190" width="494" height="260" rx="8" fill="#ffffff" stroke="#e6e4da"/>
+  <text x="570" y="212" style="font:600 9px 'JetBrains Mono',monospace;letter-spacing:0.08em;fill:#1e40af">ROOFLINE CROSSOVER POINTS</text>
+
+  <rect x="570" y="224" width="454" height="20" rx="3" fill="#f1f5f9"/>
+  <text x="580" y="238" style="font:600 8.5px 'JetBrains Mono',monospace;fill:#0b1220">PRECISION</text>
+  <text x="700" y="238" style="font:600 8.5px 'JetBrains Mono',monospace;fill:#0b1220">PEAK TFLOPS</text>
+  <text x="810" y="238" style="font:600 8.5px 'JetBrains Mono',monospace;fill:#0b1220">BW (GB/s)</text>
+  <text x="910" y="238" style="font:600 8.5px 'JetBrains Mono',monospace;fill:#0b1220">AI (FLOP/B)</text>
+
+  <text x="580" y="258" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#0b1220">MX-FP4</text>
+  <text x="700" y="258" style="font:600 9.5px 'JetBrains Mono',monospace;fill:#76b900">1069</text>
+  <text x="810" y="258" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#0b1220">1231</text>
+  <text x="910" y="258" style="font:700 9.5px 'JetBrains Mono',monospace;fill:#ea580c">869</text>
+
+  <text x="580" y="276" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#0b1220">FP8</text>
+  <text x="700" y="276" style="font:600 9.5px 'JetBrains Mono',monospace;fill:#76b900">529</text>
+  <text x="810" y="276" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#0b1220">1231</text>
+  <text x="910" y="276" style="font:700 9.5px 'JetBrains Mono',monospace;fill:#ea580c">430</text>
+
+  <text x="580" y="294" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#0b1220">INT8</text>
+  <text x="700" y="294" style="font:600 9.5px 'JetBrains Mono',monospace;fill:#76b900">526</text>
+  <text x="810" y="294" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#0b1220">1231</text>
+  <text x="910" y="294" style="font:700 9.5px 'JetBrains Mono',monospace;fill:#ea580c">427</text>
+
+  <text x="580" y="312" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#0b1220">FP16/BF16</text>
+  <text x="700" y="312" style="font:600 9.5px 'JetBrains Mono',monospace;fill:#76b900">271</text>
+  <text x="810" y="312" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#0b1220">1231</text>
+  <text x="910" y="312" style="font:700 9.5px 'JetBrains Mono',monospace;fill:#ea580c">220</text>
+
+  <text x="580" y="330" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#0b1220">TF32</text>
+  <text x="700" y="330" style="font:600 9.5px 'JetBrains Mono',monospace;fill:#76b900">129</text>
+  <text x="810" y="330" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#0b1220">1231</text>
+  <text x="910" y="330" style="font:700 9.5px 'JetBrains Mono',monospace;fill:#ea580c">105</text>
+
+  <text x="580" y="348" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#0b1220">FP32 (CUDA)</text>
+  <text x="700" y="348" style="font:600 9.5px 'JetBrains Mono',monospace;fill:#76b900">58</text>
+  <text x="810" y="348" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#0b1220">1231</text>
+  <text x="910" y="348" style="font:700 9.5px 'JetBrains Mono',monospace;fill:#ea580c">47</text>
+
+  <line x1="570" y1="360" x2="1024" y2="360" stroke="#e6e4da" stroke-width="0.5"/>
+  <text x="570" y="378" style="font:500 9px 'JetBrains Mono',monospace;fill:#0b1220">AI rule: if AI &lt; crossover → memory-bound</text>
+  <text x="570" y="394" style="font:500 9px 'JetBrains Mono',monospace;fill:#0b1220">AI rule: if AI &gt; crossover → compute-bound</text>
+  <text x="570" y="412" style="font:italic 9px 'JetBrains Mono',monospace;fill:#5b6679">AI = 2MNK / (sA*MK + sB*KN + sC*MN)</text>
+  <text x="570" y="428" style="font:italic 9px 'JetBrains Mono',monospace;fill:#5b6679">DRAM BW = 1231 GB/s (91.6% of 1344 theoretical)</text>
+
+  <!-- ═══════════════ CONSTRAINT DB + CODE PATTERNS ═══════════════ -->
+  <g transform="translate(36,464)">
+    <!-- Hard Constraints -->
+    <rect x="0" y="0" width="500" height="200" rx="8" fill="#ffffff" stroke="#e6e4da"/>
+    <text x="20" y="22" style="font:600 9px 'JetBrains Mono',monospace;letter-spacing:0.08em;fill:#e11d48">HARD CONSTRAINTS (14 — VIOLATION = FAILURE)</text>
+
+    <text x="20" y="44" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#e11d48">C1</text>
+    <text x="44" y="44" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#0b1220">No wgmma / tcgen05 (compilation failure)</text>
+    <text x="20" y="62" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#e11d48">C2</text>
+    <text x="44" y="62" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#0b1220">No TMA multicast (2000-8000x SW penalty)</text>
+    <text x="20" y="80" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#e11d48">C4</text>
+    <text x="44" y="80" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#0b1220">Max smem = 99 KB / block</text>
+    <text x="20" y="98" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#e11d48">C7</text>
+    <text x="44" y="98" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#0b1220">Register floor = 24/thread (ptxas enforced)</text>
+    <text x="20" y="116" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#e11d48">C8</text>
+    <text x="44" y="116" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#0b1220">TMA rejects sub-byte types (no FP4 direct)</text>
+    <text x="20" y="134" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#e11d48">C11</text>
+    <text x="44" y="134" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#0b1220">INT4 = 24x emulated → use FP4 E2M1 QMMA</text>
+    <text x="20" y="152" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#e11d48">C14</text>
+    <text x="44" y="152" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#0b1220">Stall &lt; write-back → silent data corruption</text>
+
+    <line x1="20" y1="164" x2="480" y2="164" stroke="#e6e4da" stroke-width="0.5"/>
+    <text x="20" y="180" style="font:italic 9px 'JetBrains Mono',monospace;fill:#5b6679">+ C3 no cvt.rs, C5 max 48 warps, C6 max 24 blk,</text>
+    <text x="20" y="194" style="font:italic 9px 'JetBrains Mono',monospace;fill:#5b6679">C9 sparse needs ::ordered, C10 max cluster=8, C12/13 setmaxnreg</text>
+
+    <!-- Code Pattern Library -->
+    <rect x="514" y="0" width="494" height="200" rx="8" fill="#ffffff" stroke="#e6e4da"/>
+    <text x="534" y="22" style="font:600 9px 'JetBrains Mono',monospace;letter-spacing:0.08em;fill:#6d28d9">CODE PATTERN TEMPLATE LIBRARY (6 PATTERNS)</text>
+
+    <text x="534" y="46" style="font:600 9.5px 'JetBrains Mono',monospace;fill:#6d28d9">P1</text>
+    <text x="558" y="46" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#0b1220">MMA inner loop: K-unrolled mma.sync + ldmatrix</text>
+    <text x="558" y="60" style="font:500 8px 'JetBrains Mono',monospace;fill:#76b900">→ 15.88 cyc/MMA at ILP>=4</text>
+
+    <text x="534" y="78" style="font:600 9.5px 'JetBrains Mono',monospace;fill:#6d28d9">P2</text>
+    <text x="558" y="78" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#0b1220">3-stage TMA pipeline (parity-based protocol)</text>
+    <text x="558" y="92" style="font:500 8px 'JetBrains Mono',monospace;fill:#76b900">→ 1.92x over serial</text>
+
+    <text x="534" y="110" style="font:600 9.5px 'JetBrains Mono',monospace;fill:#6d28d9">P3</text>
+    <text x="558" y="110" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#0b1220">Fused RMSNorm + SiLU (eliminate DRAM RT)</text>
+    <text x="558" y="124" style="font:500 8px 'JetBrains Mono',monospace;fill:#76b900">→ 1.28-1.41x over separate kernels</text>
+
+    <text x="534" y="142" style="font:600 9.5px 'JetBrains Mono',monospace;fill:#6d28d9">P4</text>
+    <text x="558" y="142" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#0b1220">Online softmax with MMA-based rowsum</text>
+    <text x="558" y="156" style="font:500 8px 'JetBrains Mono',monospace;fill:#76b900">→ 96x faster than shfl_down (batched 16)</text>
+
+    <text x="534" y="174" style="font:600 9.5px 'JetBrains Mono',monospace;fill:#6d28d9">P5</text>
+    <text x="558" y="174" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#0b1220">Persistent kernel + atomic work-stealing</text>
+    <text x="534" y="194" style="font:600 9.5px 'JetBrains Mono',monospace;fill:#6d28d9">P6</text>
+    <text x="558" y="194" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#0b1220">DSMEM cross-CTA (no-multicast workaround)</text>
+  </g>
+
+  <!-- ═══════════════ OPTIMIZATION PRIORITY (regime-specific) ═══════════════ -->
+  <rect x="36" y="678" width="1008" height="110" rx="8" fill="#ffffff" stroke="#e6e4da"/>
+  <text x="56" y="700" style="font:600 9px 'JetBrains Mono',monospace;letter-spacing:0.08em;fill:#0b1220">REGIME-SPECIFIC OPTIMIZATION PRIORITY ORDER</text>
+
+  <!-- TC-bound -->
+  <rect x="56" y="712" width="300" height="62" rx="5" fill="#d1fae5" stroke="#10b981" stroke-width="0.6"/>
+  <text x="70" y="728" style="font:600 9.5px 'JetBrains Mono',monospace;fill:#047857">TC-BOUND GEMM</text>
+  <text x="70" y="744" style="font:500 9px 'JetBrains Mono',monospace;fill:#0b1220">S1/S2 ILP (1.81x) → S3 swizzle (4.23x)</text>
+  <text x="70" y="758" style="font:500 9px 'JetBrains Mono',monospace;fill:#0b1220">→ S14 pipeline (1.92x) → S19/20 precision</text>
+
+  <!-- DRAM-bound -->
+  <rect x="376" y="712" width="300" height="62" rx="5" fill="#dbeafe" stroke="#2563eb" stroke-width="0.6"/>
+  <text x="390" y="728" style="font:600 9.5px 'JetBrains Mono',monospace;fill:#1e40af">DRAM-BOUND GEMV</text>
+  <text x="390" y="744" style="font:500 9px 'JetBrains Mono',monospace;fill:#0b1220">S7 coalesce (5.1x) → S4 LDG.128 (1.2x)</text>
+  <text x="390" y="758" style="font:500 9px 'JetBrains Mono',monospace;fill:#0b1220">→ S5 quantize (2.38x) → S18 fuse</text>
+
+  <!-- Mixed attention -->
+  <rect x="696" y="712" width="300" height="62" rx="5" fill="#fef3c7" stroke="#d97706" stroke-width="0.6"/>
+  <text x="710" y="728" style="font:600 9.5px 'JetBrains Mono',monospace;fill:#92400e">MIXED ATTENTION</text>
+  <text x="710" y="744" style="font:500 9px 'JetBrains Mono',monospace;fill:#0b1220">S9 MMA rowsum (96x) → S21 selp (free)</text>
+  <text x="710" y="758" style="font:500 9px 'JetBrains Mono',monospace;fill:#0b1220">→ S3 swizzle → S14 pipeline</text>
+
+  <!-- ═══════════════ KEY INSIGHTS ═══════════════ -->
+  <rect x="36" y="802" width="1008" height="142" rx="10" fill="#D1FAE5" stroke="#10b981" stroke-width="0.8"/>
+  <text x="56" y="824" style="font:600 11px 'JetBrains Mono',monospace;letter-spacing:0.08em;fill:#047857">KEY INSIGHTS</text>
+
+  <circle cx="60" cy="844" r="3" fill="#047857"/>
+  <text x="72" y="848" style="font:500 11px 'IBM Plex Sans',sans-serif;fill:#2a3548">All values from cycle-level measurement — no heuristic or training-data priors needed</text>
+  <circle cx="60" cy="866" r="3" fill="#047857"/>
+  <text x="72" y="870" style="font:500 11px 'IBM Plex Sans',sans-serif;fill:#2a3548">Bottleneck classifier determines regime FIRST, then selects strategy from priority-ordered lookup</text>
+  <circle cx="60" cy="888" r="3" fill="#047857"/>
+  <text x="72" y="892" style="font:500 11px 'IBM Plex Sans',sans-serif;fill:#2a3548">14 hard constraints are non-negotiable guardrails — the agent must NEVER violate C1-C14</text>
+  <circle cx="60" cy="910" r="3" fill="#047857"/>
+  <text x="72" y="914" style="font:500 11px 'IBM Plex Sans',sans-serif;fill:#2a3548">Validation loop: max 3 iterations, stop at &lt;10% headroom, regression → revert immediately</text>
+  <circle cx="60" cy="932" r="3" fill="#047857"/>
+  <text x="72" y="936" style="font:500 11px 'IBM Plex Sans',sans-serif;fill:#2a3548">Co-issue matrix enables free computation: SFU+MMA=1.0, FMA+TC=1.0, ALU+LSU=0.17 (avoid)</text>
+</svg>

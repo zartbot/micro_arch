@@ -1,0 +1,2165 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Agent Ground Truth · SM_120 Microarch Reference</title>
+    <link rel="stylesheet" href="assets/css/style.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css"
+      integrity="sha384-nB0miv6/jRmo5UMMR1wu3Gz6NLsoTkbqJghGIsx//Rlm+ZU03BU6SQNC66uf4l5+"
+      crossorigin="anonymous"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/styles/atom-one-light.min.css"
+    />
+    <style>
+      /* protect non-color overrides over hljs theme */
+      pre code.hljs {
+        background: transparent !important;
+        padding: 0 !important;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="shell">
+      <aside class="toc">
+        <a class="toc-back" href="index.html">← Index</a>
+        <div class="toc-brand">
+          SM_120 <span class="accent">GB202</span> · <em>Microarch</em>
+        </div>
+        <span class="toc-tag">FINAL REPORT · 2026</span>
+        <h4>All Chapters</h4>
+        <a href="01_architecture_overview.html">01 · Architecture Overview</a>
+        <a href="02_memory_subsystem.html">02 · Memory Subsystem</a>
+        <a href="03_sm_microarchitecture.html">03 · SM Microarchitecture</a>
+        <a href="04_tensorcore_architecture.html"
+          >04 · TensorCore Architecture</a
+        >
+        <a href="05_instruction_level_characterization.html"
+          >05 · Instruction-Level Characterization</a
+        >
+        <a href="06_on_chip_network_async.html"
+          >06 · On-Chip Network &amp; Async</a
+        >
+        <a href="07_warp_scheduler_control.html"
+          >07 · Warp Scheduler &amp; Control</a
+        >
+        <a href="08_workload_analysis.html">08 · Workload Analysis</a>
+        <a href="09_power_thermal_efficiency.html"
+          >09 · Power, Thermal &amp; Efficiency</a
+        >
+        <a href="10_system_level_multi_gpu.html"
+          >10 · System-Level &amp; Multi-GPU</a
+        >
+        <a href="11_optimization_guidance.html">11 · Optimization Guidance</a>
+        <a href="12_ptxas_compiler_behavior.html"
+          >12 · ptxas Compiler Behavior</a
+        >
+        <a href="13_unified_performance_model.html"
+          >13 · Unified Performance Model</a
+        >
+        <a href="14_sm100_to_sm120_porting_guide.html"
+          >14 · SM_100 → SM_120 Porting Guide</a
+        >
+        <a
+          href="15_agent_ground_truth.html"
+          style="font-weight: 600; color: var(--ink)"
+          >15 · Agent Ground Truth</a
+        >
+        <a href="16_open_questions.html">16 · Open Questions</a>
+        <a href="17_cross_reference_map.html">17 · Cross-Reference Map</a>
+        <a href="18_appendix_a_test_coverage.html"
+          >18 · Appendix A — Test Coverage</a
+        >
+        <a href="19_appendix_b_machine_readable.html"
+          >19 · Appendix B — Machine-Readable Parameters</a
+        >
+        <a href="20_appendix_c_methodology.html"
+          >20 · Appendix C — Measurement Methodology</a
+        >
+      </aside>
+      <main class="content">
+        <header class="hero">
+          <div class="hero-eyebrow">
+            <span class="pulse"></span>CHAPTER 15 · SM_120 · GB202 BLACKWELL
+          </div>
+          <h1 class="hero-title">Agent Ground Truth</h1>
+          <p class="lede">
+            This chapter defines how the SM_120 microbenchmark data serves as
+            the ground truth knowledge base for an LLM-powered agent that
+            automatically profiles, diagnoses, and optimizes GPU operators.
+            Every number, threshold, and decision rule below is derived from
+            measured data in the preceding chapters --- no heuristic or
+            training-data prior is needed. The agent uses this ground truth to:
+            (1) predict performance, (2) classify bottlenecks, (3) select
+            optimization strategies, (4) generate optimized code, and (5)
+            validate results against measured expectations.
+          </p>
+        </header>
+
+        <figure class="diagram">
+          <object
+            data="svg/ch15/ch15_summary.svg"
+            type="image/svg+xml"
+            aria-label="Chapter 15 summary — agent ground truth knowledge base"
+          ></object>
+          <figcaption>
+            <span class="fig-num">FIG 15.0</span>Chapter 15 summary — agent
+            ground truth knowledge base
+          </figcaption>
+        </figure>
+        <h2 class="ch-title" id="15-1-system-architecture-and-workflow">
+          15.1 System Architecture and Workflow
+        </h2>
+        <h3 class="sub-title" id="agent-architecture">Agent Architecture</h3>
+        <figure class="diagram">
+          <object
+            data="svg/ch15/ch15_agent_workflow.svg"
+            type="image/svg+xml"
+            aria-label="Agent three-phase workflow — Profile → Diagnose → Optimize"
+          ></object>
+          <figcaption>
+            Agent three-phase workflow — Profile → Diagnose → Optimize
+          </figcaption>
+        </figure>
+        <h3 class="sub-title" id="three-phase-workflow">
+          Three-Phase Workflow
+        </h3>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Phase</th>
+                <th>Input</th>
+                <th>Agent Action</th>
+                <th>Output</th>
+                <th>Ground Truth Used</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Profile</strong></td>
+                <td>Kernel source + NCU report</td>
+                <td>
+                  Extract instruction mix, memory pattern, sync points,
+                  occupancy
+                </td>
+                <td>Kernel characterization vector</td>
+                <td>Chapter 13 methodology</td>
+              </tr>
+              <tr>
+                <td><strong>Diagnose</strong></td>
+                <td>Characterization vector</td>
+                <td>
+                  Classify bottleneck via decision tree; predict current
+                  performance
+                </td>
+                <td>Bottleneck type + predicted vs actual gap</td>
+                <td>Section 15.3 decision tree, Section 15.5 predictor</td>
+              </tr>
+              <tr>
+                <td><strong>Optimize</strong></td>
+                <td>Bottleneck + constraint set</td>
+                <td>Select strategy, generate code, predict new performance</td>
+                <td>Optimized kernel + expected speedup</td>
+                <td>
+                  Section 15.4 strategies, Section 15.6 constraints, Section
+                  15.7 templates
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <hr />
+        <h2 class="ch-title" id="15-2-ground-truth-knowledge-base-schema">
+          15.2 Ground Truth Knowledge Base Schema
+        </h2>
+        <p>
+          The agent's knowledge base is organized into 8 queryable tables. All
+          values are from measured data. The agent
+          <strong>must not</strong> fall back to training-data priors when a
+          measured value exists.
+        </p>
+        <h3 class="sub-title" id="table-1-instruction-latency-and-throughput">
+          Table 1: Instruction Latency and Throughput
+        </h3>
+        <p>Query interface:</p>
+        <pre><code>QUERY: latency(HMMA.16816.F32)           -&gt; 29 cyc <span class="cite">[S9/case_1]</span>
+QUERY: throughput(HMMA.16816.F32, ILP=4)  -&gt; 15.88 cyc/mma <span class="cite">[S9/case_2]</span>
+QUERY: pipe(HMMA.16816.F32)              -&gt; tensor (subpipe: hmma) <span class="cite">[S22/case_10]</span></code></pre>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Instruction</th>
+                <th style="text-align: center">Latency (cyc)</th>
+                <th style="text-align: center">Throughput (cyc/op)</th>
+                <th>Pipe</th>
+                <th style="text-align: center">ILP Saturation</th>
+                <th>Source</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>IADD3</td>
+                <td style="text-align: center">2</td>
+                <td style="text-align: center">1.0 @ILP&gt;=2</td>
+                <td>fmalite</td>
+                <td style="text-align: center">2</td>
+                <td><code>S4/case_1</code></td>
+              </tr>
+              <tr>
+                <td>IMAD</td>
+                <td style="text-align: center">4</td>
+                <td style="text-align: center">2.0 @ILP&gt;=2</td>
+                <td>fmaheavy</td>
+                <td style="text-align: center">2</td>
+                <td><code>S4/case_3</code></td>
+              </tr>
+              <tr>
+                <td>FFMA</td>
+                <td style="text-align: center">4</td>
+                <td style="text-align: center">1.08 @ILP&gt;=4</td>
+                <td>fmalite</td>
+                <td style="text-align: center">4</td>
+                <td><code>S5/case_23</code></td>
+              </tr>
+              <tr>
+                <td>HFMA2</td>
+                <td style="text-align: center">4</td>
+                <td style="text-align: center">2.02 @ILP&gt;=2</td>
+                <td>fmalite</td>
+                <td style="text-align: center">2</td>
+                <td><code>S5/case_39</code></td>
+              </tr>
+              <tr>
+                <td>DFMA</td>
+                <td style="text-align: center">64</td>
+                <td style="text-align: center">64.0 (non-pipelined)</td>
+                <td>fp64</td>
+                <td style="text-align: center">1</td>
+                <td><code>S5/case_48</code></td>
+              </tr>
+              <tr>
+                <td>MUFU.RCP</td>
+                <td style="text-align: center">44</td>
+                <td style="text-align: center">8.43 @ILP&gt;=8</td>
+                <td>xu</td>
+                <td style="text-align: center">5</td>
+                <td><code>S5/case_1</code></td>
+              </tr>
+              <tr>
+                <td>MUFU.EX2</td>
+                <td style="text-align: center">18</td>
+                <td style="text-align: center">4.0 @ILP&gt;=5</td>
+                <td>xu</td>
+                <td style="text-align: center">5</td>
+                <td><code>S5/case_83</code></td>
+              </tr>
+              <tr>
+                <td>MUFU.SIN</td>
+                <td style="text-align: center">
+                  18 (bare MUFU.SIN, CuAssembler)
+                </td>
+                <td style="text-align: center">8.0 @ILP&gt;=4</td>
+                <td>xu</td>
+                <td style="text-align: center">4</td>
+                <td><code>S26/case_43,44</code></td>
+              </tr>
+              <tr>
+                <td>LDG.32 (L1 hit)</td>
+                <td style="text-align: center">44</td>
+                <td style="text-align: center">2.27 issue</td>
+                <td>lsu</td>
+                <td style="text-align: center">--</td>
+                <td><code>S26/case_7-9</code></td>
+              </tr>
+              <tr>
+                <td>LDG.32 (L2 hit)</td>
+                <td style="text-align: center">354</td>
+                <td style="text-align: center">2.27 issue</td>
+                <td>lsu</td>
+                <td style="text-align: center">--</td>
+                <td><code>S8/case_2</code></td>
+              </tr>
+              <tr>
+                <td>LDG.32 (DRAM)</td>
+                <td style="text-align: center">362</td>
+                <td style="text-align: center">2.27 issue</td>
+                <td>lsu</td>
+                <td style="text-align: center">--</td>
+                <td><code>S8/case_3, S26/case_11</code></td>
+              </tr>
+              <tr>
+                <td>LDS.32</td>
+                <td style="text-align: center">34</td>
+                <td style="text-align: center">4.00 issue</td>
+                <td>lsu</td>
+                <td style="text-align: center">--</td>
+                <td><code>S8/case_16</code></td>
+              </tr>
+              <tr>
+                <td>STG.32</td>
+                <td style="text-align: center">6 (fire-and-forget)</td>
+                <td style="text-align: center">5.85 issue</td>
+                <td>lsu</td>
+                <td style="text-align: center">--</td>
+                <td><code>S8/case_31, S26/case_45</code></td>
+              </tr>
+              <tr>
+                <td>HMMA.16816 (FP16)</td>
+                <td style="text-align: center">29</td>
+                <td style="text-align: center">15.88 @ILP&gt;=4</td>
+                <td>tc.hmma</td>
+                <td style="text-align: center">2</td>
+                <td><code>S9/case_1</code></td>
+              </tr>
+              <tr>
+                <td>QMMA.16832 (FP8)</td>
+                <td style="text-align: center">29</td>
+                <td style="text-align: center">15.88 @ILP&gt;=4</td>
+                <td>tc.hmma</td>
+                <td style="text-align: center">2</td>
+                <td><code>S9/case_35</code></td>
+              </tr>
+              <tr>
+                <td>OMMA.SF.16864 (MX-FP4)</td>
+                <td style="text-align: center">29</td>
+                <td style="text-align: center">15.59 @ILP&gt;=4</td>
+                <td>tc.hmma</td>
+                <td style="text-align: center">2</td>
+                <td><code>S9/case_55</code></td>
+              </tr>
+              <tr>
+                <td>IMMA.16832 (INT8)</td>
+                <td style="text-align: center">27</td>
+                <td style="text-align: center">6.55 @ILP&gt;=4</td>
+                <td>tc.imma</td>
+                <td style="text-align: center">4</td>
+                <td><code>S9/case_101</code></td>
+              </tr>
+              <tr>
+                <td>LDSM.x4</td>
+                <td style="text-align: center">49</td>
+                <td style="text-align: center">1.68 @ILP&gt;=8</td>
+                <td>lsu</td>
+                <td style="text-align: center">--</td>
+                <td><code>S8/case_103</code></td>
+              </tr>
+              <tr>
+                <td>SHFL</td>
+                <td style="text-align: center">29</td>
+                <td style="text-align: center">4.60 issue</td>
+                <td>dedicated</td>
+                <td style="text-align: center">--</td>
+                <td><code>S6/case_20</code></td>
+              </tr>
+              <tr>
+                <td>BAR.SYNC (W warps)</td>
+                <td style="text-align: center">11+2W</td>
+                <td style="text-align: center">--</td>
+                <td>cbu</td>
+                <td style="text-align: center">--</td>
+                <td><code>S26/case_1</code></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <h3 class="sub-title" id="table-2-memory-hierarchy-cost-model">
+          Table 2: Memory Hierarchy Cost Model
+        </h3>
+        <p>Query interface:</p>
+        <pre><code>QUERY: mem_latency(level=L1, pattern=pointer_chase) -&gt; 44 cyc
+QUERY: mem_bw(level=DRAM, access=coalesced_128b)    -&gt; 1231 GB/s
+QUERY: coalescing_efficiency(stride=16, width=b32)  -&gt; 19.6%</code></pre>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Level</th>
+                <th>Capacity</th>
+                <th style="text-align: center">Latency (cyc)</th>
+                <th>Peak BW</th>
+                <th style="text-align: center">Saturation Condition</th>
+                <th>Source</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Shared Memory</td>
+                <td>99 KB/block</td>
+                <td style="text-align: center">34</td>
+                <td>30.2 B/cyc/warp</td>
+                <td style="text-align: center">8 warps -&gt; 64 B/cyc</td>
+                <td><code>S8/case_28,52,53</code></td>
+              </tr>
+              <tr>
+                <td>L1 Cache</td>
+                <td>89 KB</td>
+                <td style="text-align: center">44</td>
+                <td>116.5 B/cyc (1 warp)</td>
+                <td style="text-align: center">16 warps</td>
+                <td><code>S26/case_7-9; OQ-1</code></td>
+              </tr>
+              <tr>
+                <td>L2 Cache</td>
+                <td>96 MB</td>
+                <td style="text-align: center">354</td>
+                <td>13768 GB/s aggregate</td>
+                <td style="text-align: center">16 SMs</td>
+                <td><code>S8/case_2,93</code></td>
+              </tr>
+              <tr>
+                <td>DRAM (GDDR7)</td>
+                <td>72 GB</td>
+                <td style="text-align: center">362</td>
+                <td>1231 GB/s read</td>
+                <td style="text-align: center">6 warps/SM</td>
+                <td><code>S8/case_3,81; S26/case_11</code></td>
+              </tr>
+              <tr>
+                <td>Constant Cache</td>
+                <td>2-4 KB</td>
+                <td style="text-align: center">35 (broadcast)</td>
+                <td>4 cyc/lookup</td>
+                <td style="text-align: center">--</td>
+                <td><code>S8/case_5,82</code></td>
+              </tr>
+              <tr>
+                <td>DSMEM</td>
+                <td>per-cluster</td>
+                <td style="text-align: center">220</td>
+                <td>8.2 GB/s/CTA</td>
+                <td style="text-align: center">8 CTAs</td>
+                <td><code>S16/case_3,4</code></td>
+              </tr>
+              <tr>
+                <td>TLB</td>
+                <td>712 entries (4KB), single-level</td>
+                <td style="text-align: center">327 (miss)</td>
+                <td>--</td>
+                <td style="text-align: center">--</td>
+                <td><code>S26/case_15,17,18</code></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          <strong>Coalescing degradation curve</strong> (agent must apply this
+          to estimate effective BW):
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th style="text-align: center">Stride (elements)</th>
+                <th style="text-align: center">Effective BW (GB/s)</th>
+                <th style="text-align: center">Fraction of Peak</th>
+                <th>Source</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="text-align: center">1</td>
+                <td style="text-align: center">858</td>
+                <td style="text-align: center">100%</td>
+                <td><code>S21/case_5</code></td>
+              </tr>
+              <tr>
+                <td style="text-align: center">2</td>
+                <td style="text-align: center">665</td>
+                <td style="text-align: center">77.5%</td>
+                <td><code>S21/case_5</code></td>
+              </tr>
+              <tr>
+                <td style="text-align: center">4</td>
+                <td style="text-align: center">467</td>
+                <td style="text-align: center">54.4%</td>
+                <td><code>S21/case_5</code></td>
+              </tr>
+              <tr>
+                <td style="text-align: center">8</td>
+                <td style="text-align: center">296</td>
+                <td style="text-align: center">34.5%</td>
+                <td><code>S21/case_5</code></td>
+              </tr>
+              <tr>
+                <td style="text-align: center">16</td>
+                <td style="text-align: center">169</td>
+                <td style="text-align: center">19.6%</td>
+                <td><code>S21/case_5</code></td>
+              </tr>
+              <tr>
+                <td style="text-align: center">32</td>
+                <td style="text-align: center">203</td>
+                <td style="text-align: center">23.7%</td>
+                <td><code>S21/case_5</code></td>
+              </tr>
+              <tr>
+                <td style="text-align: center">64-128</td>
+                <td style="text-align: center">265-325</td>
+                <td style="text-align: center">30.9-37.9%</td>
+                <td><code>S21/case_5</code></td>
+              </tr>
+              <tr>
+                <td style="text-align: center">Random</td>
+                <td style="text-align: center">9.9</td>
+                <td style="text-align: center">0.7%</td>
+                <td><code>S21/case_6</code></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <h3 class="sub-title" id="table-3-synchronization-cost-lookup">
+          Table 3: Synchronization Cost Lookup
+        </h3>
+        <p>Query interface:</p>
+        <pre><code>QUERY: sync_cost(type=barrier_cluster, mode=relaxed) -&gt; 85 cyc
+QUERY: sync_cost(type=fence, scope=gpu)              -&gt; 285 cyc</code></pre>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Primitive</th>
+                <th style="text-align: center">Cost (cyc)</th>
+                <th>Scaling Behavior</th>
+                <th>Source</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>__syncthreads()</code> (1-24 warps)</td>
+                <td style="text-align: center">11+2W</td>
+                <td>+2 cyc/warp (W=warps)</td>
+                <td><code>S26/case_1</code></td>
+              </tr>
+              <tr>
+                <td><code>__syncthreads()</code> (1024 threads)</td>
+                <td style="text-align: center">16</td>
+                <td>--</td>
+                <td><code>S7/case_1</code></td>
+              </tr>
+              <tr>
+                <td><code>bar.warp.sync</code></td>
+                <td style="text-align: center">1 (NOP)</td>
+                <td>--</td>
+                <td><code>S7/case_2</code></td>
+              </tr>
+              <tr>
+                <td>Named barrier sync</td>
+                <td style="text-align: center">15</td>
+                <td>Constant 32-512 threads</td>
+                <td><code>S23/case_38</code></td>
+              </tr>
+              <tr>
+                <td><code>mbarrier.arrive</code></td>
+                <td style="text-align: center">31</td>
+                <td>--</td>
+                <td><code>S7/case_48</code></td>
+              </tr>
+              <tr>
+                <td><code>mbarrier.arrive.expect_tx</code></td>
+                <td style="text-align: center">34</td>
+                <td>Per-byte cost = 0</td>
+                <td><code>S7/case_48</code></td>
+              </tr>
+              <tr>
+                <td><code>mbarrier.try_wait</code> (ready)</td>
+                <td style="text-align: center">5-15</td>
+                <td>--</td>
+                <td><code>S7/case_49</code></td>
+              </tr>
+              <tr>
+                <td><code>mbarrier.try_wait</code> (not-ready spin)</td>
+                <td style="text-align: center">101-153/poll</td>
+                <td>--</td>
+                <td><code>S7/case_45</code></td>
+              </tr>
+              <tr>
+                <td><code>barrier.cluster</code> (full)</td>
+                <td style="text-align: center">371</td>
+                <td>O(1) for 2-8 CTAs</td>
+                <td><code>S16/case_5</code></td>
+              </tr>
+              <tr>
+                <td><code>barrier.cluster</code> (relaxed)</td>
+                <td style="text-align: center">85</td>
+                <td>O(1) for 2-8 CTAs</td>
+                <td><code>S7/case_53</code></td>
+              </tr>
+              <tr>
+                <td><code>fence.acq_rel.cta</code></td>
+                <td style="text-align: center">7</td>
+                <td>--</td>
+                <td><code>S8/case_64</code></td>
+              </tr>
+              <tr>
+                <td><code>fence.acq_rel.gpu</code></td>
+                <td style="text-align: center">285</td>
+                <td>--</td>
+                <td><code>S8/case_65</code></td>
+              </tr>
+              <tr>
+                <td><code>fence.acq_rel.sys</code></td>
+                <td style="text-align: center">920</td>
+                <td>--</td>
+                <td><code>S8/case_66</code></td>
+              </tr>
+              <tr>
+                <td><code>fence.proxy.async</code> (cta)</td>
+                <td style="text-align: center">7</td>
+                <td>--</td>
+                <td><code>S8/case_123</code></td>
+              </tr>
+              <tr>
+                <td><code>fence.proxy.async</code> (global)</td>
+                <td style="text-align: center">163</td>
+                <td>--</td>
+                <td><code>S8/case_68</code></td>
+              </tr>
+              <tr>
+                <td>Producer-consumer handoff (mbarrier)</td>
+                <td style="text-align: center">58-59</td>
+                <td>--</td>
+                <td><code>S23/case_1</code></td>
+              </tr>
+              <tr>
+                <td>Producer-consumer handoff (named bar)</td>
+                <td style="text-align: center">15</td>
+                <td>--</td>
+                <td><code>S23/case_38</code></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <h3 class="sub-title" id="table-4-co-issue-compatibility-matrix">
+          Table 4: Co-Issue Compatibility Matrix
+        </h3>
+        <p>
+          The agent uses this to estimate throughput when an instruction mix
+          contains multiple pipe types. <code>1.0</code> = full overlap
+          (separate pipes); <code>0.0</code> = full serialization (shared pipe).
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Pipe A</th>
+                <th>Pipe B</th>
+                <th style="text-align: center">Overlap Ratio</th>
+                <th>Notes</th>
+                <th>Source</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>FMA</td>
+                <td>ALU</td>
+                <td style="text-align: center">1.00</td>
+                <td>Shared issue slot, separate backends</td>
+                <td><code>S4/case_5</code></td>
+              </tr>
+              <tr>
+                <td>FMA</td>
+                <td>XU (SFU)</td>
+                <td style="text-align: center">1.00</td>
+                <td>Full co-issue</td>
+                <td><code>S26/case_28</code></td>
+              </tr>
+              <tr>
+                <td>FMA</td>
+                <td>LSU</td>
+                <td style="text-align: center">0.78</td>
+                <td>Partial overlap</td>
+                <td><code>S11/case_3</code></td>
+              </tr>
+              <tr>
+                <td>FMA</td>
+                <td>Tensor</td>
+                <td style="text-align: center">1.00</td>
+                <td>FFMA free during MMA stall</td>
+                <td><code>S9/case_9</code></td>
+              </tr>
+              <tr>
+                <td>FMA</td>
+                <td>FP64</td>
+                <td style="text-align: center">1.00</td>
+                <td>Fully independent</td>
+                <td><code>S5/case_29</code></td>
+              </tr>
+              <tr>
+                <td>ALU</td>
+                <td>LSU</td>
+                <td style="text-align: center">0.17</td>
+                <td>Minimal overlap</td>
+                <td><code>S26/case_29</code></td>
+              </tr>
+              <tr>
+                <td>ALU</td>
+                <td>Tensor</td>
+                <td style="text-align: center">1.00</td>
+                <td>Full overlap</td>
+                <td><code>S22/case_45</code></td>
+              </tr>
+              <tr>
+                <td>XU</td>
+                <td>LSU</td>
+                <td style="text-align: center">0.44</td>
+                <td>Partial</td>
+                <td><code>S5/case_6</code></td>
+              </tr>
+              <tr>
+                <td>XU</td>
+                <td>Tensor</td>
+                <td style="text-align: center">0.78</td>
+                <td>Partial (77.5%)</td>
+                <td><code>S5/case_5</code></td>
+              </tr>
+              <tr>
+                <td>LSU</td>
+                <td>Tensor</td>
+                <td style="text-align: center">0.38-0.83</td>
+                <td>17.4% penalty from LDS FADD contention</td>
+                <td><code>S22/case_47</code></td>
+              </tr>
+              <tr>
+                <td>Tensor</td>
+                <td>DSMEM</td>
+                <td style="text-align: center">1.00</td>
+                <td>100% free (no contention)</td>
+                <td><code>S9/case_122</code></td>
+              </tr>
+              <tr>
+                <td>HMMA</td>
+                <td>IMMA</td>
+                <td style="text-align: center">0.71</td>
+                <td>TC subpipes partially shared</td>
+                <td><code>S26/case_31</code></td>
+              </tr>
+              <tr>
+                <td>SFU</td>
+                <td>SMEM</td>
+                <td style="text-align: center">0.77</td>
+                <td>Partial overlap</td>
+                <td><code>S26/case_32</code></td>
+              </tr>
+              <tr>
+                <td>ALU</td>
+                <td>SMEM</td>
+                <td style="text-align: center">-0.10</td>
+                <td>No benefit</td>
+                <td><code>S26/case_33</code></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          <strong>Agent rule</strong>: For N-way instruction mixes, compute
+          <code
+            >T_mix = max(T_pipeA, T_pipeB, ...) * (1 +
+            SUM(switching_penalty))</code
+          >
+          using this matrix.
+        </p>
+        <h3 class="sub-title" id="table-5-roofline-parameters">
+          Table 5: Roofline Parameters
+        </h3>
+        <p>Query interface:</p>
+        <pre><code>QUERY: roofline_balance(precision=FP16) -&gt; AI=220 FLOP/byte
+QUERY: roofline_balance(precision=FP8)  -&gt; AI=430 FLOP/byte [CALCULATED: 2x FP16]</code></pre>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Precision</th>
+                <th style="text-align: center">Peak TFLOPS</th>
+                <th style="text-align: center">DRAM BW (GB/s)</th>
+                <th style="text-align: center">Crossover AI (FLOP/byte)</th>
+                <th>Source</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>FP16</td>
+                <td style="text-align: center">271</td>
+                <td style="text-align: center">1231</td>
+                <td style="text-align: center"><strong>220</strong></td>
+                <td><code>S18/case_3</code></td>
+              </tr>
+              <tr>
+                <td>BF16</td>
+                <td style="text-align: center">271</td>
+                <td style="text-align: center">1231</td>
+                <td style="text-align: center"><strong>220</strong></td>
+                <td><code>S18/case_3</code></td>
+              </tr>
+              <tr>
+                <td>FP8</td>
+                <td style="text-align: center">529</td>
+                <td style="text-align: center">1231</td>
+                <td style="text-align: center"><strong>430</strong></td>
+                <td>[CALCULATED]</td>
+              </tr>
+              <tr>
+                <td>MX-FP4</td>
+                <td style="text-align: center">1069</td>
+                <td style="text-align: center">1231</td>
+                <td style="text-align: center"><strong>869</strong></td>
+                <td>[CALCULATED]</td>
+              </tr>
+              <tr>
+                <td>INT8</td>
+                <td style="text-align: center">526</td>
+                <td style="text-align: center">1231</td>
+                <td style="text-align: center"><strong>427</strong></td>
+                <td>[CALCULATED]</td>
+              </tr>
+              <tr>
+                <td>TF32 (tensor)</td>
+                <td style="text-align: center">129</td>
+                <td style="text-align: center">1231</td>
+                <td style="text-align: center"><strong>105</strong></td>
+                <td>AppB §B.15 <code>fp32_tensor_tf32</code></td>
+              </tr>
+              <tr>
+                <td>FP32 (CUDA cores)</td>
+                <td style="text-align: center">58</td>
+                <td style="text-align: center">1231</td>
+                <td style="text-align: center"><strong>47</strong></td>
+                <td>
+                  AppB §B.15 <code>fp32_cuda_cores</code> (<span class="cite"
+                    >[S20/case_9]</span
+                  >)
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          <strong>AI computation rule (M-24 RESOLVED 2026-06-11)</strong>:
+          Crossover AI = Peak_TFLOPS × 1000 / DRAM_BW_GBps. The earlier
+          <code>FP32 = 133 / AI = 38</code> row mixed an extended-path peak
+          (<span class="cite">[S19/case_25]</span> FFMA+IMAD co-issued sweep,
+          133 TFLOPS) with a legacy spec-BW AI computation (yielding 38 against
+          a different baseline), creating internal inconsistency. Pure FP32
+          CUDA-core peak is 58 TFLOPS [AppB §B.15]; TF32 tensor peak is 129
+          TFLOPS [theoretical]; the 133 TFLOPS observation is preserved in
+          narrative chapters as <code>S19/case_25</code> extended-path
+          measurement but is not used as the canonical roofline anchor.
+        </p>
+        <p>
+          <strong>Agent rule</strong>: Compute the operator's arithmetic
+          intensity as
+          <code
+            >AI = 2*M*N*K / (sizeof_A*M*K + sizeof_B*K*N + sizeof_C*M*N)</code
+          >. If AI &lt; crossover, the kernel is memory-bound; if AI &gt;
+          crossover, the kernel is compute-bound. At AI approximately equal to
+          crossover, apply the dual-bottleneck decision tree (Section 15.3).
+        </p>
+        <hr />
+        <h2 class="ch-title" id="15-3-bottleneck-classification-decision-tree">
+          15.3 Bottleneck Classification Decision Tree
+        </h2>
+        <p>
+          The agent traverses this decision tree given a kernel's NCU profile or
+          estimated instruction mix.
+        </p>
+        <figure class="diagram">
+          <object
+            data="svg/ch15/ch15_decision_tree.svg"
+            type="image/svg+xml"
+            aria-label="Bottleneck classification decision tree — AI → memory/compute/mixed → strategy"
+          ></object>
+          <figcaption>
+            Bottleneck classification decision tree — AI → memory/compute/mixed
+            → strategy
+          </figcaption>
+        </figure>
+        <hr />
+        <h2 class="ch-title" id="15-4-optimization-strategy-lookup-table">
+          15.4 Optimization Strategy Lookup Table
+        </h2>
+        <p>
+          Each strategy maps from a bottleneck type to a specific action with
+          measured expected benefit.
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Bottleneck</th>
+                <th>Strategy</th>
+                <th style="text-align: center">Expected Benefit</th>
+                <th>Measured Source</th>
+                <th style="text-align: center">Priority</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>S1</td>
+                <td>TC-bound, low ILP</td>
+                <td>Increase MMA ILP to &gt;=2 (K-unrolling)</td>
+                <td style="text-align: center">1.71x (ILP=1 to 2)</td>
+                <td><code>S9/case_8</code></td>
+                <td style="text-align: center">P0</td>
+              </tr>
+              <tr>
+                <td>S2</td>
+                <td>TC-bound, low ILP</td>
+                <td>Increase MMA ILP to &gt;=4</td>
+                <td style="text-align: center">
+                  1.81x (ILP=1 to 4, saturates)
+                </td>
+                <td><code>S9/case_8</code></td>
+                <td style="text-align: center">P0</td>
+              </tr>
+              <tr>
+                <td>S3</td>
+                <td>TC-bound, smem feeding</td>
+                <td>Use ldmatrix.x4 + XOR swizzle</td>
+                <td style="text-align: center">
+                  4.23x (eliminate bank conflicts)
+                </td>
+                <td><code>S8/case_142</code></td>
+                <td style="text-align: center">P0</td>
+              </tr>
+              <tr>
+                <td>S4</td>
+                <td>Memory-bound, DRAM</td>
+                <td>Vectorize loads to LDG.128</td>
+                <td style="text-align: center">
+                  1.20x (128b/32b ratio at DRAM)
+                </td>
+                <td><code>S8/case_176</code></td>
+                <td style="text-align: center">P1</td>
+              </tr>
+              <tr>
+                <td>S5</td>
+                <td>Memory-bound, DRAM</td>
+                <td>Use FP8/FP4 quantization</td>
+                <td style="text-align: center">2.38x (INT4 GEMV vs FP16)</td>
+                <td><code>S21/case_57</code></td>
+                <td style="text-align: center">P1</td>
+              </tr>
+              <tr>
+                <td>S6</td>
+                <td>Memory-bound, L2</td>
+                <td>Enable L2 persistence window</td>
+                <td style="text-align: center">13.3% latency reduction</td>
+                <td><code>S21/case_29</code></td>
+                <td style="text-align: center">P2</td>
+              </tr>
+              <tr>
+                <td>S7</td>
+                <td>Memory-bound, coalescing</td>
+                <td>Fix stride to 1 (row-major)</td>
+                <td style="text-align: center">up to 5.1x at stride=16</td>
+                <td><code>S21/case_5</code></td>
+                <td style="text-align: center">P0</td>
+              </tr>
+              <tr>
+                <td>S8</td>
+                <td>SFU-bound</td>
+                <td>Enable <code>--use_fast_math</code></td>
+                <td style="text-align: center">3.95-11.3x per function</td>
+                <td><code>S5/case_84-92</code></td>
+                <td style="text-align: center">P0</td>
+              </tr>
+              <tr>
+                <td>S9</td>
+                <td>SFU-bound, softmax</td>
+                <td>Use MMA-based rowsum</td>
+                <td style="text-align: center">
+                  96x vs shfl per-row (batched)
+                </td>
+                <td><code>S9/case_160</code></td>
+                <td style="text-align: center">P0</td>
+              </tr>
+              <tr>
+                <td>S10</td>
+                <td>Sync-bound, mbarrier</td>
+                <td>Replace with named barrier (intra-CTA)</td>
+                <td style="text-align: center">14x cheaper (15 vs 211 cyc)</td>
+                <td><code>S23/case_38</code></td>
+                <td style="text-align: center">P0</td>
+              </tr>
+              <tr>
+                <td>S11</td>
+                <td>Sync-bound, fence</td>
+                <td>Use CTA-scope instead of GPU-scope</td>
+                <td style="text-align: center">40.7x cheaper (7 vs 285 cyc)</td>
+                <td><code>S8/case_64-65</code></td>
+                <td style="text-align: center">P0</td>
+              </tr>
+              <tr>
+                <td>S12</td>
+                <td>Sync-bound, cluster</td>
+                <td>Use relaxed arrive instead of full sync</td>
+                <td style="text-align: center">4.4x cheaper (85 vs 371 cyc)</td>
+                <td><code>S7/case_53</code></td>
+                <td style="text-align: center">P1</td>
+              </tr>
+              <tr>
+                <td>S13</td>
+                <td>Occupancy-limited</td>
+                <td>Reduce registers via setmaxnreg.dec</td>
+                <td style="text-align: center">
+                  +occupancy; cost 60 cyc one-time
+                </td>
+                <td><code>S12/case_13</code></td>
+                <td style="text-align: center">P2</td>
+              </tr>
+              <tr>
+                <td>S14</td>
+                <td>Pipeline-bound, TMA</td>
+                <td>Use 3-stage software pipeline</td>
+                <td style="text-align: center">1.92x over serial</td>
+                <td><code>S10/case_82</code></td>
+                <td style="text-align: center">P0</td>
+              </tr>
+              <tr>
+                <td>S15</td>
+                <td>Launch-limited (small M)</td>
+                <td>Use persistent kernel + work-stealing</td>
+                <td style="text-align: center">
+                  Eliminate per-expert launch (35 us)
+                </td>
+                <td><code>S19/case_38</code></td>
+                <td style="text-align: center">P0</td>
+              </tr>
+              <tr>
+                <td>S16</td>
+                <td>Launch-limited (multi-kernel)</td>
+                <td>Use CUDA Graphs</td>
+                <td style="text-align: center">1.67x for 10-kernel pipeline</td>
+                <td><code>S14/case_14</code></td>
+                <td style="text-align: center">P1</td>
+              </tr>
+              <tr>
+                <td>S17</td>
+                <td>Tail-effect</td>
+                <td>Use persistent kernel or Stream-K</td>
+                <td style="text-align: center">
+                  Eliminate (1-R/110)*100% waste
+                </td>
+                <td><code>S14/case_29</code></td>
+                <td style="text-align: center">P1</td>
+              </tr>
+              <tr>
+                <td>S18</td>
+                <td>Fusion opportunity</td>
+                <td>Fuse elementwise kernels</td>
+                <td style="text-align: center">
+                  1.3-3.7x from memory round-trip elimination
+                </td>
+                <td><code>S19/case_44-47</code></td>
+                <td style="text-align: center">P0</td>
+              </tr>
+              <tr>
+                <td>S19</td>
+                <td>Precision downgrade</td>
+                <td>FP16 to FP8 MMA</td>
+                <td style="text-align: center">2.00x TOPS at same cyc/mma</td>
+                <td><code>S9/case_38</code></td>
+                <td style="text-align: center">P1</td>
+              </tr>
+              <tr>
+                <td>S20</td>
+                <td>Precision downgrade</td>
+                <td>FP8 to MX-FP4 MMA</td>
+                <td style="text-align: center">
+                  2.00x TOPS further (k=64 via OMMA.SF)
+                </td>
+                <td><code>S9/case_60</code></td>
+                <td style="text-align: center">P1</td>
+              </tr>
+              <tr>
+                <td>S21</td>
+                <td>Causal mask overhead</td>
+                <td>Use selp predication (not additive)</td>
+                <td style="text-align: center">+40.6% overhead eliminated</td>
+                <td><code>S19/case_67</code></td>
+                <td style="text-align: center">P1</td>
+              </tr>
+              <tr>
+                <td>S22</td>
+                <td>GEMM tile layout</td>
+                <td>ColMajor swizzle for B-operand</td>
+                <td style="text-align: center">21-35% from L2 reuse</td>
+                <td><code>S19/case_32</code></td>
+                <td style="text-align: center">P2</td>
+              </tr>
+              <tr>
+                <td>S23</td>
+                <td>Sparsity</td>
+                <td>Use 2:4 structured <code>.sp::ordered_metadata</code></td>
+                <td style="text-align: center">2.00x exact gain</td>
+                <td><code>S9/case_81</code></td>
+                <td style="text-align: center">P1</td>
+              </tr>
+              <tr>
+                <td>S24</td>
+                <td>Divergence</td>
+                <td>Replace branching with FSEL predication</td>
+                <td style="text-align: center">
+                  3-4x faster (no crossover found)
+                </td>
+                <td><code>S21/case_104</code></td>
+                <td style="text-align: center">P2</td>
+              </tr>
+              <tr>
+                <td>S25</td>
+                <td>Epilogue</td>
+                <td>Interleave STG with next-tile prologue</td>
+                <td style="text-align: center">
+                  40.9% overlap (fire-and-forget store)
+                </td>
+                <td><code>S21/case_45</code></td>
+                <td style="text-align: center">P2</td>
+              </tr>
+              <tr>
+                <td>S26</td>
+                <td>RoPE cost</td>
+                <td>Pre-compute sin/cos table</td>
+                <td style="text-align: center">
+                  6.4x savings (162 vs 1033 cyc/token)
+                </td>
+                <td><code>S19/case_50</code></td>
+                <td style="text-align: center">P1</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <hr />
+        <h2 class="ch-title" id="15-5-performance-prediction-api">
+          15.5 Performance Prediction API
+        </h2>
+        <p>
+          The agent uses the unified model from Chapter 13 to predict kernel
+          time before and after optimization.
+        </p>
+        <h3 class="sub-title" id="input-specification">Input Specification</h3>
+        <pre><code class="language-yaml">kernel_spec:
+  name: &quot;fused_attention_fwd&quot;
+  tile_shape: [128, 128, 64] # M_tile, N_tile, K_tile
+  precision: FP16 # -&gt; HMMA.16816, 29 cyc lat, 15.88 cyc/mma tput
+  warp_count: 8 # per CTA
+  register_per_thread: 128 # -&gt; occupancy = min(48, floor(65536/(128*32))) = 16 warps/SM
+  smem_per_block_kb: 48 # -&gt; default, no opt-in needed
+  grid_size: 110 # 1 block/SM
+  instruction_mix:
+    mma_count: 32 # per tile
+    ffma_count: 64 # epilogue + softmax
+    mufu_count: 8 # exp2 for softmax
+    ldg_count: 16 # global loads
+    lds_count: 32 # smem loads (ldmatrix)
+    stg_count: 4 # output store
+    barrier_count: 2 # __syncthreads
+    fence_count: 1 # fence.proxy.async.cta</code></pre>
+        <h3 class="sub-title" id="prediction-output">Prediction Output</h3>
+        <pre><code class="language-yaml">prediction:
+  T_compute:
+    T_tc: 507.8 cyc # 32 MMA * 15.88 cyc/mma
+    T_alu: 69.1 cyc # 64 FFMA * 1.08 cyc/op
+    T_sfu: 67.4 cyc # 8 MUFU * 8.43 cyc/op
+  T_memory:
+    T_global: 363.2 cyc # 16 LDG * 2.27 cyc/op issue + L2 latency hiding
+    T_smem: 128.0 cyc # 32 LDS * 4.0 cyc/op
+    T_reg: 26.9 cyc # 32 ldmatrix covered by T_smem
+  T_sync: 21.0 cyc # 2 * bar.sync(8 warps) + 1 * fence.cta
+  T_launch: 1.5 us # warm GPU-side
+  T_tail: 0.0 cyc # grid=110=1 wave, no tail
+
+  T_kernel: max(507.8, 363.2, 21.0) = 507.8 cyc # TC-bound
+  bottleneck: TC-BOUND
+  utilization:
+    tc: 100%
+    alu: 13.6% # fully hidden behind TC
+    sfu: 13.3% # fully hidden behind TC
+    lsu: 71.5%
+  headroom:
+    current_efficiency: 67% # vs theoretical peak
+    optimization_target: increase MMA ILP from 1 to 4 -&gt; expected 1.81x</code></pre>
+        <p>
+          <strong>Agent decision</strong>: If predicted bottleneck is TC-BOUND
+          and ILP &lt; 4, apply Strategy S1/S2 (K-unrolling). If memory-bound,
+          apply S4/S5/S7 based on access pattern analysis.
+        </p>
+        <hr />
+        <h2 class="ch-title" id="15-6-sm_120-constraint-and-guardrail-database">
+          15.6 SM_120 Constraint and Guardrail Database
+        </h2>
+        <h3 class="sub-title" id="hard-constraints">Hard Constraints</h3>
+        <p>
+          The agent <strong>must never</strong> generate code that violates
+          these constraints:
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Constraint</th>
+                <th>Limit</th>
+                <th>Consequence of Violation</th>
+                <th>Source</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>C1</td>
+                <td>No <code>wgmma</code> / <code>tcgen05</code></td>
+                <td>--</td>
+                <td>Compilation failure (ptxas rejects on sm_120)</td>
+                <td><code>S0/case_11</code></td>
+              </tr>
+              <tr>
+                <td>C2</td>
+                <td>No TMA multicast</td>
+                <td>--</td>
+                <td>2000-8000x SW penalty; CUTLASS static_assert blocks</td>
+                <td><code>S10/case_28</code></td>
+              </tr>
+              <tr>
+                <td>C3</td>
+                <td>No <code>cvt.rs</code> stochastic rounding</td>
+                <td>--</td>
+                <td>Compilation failure (sm_100a only)</td>
+                <td><code>S6/case_28</code></td>
+              </tr>
+              <tr>
+                <td>C4</td>
+                <td>Max smem per block = 99 KB</td>
+                <td>99 KB</td>
+                <td>
+                  cudaFuncSetAttribute required for &gt;48 KB; launch failure
+                  without
+                </td>
+                <td><code>S1/case_3</code></td>
+              </tr>
+              <tr>
+                <td>C5</td>
+                <td>Max 48 warps/SM</td>
+                <td>48</td>
+                <td>Hardware limit</td>
+                <td><code>S3/case_2</code></td>
+              </tr>
+              <tr>
+                <td>C6</td>
+                <td>Max 24 blocks/SM</td>
+                <td>24</td>
+                <td>Hardware limit; occupancy cap</td>
+                <td><code>S3/case_2</code></td>
+              </tr>
+              <tr>
+                <td>C7</td>
+                <td>Register floor = 24/thread</td>
+                <td>24</td>
+                <td>
+                  ptxas silently raises <code>maxrregcount&lt;24</code>;
+                  unexpected reg count
+                </td>
+                <td><code>S21/case_111</code></td>
+              </tr>
+              <tr>
+                <td>C8</td>
+                <td>TMA sub-byte types rejected</td>
+                <td>--</td>
+                <td>
+                  CUDA_ERROR_INVALID_VALUE; cannot use TMA for FP4 tile loads
+                  directly
+                </td>
+                <td><code>S10/case_116</code></td>
+              </tr>
+              <tr>
+                <td>C9</td>
+                <td>Sparse MMA requires <code>::ordered_metadata</code></td>
+                <td>--</td>
+                <td>
+                  7.5x emulation penalty without it; correctness + performance
+                </td>
+                <td><code>S19/case_13</code></td>
+              </tr>
+              <tr>
+                <td>C10</td>
+                <td>Max portable cluster = 8 CTAs</td>
+                <td>8</td>
+                <td>Launch failure at &gt;8; non-portable allows 12</td>
+                <td><code>S16/case_1,7</code></td>
+              </tr>
+              <tr>
+                <td>C11</td>
+                <td>INT4 mma.sync emulated (24x cost)</td>
+                <td>--</td>
+                <td>Use FP4 E2M1 QMMA instead; no native INT4 opcode</td>
+                <td><code>S9/case_79</code></td>
+              </tr>
+              <tr>
+                <td>C12</td>
+                <td>
+                  <code>setmaxnreg</code> requires <code>compute_120a</code>
+                </td>
+                <td>--</td>
+                <td>Rejected on base sm_120</td>
+                <td><code>S12/case_16</code></td>
+              </tr>
+              <tr>
+                <td>C13</td>
+                <td>
+                  <code>setmaxnreg</code> per-warp asymmetric dec/inc illegal
+                </td>
+                <td>--</td>
+                <td>Undefined behavior; must match across warp</td>
+                <td><code>S12/case_32</code></td>
+              </tr>
+              <tr>
+                <td>C14</td>
+                <td>Stall &lt; write-back latency causes silent stale read</td>
+                <td>--</td>
+                <td>
+                  Data corruption, no trap; agent must never set stall manually
+                </td>
+                <td><code>S11/case_132</code></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <h3 class="sub-title" id="soft-constraints">Soft Constraints</h3>
+        <p>Violations cause measured performance degradation:</p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Constraint</th>
+                <th>Threshold</th>
+                <th>Penalty</th>
+                <th>Source</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>SC1</td>
+                <td>I-cache footprint</td>
+                <td>&gt;8-16 KB</td>
+                <td>1.45-4.0x degradation</td>
+                <td><code>S21/case_32</code></td>
+              </tr>
+              <tr>
+                <td>SC2</td>
+                <td>Scoreboard pressure</td>
+                <td>&gt;6 outstanding LDG</td>
+                <td>2x+ latency cliff at N=11-12</td>
+                <td><code>S12/case_24</code></td>
+              </tr>
+              <tr>
+                <td>SC3</td>
+                <td>Warp count for compute</td>
+                <td>&lt;16 warps/SM</td>
+                <td>Below TC saturation</td>
+                <td><code>S11/case_61</code></td>
+              </tr>
+              <tr>
+                <td>SC4</td>
+                <td>Block size</td>
+                <td>1024 threads</td>
+                <td>47% regression vs 128 threads</td>
+                <td><code>S11/case_123</code></td>
+              </tr>
+              <tr>
+                <td>SC5</td>
+                <td>Pipeline depth</td>
+                <td>&gt;3 stages</td>
+                <td>Diminishing returns (+5.5% only)</td>
+                <td><code>S10/case_82</code></td>
+              </tr>
+              <tr>
+                <td>SC6</td>
+                <td>Register spill</td>
+                <td>maxreg&lt;=24 with 32 accumulators</td>
+                <td>5.23x slowdown</td>
+                <td><code>S21/case_113</code></td>
+              </tr>
+              <tr>
+                <td>SC7</td>
+                <td>fence.proxy.async scope</td>
+                <td>Global instead of CTA</td>
+                <td>+422% overhead (163 vs 7 cyc)</td>
+                <td><code>S23/case_32</code></td>
+              </tr>
+              <tr>
+                <td>SC8</td>
+                <td>Warp specialization</td>
+                <td>Without TM/NVLink</td>
+                <td>2.5-3.1x worse than all-compute</td>
+                <td><code>S9/case_33</code></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <hr />
+        <h2 class="ch-title" id="15-7-code-pattern-template-library">
+          15.7 Code Pattern Template Library
+        </h2>
+        <p>
+          The agent generates code from these measured-optimal patterns. Each
+          template has a measured performance expectation.
+        </p>
+        <h3
+          class="sub-title"
+          id="pattern-p1-mma-inner-loop-tc-bound-gemm-mainloop"
+        >
+          Pattern P1: MMA Inner Loop (TC-Bound GEMM Mainloop)
+        </h3>
+        <pre><code class="language-cuda">// Expected: 15.88 cyc/MMA at ILP&gt;=4 <span class="cite">[S9/case_2]</span>
+// Template: K-unrolled mma.sync with ldmatrix feeding
+#pragma unroll
+for (int k = 0; k &lt; K_TILE; k += 16) {
+    // ldmatrix fully hidden behind MMA [S9/case_10: 0 extra cyc at 1:1 ratio]
+    ldmatrix_sync_aligned_x4(frag_A[k/16], smem_A_ptr + swizzle_offset(k));
+    ldmatrix_sync_aligned_x4(frag_B[k/16], smem_B_ptr + swizzle_offset(k));
+    mma_sync_aligned_m16n8k16(accum, frag_A[k/16], frag_B[k/16], accum);
+}
+// Achievable: 29.3 TFLOPS/SM FP16 @ 2377 MHz <span class="cite">[S9/case_23]</span></code></pre>
+        <h3
+          class="sub-title"
+          id="pattern-p2-3-stage-software-pipeline-tma-bound"
+        >
+          Pattern P2: 3-Stage Software Pipeline (TMA-Bound)
+        </h3>
+        <pre><code class="language-cuda">// Expected: 1.92x over serial <span class="cite">[S10/case_82]</span>
+// Stage 0: TMA prefetch (479 cyc latency hidden by stages 1-2)
+// Stage 1: Compute on buffer[i-1]
+// Stage 2: Wait for buffer[i], compute on buffer[i]
+for (int stage = 0; stage &lt; K_TILES; stage++) {
+    cp_async_bulk_tensor_2d(smem_buf[(stage+2)%3], ...);  // prefetch stage+2
+    mbarrier_arrive_expect_tx(bar[(stage+2)%3], tile_bytes);
+    mbarrier_try_wait_parity(bar[stage%3], parity);        // wait for current
+    // Compute on smem_buf[stage%3]
+    compute_tile(smem_buf[stage%3]);
+    parity ^= 1;  // parity-based protocol mandatory <span class="cite">[S23/case_4]</span>
+}</code></pre>
+        <h3
+          class="sub-title"
+          id="pattern-p3-fused-normalization-activation-memory-bound"
+        >
+          Pattern P3: Fused Normalization + Activation (Memory-Bound)
+        </h3>
+        <pre><code class="language-cuda">// Expected: 1.28-1.41x over separate kernels <span class="cite">[S19/case_44]</span>
+// Eliminates 1 DRAM round-trip (~1231 GB/s BW saved)
+__global__ void fused_rmsnorm_silu(half* out, const half* in,
+                                    const half* weight, int H) {
+    // Phase 1: warp-level reduction for variance [S7/case_70: 170 cyc FP32]
+    float sum_sq = warp_reduce_sum(x * x);  // redux.sync: 45 cyc <span class="cite">[S7/case_8]</span>
+    float rms = rsqrtf(sum_sq / H + eps);    // MUFU.RSQ: 40 cyc <span class="cite">[S5/case_1]</span>
+    // Phase 2: normalize + SiLU in single pass
+    out[i] = (half)(x * rms * weight[i] * sigmoid(x * rms * weight[i]));
+    // SiLU memory-bound at production sizes: ~1121 GB/s <span class="cite">[S7/case_78]</span>
+}</code></pre>
+        <h3
+          class="sub-title"
+          id="pattern-p4-online-softmax-with-mma-based-rowsum"
+        >
+          Pattern P4: Online Softmax with MMA-Based Rowsum
+        </h3>
+        <pre><code class="language-cuda">// Expected: MMA rowsum 96x faster than shfl per-row <span class="cite">[S9/case_160]</span>
+// Rescale: 21.1 cyc/rescale (sub+exp2+mul) <span class="cite">[S19/case_65]</span>
+mma_sync(rowsum_frag, qk_frag, ones_frag, rowsum_frag);  // 7.25 cyc/mma <span class="cite">[S9/case_160]</span>
+float m_new = max(m_prev, row_max);
+float scale = exp2f(m_prev - m_new);  // MUFU.EX2: 18 cyc <span class="cite">[S5/case_83]</span>
+// exp2 does NOT short-circuit for exp2(0) [S5/case_100: same 17.75 cyc]
+accum *= scale;  // free behind TC pipeline [S5/case_98: 80.6% overlap]</code></pre>
+        <h3
+          class="sub-title"
+          id="pattern-p5-persistent-kernel-with-work-stealing"
+        >
+          Pattern P5: Persistent Kernel with Work-Stealing
+        </h3>
+        <pre><code class="language-cuda">// Expected: eliminate tail effect + 35 us/expert launch overhead <span class="cite">[S19/case_38, S14/case_29]</span>
+__global__ void persistent_gemm(int* tile_counter, ...) {
+    while (true) {
+        int tile_idx = atomicAdd(tile_counter, 1);  // 474 cyc/tile <span class="cite">[S17/case_18]</span>
+        if (tile_idx &gt;= total_tiles) break;
+        // Swizzled index: ColMajor 21-35% faster <span class="cite">[S19/case_32]</span>
+        auto [m, n] = swizzle_tile_index(tile_idx);  // 219 cyc/tile <span class="cite">[S19/case_26]</span>
+        compute_tile(m, n);
+    }
+}</code></pre>
+        <h3
+          class="sub-title"
+          id="pattern-p6-dsmem-cross-cta-data-sharing-no-multicast-workaround"
+        >
+          Pattern P6: DSMEM Cross-CTA Data Sharing (No-Multicast Workaround)
+        </h3>
+        <pre><code class="language-cuda">// Expected: DSMEM 220 cyc read <span class="cite">[S16/case_3]</span>; 3.5x faster pipeline than L2 <span class="cite">[S17/case_36]</span>
+// Replaces: TMA multicast (BROKEN on SM_120 <span class="cite">[S10/case_28]</span>)
+// CTA 0 loads tile via TMA unicast -&gt; writes to local smem
+// CTA 1 reads via ld.shared::cluster
+__shared__ half tile_buf[TILE_SIZE];
+if (cta_rank == 0) {
+    cp_async_bulk_tensor_2d(tile_buf, ...);  // 479 cyc <span class="cite">[S10/case_1]</span>
+    barrier_cluster_arrive();                 // relaxed 85 cyc <span class="cite">[S7/case_53]</span>
+} else {
+    barrier_cluster_wait();
+    // Remote read: 220 cyc <span class="cite">[S16/case_3]</span>
+    auto remote_ptr = mapa(tile_buf, cta_rank=0);  // 4.23 cyc <span class="cite">[S16/case_24]</span>
+    ld_shared_cluster(local_frag, remote_ptr);
+}</code></pre>
+        <hr />
+        <h2 class="ch-title" id="15-8-validation-and-feedback-loop-protocol">
+          15.8 Validation and Feedback Loop Protocol
+        </h2>
+        <p>
+          After the agent generates an optimized kernel, it must validate
+          against ground truth expectations.
+        </p>
+        <h3 class="sub-title" id="phase-1-static-validation-before-compilation">
+          Phase 1: Static Validation (Before Compilation)
+        </h3>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Check</th>
+                <th>Rule</th>
+                <th>Source</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>No forbidden instructions</td>
+                <td>Verify no wgmma/tcgen05/cvt.rs in generated PTX</td>
+                <td>Section 15.6, C1-C3</td>
+              </tr>
+              <tr>
+                <td>Smem within limit</td>
+                <td>smem_per_block &lt;= 99 KB</td>
+                <td>Section 15.6, C4</td>
+              </tr>
+              <tr>
+                <td>Register estimation</td>
+                <td>regs/thread * warps/block &lt;= 65536</td>
+                <td>Chapter 7</td>
+              </tr>
+              <tr>
+                <td>I-cache footprint</td>
+                <td>Unrolled body &lt; 8 KB (warn if &gt;16 KB)</td>
+                <td>Section 15.6, SC1</td>
+              </tr>
+              <tr>
+                <td>Scoreboard pressure</td>
+                <td>Outstanding LDG per warp &lt;= 6</td>
+                <td>Section 15.6, SC2</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <h3
+          class="sub-title"
+          id="phase-2-performance-validation-after-execution"
+        >
+          Phase 2: Performance Validation (After Execution)
+        </h3>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Metric</th>
+                <th>Expected Range</th>
+                <th>Action if Outside</th>
+                <th>Source</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>HMMA throughput</td>
+                <td>15.0-16.0 cyc/mma</td>
+                <td>If &gt;20: check ILP, register spill</td>
+                <td><code>S9/case_2</code></td>
+              </tr>
+              <tr>
+                <td>L2 hit rate</td>
+                <td>Per working-set prediction</td>
+                <td>If &lt;expected: check tile layout</td>
+                <td><code>S21/case_25-31</code></td>
+              </tr>
+              <tr>
+                <td>DRAM BW utilization</td>
+                <td>&gt;=85% of 1231 GB/s for DRAM-bound</td>
+                <td>If &lt;70%: check coalescing</td>
+                <td><code>S8/case_81</code></td>
+              </tr>
+              <tr>
+                <td>Sync overhead fraction</td>
+                <td>&lt;20% for production kernels</td>
+                <td>If &gt;30%: reduce fence scope</td>
+                <td><code>S23/case_49-52</code></td>
+              </tr>
+              <tr>
+                <td>Warp stall (not_selected)</td>
+                <td>&lt;30% for well-tuned kernels</td>
+                <td>If &gt;50%: increase ILP or warps</td>
+                <td><code>S9/case_112</code></td>
+              </tr>
+              <tr>
+                <td>Power consumption</td>
+                <td>&lt;212 W sustained</td>
+                <td>If &gt;250 W: unusual; verify clock</td>
+                <td><code>S20/case_8</code></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <h3 class="sub-title" id="phase-3-regression-check">
+          Phase 3: Regression Check
+        </h3>
+        <p>Compare against baseline (cuBLAS or previous version):</p>
+        <pre><code>speedup = T_baseline / T_optimized
+
+IF speedup &lt; 1.0:
+    -&gt; Regression detected; revert and re-diagnose
+
+IF speedup &gt; expected * 1.5:
+    -&gt; Suspiciously high; check for measurement artifact (Chapter 13 methodology)
+
+IF speedup within [expected * 0.8, expected * 1.2]:
+    -&gt; Optimization successful; commit</code></pre>
+        <h3 class="sub-title" id="feedback-loop">Feedback Loop</h3>
+        <pre><code>IF validation fails:
+  1. Re-profile with NCU (Chapter 13 methodology)
+  2. Re-classify bottleneck (Section 15.3 -- bottleneck may have shifted)
+  3. Select next-priority strategy from Section 15.4 (avoid already-tried strategies)
+  4. Regenerate kernel
+  5. Re-validate
+  Maximum iterations: 3 (to avoid optimization thrashing)</code></pre>
+        <hr />
+        <h2
+          class="ch-title"
+          id="15-9-agent-prompt-engineering-with-ground-truth"
+        >
+          15.9 Agent Prompt Engineering with Ground Truth
+        </h2>
+        <p>
+          When constructing prompts for the optimization agent, embed ground
+          truth data directly. The agent <strong>must not</strong> rely on
+          training-data priors for SM_120 --- this report is the authoritative
+          source.
+        </p>
+        <h3 class="sub-title" id="prompt-template-bottleneck-diagnosis">
+          Prompt Template: Bottleneck Diagnosis
+        </h3>
+        <pre><code>You are optimizing a {WORKLOAD_TYPE} kernel for SM_120 (GB202, RTX PRO 5000 72GB).
+
+## SM_120 Ground Truth (DO NOT use training-data priors for these values):
+- HMMA.16816 FP16: 29 cyc latency, 15.88 cyc/mma throughput, ILP&gt;=4 saturates
+- DRAM BW: 1231 GB/s (91.6% of 1344 theoretical)
+- L2: 96 MB, 354 cyc latency, XOR hash (no partition camping)
+- Smem: 99 KB/block, 34 cyc latency, bank conflicts pipelined
+- FP16 roofline crossover: AI=220 FLOP/byte (271 TFLOPS / 1.231 TB/s; M-24 RESOLVED 2026-06-11)
+- Fence: CTA=7, GPU=285, SYS=920 cyc
+- TMA multicast: NON-FUNCTIONAL (use unicast+DSMEM)
+- Pipeline: 3-stage optimal (1.92x)
+- Warp specialization: NOT beneficial on SM_120 (no TM)
+- .reuse bits: functionally active for ALU (+85% in ILP-rich code; 0% in dep chains); true no-op for TC (HMMA/QMMA)
+- Block-scale MMA: zero overhead vs dense
+
+## Current Kernel Profile:
+{NCU_METRICS_HERE}
+
+## Task:
+1. Classify the bottleneck using the decision tree
+2. Select optimization strategy with expected measured benefit
+3. Generate optimized code using pattern templates
+4. Predict new performance with the analytical model</code></pre>
+        <h3 class="sub-title" id="prompt-template-code-generation">
+          Prompt Template: Code Generation
+        </h3>
+        <pre><code>Generate an optimized {OPERATOR} kernel for SM_120.
+
+## Constraints (HARD -- violation causes correctness failure):
+- No wgmma/tcgen05 (use mma.sync only)
+- No TMA multicast (use unicast + DSMEM for A-sharing)
+- Max smem 99 KB/block (cudaFuncSetAttribute required for &gt;48 KB)
+- Sparse MMA requires ::ordered_metadata
+- INT4 -&gt; use FP4 E2M1 QMMA (INT4 IMMA is 24x emulated)
+
+## Performance Targets (from measured ground truth):
+- TC utilization: &gt;=60% of 29.3 TFLOPS/SM
+- Memory BW: &gt;=85% of 1231 GB/s for DRAM-bound ops
+- Sync overhead: &lt;20% of total kernel time
+- ILP requirement: MMA ILP&gt;=2 (1.71x gain), ILP&gt;=4 preferred (1.81x)
+
+## Optimization Priorities (ordered by measured impact):
+1. K-unrolling for MMA ILP (1.81x) -- Strategy S1/S2
+2. XOR swizzle for smem bank conflicts (4.23x) -- Strategy S3
+3. 3-stage pipeline for TMA hiding (1.92x) -- Strategy S14
+4. fast_math for SFU ops (3.95-11.3x) -- Strategy S8
+5. Vectorize to LDG.128 (1.20x) -- Strategy S4
+
+## Code Patterns:
+{RELEVANT_PATTERNS_FROM_SECTION_15.7}</code></pre>
+        <h3 class="sub-title" id="prompt-template-validation">
+          Prompt Template: Validation
+        </h3>
+        <pre><code>Validate this optimized kernel against SM_120 ground truth.
+
+## Expected Performance:
+- Predicted T_kernel: {PREDICTED_CYC} cyc
+- Predicted bottleneck: {BOTTLENECK_TYPE}
+- Predicted TFLOPS: {PREDICTED_TFLOPS}
+
+## Actual NCU Measurements:
+{ACTUAL_NCU_METRICS}
+
+## Validation Criteria:
+- HMMA throughput within [15.0, 16.0] cyc/mma -&gt; PASS
+- DRAM BW &gt;= 85% of 1231 GB/s (if DRAM-bound) -&gt; PASS
+- Prediction error &lt; 20% (compute-bound) or &lt; 30% (memory-bound) -&gt; PASS
+- No regression vs baseline -&gt; PASS
+
+## If FAIL:
+- Re-diagnose bottleneck (it may have shifted after optimization)
+- Select next-priority strategy from lookup table
+- Maximum 3 iterations before escalating to human review</code></pre>
+        <hr />
+        <h2 class="ch-title" id="15-10-complete-parameter-summary">
+          15.10 Complete Parameter Summary
+        </h2>
+        <p>
+          The following is the consolidated set of ground truth parameters that
+          the agent must use, organized by decision context:
+        </p>
+        <h3 class="sub-title" id="when-the-agent-is-predicting-performance">
+          When the Agent is Predicting Performance
+        </h3>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Parameter</th>
+                <th>Value</th>
+                <th>Use</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>SM count</td>
+                <td>110</td>
+                <td>Grid efficiency, tail effect</td>
+              </tr>
+              <tr>
+                <td>Clock frequency</td>
+                <td>2377 MHz (nominal), 2572 MHz (boost)</td>
+                <td>TFLOPS calculation</td>
+              </tr>
+              <tr>
+                <td>DRAM BW</td>
+                <td>1231 GB/s</td>
+                <td>Memory roofline</td>
+              </tr>
+              <tr>
+                <td>FP16 peak</td>
+                <td>271 TFLOPS</td>
+                <td>Compute roofline</td>
+              </tr>
+              <tr>
+                <td>MMA throughput</td>
+                <td>15.88 cyc/mma @ILP&gt;=4</td>
+                <td>TC time estimation</td>
+              </tr>
+              <tr>
+                <td>FFMA throughput</td>
+                <td>1.08 cyc/op @ILP&gt;=4</td>
+                <td>ALU time estimation</td>
+              </tr>
+              <tr>
+                <td>MUFU throughput</td>
+                <td>8.43 cyc/op @ILP&gt;=8</td>
+                <td>SFU time estimation</td>
+              </tr>
+              <tr>
+                <td>LDG issue rate</td>
+                <td>2.27 cyc/op</td>
+                <td>LSU time estimation</td>
+              </tr>
+              <tr>
+                <td>Smem latency</td>
+                <td>34 cyc</td>
+                <td>Smem time estimation</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <h3 class="sub-title" id="when-the-agent-is-selecting-tile-sizes">
+          When the Agent is Selecting Tile Sizes
+        </h3>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Parameter</th>
+                <th>Value</th>
+                <th>Constraint</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Max smem/block</td>
+                <td>99 KB</td>
+                <td>Tile size upper bound</td>
+              </tr>
+              <tr>
+                <td>Register file/SM</td>
+                <td>65536 x 32-bit</td>
+                <td>Register budget</td>
+              </tr>
+              <tr>
+                <td>TC saturation</td>
+                <td>ILP&gt;=4 or warps&gt;=16</td>
+                <td>Minimum K-unroll</td>
+              </tr>
+              <tr>
+                <td>Pipeline depth</td>
+                <td>3 stages optimal</td>
+                <td>Number of smem buffers</td>
+              </tr>
+              <tr>
+                <td>ldmatrix cost</td>
+                <td>49 cyc latency, hidden at 1:1 MMA ratio</td>
+                <td>Operand feed</td>
+              </tr>
+              <tr>
+                <td>Swizzle mode</td>
+                <td>XOR 128B</td>
+                <td>Bank conflict elimination</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <h3 class="sub-title" id="when-the-agent-is-choosing-synchronization">
+          When the Agent is Choosing Synchronization
+        </h3>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Parameter</th>
+                <th>Value</th>
+                <th>Preference</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Named barrier</td>
+                <td>15 cyc</td>
+                <td>Always prefer for intra-CTA</td>
+              </tr>
+              <tr>
+                <td>mbarrier arrive</td>
+                <td>31 cyc</td>
+                <td>Only for TMA tracking</td>
+              </tr>
+              <tr>
+                <td>Cluster relaxed</td>
+                <td>85 cyc</td>
+                <td>Prefer over full (371 cyc)</td>
+              </tr>
+              <tr>
+                <td>Fence CTA</td>
+                <td>7 cyc</td>
+                <td>Always prefer when CTA-local</td>
+              </tr>
+              <tr>
+                <td>Fence GPU</td>
+                <td>285 cyc</td>
+                <td>Only for cross-CTA global data</td>
+              </tr>
+              <tr>
+                <td>Fence SYS</td>
+                <td>920 cyc</td>
+                <td>Avoid; use NCCL instead</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <h3 class="sub-title" id="when-the-agent-is-handling-precision">
+          When the Agent is Handling Precision
+        </h3>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Parameter</th>
+                <th>Value</th>
+                <th>Decision</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>FP16 HMMA</td>
+                <td>15.88 cyc/mma</td>
+                <td>Baseline</td>
+              </tr>
+              <tr>
+                <td>FP8 QMMA</td>
+                <td>15.88 cyc/mma, 2x elements</td>
+                <td>2x TOPS improvement</td>
+              </tr>
+              <tr>
+                <td>MX-FP4 OMMA.SF</td>
+                <td>15.59 cyc/mma, 4x elements</td>
+                <td>4x TOPS improvement</td>
+              </tr>
+              <tr>
+                <td>INT8 IMMA</td>
+                <td>6.55 cyc/mma</td>
+                <td>Higher throughput pipe</td>
+              </tr>
+              <tr>
+                <td>INT4</td>
+                <td>24x emulated</td>
+                <td>Never use; choose FP4 E2M1</td>
+              </tr>
+              <tr>
+                <td>FP64 DFMA</td>
+                <td>64 cyc (non-pipelined)</td>
+                <td>
+                  1:32 ratio vs FP32 (real-workload, 4 EU/SM RESOLVED
+                  2026-06-11)
+                </td>
+              </tr>
+              <tr>
+                <td>Block-scale overhead</td>
+                <td>0 cyc vs dense</td>
+                <td>Free precision downgrade path</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <hr />
+        <h2 class="ch-title" id="15-11-optimization-priority-rules">
+          15.11 Optimization Priority Rules
+        </h2>
+        <p>
+          The agent must apply optimizations in priority order. The following
+          rules determine when to stop:
+        </p>
+        <ol>
+          <li>
+            <strong>P0 strategies first</strong>: Always apply all applicable P0
+            strategies before considering P1.
+          </li>
+          <li>
+            <strong>Never violate hard constraints</strong>: Even if a P0
+            strategy would improve performance, skip it if it would violate
+            C1-C14.
+          </li>
+          <li>
+            <strong>Check soft constraints after each change</strong>: If a P0
+            strategy triggers a soft constraint violation (e.g., I-cache cliff
+            from excessive unrolling), back off to the threshold.
+          </li>
+          <li>
+            <strong>Stop at 3 iterations maximum</strong>: If the validation
+            loop has run 3 times without convergence, escalate to human review.
+          </li>
+          <li>
+            <strong>Stop at &lt;10% headroom</strong>: If predicted headroom is
+            below 10%, the kernel is near-optimal and further optimization is
+            unlikely to yield significant gains.
+          </li>
+          <li>
+            <strong>Regime-specific ordering</strong>: The priority order
+            depends on the diagnosed bottleneck regime:
+          </li>
+          <li>
+            <strong>TC-bound GEMM</strong>: S1/S2 (ILP) -&gt; S3 (swizzle) -&gt;
+            S14 (pipeline) -&gt; S19/S20 (precision)
+          </li>
+          <li>
+            <strong>DRAM-bound GEMV</strong>: S7 (coalescing) -&gt; S4
+            (vectorize) -&gt; S5 (quantize) -&gt; S18 (fuse)
+          </li>
+          <li>
+            <strong>Mixed attention</strong>: S9 (MMA rowsum) -&gt; S21 (selp
+            mask) -&gt; S3 (swizzle) -&gt; S14 (pipeline)
+          </li>
+          <li>
+            <strong>Launch-limited</strong>: S15 (persistent) -&gt; S16 (graphs)
+            -&gt; S18 (fuse)
+          </li>
+          <li>
+            <strong>Sync-limited</strong>: S10 (named barrier) -&gt; S11 (CTA
+            fence) -&gt; S12 (relaxed arrive)
+          </li>
+        </ol>
+
+        <footer class="page-footer">
+          <div class="foot-grid">
+            <div>
+              <strong>SM_120 / GB202 Blackwell</strong> · Microarchitecture
+              Analysis &amp; Reference · 2026
+            </div>
+            <div>1542 microbenchmark cases · 26 sections · ~13,400 lines</div>
+            <div class="foot-accent">
+              RTX PRO 5000 72GB · CUDA 13.3 · Data source: test_results/SM_120/
+            </div>
+          </div>
+        </footer>
+      </main>
+      <aside class="toc-right">
+        <h4>Chapter Navigation</h4>
+        <a href="#15-1-system-architecture-and-workflow"
+          >15.1 System Architecture and Workflow</a
+        >
+        <a class="sub" href="#agent-architecture">Agent Architecture</a>
+        <a class="sub" href="#three-phase-workflow">Three-Phase Workflow</a>
+        <a href="#15-2-ground-truth-knowledge-base-schema"
+          >15.2 Ground Truth Knowledge Base Schema</a
+        >
+        <a class="sub" href="#table-1-instruction-latency-and-throughput"
+          >Table 1: Instruction Latency and Throughput</a
+        >
+        <a class="sub" href="#table-2-memory-hierarchy-cost-model"
+          >Table 2: Memory Hierarchy Cost Model</a
+        >
+        <a class="sub" href="#table-3-synchronization-cost-lookup"
+          >Table 3: Synchronization Cost Lookup</a
+        >
+        <a class="sub" href="#table-4-co-issue-compatibility-matrix"
+          >Table 4: Co-Issue Compatibility Matrix</a
+        >
+        <a class="sub" href="#table-5-roofline-parameters"
+          >Table 5: Roofline Parameters</a
+        >
+        <a href="#15-3-bottleneck-classification-decision-tree"
+          >15.3 Bottleneck Classification Decision Tree</a
+        >
+        <a href="#15-4-optimization-strategy-lookup-table"
+          >15.4 Optimization Strategy Lookup Table</a
+        >
+        <a href="#15-5-performance-prediction-api"
+          >15.5 Performance Prediction API</a
+        >
+        <a class="sub" href="#input-specification">Input Specification</a>
+        <a class="sub" href="#prediction-output">Prediction Output</a>
+        <a href="#15-6-sm_120-constraint-and-guardrail-database"
+          >15.6 SM_120 Constraint and Guardrail Database</a
+        >
+        <a class="sub" href="#hard-constraints">Hard Constraints</a>
+        <a class="sub" href="#soft-constraints">Soft Constraints</a>
+        <a href="#15-7-code-pattern-template-library"
+          >15.7 Code Pattern Template Library</a
+        >
+        <a class="sub" href="#pattern-p1-mma-inner-loop-tc-bound-gemm-mainloop"
+          >Pattern P1: MMA Inner Loop (TC-Bound GEMM Mainloop)</a
+        >
+        <a class="sub" href="#pattern-p2-3-stage-software-pipeline-tma-bound"
+          >Pattern P2: 3-Stage Software Pipeline (TMA-Bound)</a
+        >
+        <a
+          class="sub"
+          href="#pattern-p3-fused-normalization-activation-memory-bound"
+          >Pattern P3: Fused Normalization + Activation (Memory-Bound)</a
+        >
+        <a class="sub" href="#pattern-p4-online-softmax-with-mma-based-rowsum"
+          >Pattern P4: Online Softmax with MMA-Based Rowsum</a
+        >
+        <a class="sub" href="#pattern-p5-persistent-kernel-with-work-stealing"
+          >Pattern P5: Persistent Kernel with Work-Stealing</a
+        >
+        <a
+          class="sub"
+          href="#pattern-p6-dsmem-cross-cta-data-sharing-no-multicast-workaround"
+          >Pattern P6: DSMEM Cross-CTA Data Sharing (No-Multicast Workaround)</a
+        >
+        <a href="#15-8-validation-and-feedback-loop-protocol"
+          >15.8 Validation and Feedback Loop Protocol</a
+        >
+        <a class="sub" href="#phase-1-static-validation-before-compilation"
+          >Phase 1: Static Validation (Before Compilation)</a
+        >
+        <a class="sub" href="#phase-2-performance-validation-after-execution"
+          >Phase 2: Performance Validation (After Execution)</a
+        >
+        <a class="sub" href="#phase-3-regression-check"
+          >Phase 3: Regression Check</a
+        >
+        <a class="sub" href="#feedback-loop">Feedback Loop</a>
+        <a href="#15-9-agent-prompt-engineering-with-ground-truth"
+          >15.9 Agent Prompt Engineering with Ground Truth</a
+        >
+        <a class="sub" href="#prompt-template-bottleneck-diagnosis"
+          >Prompt Template: Bottleneck Diagnosis</a
+        >
+        <a class="sub" href="#prompt-template-code-generation"
+          >Prompt Template: Code Generation</a
+        >
+        <a class="sub" href="#prompt-template-validation"
+          >Prompt Template: Validation</a
+        >
+        <a href="#15-10-complete-parameter-summary"
+          >15.10 Complete Parameter Summary</a
+        >
+        <a class="sub" href="#when-the-agent-is-predicting-performance"
+          >When the Agent is Predicting Performance</a
+        >
+        <a class="sub" href="#when-the-agent-is-selecting-tile-sizes"
+          >When the Agent is Selecting Tile Sizes</a
+        >
+        <a class="sub" href="#when-the-agent-is-choosing-synchronization"
+          >When the Agent is Choosing Synchronization</a
+        >
+        <a class="sub" href="#when-the-agent-is-handling-precision"
+          >When the Agent is Handling Precision</a
+        >
+        <a href="#15-11-optimization-priority-rules"
+          >15.11 Optimization Priority Rules</a
+        >
+      </aside>
+    </div>
+    <script
+      defer
+      src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"
+      integrity="sha384-7zkQWkzuo3B5mTepMUcHkMB5jZaolc2xDwL6VFqjFALcbeS9Ggm/Yr2r3Dy4lfFg"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      defer
+      src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+      integrity="sha384-43gviWU0YVjaDtb/GhzOouOXtZMP/7XUzwPTstBeZFe/+rCMvRwr4yROQP43s0Xk"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      defer
+      src="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/lib/highlight.min.js"
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (window.renderMathInElement) {
+          renderMathInElement(document.body, {
+            delimiters: [
+              { left: "$$", right: "$$", display: true },
+              { left: "$", right: "$", display: false },
+            ],
+            throwOnError: false,
+          });
+        }
+        if (window.hljs) {
+          document
+            .querySelectorAll("pre code[class^='language-']")
+            .forEach(function (el) {
+              try {
+                hljs.highlightElement(el);
+              } catch (e) {}
+            });
+        }
+      });
+    </script>
+    <script src="assets/js/toc.js" defer></script>
+  </body>
+</html>

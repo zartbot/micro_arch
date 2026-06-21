@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 700" role="img"
+     aria-label="SM_120 On-Chip Network Topology — dual-path interconnect from SM to DSMEM (SM2SM) and L2/DRAM (global)">
+  <defs>
+    <marker id="aD" markerWidth="7" markerHeight="6" refX="5" refY="3" orient="auto">
+      <polygon points="0,0 7,3 0,6" fill="#5b6679"/>
+    </marker>
+    <marker id="aP" markerWidth="7" markerHeight="6" refX="5" refY="3" orient="auto">
+      <polygon points="0,0 7,3 0,6" fill="#6d28d9"/>
+    </marker>
+    <marker id="aO" markerWidth="7" markerHeight="6" refX="5" refY="3" orient="auto">
+      <polygon points="0,0 7,3 0,6" fill="#ea580c"/>
+    </marker>
+    <style><![CDATA[
+      .ttl{font:600 14px "Fraunces",serif;fill:#0b1220}
+      .sub{font:italic 11px "Fraunces",serif;fill:#5b6679}
+      .box-ttl{font:700 11px "JetBrains Mono",monospace}
+      .box-sub{font:500 9.5px "JetBrains Mono",monospace;fill:#5b6679}
+      .box-desc{font:italic 9px "Fraunces",serif;fill:#8e97a5}
+      .path-lbl{font:700 10px "JetBrains Mono",monospace;letter-spacing:0.06em}
+      .lat{font:600 9.5px "JetBrains Mono",monospace}
+      .ann{font:italic 10px "Fraunces",serif;fill:#5b6679}
+    ]]></style>
+  </defs>
+  <rect width="1080" height="700" fill="#ffffff"/>
+  <text x="36" y="30" class="ttl">SM_120 On-Chip Network Topology</text>
+  <text x="36" y="48" class="sub">Dual-path interconnect: SM2SM fabric (DSMEM, 220 cyc) vs GXBAR→L2→DRAM global path (354-362 cyc)</text>
+
+  <!-- ═══════════ SM BOX (top center) ═══════════ -->
+  <rect x="280" y="64" width="520" height="80" rx="10" fill="#e9f3d2" stroke="#5a8e00" stroke-width="1.2"/>
+  <text x="300" y="86" class="box-ttl" fill="#3d6b00">SM (Streaming Multiprocessor)</text>
+
+  <!-- LSU -->
+  <rect x="310" y="96" width="70" height="32" rx="5" fill="#d9f99d" stroke="#5a8e00"/>
+  <text x="345" y="116" class="box-ttl" fill="#3d6b00" text-anchor="middle">LSU</text>
+  <!-- Arrow LSU → uTLB -->
+  <line x1="380" y1="112" x2="410" y2="112" stroke="#5a8e00" stroke-width="1.5" marker-end="url(#aD)"/>
+  <!-- uTLB -->
+  <rect x="414" y="96" width="72" height="32" rx="5" fill="#d9f99d" stroke="#5a8e00"/>
+  <text x="450" y="116" class="box-ttl" fill="#3d6b00" text-anchor="middle">uTLB</text>
+  <!-- Arrow uTLB → TPCXRB -->
+  <line x1="486" y1="112" x2="520" y2="112" stroke="#5a8e00" stroke-width="1.5" marker-end="url(#aD)"/>
+  <!-- TPCXRB -->
+  <rect x="524" y="96" width="120" height="32" rx="5" fill="#d9f99d" stroke="#5a8e00"/>
+  <text x="584" y="112" class="box-ttl" fill="#3d6b00" text-anchor="middle">TPCXRB</text>
+  <text x="584" y="124" class="box-desc" text-anchor="middle">TPC crossbar</text>
+  <!-- Internal description -->
+  <text x="670" y="112" class="box-sub">Load/Store Unit → TLB → TPC crossbar</text>
+
+  <!-- Arrow SM → GPCXRB -->
+  <line x1="540" y1="144" x2="540" y2="170" stroke="#5b6679" stroke-width="2" marker-end="url(#aD)"/>
+
+  <!-- ═══════════ GPCXRB (junction router) ═══════════ -->
+  <rect x="430" y="174" width="220" height="44" rx="8" fill="#f6f4ed" stroke="#5b6679" stroke-width="1.2"/>
+  <text x="540" y="196" class="box-ttl" fill="#2a3548" text-anchor="middle">GPCXRB</text>
+  <text x="540" y="212" class="box-sub" text-anchor="middle">GPC crossbar — route decision point</text>
+
+  <!-- ═══════════ SPLIT INTO TWO PATHS ═══════════ -->
+  <!-- Left branch line (SM2SM) -->
+  <line x1="480" y1="218" x2="480" y2="240" stroke="#5b6679" stroke-width="1.2"/>
+  <line x1="480" y1="240" x2="280" y2="240" stroke="#6d28d9" stroke-width="1.5"/>
+  <line x1="280" y1="240" x2="280" y2="268" stroke="#6d28d9" stroke-width="1.5" marker-end="url(#aP)"/>
+  <!-- Right branch line (L2/Global) -->
+  <line x1="600" y1="218" x2="600" y2="240" stroke="#5b6679" stroke-width="1.2"/>
+  <line x1="600" y1="240" x2="780" y2="240" stroke="#ea580c" stroke-width="1.5"/>
+  <line x1="780" y1="240" x2="780" y2="268" stroke="#ea580c" stroke-width="1.5" marker-end="url(#aO)"/>
+
+  <!-- Path labels -->
+  <text x="270" y="256" class="path-lbl" fill="#6d28d9" text-anchor="middle">SM2SM PATH (DSMEM)</text>
+  <text x="780" y="256" class="path-lbl" fill="#ea580c" text-anchor="middle">L2 / GLOBAL PATH</text>
+
+  <!-- ═══════════ LEFT PATH: SM2SM / DSMEM ═══════════ -->
+  <!-- IG (CPC Ingress) -->
+  <rect x="180" y="272" width="200" height="44" rx="7" fill="#ede7fb" stroke="#6d28d9" stroke-width="0.8"/>
+  <text x="280" y="292" class="box-ttl" fill="#6d28d9" text-anchor="middle">IG (CPC Ingress)</text>
+  <text x="280" y="308" class="box-sub" text-anchor="middle">Packet formation + routing</text>
+  <line x1="280" y1="316" x2="280" y2="338" stroke="#6d28d9" stroke-width="1.5" marker-end="url(#aP)"/>
+
+  <!-- QX (GPC Crossbar) -->
+  <rect x="180" y="342" width="200" height="44" rx="7" fill="#ede7fb" stroke="#6d28d9" stroke-width="0.8"/>
+  <text x="280" y="362" class="box-ttl" fill="#6d28d9" text-anchor="middle">QX (GPC Crossbar)</text>
+  <text x="280" y="378" class="box-sub" text-anchor="middle">Inter-SM fabric switch</text>
+  <line x1="280" y1="386" x2="280" y2="408" stroke="#6d28d9" stroke-width="1.5" marker-end="url(#aP)"/>
+
+  <!-- EG (CPC Egress) -->
+  <rect x="180" y="412" width="200" height="44" rx="7" fill="#ede7fb" stroke="#6d28d9" stroke-width="0.8"/>
+  <text x="280" y="432" class="box-ttl" fill="#6d28d9" text-anchor="middle">EG (CPC Egress)</text>
+  <text x="280" y="448" class="box-sub" text-anchor="middle">Delivery to destination SM</text>
+  <line x1="280" y1="456" x2="280" y2="478" stroke="#6d28d9" stroke-width="1.5" marker-end="url(#aP)"/>
+
+  <!-- Dest SM -->
+  <rect x="180" y="482" width="200" height="50" rx="7" fill="#e9f3d2" stroke="#5a8e00" stroke-width="0.8"/>
+  <text x="280" y="504" class="box-ttl" fill="#3d6b00" text-anchor="middle">Destination SM</text>
+  <text x="280" y="520" class="box-sub" text-anchor="middle">SMEM write + barrier signal</text>
+
+  <!-- DSMEM latency annotation -->
+  <rect x="60" y="350" width="100" height="36" rx="6" fill="#6d28d9" opacity="0.9"/>
+  <text x="110" y="366" class="lat" fill="#ffffff" text-anchor="middle">220 cyc</text>
+  <text x="110" y="380" class="lat" fill="#ddd0fa" text-anchor="middle">round-trip</text>
+  <line x1="160" y1="368" x2="178" y2="368" stroke="#6d28d9" stroke-width="1" stroke-dasharray="3 2"/>
+
+  <!-- ═══════════ RIGHT PATH: L2 / Global ═══════════ -->
+  <!-- GXBAR/MXBAR -->
+  <rect x="660" y="272" width="240" height="44" rx="7" fill="#ffedd5" stroke="#ea580c" stroke-width="0.8"/>
+  <text x="780" y="292" class="box-ttl" fill="#9a3412" text-anchor="middle">GXBAR / MXBAR (Unified)</text>
+  <text x="780" y="308" class="box-sub" text-anchor="middle">110-SM → 12 L2 partitions crossbar</text>
+  <line x1="780" y1="316" x2="780" y2="338" stroke="#ea580c" stroke-width="1.5" marker-end="url(#aO)"/>
+
+  <!-- FBP (Frame Buffer Partition) — larger compound box -->
+  <rect x="650" y="342" width="260" height="180" rx="8" fill="#fff7ed" stroke="#ea580c" stroke-width="1.0"/>
+  <text x="670" y="362" class="box-ttl" fill="#9a3412">FBP (Frame Buffer Partition)</text>
+  <text x="670" y="378" class="box-sub">× 12 partitions, one per MC</text>
+
+  <!-- L2 inside FBP -->
+  <rect x="700" y="390" width="160" height="40" rx="5" fill="#fde68a" stroke="#92400e" stroke-width="0.8"/>
+  <text x="780" y="410" class="box-ttl" fill="#92400e" text-anchor="middle">L2 Cache</text>
+  <text x="780" y="424" class="box-sub" text-anchor="middle">8 MB/partition (96 MB total)</text>
+  <line x1="780" y1="430" x2="780" y2="450" stroke="#92400e" stroke-width="1.2" marker-end="url(#aD)"/>
+
+  <!-- MC inside FBP -->
+  <rect x="700" y="454" width="160" height="40" rx="5" fill="#fecdd3" stroke="#e11d48" stroke-width="0.8"/>
+  <text x="780" y="474" class="box-ttl" fill="#9f1239" text-anchor="middle">Memory Controller</text>
+  <text x="780" y="488" class="box-sub" text-anchor="middle">32-bit channel, GDDR7</text>
+
+  <!-- Arrow FBP → DRAM -->
+  <line x1="780" y1="522" x2="780" y2="548" stroke="#e11d48" stroke-width="1.5" marker-end="url(#aO)"/>
+
+  <!-- GDDR7 DRAM -->
+  <rect x="660" y="552" width="240" height="44" rx="7" fill="#ffe4e6" stroke="#e11d48" stroke-width="1.0"/>
+  <text x="780" y="572" class="box-ttl" fill="#9f1239" text-anchor="middle">GDDR7 DRAM</text>
+  <text x="780" y="588" class="box-sub" text-anchor="middle">72 GB · 384-bit · 1231 GB/s measured</text>
+
+  <!-- L2/DRAM latency annotation -->
+  <rect x="930" y="380" width="110" height="52" rx="6" fill="#ea580c" opacity="0.9"/>
+  <text x="985" y="398" class="lat" fill="#ffffff" text-anchor="middle">L2: 354 cyc</text>
+  <text x="985" y="414" class="lat" fill="#ffedd5" text-anchor="middle">DRAM: 362 cyc</text>
+  <text x="985" y="428" class="lat" fill="#ffedd5" text-anchor="middle">(+8 cyc only)</text>
+  <line x1="910" y1="406" x2="930" y2="406" stroke="#ea580c" stroke-width="1" stroke-dasharray="3 2"/>
+
+  <!-- ═══════════ BOTTOM: PATH COMPARISON SUMMARY ═══════════ -->
+  <rect x="36" y="610" width="1008" height="56" rx="10" fill="#fcfbf6" stroke="#e6e4da"/>
+  <text x="56" y="632" class="path-lbl" fill="#6d28d9">SM2SM (DSMEM)</text>
+  <text x="220" y="632" class="ann">220 cyc RT · IG→QX→EG pipeline · used for cluster sync (86 cyc barrier) and data exchange</text>
+  <text x="56" y="652" class="path-lbl" fill="#ea580c">GLOBAL (L2/DRAM)</text>
+  <text x="220" y="652" class="ann">354-362 cyc · GXBAR→FBP→L2/MC · used for ld.global, st.global, atomics, coherence fences</text>
+
+  <!-- Source -->
+  <text x="36" y="688" class="ann">Patent: US20230315655A1 Fig 3A-3C, US8539130 Fig 4-5 · Sources: S8/case_2,3, S16/case_3, S17/case_26-37</text>
+</svg>

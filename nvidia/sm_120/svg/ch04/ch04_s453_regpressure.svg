@@ -1,0 +1,246 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 700" role="img"
+     aria-label="4.5.3 TC Register Pressure and Spill Threshold — throughput vs chain count, spill boundary, and degradation model">
+  <defs>
+    <style><![CDATA[
+      .eyebrow{font:600 11px "JetBrains Mono",monospace;letter-spacing:0.14em;text-transform:uppercase}
+      .title  {font:500 19px "Fraunces",serif;fill:#0b1220;letter-spacing:-0.02em}
+      .ttl    {font:600 11px "JetBrains Mono",monospace;letter-spacing:0.04em}
+      .lbl    {font:500 10px "JetBrains Mono",monospace;fill:#5b6679}
+      .lbl-sm {font:500 9px "JetBrains Mono",monospace;fill:#5b6679;letter-spacing:0.03em;text-transform:uppercase}
+      .val    {font:600 16px "Fraunces",serif;fill:#0b1220}
+      .val-sm {font:600 12px "Fraunces",serif;fill:#0b1220}
+      .note   {font:500 10.5px "IBM Plex Sans",sans-serif;fill:#2a3548}
+      .note-em{font:600 10.5px "IBM Plex Sans",sans-serif;fill:#e11d48}
+      .note-gr{font:600 10.5px "IBM Plex Sans",sans-serif;fill:#16a34a}
+      .cyc-val{font:500 9px "JetBrains Mono",monospace;fill:#5b6679}
+      .cyc-lbl{font:600 10px "JetBrains Mono",monospace;fill:#0b1220}
+      .axis-l {font:500 9px "JetBrains Mono",monospace;fill:#5b6679}
+    ]]></style>
+    <marker id="ar" markerWidth="6" markerHeight="6" refX="4" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#5b6679"/>
+    </marker>
+  </defs>
+
+  <rect width="1080" height="700" fill="#fcfbf6"/>
+
+  <!-- Header -->
+  <g transform="translate(36,24)">
+    <rect x="0" y="0" width="3" height="44" fill="#e11d48"/>
+    <text x="14" y="14" class="eyebrow" fill="#e11d48">§4.5.3 · REGISTER PRESSURE &amp; SPILL THRESHOLD</text>
+    <text x="14" y="38" class="title">TC Throughput vs Accumulator Chain Count (Case 5)</text>
+  </g>
+
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <!-- SECTION 1: Throughput chart (stylized bar chart) -->
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <g transform="translate(36,80)">
+    <text x="0" y="0" class="ttl" fill="#e11d48">THROUGHPUT (cyc/mma) vs CHAIN COUNT</text>
+    <text x="400" y="0" class="lbl">Lower = faster · 15.88 cyc = theoretical floor</text>
+
+    <g transform="translate(0,20)">
+      <!-- Chart area -->
+      <rect x="0" y="-10" width="1008" height="240" rx="10" fill="#ffffff" stroke="#e6e4da"/>
+
+      <!-- Y-axis labels -->
+      <text x="8" y="20" class="axis-l">30</text>
+      <line x1="28" y1="16" x2="1000" y2="16" stroke="#f0efe8" stroke-width="0.5"/>
+      <text x="8" y="72" class="axis-l">20</text>
+      <line x1="28" y1="68" x2="1000" y2="68" stroke="#f0efe8" stroke-width="0.5"/>
+      <text x="8" y="124" class="axis-l">16</text>
+      <line x1="28" y1="120" x2="1000" y2="120" stroke="#16a34a" stroke-width="0.8" stroke-dasharray="4,3"/>
+      <text x="8" y="176" class="axis-l">10</text>
+      <line x1="28" y1="172" x2="1000" y2="172" stroke="#f0efe8" stroke-width="0.5"/>
+
+      <!-- 15.88 floor annotation -->
+      <text x="36" y="134" class="cyc-val" fill="#16a34a">15.88 cyc floor (RF-read limited)</text>
+
+      <!-- Bars: Green = no spill, Red = spill -->
+      <!-- 1 chain: 27.25 cyc → bar height ~(27.25-10)/20 * 156 = ~134 -->
+      <g transform="translate(60,0)">
+        <rect x="0" y="12" width="50" height="134" rx="3" fill="#f59e0b" opacity="0.3"/>
+        <text x="10" y="8" class="cyc-lbl">27.3</text>
+        <text x="18" y="160" class="axis-l">1</text>
+      </g>
+
+      <!-- 2 chains: 16.47 → bar height ~50 -->
+      <g transform="translate(130,0)">
+        <rect x="0" y="96" width="50" height="50" rx="3" fill="#16a34a" opacity="0.2"/>
+        <text x="10" y="90" class="cyc-lbl">16.5</text>
+        <text x="18" y="160" class="axis-l">2</text>
+      </g>
+
+      <!-- 4 chains: 15.77 → bar height ~45 -->
+      <g transform="translate(200,0)">
+        <rect x="0" y="102" width="50" height="44" rx="3" fill="#16a34a" opacity="0.25"/>
+        <text x="10" y="96" class="cyc-lbl">15.8</text>
+        <text x="18" y="160" class="axis-l">4</text>
+      </g>
+
+      <!-- 8 chains: 15.88 -->
+      <g transform="translate(270,0)">
+        <rect x="0" y="103" width="50" height="43" rx="3" fill="#16a34a" opacity="0.25"/>
+        <text x="10" y="97" class="cyc-lbl">15.9</text>
+        <text x="18" y="160" class="axis-l">8</text>
+      </g>
+
+      <!-- 16 chains: 15.94 -->
+      <g transform="translate(340,0)">
+        <rect x="0" y="103" width="50" height="43" rx="3" fill="#16a34a" opacity="0.25"/>
+        <text x="10" y="97" class="cyc-lbl">15.9</text>
+        <text x="14" y="160" class="axis-l">16</text>
+      </g>
+
+      <!-- 32 chains: 15.97 -->
+      <g transform="translate(410,0)">
+        <rect x="0" y="103" width="50" height="43" rx="3" fill="#16a34a" opacity="0.25"/>
+        <text x="10" y="97" class="cyc-lbl">16.0</text>
+        <text x="14" y="160" class="axis-l">32</text>
+      </g>
+
+      <!-- 48 chains: 15.98 -->
+      <g transform="translate(480,0)">
+        <rect x="0" y="103" width="50" height="43" rx="3" fill="#16a34a" opacity="0.25"/>
+        <text x="10" y="97" class="cyc-lbl">16.0</text>
+        <text x="14" y="160" class="axis-l">48</text>
+      </g>
+
+      <!-- 60 chains: 15.99 (max no-spill) -->
+      <g transform="translate(550,0)">
+        <rect x="0" y="103" width="50" height="43" rx="3" fill="#16a34a" opacity="0.35" stroke="#16a34a" stroke-width="1"/>
+        <text x="6" y="97" class="cyc-lbl" fill="#16a34a">16.0</text>
+        <text x="14" y="160" class="axis-l">60</text>
+        <text x="12" y="176" class="cyc-val" fill="#16a34a">MAX</text>
+      </g>
+
+      <!-- SPILL BOUNDARY LINE -->
+      <line x1="618" y1="0" x2="618" y2="200" stroke="#e11d48" stroke-width="1.5" stroke-dasharray="5,3"/>
+      <text x="622" y="196" class="note-em">← SPILL BOUNDARY</text>
+
+      <!-- 62 chains: 17.87 (spill onset) -->
+      <g transform="translate(640,0)">
+        <rect x="0" y="82" width="50" height="64" rx="3" fill="#e11d48" opacity="0.2" stroke="#e11d48" stroke-width="0.8"/>
+        <text x="6" y="76" class="cyc-lbl" fill="#e11d48">17.9</text>
+        <text x="14" y="160" class="axis-l">62</text>
+        <text x="14" y="176" class="cyc-val" fill="#e11d48">+12%</text>
+      </g>
+
+      <!-- 63 chains: 18.83 -->
+      <g transform="translate(720,0)">
+        <rect x="0" y="74" width="50" height="72" rx="3" fill="#e11d48" opacity="0.25" stroke="#e11d48" stroke-width="0.8"/>
+        <text x="6" y="68" class="cyc-lbl" fill="#e11d48">18.8</text>
+        <text x="14" y="160" class="axis-l">63</text>
+        <text x="14" y="176" class="cyc-val" fill="#e11d48">+18%</text>
+      </g>
+
+      <!-- 64 chains: 18.93 -->
+      <g transform="translate(800,0)">
+        <rect x="0" y="72" width="50" height="74" rx="3" fill="#e11d48" opacity="0.3" stroke="#e11d48" stroke-width="0.8"/>
+        <text x="6" y="66" class="cyc-lbl" fill="#e11d48">18.9</text>
+        <text x="14" y="160" class="axis-l">64</text>
+        <text x="14" y="176" class="cyc-val" fill="#e11d48">+19%</text>
+      </g>
+
+      <!-- X-axis label -->
+      <text x="400" y="210" class="lbl" text-anchor="middle">Accumulator Chains (each = 4 regs)</text>
+
+      <!-- Legend -->
+      <g transform="translate(870,16)">
+        <rect x="0" y="0" width="12" height="12" rx="2" fill="#16a34a" opacity="0.25"/>
+        <text x="18" y="10" class="cyc-val">No spill</text>
+        <rect x="0" y="18" width="12" height="12" rx="2" fill="#e11d48" opacity="0.25"/>
+        <text x="18" y="28" class="cyc-val">Spill active</text>
+        <rect x="0" y="36" width="12" height="12" rx="2" fill="#f59e0b" opacity="0.3"/>
+        <text x="18" y="46" class="cyc-val">ILP-limited</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <!-- SECTION 2: Spill Mechanism Detail -->
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <g transform="translate(36,340)">
+    <text x="0" y="0" class="ttl" fill="#e11d48">SPILL MECHANISM · WHAT HAPPENS AT 62 CHAINS</text>
+
+    <g transform="translate(0,18)">
+      <!-- No-spill box -->
+      <rect x="0" y="0" width="480" height="120" rx="10" fill="#f0fdf4" stroke="#16a34a" stroke-width="1"/>
+      <text x="16" y="18" class="ttl" fill="#16a34a">NO SPILL (≤60 chains, ≤252 regs)</text>
+      <text x="16" y="40" class="note">ptxas assigns distinct RF locations to all accumulators</text>
+      <text x="16" y="58" class="note">SASS: 960× HMMA.16816.F32 with unique Rxx destinations</text>
+      <text x="16" y="78" class="note">Each chain has dedicated 4-register accumulator set</text>
+      <text x="16" y="98" class="note-gr">Throughput: 15.77–15.99 cyc/mma (perfectly stable)</text>
+      <text x="16" y="114" class="cyc-val">Register file SIZE has zero effect on MMA throughput</text>
+
+      <!-- Spill box -->
+      <rect x="504" y="0" width="504" height="120" rx="10" fill="#FFF1F2" stroke="#e11d48" stroke-width="1"/>
+      <text x="520" y="18" class="ttl" fill="#e11d48">SPILL ACTIVE (≥62 chains, 255 regs + STL/LDL)</text>
+      <text x="520" y="40" class="note">ptxas rotates chains through single register group (R8)</text>
+      <text x="520" y="58" class="note">SASS: HMMA R8,... → STL [addr], R8 → LDL R8, [addr+N]</text>
+      <text x="520" y="78" class="note">Spill/fill via L1-cached local memory (not L2/DRAM)</text>
+      <text x="520" y="98" class="note-em">Throughput: 17.87–18.93 cyc/mma (+12%–19%)</text>
+      <text x="520" y="114" class="cyc-val">Cost = extra issue slots for STL/LDL, not memory latency</text>
+    </g>
+  </g>
+
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <!-- SECTION 3: Register Budget Breakdown -->
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <g transform="translate(36,500)">
+    <text x="0" y="0" class="ttl" fill="#e11d48">REGISTER BUDGET ANATOMY (per thread, 255 max)</text>
+
+    <g transform="translate(0,18)">
+      <rect x="0" y="0" width="1008" height="56" rx="8" fill="#ffffff" stroke="#e6e4da"/>
+
+      <!-- Stacked bar showing register allocation -->
+      <g transform="translate(12,10)">
+        <!-- Accumulator regs -->
+        <rect x="0" y="0" width="570" height="18" rx="3" fill="#e11d48" opacity="0.2" stroke="#e11d48" stroke-width="0.6"/>
+        <text x="6" y="13" class="cyc-lbl" fill="#e11d48">Accumulators: 4 × N chains (max 240 regs at N=60)</text>
+
+        <!-- Overhead regs -->
+        <rect x="574" y="0" width="80" height="18" rx="3" fill="#9333ea" opacity="0.15" stroke="#9333ea" stroke-width="0.6"/>
+        <text x="580" y="13" class="cyc-val" fill="#9333ea">A/B: ~6</text>
+
+        <rect x="658" y="0" width="100" height="18" rx="3" fill="#f59e0b" opacity="0.12" stroke="#f59e0b" stroke-width="0.6"/>
+        <text x="664" y="13" class="cyc-val" fill="#92400e">Control: ~6-10</text>
+
+        <rect x="762" y="0" width="60" height="18" rx="3" fill="#5b6679" opacity="0.1" stroke="#5b6679" stroke-width="0.6"/>
+        <text x="768" y="13" class="cyc-val">Misc: ~3</text>
+
+        <!-- Total annotation -->
+        <text x="840" y="13" class="note">= 252 / 255</text>
+      </g>
+
+      <!-- Practical GEMM -->
+      <g transform="translate(12,34)">
+        <rect x="0" y="0" width="100" height="16" rx="3" fill="#e11d48" opacity="0.2"/>
+        <text x="6" y="12" class="cyc-val" fill="#e11d48">Accum: 16</text>
+        <rect x="104" y="0" width="100" height="16" rx="3" fill="#9333ea" opacity="0.1"/>
+        <text x="110" y="12" class="cyc-val">A/B: ~16</text>
+        <rect x="208" y="0" width="120" height="16" rx="3" fill="#f59e0b" opacity="0.1"/>
+        <text x="214" y="12" class="cyc-val">Control: ~32</text>
+        <rect x="332" y="0" width="490" height="16" rx="3" fill="#16a34a" opacity="0.06" stroke="#16a34a" stroke-width="0.5" stroke-dasharray="3,2"/>
+        <text x="338" y="12" class="cyc-val" fill="#16a34a">Headroom: ~191 regs available for double-buffer / addresses / misc</text>
+        <text x="840" y="12" class="note">Typical GEMM: ~64 regs</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <!-- SECTION 4: Key Insight -->
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <g transform="translate(36,594)">
+    <rect x="0" y="0" width="1008" height="72" rx="10" fill="#FEF3C7" stroke="#f59e0b" stroke-width="0.8"/>
+    <text x="20" y="18" class="ttl" fill="#92400e">KEY FINDING</text>
+    <text x="20" y="38" class="note">The spill boundary is a <tspan style="font-weight:700;fill:#e11d48">razor-sharp cliff</tspan>: 60 chains (15.99 cyc) → 62 chains (17.87 cyc) = instant +12% penalty.</text>
+    <text x="20" y="56" class="note">But beyond the cliff, degradation is <tspan style="font-weight:700;fill:#16a34a">graceful</tspan>: doubling spill volume (4.1 KB → 9.1 KB) adds only +6% more (L1 absorbs spill traffic efficiently).</text>
+  </g>
+
+  <!-- Footer -->
+  <g transform="translate(36,680)">
+    <line x1="0" y1="0" x2="1008" y2="0" stroke="#e6e4da" stroke-width="0.8"/>
+    <text x="0" y="14" class="cyc-val">Source: [S9/case_5] register pressure sweep · 14 chain counts × 2000 trials · ptxas --ptxas-options=-v for reg/spill reporting</text>
+    <text x="850" y="14" class="cyc-val">SM_120 · 2026</text>
+  </g>
+</svg>

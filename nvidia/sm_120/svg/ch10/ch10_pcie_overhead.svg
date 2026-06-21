@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 560" role="img" aria-label="PCIe Gen5 x16 Throughput Budget Waterfall Decomposition">
+  <defs>
+    <style><![CDATA[
+      .ttl{font:600 15px "Fraunces",serif;fill:#0b1220}
+      .sub{font:italic 11px "Fraunces",serif;fill:#5b6679}
+      .axL{font:500 10px "JetBrains Mono",monospace;fill:#5b6679}
+      .axL2{font:500 9px "JetBrains Mono",monospace;fill:#3136d0}
+      .bar-val{font:600 11px "JetBrains Mono",monospace;fill:#0b1220}
+      .bar-loss{font:600 9px "JetBrains Mono",monospace;fill:#ffffff}
+      .bar-loss-sm{font:600 9px "JetBrains Mono",monospace;fill:#92400e}
+      .x-lbl{font:500 9px "JetBrains Mono",monospace;fill:#2a3548}
+      .x-lbl2{font:500 9px "JetBrains Mono",monospace;fill:#5b6679}
+      .cat-lbl{font:600 10px "Fraunces",serif;fill:#92400e}
+      .cat-lbl2{font:600 10px "Fraunces",serif;fill:#6d28d9}
+      .metric-val{font:700 18px "Fraunces",serif;fill:#0b1220;letter-spacing:-0.02em}
+      .metric-lbl{font:500 9px "JetBrains Mono",monospace;fill:#5b6679}
+      .note{font:italic 10px "Fraunces",serif;fill:#5b6679}
+    ]]></style>
+  </defs>
+
+  <rect width="1080" height="560" fill="#ffffff"/>
+
+  <!-- ===== Title ===== -->
+  <text x="36" y="28" class="ttl">PCIe Gen5 x16 Throughput Budget — Waterfall Decomposition</text>
+  <text x="36" y="48" class="sub">From 64.0 GB/s theoretical to 56.9 GB/s measured — 88.9% link efficiency (zoomed Y-axis: 56–64 GB/s)</text>
+
+  <!-- ===== Y-axis (zoomed: 56-64 GB/s) ===== -->
+  <!-- Chart area: x=100 to x=1020, y=70 to y=380 -->
+  <!-- Scale: 310px / 8 GB/s = 38.75 px per GB/s -->
+  <line x1="100" y1="70" x2="100" y2="380" stroke="#5b6679" stroke-width="1.2"/>
+  <line x1="100" y1="380" x2="1020" y2="380" stroke="#5b6679" stroke-width="1.2"/>
+
+  <!-- Y-axis tick marks and labels -->
+  <line x1="96" y1="70" x2="100" y2="70" stroke="#5b6679" stroke-width="1"/>
+  <text x="92" y="74" class="axL" text-anchor="end">64</text>
+  <line x1="96" y1="147.5" x2="100" y2="147.5" stroke="#5b6679" stroke-width="1"/>
+  <text x="92" y="151.5" class="axL" text-anchor="end">62</text>
+  <line x1="96" y1="225" x2="100" y2="225" stroke="#5b6679" stroke-width="1"/>
+  <text x="92" y="229" class="axL" text-anchor="end">60</text>
+  <line x1="96" y1="302.5" x2="100" y2="302.5" stroke="#5b6679" stroke-width="1"/>
+  <text x="92" y="306.5" class="axL" text-anchor="end">58</text>
+  <line x1="96" y1="380" x2="100" y2="380" stroke="#5b6679" stroke-width="1"/>
+  <text x="92" y="384" class="axL" text-anchor="end">56</text>
+  <text x="72" y="225" class="axL" text-anchor="middle" transform="rotate(-90 72 225)">Bandwidth (GB/s)</text>
+
+  <!-- Gridlines -->
+  <line x1="100" y1="70" x2="1020" y2="70" stroke="#e6e4da" stroke-dasharray="3 3"/>
+  <line x1="100" y1="147.5" x2="1020" y2="147.5" stroke="#e6e4da" stroke-dasharray="3 3"/>
+  <line x1="100" y1="225" x2="1020" y2="225" stroke="#e6e4da" stroke-dasharray="3 3"/>
+  <line x1="100" y1="302.5" x2="1020" y2="302.5" stroke="#e6e4da" stroke-dasharray="3 3"/>
+
+  <!-- Break indicator (axis is zoomed, 0-56 not shown) -->
+  <path d="M 96 388 L 104 384 L 96 390 L 104 386" fill="none" stroke="#5b6679" stroke-width="1"/>
+  <text x="53" y="402" class="axL2">0–56 GB/s </text>
+    <text x="58" y="412" class="axL2"> omitted</text>
+
+
+  <!-- ===== Waterfall Bars ===== -->
+  <!-- Bar geometry: width=80, gap=40, start x=120 -->
+  <!-- Bar 1: Theoretical 64.0 GB/s (full bar, blue) -->
+  <rect x="120" y="70" width="80" height="310" rx="3" fill="#1e40af" opacity="0.85"/>
+  <text x="160" y="64" class="bar-val" text-anchor="middle">64.0 GB/s</text>
+  <text x="160" y="396" class="x-lbl" text-anchor="middle">Raw Lane</text>
+  <text x="160" y="408" class="x-lbl2" text-anchor="middle">32GT/s × 16</text>
+
+  <!-- Connector dashed line: bar1 top to bar2 top -->
+  <line x1="200" y1="70" x2="220" y2="70" stroke="#8e97a5" stroke-width="1" stroke-dasharray="2 2"/>
+
+  <!-- Bar 2: 128b/130b encoding (-1.54%, -1.0 GB/s → 63.0) -->
+  <!-- y: 70 to 108.75, height: 38.75 -->
+  <rect x="220" y="70" width="80" height="38.75" rx="3" fill="#ea580c" opacity="0.8"/>
+  <text x="260" y="64" class="bar-val" text-anchor="middle">63.0</text>
+  <text x="260" y="93" class="bar-loss" text-anchor="middle">−1.54%</text>
+  <text x="260" y="396" class="x-lbl" text-anchor="middle">128b/130b</text>
+  <text x="260" y="408" class="x-lbl2" text-anchor="middle">Encoding</text>
+
+  <line x1="300" y1="108.75" x2="320" y2="108.75" stroke="#8e97a5" stroke-width="1" stroke-dasharray="2 2"/>
+
+  <!-- Bar 3: TLP header (-3.1%, -1.9 GB/s → 61.1) -->
+  <!-- y: 108.75 to 182.375, height: 73.625 -->
+  <rect x="320" y="108.75" width="80" height="73.625" rx="3" fill="#ea580c" opacity="0.8"/>
+  <text x="360" y="102" class="bar-val" text-anchor="middle">61.1</text>
+  <text x="360" y="140" class="bar-loss" text-anchor="middle">−3.1%</text>
+  <text x="360" y="153" class="bar-loss" text-anchor="middle">−1.9 GB/s</text>
+  <text x="360" y="396" class="x-lbl" text-anchor="middle">TLP Header</text>
+  <text x="360" y="408" class="x-lbl2" text-anchor="middle">16–24B/TLP</text>
+
+  <line x1="400" y1="182.375" x2="420" y2="182.375" stroke="#8e97a5" stroke-width="1" stroke-dasharray="2 2"/>
+
+  <!-- Bar 4: DLLP overhead (-1.2%, -0.7 GB/s → 60.4) -->
+  <!-- y: 182.375 to 209.5, height: 27.125 -->
+  <rect x="420" y="182.375" width="80" height="27.125" rx="3" fill="#ea580c" opacity="0.8"/>
+  <text x="460" y="176" class="bar-val" text-anchor="middle">60.4</text>
+  <text x="460" y="199" class="bar-loss" text-anchor="middle">−1.2%</text>
+  <text x="460" y="396" class="x-lbl" text-anchor="middle">DLLP</text>
+  <text x="460" y="408" class="x-lbl2" text-anchor="middle">ACK/NAK, FC</text>
+
+  <line x1="500" y1="209.5" x2="520" y2="209.5" stroke="#8e97a5" stroke-width="1" stroke-dasharray="2 2"/>
+
+  <!-- Bar 5: ECRC (-0.6%, -0.4 GB/s → 60.0) -->
+  <!-- y: 209.5 to 225, height: 15.5 -->
+  <rect x="520" y="209.5" width="80" height="15.5" rx="3" fill="#ea580c" opacity="0.8"/>
+  <text x="560" y="203" class="bar-val" text-anchor="middle">60.0</text>
+  <text x="560" y="221" class="bar-loss-sm" text-anchor="middle">−0.6%</text>
+  <text x="560" y="396" class="x-lbl" text-anchor="middle">ECRC</text>
+  <text x="560" y="408" class="x-lbl2" text-anchor="middle">4B/TLP</text>
+
+  <line x1="600" y1="225" x2="620" y2="225" stroke="#8e97a5" stroke-width="1" stroke-dasharray="2 2"/>
+
+  <!-- Category separator: Protocol → System -->
+  <line x1="610" y1="55" x2="610" y2="415" stroke="#e6e4da" stroke-width="1" stroke-dasharray="4 4"/>
+  <text x="460" y="66" class="cat-lbl" text-anchor="middle">Protocol Overhead</text>
+  <text x="820" y="66" class="cat-lbl2" text-anchor="middle">System Overhead</text>
+
+  <!-- Bar 6: DMA scheduling (-2.0%, -1.2 GB/s → 58.8) -->
+  <!-- y: 225 to 271.5, height: 46.5 -->
+  <rect x="620" y="225" width="80" height="46.5" rx="3" fill="#6d28d9" opacity="0.8"/>
+  <text x="660" y="219" class="bar-val" text-anchor="middle">58.8</text>
+  <text x="660" y="246" class="bar-loss" text-anchor="middle">−2.0%</text>
+  <text x="660" y="259" class="bar-loss" text-anchor="middle">−1.2 GB/s</text>
+  <text x="660" y="396" class="x-lbl" text-anchor="middle">DMA Engine</text>
+  <text x="660" y="408" class="x-lbl2" text-anchor="middle">Scheduling</text>
+
+  <line x1="700" y1="271.5" x2="720" y2="271.5" stroke="#8e97a5" stroke-width="1" stroke-dasharray="2 2"/>
+
+  <!-- Bar 7: Driver/staging (-3.3%, -1.9 GB/s → 56.9) -->
+  <!-- y: 271.5 to 345.125, height: 73.625 -->
+  <rect x="720" y="271.5" width="80" height="73.625" rx="3" fill="#6d28d9" opacity="0.8"/>
+  <text x="760" y="265" class="bar-val" text-anchor="middle">56.9</text>
+  <text x="760" y="303" class="bar-loss" text-anchor="middle">−3.3%</text>
+  <text x="760" y="316" class="bar-loss" text-anchor="middle">−1.9 GB/s</text>
+  <text x="760" y="396" class="x-lbl" text-anchor="middle">Driver/Staging</text>
+  <text x="760" y="408" class="x-lbl2" text-anchor="middle">Host-side</text>
+
+  <line x1="800" y1="345.125" x2="820" y2="345.125" stroke="#8e97a5" stroke-width="1" stroke-dasharray="2 2"/>
+
+  <!-- Bar 8: Measured 56.9 GB/s (full bar, green) -->
+  <!-- y: 345.125 to 380, height: 34.875 -->
+  <rect x="820" y="345.125" width="80" height="34.875" rx="3" fill="#76b900" opacity="0.85"/>
+  <text x="860" y="339" class="bar-val" text-anchor="middle">56.9 GB/s</text>
+  <text x="860" y="396" class="x-lbl" text-anchor="middle">Measured</text>
+  <text x="860" y="408" class="x-lbl2" text-anchor="middle">H2D / D2H</text>
+
+  <!-- ===== Summary Metrics ===== -->
+  <rect x="36" y="430" width="1008" height="112" rx="10" fill="#fcfbf6" stroke="#e6e4da"/>
+
+  <!-- Metric 1: Theoretical -->
+  <text x="80" y="458" class="metric-lbl">Theoretical (raw lane rate)</text>
+  <text x="80" y="482" class="metric-val" fill="#1e40af">64.0 GB/s</text>
+  <text x="80" y="498" class="x-lbl2">32 GT/s × 16 lanes ÷ 8</text>
+
+  <!-- Metric 2: Protocol overhead -->
+  <text x="300" y="458" class="metric-lbl">Protocol overhead</text>
+  <text x="300" y="482" class="metric-val" fill="#ea580c">−4.0 GB/s</text>
+  <text x="300" y="498" class="x-lbl2">128b/130b + TLP + DLLP + ECRC = 6.3%</text>
+
+  <!-- Metric 3: System overhead -->
+  <text x="540" y="458" class="metric-lbl">System overhead</text>
+  <text x="540" y="482" class="metric-val" fill="#6d28d9">−3.1 GB/s</text>
+  <text x="540" y="498" class="x-lbl2">DMA scheduling + Driver/staging = 4.8%</text>
+
+  <!-- Metric 4: Measured -->
+  <text x="780" y="458" class="metric-lbl">Measured (H2D / D2H)</text>
+  <text x="780" y="482" class="metric-val" fill="#5a8e00">56.9 GB/s</text>
+  <text x="780" y="498" class="x-lbl2">56.89 H2D · 56.54 D2H · 88.9% efficiency</text>
+
+  <!-- Footer note -->
+  <text x="540" y="530" class="note" text-anchor="middle">H2D/D2H symmetry: 0.6% delta — PCIe Gen5 independent TX/RX lanes eliminate bus turnaround penalty</text>
+
+</svg>

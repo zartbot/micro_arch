@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 640" role="img"
+     aria-label="SM_120 Yield Bit Inverted Semantics: yield=0 releases slot, yield=1 retains slot, interaction with stall counter">
+  <defs>
+    <marker id="ar" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto">
+      <path d="M0,0 L7,3.5 L0,7 Z" fill="#5b6679"/>
+    </marker>
+    <linearGradient id="yieldG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#DCFCE7"/><stop offset="1" stop-color="#F0FDF4"/>
+    </linearGradient>
+    <linearGradient id="noyieldG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FEF3C7"/><stop offset="1" stop-color="#FFFBEB"/>
+    </linearGradient>
+    <linearGradient id="pathG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FEE2E2"/><stop offset="1" stop-color="#FEF2F2"/>
+    </linearGradient>
+    <style><![CDATA[
+      .ttl{font:600 15px "Fraunces",serif;fill:#0b1220}
+      .sub{font:italic 11.5px "Fraunces",serif;fill:#5b6679}
+      .sect{font:600 13px "Fraunces",serif}
+      .lbl{font:600 11.5px "JetBrains Mono",monospace}
+      .lbl-sm{font:500 10px "JetBrains Mono",monospace;fill:#5b6679}
+      .desc{font:500 10px "JetBrains Mono",monospace;fill:#5b6679}
+      .badge{font:600 9.5px "JetBrains Mono",monospace}
+      .note{font:500 9.5px "JetBrains Mono",monospace;fill:#8e97a5}
+      .warn{font:600 10px "JetBrains Mono",monospace;fill:#dc2626}
+      .safe{font:600 10px "JetBrains Mono",monospace;fill:#16a34a}
+      .zone-t{font:600 12px "Fraunces",serif}
+      .big-num{font:700 18px "JetBrains Mono",monospace}
+    ]]></style>
+  </defs>
+
+  <rect width="1080" height="640" fill="#ffffff"/>
+  <text x="36" y="32" class="ttl">Yield Bit [109] — Inverted Semantics and Latency Hiding Control</text>
+  <text x="36" y="52" class="sub">yield=0 means YIELD (release slot); yield=1 means NO YIELD (retain). Opposite to naive interpretation! [S11/case_142-148, CuAssembler]</text>
+
+  <!-- ═══════ TWO SEMANTIC CARDS ═══════ -->
+  <g transform="translate(30, 76)">
+    <!-- yield=0: YIELD -->
+    <rect x="0" y="0" width="490" height="150" rx="12" fill="url(#yieldG)" stroke="#16a34a" stroke-width="1.2"/>
+    <rect x="12" y="8" width="80" height="24" rx="10" fill="#16a34a" opacity="0.15"/>
+    <text x="52" y="24" class="big-num" fill="#16a34a" text-anchor="middle">0</text>
+    <text x="104" y="24" class="zone-t" fill="#16a34a">yield = 0 → YIELD the scheduler slot</text>
+
+    <text x="14" y="52" class="lbl-sm">• Releases the warp's priority; other warps can fill bubbles</text>
+    <text x="14" y="70" class="lbl-sm">• Enables latency hiding via warp interleaving</text>
+    <text x="14" y="88" class="lbl-sm">• BLOCKS same-warp consecutive dispatch</text>
+    <text x="14" y="110" class="safe">Used by ptxas at: barriers, EXIT, long-latency consumers</text>
+    <text x="14" y="128" class="note">Purpose: allow other warps to hide this warp's stall</text>
+    <text x="14" y="144" class="note">Critical for memory-bound kernels with high occupancy</text>
+
+    <!-- yield=1: NO YIELD -->
+    <rect x="520" y="0" width="490" height="150" rx="12" fill="url(#noyieldG)" stroke="#b45309" stroke-width="1.2"/>
+    <rect x="532" y="8" width="80" height="24" rx="10" fill="#b45309" opacity="0.15"/>
+    <text x="572" y="24" class="big-num" fill="#92400e" text-anchor="middle">1</text>
+    <text x="624" y="24" class="zone-t" fill="#92400e">yield = 1 → NO YIELD (retain slot)</text>
+
+    <text x="534" y="52" class="lbl-sm">• Warp keeps dispatching from its own stream (greedy)</text>
+    <text x="534" y="70" class="lbl-sm">• Maximizes single-warp throughput for compute-bound</text>
+    <text x="534" y="88" class="lbl-sm">• BLOCKS latency hiding for memory-bound code</text>
+    <text x="534" y="110" class="badge" fill="#92400e">Used by ptxas at: ALU/FMA instructions (default)</text>
+    <text x="534" y="128" class="note">Purpose: greedy same-warp execution for throughput</text>
+    <text x="534" y="144" class="note">Optimal when dep chain saturates pipe (stall ≥ latency)</text>
+  </g>
+
+  <!-- ═══════ MIDDLE: Interaction Matrix ═══════ -->
+  <g transform="translate(30, 246)">
+    <rect x="0" y="0" width="1020" height="180" rx="12" fill="#f8fafc" stroke="#334155" stroke-width="1"/>
+    <text x="16" y="24" class="sect" fill="#334155">Yield × Stall Interaction — Measured Impact (4232 FFMA patched, Case 142)</text>
+
+    <!-- 2x2 matrix -->
+    <g transform="translate(20, 48)">
+      <!-- Headers -->
+      <text x="200" y="0" class="lbl" fill="#334155" text-anchor="middle">stall = 4 (correct)</text>
+      <text x="540" y="0" class="lbl" fill="#334155" text-anchor="middle">stall = 0 (HW fallback)</text>
+
+      <!-- yield=0 row -->
+      <text x="0" y="36" class="badge" fill="#16a34a">yield=0</text>
+      <rect x="100" y="16" width="200" height="36" rx="6" fill="#DCFCE7" stroke="#16a34a" stroke-width="0.6"/>
+      <text x="200" y="30" class="safe" text-anchor="middle">251 cyc (all warp counts)</text>
+      <text x="200" y="46" class="note" text-anchor="middle">yield irrelevant: stall gates</text>
+
+      <rect x="440" y="16" width="200" height="36" rx="6" fill="url(#pathG)" stroke="#dc2626" stroke-width="1"/>
+      <text x="540" y="30" class="warn" text-anchor="middle">2169 cyc (ALL warp counts!)</text>
+      <text x="540" y="46" class="note" text-anchor="middle">PATHOLOGICAL: no hiding at 32W</text>
+
+      <!-- yield=1 row -->
+      <text x="0" y="86" class="badge" fill="#92400e">yield=1</text>
+      <rect x="100" y="66" width="200" height="36" rx="6" fill="#DCFCE7" stroke="#16a34a" stroke-width="0.6"/>
+      <text x="200" y="80" class="safe" text-anchor="middle">250 cyc (all warp counts)</text>
+      <text x="200" y="96" class="note" text-anchor="middle">yield irrelevant: stall gates</text>
+
+      <rect x="440" y="66" width="200" height="36" rx="6" fill="#DCFCE7" stroke="#16a34a" stroke-width="0.8"/>
+      <text x="540" y="80" class="lbl" fill="#16a34a" text-anchor="middle">128 cyc @ 8-32 warps</text>
+      <text x="540" y="96" class="note" text-anchor="middle">OPTIMAL: HW fallback + hiding</text>
+
+      <!-- Key insight arrow -->
+      <rect x="700" y="16" width="290" height="86" rx="8" fill="#EDE7FB" stroke="#6d28d9" stroke-width="0.6"/>
+      <text x="712" y="34" class="lbl" fill="#6d28d9">Key Insight:</text>
+      <text x="712" y="52" class="lbl-sm">yield only matters when stall=0</text>
+      <text x="712" y="68" class="lbl-sm">(HW scoreboard mode).</text>
+      <text x="712" y="84" class="lbl-sm">When stall≥latency, yield is irrelevant.</text>
+      <text x="712" y="98" class="warn">stall=0 + yield=0 = worst case ever</text>
+    </g>
+  </g>
+
+  <!-- ═══════ BOTTOM: ptxas Policy + Pathological Case ═══════ -->
+  <g transform="translate(30, 446)">
+    <rect x="0" y="0" width="500" height="160" rx="12" fill="#DCFCE7" stroke="#16a34a" stroke-width="0.8"/>
+    <text x="16" y="24" class="sect" fill="#16a34a">ptxas Default Yield Policy</text>
+    <text x="16" y="48" class="lbl-sm">• ALU/FMA instructions: yield=1 (greedy, maximize throughput)</text>
+    <text x="16" y="66" class="lbl-sm">• Barrier (bar.sync): yield=0 (release slot for sync)</text>
+    <text x="16" y="84" class="lbl-sm">• EXIT: yield=0 (warp done, release resources)</text>
+    <text x="16" y="102" class="lbl-sm">• Long stall (stall≥4): yield irrelevant (stall dominates)</text>
+    <text x="16" y="124" class="safe">This policy is optimal for &gt;95% of workloads.</text>
+    <text x="16" y="142" class="note">Only CuAssembler patching can create the pathological stall=0+yield=0 case.</text>
+
+    <!-- Pathological case explanation -->
+    <rect x="520" y="0" width="500" height="160" rx="12" fill="url(#pathG)" stroke="#dc2626" stroke-width="0.8"/>
+    <text x="536" y="24" class="sect" fill="#991b1b">Pathological: stall=0 + yield=0</text>
+    <text x="536" y="48" class="warn">2169 cyc CONSTANT regardless of warp count</text>
+    <text x="536" y="68" class="lbl-sm">• HW scoreboard activates (stall=0 → full dep tracking)</text>
+    <text x="536" y="86" class="lbl-sm">• yield=0 says "release slot" but scheduler never switches</text>
+    <text x="536" y="104" class="lbl-sm">  because HW fallback keeps the warp "busy" on scoreboard</text>
+    <text x="536" y="122" class="lbl-sm">• Result: 17× penalty + zero latency hiding = worst of both</text>
+    <text x="536" y="144" class="warn">32 warps perform identically to 1 warp — complete blocking</text>
+  </g>
+
+  <text x="36" y="632" class="note">[source: S11/case_142-148 (yield sweep), CuAssembler binary patch of 4232 FFMA instructions across yield×stall×warp-count matrix]</text>
+</svg>

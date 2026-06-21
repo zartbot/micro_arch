@@ -1,0 +1,2482 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ptxas Compiler Behavior · SM_120 Microarch Reference</title>
+    <link rel="stylesheet" href="assets/css/style.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css"
+      integrity="sha384-nB0miv6/jRmo5UMMR1wu3Gz6NLsoTkbqJghGIsx//Rlm+ZU03BU6SQNC66uf4l5+"
+      crossorigin="anonymous"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/styles/atom-one-light.min.css"
+    />
+    <style>
+      /* protect non-color overrides over hljs theme */
+      pre code.hljs {
+        background: transparent !important;
+        padding: 0 !important;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="shell">
+      <aside class="toc">
+        <a class="toc-back" href="index.html">← Index</a>
+        <div class="toc-brand">
+          SM_120 <span class="accent">GB202</span> · <em>Microarch</em>
+        </div>
+        <span class="toc-tag">FINAL REPORT · 2026</span>
+        <h4>All Chapters</h4>
+        <a href="01_architecture_overview.html">01 · Architecture Overview</a>
+        <a href="02_memory_subsystem.html">02 · Memory Subsystem</a>
+        <a href="03_sm_microarchitecture.html">03 · SM Microarchitecture</a>
+        <a href="04_tensorcore_architecture.html"
+          >04 · TensorCore Architecture</a
+        >
+        <a href="05_instruction_level_characterization.html"
+          >05 · Instruction-Level Characterization</a
+        >
+        <a href="06_on_chip_network_async.html"
+          >06 · On-Chip Network &amp; Async</a
+        >
+        <a href="07_warp_scheduler_control.html"
+          >07 · Warp Scheduler &amp; Control</a
+        >
+        <a href="08_workload_analysis.html">08 · Workload Analysis</a>
+        <a href="09_power_thermal_efficiency.html"
+          >09 · Power, Thermal &amp; Efficiency</a
+        >
+        <a href="10_system_level_multi_gpu.html"
+          >10 · System-Level &amp; Multi-GPU</a
+        >
+        <a href="11_optimization_guidance.html">11 · Optimization Guidance</a>
+        <a
+          href="12_ptxas_compiler_behavior.html"
+          style="font-weight: 600; color: var(--ink)"
+          >12 · ptxas Compiler Behavior</a
+        >
+        <a href="13_unified_performance_model.html"
+          >13 · Unified Performance Model</a
+        >
+        <a href="14_sm100_to_sm120_porting_guide.html"
+          >14 · SM_100 → SM_120 Porting Guide</a
+        >
+        <a href="15_agent_ground_truth.html">15 · Agent Ground Truth</a>
+        <a href="16_open_questions.html">16 · Open Questions</a>
+        <a href="17_cross_reference_map.html">17 · Cross-Reference Map</a>
+        <a href="18_appendix_a_test_coverage.html"
+          >18 · Appendix A — Test Coverage</a
+        >
+        <a href="19_appendix_b_machine_readable.html"
+          >19 · Appendix B — Machine-Readable Parameters</a
+        >
+        <a href="20_appendix_c_methodology.html"
+          >20 · Appendix C — Measurement Methodology</a
+        >
+      </aside>
+      <main class="content">
+        <header class="hero">
+          <div class="hero-eyebrow">
+            <span class="pulse"></span>CHAPTER 12 · SM_120 · GB202 BLACKWELL
+          </div>
+          <h1 class="hero-title">ptxas Compiler Behavior</h1>
+          <p class="lede">
+            The ptxas assembler is the final optimization pass in the CUDA
+            compilation pipeline, transforming PTX intermediate representation
+            into machine-level SASS instructions with control codes, scoreboard
+            assignments, and register allocation. Because ptxas is a
+            closed-source black box, its behavior directly affects both
+            measurement trustworthiness and optimization headroom. This chapter
+            documents all empirically observed ptxas behaviors on SM_120 (GB202,
+            RTX PRO 5000 72GB), organized into five categories: register
+            allocation, instruction scheduling, known optimizations and
+            side-effects, missed optimizations, and implications for measurement
+            validity. Every finding is backed by CuAssembler binary patching
+            experiments and cuobjdump SASS verification.
+          </p>
+        </header>
+
+        <figure class="diagram">
+          <object
+            data="svg/ch12/ch12_summary.svg"
+            type="image/svg+xml"
+            aria-label="Chapter 12 summary — ptxas compiler behavior, stall counter HW model"
+          ></object>
+          <figcaption>
+            <span class="fig-num">FIG 12.0</span>Chapter 12 summary — ptxas
+            compiler behavior, stall counter HW model
+          </figcaption>
+        </figure>
+        <h2 class="ch-title" id="12-1-register-allocation">
+          12.1 Register Allocation
+        </h2>
+        <h3 class="sub-title" id="12-1-1-the-24-register-floor">
+          12.1.1 The 24-Register Floor
+        </h3>
+        <p>
+          ptxas enforces an absolute minimum of 24 registers per thread on
+          SM_120. Any <code>maxrregcount</code> value below 24 triggers the
+          ptxas warning:
+        </p>
+        <pre><code>For profile sm_120a adjusting per thread register count of N to lower bound of 24</code></pre>
+        <p>
+          The floor affects the <strong>limit</strong>, not the actual
+          allocation. Kernels that naturally require fewer registers (e.g., 8 or
+          16) continue to use their natural allocation regardless of the
+          maxrregcount setting.
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th style="text-align: center">maxrregcount</th>
+                <th style="text-align: center">ptxas Warning</th>
+                <th style="text-align: center">Actual Regs (trivial)</th>
+                <th style="text-align: center">Actual Regs (moderate)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="text-align: center">8</td>
+                <td style="text-align: center">YES</td>
+                <td style="text-align: center">8</td>
+                <td style="text-align: center">16</td>
+              </tr>
+              <tr>
+                <td style="text-align: center">16</td>
+                <td style="text-align: center">YES</td>
+                <td style="text-align: center">8</td>
+                <td style="text-align: center">16</td>
+              </tr>
+              <tr>
+                <td style="text-align: center">20</td>
+                <td style="text-align: center">YES</td>
+                <td style="text-align: center">8</td>
+                <td style="text-align: center">16</td>
+              </tr>
+              <tr>
+                <td style="text-align: center">24</td>
+                <td style="text-align: center">No</td>
+                <td style="text-align: center">8</td>
+                <td style="text-align: center">16</td>
+              </tr>
+              <tr>
+                <td style="text-align: center">32</td>
+                <td style="text-align: center">No</td>
+                <td style="text-align: center">8</td>
+                <td style="text-align: center">16</td>
+              </tr>
+              <tr>
+                <td style="text-align: center">48</td>
+                <td style="text-align: center">No</td>
+                <td style="text-align: center">8</td>
+                <td style="text-align: center">16</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>[source: <code>S21/case_111</code>]</p>
+        <h3
+          class="sub-title"
+          id="12-1-2-restructuring-preference-over-spilling"
+        >
+          12.1.2 Restructuring Preference Over Spilling
+        </h3>
+        <p>
+          When <code>maxrregcount</code> is set low (e.g., 24) but the kernel
+          naturally needs more registers, ptxas
+          <strong>exceeds the requested limit</strong> rather than introducing
+          spill code:
+        </p>
+        <ul>
+          <li>
+            Kernel compiled with <code>maxrregcount=24</code> actually uses
+            28-30 registers
+          </li>
+          <li>Zero spill instructions (STL/LDL) generated</li>
+          <li>
+            Zero performance degradation compared to unconstrained compilation
+          </li>
+        </ul>
+        <p>
+          This demonstrates that ptxas treats maxrregcount as a soft target for
+          occupancy guidance, not a hard constraint. The compiler prefers
+          register restructuring (rematerialization, recomputation) over
+          spilling when the excess is modest.
+        </p>
+        <p>[source: <code>S21/case_112</code>]</p>
+        <h3 class="sub-title" id="12-1-3-spill-onset-and-cost">
+          12.1.3 Spill Onset and Cost
+        </h3>
+        <p>
+          When register pressure genuinely exceeds hardware capacity (e.g., 32
+          accumulator registers with maxreg=24), ptxas is forced to spill:
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Configuration</th>
+                <th style="text-align: center">Total Cycles</th>
+                <th style="text-align: center">Spill Ops</th>
+                <th style="text-align: center">Slowdown</th>
+                <th style="text-align: center">Spill Cost</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>10-FMA (no spill)</td>
+                <td style="text-align: center">35</td>
+                <td style="text-align: center">0</td>
+                <td style="text-align: center">1.0x</td>
+                <td style="text-align: center">--</td>
+              </tr>
+              <tr>
+                <td>32-FMA + maxreg=24 (forced spill)</td>
+                <td style="text-align: center">183</td>
+                <td style="text-align: center">233 STL + 231 LDL</td>
+                <td style="text-align: center">5.23x</td>
+                <td style="text-align: center">0.32 cyc/op</td>
+              </tr>
+              <tr>
+                <td>40-FMA (natural, unconstrained)</td>
+                <td style="text-align: center">74</td>
+                <td style="text-align: center">0</td>
+                <td style="text-align: center">1.0x</td>
+                <td style="text-align: center">--</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          Key observations: - Spill operations use <strong>scalar</strong> STL
+          and LDL.LU (not vectorized STL.128) - Per-spill-operation cost:
+          0.32-0.43 cyc (amortized, fire-and-forget for stores) - Local memory
+          frame allocation adds negligible overhead (linear FMA scaling
+          preserved) - The 5.23x slowdown at 32 accumulators with maxreg=24 is
+          catastrophic -- avoid at all costs
+        </p>
+        <p>[source: <code>S21/case_113-115</code>]</p>
+        <h3 class="sub-title" id="12-1-4-launch_bounds-impact">
+          12.1.4 launch_bounds Impact
+        </h3>
+        <p>
+          <code>__launch_bounds__(maxThreadsPerBlock, minBlocksPerSM)</code> has
+          <strong>zero performance impact</strong> when the kernel's natural
+          register usage already fits within occupancy constraints. The
+          annotation serves only as a hint to ptxas for cases where register
+          pressure is borderline.
+        </p>
+        <ul>
+          <li>Measured delta with and without launch_bounds(256, 2): 0%</li>
+          <li>
+            ptxas uses launch_bounds to relax or tighten the register target
+            (40-56 reg range observed)
+          </li>
+          <li>
+            Spill onset when maxreg&lt;=36 with complex kernels: up to 7.75x
+            slowdown
+          </li>
+        </ul>
+        <p>[source: <code>S11/case_124</code>, <code>S21/case_10</code>]</p>
+        <hr />
+        <h2 class="ch-title" id="12-2-instruction-scheduling">
+          12.2 Instruction Scheduling
+        </h2>
+        <h3 class="sub-title" id="12-2-1-stall-counter-semantics">
+          12.2.1 Stall Counter Semantics
+        </h3>
+        <p>
+          The stall counter field (bits [44:41] of the 128-bit SASS instruction
+          word) controls the
+          <strong
+            >minimum number of cycles between consecutive instruction
+            issues</strong
+          >
+          for the same warp. SM_120 uses three special sentinel values:
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th style="text-align: center">Stall Value</th>
+                <th>Behavior</th>
+                <th style="text-align: center">Measured Cost (cyc/FFMA)</th>
+                <th style="text-align: center">vs Optimal</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="text-align: center">0</td>
+                <td>HW sentinel: forces full replay</td>
+                <td style="text-align: center">31.10</td>
+                <td style="text-align: center">7.15x (22x replay)</td>
+              </tr>
+              <tr>
+                <td style="text-align: center">1 (ptxas default for FFMA)</td>
+                <td>Optimal for dependent chains</td>
+                <td style="text-align: center">1.45</td>
+                <td style="text-align: center">1.0x (baseline)</td>
+              </tr>
+              <tr>
+                <td style="text-align: center">2</td>
+                <td>Direct interval control</td>
+                <td style="text-align: center">2.05</td>
+                <td style="text-align: center">1.41x</td>
+              </tr>
+              <tr>
+                <td style="text-align: center">4 (ptxas default for loops)</td>
+                <td>Direct interval control</td>
+                <td style="text-align: center">4.05</td>
+                <td style="text-align: center">2.79x</td>
+              </tr>
+              <tr>
+                <td style="text-align: center">8</td>
+                <td>Direct interval control</td>
+                <td style="text-align: center">8.05</td>
+                <td style="text-align: center">5.55x</td>
+              </tr>
+              <tr>
+                <td style="text-align: center">11 (ptxas default for HMMA)</td>
+                <td>Suboptimal for MMA chains</td>
+                <td style="text-align: center">34.34</td>
+                <td style="text-align: center">--</td>
+              </tr>
+              <tr>
+                <td style="text-align: center">12 (CuAssembler optimal)</td>
+                <td>Optimal for MMA chains</td>
+                <td style="text-align: center">32.23</td>
+                <td style="text-align: center">6.1% better than 11</td>
+              </tr>
+              <tr>
+                <td style="text-align: center">13</td>
+                <td>Same as 12 for MMA</td>
+                <td style="text-align: center">32.23</td>
+                <td style="text-align: center">6.1% better than 11</td>
+              </tr>
+              <tr>
+                <td style="text-align: center">14+</td>
+                <td>HW sentinel: dep resolution</td>
+                <td style="text-align: center">55.51</td>
+                <td style="text-align: center">~1.7x vs stall=12</td>
+              </tr>
+              <tr>
+                <td style="text-align: center">15</td>
+                <td>HW sentinel: full dep replay</td>
+                <td style="text-align: center">32.05</td>
+                <td style="text-align: center">23x vs stall=1</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p><strong>Critical findings:</strong></p>
+        <ol>
+          <li>
+            <p>
+              <strong>stall=0 and stall=15 are hardware sentinels</strong> that
+              trigger full dependency resolution replay. Both produce identical
+              timing (641 cyc for 20 FFMAs), indicating they bypass the normal
+              scheduling mechanism.
+            </p>
+          </li>
+          <li>
+            <p>
+              <strong
+                >Stall values 1-13 provide direct interval control.</strong
+              >
+              The relationship is exactly linear:
+              <code>total_cycles = stall * N_instructions + constant</code>.
+              Each stall unit adds exactly 1 cycle of minimum inter-issue delay.
+            </p>
+          </li>
+          <li>
+            <p>
+              <strong
+                >stall&gt;=14 triggers a different hardware mechanism</strong
+              >
+              (possibly scoreboard-based dependency resolution), producing 55.51
+              cyc/HMMA -- significantly worse than the optimal stall=12.
+            </p>
+          </li>
+        </ol>
+        <p>[source: <code>S21/case_9,16,17,82</code>]</p>
+        <h3 class="sub-title" id="12-2-2-ptxas-stall-counter-optimality">
+          12.2.2 ptxas Stall Counter Optimality
+        </h3>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Instruction Class</th>
+                <th style="text-align: center">ptxas Default Stall</th>
+                <th style="text-align: center">Optimal Stall</th>
+                <th style="text-align: center">Hand-Tuning Headroom</th>
+                <th>Source</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>FFMA chains (compute-bound)</td>
+                <td style="text-align: center">1</td>
+                <td style="text-align: center">1</td>
+                <td style="text-align: center">0%</td>
+                <td><code>S21/case_9</code></td>
+              </tr>
+              <tr>
+                <td>FFMA in tight loops</td>
+                <td style="text-align: center">4</td>
+                <td style="text-align: center">4</td>
+                <td style="text-align: center">0%</td>
+                <td><code>S21/case_16</code></td>
+              </tr>
+              <tr>
+                <td>HMMA chains</td>
+                <td style="text-align: center">11</td>
+                <td style="text-align: center">12-13</td>
+                <td style="text-align: center">6.1% improvement</td>
+                <td><code>S21/case_82</code></td>
+              </tr>
+              <tr>
+                <td>QMMA chains</td>
+                <td style="text-align: center">--</td>
+                <td style="text-align: center">--</td>
+                <td style="text-align: center">(same as HMMA)</td>
+                <td><code>S21/case_84</code></td>
+              </tr>
+              <tr>
+                <td>OMMA.SF chains</td>
+                <td style="text-align: center">--</td>
+                <td style="text-align: center">--</td>
+                <td style="text-align: center">(same as HMMA)</td>
+                <td><code>S21/case_85</code></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          <strong>Summary</strong>: ptxas is <strong>optimal</strong> for scalar
+          ALU chains (0% improvement possible) but
+          <strong>suboptimal</strong> for MMA chains, where CuAssembler patching
+          from stall=11 to stall=12 yields a consistent 6.1% throughput
+          improvement. This represents the only confirmed optimization
+          opportunity via binary patching on SM_120.
+        </p>
+        <p>[source: <code>S21/case_9,82</code>]</p>
+        <h3
+          class="sub-title"
+          id="12-2-2a-microarchitectural-analysis-the-stall-counter-hardware-model"
+        >
+          12.2.2a Microarchitectural Analysis: The Stall Counter Hardware Model
+        </h3>
+        <p>
+          The stall counter sweep data (Cases 9, 16, 17, 82) constrains a
+          precise model of the SM_120 dispatch hardware. The 4-bit stall counter
+          field (bits [44:41] of the 128-bit SASS instruction word) does
+          <strong>not</strong> operate as a uniform "delay N cycles" knob.
+          Instead, the hardware enters three completely different operating
+          modes depending on the encoded value — a critical distinction that any
+          CuAssembler-based optimization must respect:
+        </p>
+        <figure class="diagram">
+          <object
+            data="svg/ch12/ch12_s00_arch.svg"
+            type="image/svg+xml"
+            aria-label="SM_120 Stall Counter Hardware Architecture — Three Operating Modes (CuAssembler-Verified)"
+          ></object>
+          <figcaption>
+            <span class="fig-num">FIG 12.2a</span>SM_120 Stall Counter Hardware
+            Architecture — three distinct operating modes of the 4-bit stall
+            counter, verified via CuAssembler binary patching
+          </figcaption>
+        </figure>
+
+        <h4 class="sub-sub-title">
+          Mode A — Linear Interval Control (stall ∈ [1..13])
+        </h4>
+        <p>
+          In this mode, each stall unit corresponds to
+          <strong>exactly one cycle</strong>
+          of inter-issue delay for the same warp. The relationship is perfectly
+          linear:
+          <code>total_cycles = stall × N_instructions + constant</code>, where
+          the constant (+1-2 cyc) represents clock64 measurement overhead. This
+          is confirmed by Case 17's sweep across 5 FFMAs:
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th style="text-align: center">Stall Value</th>
+                <th style="text-align: center">Total (5 FFMAs)</th>
+                <th style="text-align: center">Per-FFMA</th>
+                <th>Derivation</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="text-align: center">1</td>
+                <td style="text-align: center">7 cyc</td>
+                <td style="text-align: center">1.40</td>
+                <td>5×1 + 2 (overhead)</td>
+              </tr>
+              <tr>
+                <td style="text-align: center">2</td>
+                <td style="text-align: center">11 cyc</td>
+                <td style="text-align: center">2.20</td>
+                <td>5×2 + 1</td>
+              </tr>
+              <tr>
+                <td style="text-align: center">4</td>
+                <td style="text-align: center">21 cyc</td>
+                <td style="text-align: center">4.20</td>
+                <td>5×4 + 1</td>
+              </tr>
+              <tr>
+                <td style="text-align: center">8</td>
+                <td style="text-align: center">41 cyc</td>
+                <td style="text-align: center">8.20</td>
+                <td>5×8 + 1</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          ptxas is <strong>hardware-optimal</strong> throughout this range for
+          ALU instructions: FFMA dependency chains use stall=1, tight loops use
+          stall=4. No CuAssembler-based improvement is possible here.
+        </p>
+
+        <h4 class="sub-sub-title">
+          Mode B — Hardware Dependency Resolution Sentinel (stall ∈ {0, 14, 15})
+        </h4>
+        <p>
+          These three values are <strong>hardware sentinels</strong> that bypass
+          the linear dispatch-interval mechanism entirely and invoke a full
+          hardware scoreboard dependency resolver. The resolver walks the
+          complete dependency chain before allowing the next instruction to
+          issue — producing catastrophic slowdowns:
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Instruction</th>
+                <th style="text-align: center">Stall Value</th>
+                <th style="text-align: center">cyc/op</th>
+                <th style="text-align: center">Slowdown vs Optimal</th>
+                <th>Source</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>FFMA</td>
+                <td style="text-align: center">0</td>
+                <td style="text-align: center">31.10</td>
+                <td style="text-align: center">22× (vs stall=1)</td>
+                <td>Case 9</td>
+              </tr>
+              <tr>
+                <td>FFMA</td>
+                <td style="text-align: center">15</td>
+                <td style="text-align: center">32.20</td>
+                <td style="text-align: center">23× (vs stall=1)</td>
+                <td>Case 17</td>
+              </tr>
+              <tr>
+                <td>HMMA</td>
+                <td style="text-align: center">14</td>
+                <td style="text-align: center">55.51</td>
+                <td style="text-align: center">72% (vs stall=12)</td>
+                <td>Case 82</td>
+              </tr>
+              <tr>
+                <td>HMMA</td>
+                <td style="text-align: center">15</td>
+                <td style="text-align: center">55.51</td>
+                <td style="text-align: center">same as 14</td>
+                <td>Case 82</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          ptxas <strong>never emits</strong> stall values 0, 14, or 15 — these
+          are its "forbidden zone." SASS-level patchers must exercise extreme
+          caution: accidentally landing on a sentinel value produces
+          <em>silent</em> catastrophic slowdown with no error or exception, just
+          dramatically slower code.
+        </p>
+
+        <h4 class="sub-sub-title">
+          Mode C — Pipeline-Aligned Sweet Spot (stall=12 for HMMA)
+        </h4>
+        <p>
+          The most architecturally interesting finding emerges from the HMMA
+          stall sweep (Case 82, 16-deep dependency chain). The results are
+          <strong>counter-intuitive</strong>: stall=12 is <em>faster</em> than
+          stall=11 (the ptxas default), even though it imposes a longer
+          inter-issue delay:
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th style="text-align: center">Stall</th>
+                <th style="text-align: center">cyc/HMMA</th>
+                <th>Interpretation</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="text-align: center">8</td>
+                <td style="text-align: center">32.30</td>
+                <td>
+                  HW scoreboard auto-resolves (stall too short → falls into Mode
+                  B behavior)
+                </td>
+              </tr>
+              <tr>
+                <td style="text-align: center">9</td>
+                <td style="text-align: center">32.32</td>
+                <td>Same as stall=8</td>
+              </tr>
+              <tr>
+                <td style="text-align: center">10</td>
+                <td style="text-align: center">33.33</td>
+                <td>Slightly slower — partial misalignment begins</td>
+              </tr>
+              <tr>
+                <td style="text-align: center"><strong>11</strong></td>
+                <td style="text-align: center"><strong>34.34</strong></td>
+                <td>
+                  <strong
+                    >ptxas default — SUBOPTIMAL (1-cyc writeback
+                    misalignment)</strong
+                  >
+                </td>
+              </tr>
+              <tr>
+                <td style="text-align: center"><strong>12</strong></td>
+                <td style="text-align: center"><strong>32.23</strong></td>
+                <td>
+                  <strong
+                    >★ OPTIMAL — aligns with TC accumulator writeback
+                    slot</strong
+                  >
+                </td>
+              </tr>
+              <tr>
+                <td style="text-align: center">13</td>
+                <td style="text-align: center">32.23</td>
+                <td>Same as stall=12 (within alignment window)</td>
+              </tr>
+              <tr>
+                <td style="text-align: center">14</td>
+                <td style="text-align: center">55.51</td>
+                <td>Sentinel triggered — 72% penalty</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <p>
+          <strong>The 6.1% HMMA optimization opportunity explained</strong>: The
+          stall counter only controls the
+          <em>SMSP-level dispatch interval</em> — it does not directly regulate
+          the Tensor Core pipeline's internal accumulator writeback timing. The
+          TC pipeline has a 29-cycle latency with a pipeline depth of ~1.81
+          slots. At stall=11, the next HMMA instruction issues 11 cycles after
+          the previous one dispatches, but the TC accumulator writeback is not
+          yet ready — producing a 1-cycle <em>partial replay bubble</em>
+          as the hardware stalls waiting for the accumulator register to become
+          available. At stall=12, the dispatch aligns precisely with the TC
+          writeback slot, eliminating the bubble.
+        </p>
+        <p>
+          At stall=8-9, the stall is so short that it falls below the TC
+          pipeline's natural throughput threshold — the hardware scoreboard
+          detects the premature issue and automatically resolves the dependency
+          via its full-replay path, <em>accidentally</em>
+          achieving the same throughput as the aligned stall=12. This creates
+          the non-monotonic U-shaped performance curve visible in the chart
+          above.
+        </p>
+        <p>
+          ptxas's internal latency model is calibrated conservatively to
+          stall=11 (the "safe" side of the alignment boundary). CuAssembler
+          binary patching from stall=11 to stall=12 immediately recovers the
+          6.1% throughput gap. This improvement is consistent across all MMA
+          families (HMMA, QMMA, OMMA.SF), confirming that ptxas uses a single
+          stall heuristic for all Tensor Core instructions that is calibrated
+          exactly one unit below the hardware optimum.
+        </p>
+        <p>[source: <code>S21/case_9,16,17,82</code>]</p>
+        <h3 class="sub-title" id="12-2-3-instruction-reorder-distance">
+          12.2.3 Instruction Reorder Distance
+        </h3>
+        <p>
+          ptxas reorders instructions within a bounded window to improve
+          scheduling:
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Metric</th>
+                <th style="text-align: center">Value</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Maximum reorder distance</td>
+                <td style="text-align: center">20 positions</td>
+              </tr>
+              <tr>
+                <td>Mean reorder distance</td>
+                <td style="text-align: center">10.4 positions</td>
+              </tr>
+              <tr>
+                <td>Minimum reorder distance</td>
+                <td style="text-align: center">0 positions</td>
+              </tr>
+              <tr>
+                <td>Median reorder distance</td>
+                <td style="text-align: center">~11 positions</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          The reordering exhibits a <strong>two-wave pattern</strong> driven by
+          register availability: ptxas processes instructions in alternating
+          waves (even-indexed first, odd-indexed second), creating a
+          characteristic interleaved scheduling output. This pattern maximizes
+          the dependency distance between operations that share register
+          operands.
+        </p>
+        <p>
+          <strong>Impact on measurement</strong>: Dep-chain measurements may
+          have +/-1-2 cyc uncertainty from ptxas reordering within the
+          20-instruction window. Measurements using inline PTX asm with explicit
+          output dependencies are immune to this effect.
+        </p>
+        <p>[source: <code>S21/case_11</code>]</p>
+        <h3 class="sub-title" id="12-2-4-depbar-insertion-heuristic">
+          12.2.4 DEPBAR Insertion Heuristic
+        </h3>
+        <p>
+          ptxas inserts <strong>zero DEPBAR instructions</strong> for regular
+          memory loads on SM_120, regardless of the number of outstanding loads
+          (tested 1-16 loads). Instead, ptxas relies exclusively on
+          <strong>inline scoreboard control-code bits</strong> (bits [57:54] of
+          the instruction word) for load dependency tracking.
+        </p>
+        <p>
+          DEPBAR is reserved exclusively for <code>cp.async</code> operations,
+          where the asynchronous nature requires explicit barrier-based
+          completion tracking that cannot be expressed through inline scoreboard
+          bits alone.
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th style="text-align: center">Outstanding Loads</th>
+                <th style="text-align: center">DEPBAR Count</th>
+                <th>Mechanism Used</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="text-align: center">1</td>
+                <td style="text-align: center">0</td>
+                <td>Inline SB bits</td>
+              </tr>
+              <tr>
+                <td style="text-align: center">4</td>
+                <td style="text-align: center">0</td>
+                <td>Inline SB bits</td>
+              </tr>
+              <tr>
+                <td style="text-align: center">8</td>
+                <td style="text-align: center">0</td>
+                <td>Inline SB bits</td>
+              </tr>
+              <tr>
+                <td style="text-align: center">16</td>
+                <td style="text-align: center">0</td>
+                <td>Inline SB bits</td>
+              </tr>
+              <tr>
+                <td style="text-align: center">cp.async (any count)</td>
+                <td style="text-align: center">&gt;=1</td>
+                <td>DEPBAR</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>[source: <code>S21/case_12</code>]</p>
+        <hr />
+        <h2
+          class="ch-title"
+          id="12-3-known-ptxas-optimizations-and-side-effects"
+        >
+          12.3 Known ptxas Optimizations and Side-Effects
+        </h2>
+        <h3 class="sub-title" id="12-3-1-constant-folding">
+          12.3.1 Constant Folding
+        </h3>
+        <p>
+          ptxas performs aggressive constant folding that can eliminate entire
+          instruction chains when operands are compile-time visible:
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Pattern</th>
+                <th>ptxas Behavior</th>
+                <th>Evidence</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>add.s32 %0, %0, 1</code> chain (N=128)</td>
+                <td>Folds to single <code>IADD3 R, R, 128</code></td>
+                <td>Only 24 IADD3 in SASS vs expected 256+</td>
+              </tr>
+              <tr>
+                <td>Integer address arithmetic (constant offsets)</td>
+                <td>Eliminates redundant IMAD/IADD3</td>
+                <td>Tested at -O3 vs -O0</td>
+              </tr>
+              <tr>
+                <td>FP32 immediate constants (0.5f, 1.0f)</td>
+                <td>Folds MOV+FFMA into single FFMA with immediate slot</td>
+                <td>MOV produces 0 cyc overhead</td>
+              </tr>
+              <tr>
+                <td>HFMA2 constant materialization</td>
+                <td>Zero overhead (fully hidden)</td>
+                <td>4.00 cyc/FMA with/without constants</td>
+              </tr>
+              <tr>
+                <td>Polynomial chain constants</td>
+                <td>
+                  Zero overhead; 28.0 cyc/7-FMA regardless of constant source
+                </td>
+                <td><code>S21/case_91</code></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          <strong>Critical implication for benchmarking</strong>: Any
+          microbenchmark using compile-time visible integer arithmetic as a
+          "workload" will be constant-folded to a trivial computation. Use
+          volatile variables or global memory loads to prevent this
+          optimization.
+        </p>
+        <p>[source: <code>S21/case_13</code>, <code>S21/case_87-91</code>]</p>
+        <h3 class="sub-title" id="12-3-2-loop-full-unrolling">
+          12.3.2 Loop Full Unrolling
+        </h3>
+        <p>
+          ptxas fully unrolls ALL constant-trip-count loops on SM_120, with no
+          upper threshold found up to 8192 iterations:
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th style="text-align: center">Trip Count</th>
+                <th style="text-align: center">Unrolled?</th>
+                <th style="text-align: center">Speedup vs Non-Unrolled</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="text-align: center">1</td>
+                <td style="text-align: center">Yes</td>
+                <td style="text-align: center">1.24x</td>
+              </tr>
+              <tr>
+                <td style="text-align: center">64</td>
+                <td style="text-align: center">Yes</td>
+                <td style="text-align: center">6.45x</td>
+              </tr>
+              <tr>
+                <td style="text-align: center">512</td>
+                <td style="text-align: center">Yes</td>
+                <td style="text-align: center">12.22x</td>
+              </tr>
+              <tr>
+                <td style="text-align: center">2048</td>
+                <td style="text-align: center">Yes</td>
+                <td style="text-align: center">13.67x</td>
+              </tr>
+              <tr>
+                <td style="text-align: center">8192</td>
+                <td style="text-align: center">Yes</td>
+                <td style="text-align: center">14.05x</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          Key details: - <strong>No threshold found</strong>: ptxas unrolls up
+          to at least 8192 iterations with a single-instruction body -
+          <strong>nvcc frontend also unrolls</strong>:
+          <code>#pragma unroll</code> is redundant -- nvcc auto-unrolls
+          regardless - <strong>PTX-level loops also unrolled</strong>: Even
+          explicit <code>bra</code> back-edges in PTX are eliminated by ptxas -
+          <strong>Only volatile/runtime trip counts prevent unrolling</strong>:
+          To force loop behavior, use volatile loop counters -
+          <strong>Loop overhead eliminated</strong>: ~53 cyc/iteration (IADD +
+          ISETP + BRA + pipeline stalls) removed by unrolling
+        </p>
+        <p>[source: <code>S21/case_14</code>]</p>
+        <h3 class="sub-title" id="12-3-3-dead-code-elimination-dce">
+          12.3.3 Dead-Code Elimination (DCE)
+        </h3>
+        <p>
+          ptxas performs its own DCE pass, independent of nvcc's C++
+          optimizations:
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Anti-DCE Method</th>
+                <th style="text-align: center">Status</th>
+                <th>Mechanism</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Volatile global store</td>
+                <td style="text-align: center">SAFE</td>
+                <td>ptxas preserves side-effect</td>
+              </tr>
+              <tr>
+                <td>Non-volatile global store (<code>out[tid] = val</code>)</td>
+                <td style="text-align: center">SAFE</td>
+                <td>ptxas preserves store</td>
+              </tr>
+              <tr>
+                <td>printf conditional sink</td>
+                <td style="text-align: center">SAFE</td>
+                <td>ptxas preserves call dependency</td>
+              </tr>
+              <tr>
+                <td><code>asm volatile("" :: "f"(val) : "memory")</code></td>
+                <td style="text-align: center"><strong>DCE'd</strong></td>
+                <td>ptxas eliminates (no visible side-effect)</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          <strong>Critical finding</strong>: The common pattern
+          <code>asm volatile("" :: "f"(val) : "memory")</code> with only
+          register clobbers is NOT sufficient to prevent ptxas DCE on SM_120.
+          ptxas eliminates the entire dependent computation chain because no
+          visible memory side-effect is produced.
+        </p>
+        <p>
+          <strong>Recommended safe pattern</strong>: Always store results to
+          global memory (<code>out[threadIdx.x] = val</code>) or use a sink
+          function that ptxas cannot prove dead.
+        </p>
+        <p>[source: <code>S21/case_15</code>]</p>
+        <h3 class="sub-title" id="12-3-4--reuse-bit-behavior">
+          12.3.4 .reuse Bit Behavior
+        </h3>
+        <p>
+          The <code>.reuse</code> bits are encoded at bits [60:58] of the upper
+          64-bit control word (= bits [124:122] of the full 128-bit
+          instruction). They are
+          <strong>functionally active on SM_120</strong> with significant
+          throughput impact in ILP-rich workloads: FFMA ILP=8 (stall=1) shows
+          +85% penalty when .reuse is cleared. In latency-bound dep chains
+          (stall≥4), .reuse has 0% impact.
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Workload Type</th>
+                <th style="text-align: center">.reuse ON</th>
+                <th style="text-align: center">.reuse OFF</th>
+                <th style="text-align: center">Delta</th>
+                <th>Source</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>FFMA ILP=8 (stall=1)</strong></td>
+                <td style="text-align: center">1.070 cyc/FFMA</td>
+                <td style="text-align: center">1.984 cyc/FFMA</td>
+                <td style="text-align: center">
+                  <strong>+85% (1.85×)</strong>
+                </td>
+                <td>SM_120 server1</td>
+              </tr>
+              <tr>
+                <td>FFMA dep chain (stall=4)</td>
+                <td style="text-align: center">4.00 cyc/FFMA</td>
+                <td style="text-align: center">4.00 cyc/FFMA</td>
+                <td style="text-align: center">0%</td>
+                <td><code>S11/case_149</code></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          The RFC (Register File Cache) provides operand caching in
+          throughput-bound regions where multiple ALU instructions issue
+          back-to-back (stall=1). ptxas sets .reuse bits correctly for ILP-rich
+          ALU code. In latency-bound dep chains (stall≥4), .reuse provides no
+          benefit. For TC instructions (HMMA/QMMA/OMMA.SF), ptxas never sets
+          .reuse bits — the TC pipeline uses an independent operand fetch path
+          that does not rely on RFC. Forcing .reuse=111 on HMMA produces 0%
+          delta, confirming TC .reuse is a true no-op.
+        </p>
+        <p>
+          [source: <code>S11/case_155</code>, SM_120 server1 ILP=8 verification]
+        </p>
+        <h3
+          class="sub-title"
+          id="12-3-4a-microarchitectural-analysis-ptxas-as-sm120-aware-scheduler"
+        >
+          12.3.4a Microarchitectural Analysis: ptxas as an SM_120-Aware
+          Scheduler
+        </h3>
+        <p>
+          Viewing ptxas as a "generic compiler pipeline" (constant folding / DCE
+          / register allocation / scheduling / loop unrolling) sells the tool
+          short — those are table stakes that every compiler since the LLVM era
+          performs. The real value of ptxas on SM_120 lies in being a
+          <strong>microarchitecture-aware scheduler</strong>: for every SASS
+          instruction it emits, ptxas must populate five control-code fields
+          whose semantics are tightly coupled to specific SM_120 hardware
+          mechanisms; for several PTX operations it must additionally make
+          SM_120-specific <em>lowering</em> choices (REDG vs ATOMG, UFFMA
+          promotion, descriptor-mode addressing, and so on).
+        </p>
+        <p>
+          The four diagrams below cover the depth this chapter actually wants to
+          convey.
+        </p>
+
+        <h4 class="sub-sub-title">
+          (i) The Five SASS Control-Code Fields ptxas Sets per Instruction
+        </h4>
+        <p>
+          Each 128-bit SASS instruction reserves five distinct control fields in
+          its upper 64-bit word. Each field maps to a separate SM_120 hardware
+          mechanism, and any field that is mis-set causes a
+          <strong>silent performance loss</strong> — no error, no exception,
+          just slower code.
+        </p>
+        <figure class="diagram">
+          <object
+            data="svg/ch12/ch12_ptxas_decisions.svg"
+            type="image/svg+xml"
+            aria-label="ptxas SASS control-code fields on SM_120 — 5 decisions per instruction tied to specific hardware mechanisms"
+          ></object>
+          <figcaption>
+            <span class="fig-num">FIG 12.3a</span>The five SASS control-code
+            fields ptxas populates per instruction — each tied to a specific
+            SM_120 hardware mechanism
+          </figcaption>
+        </figure>
+        <p>
+          Of these five fields, ptxas already does four of them well (see the
+          "Key takeaway" panel at the bottom of the figure): parity-aware
+          register allocation always avoids same-parity 3-source patterns, the
+          SB wait mask correctly synchronizes with the 6-counter scoreboard, the
+          yield bit defaults to 1 to optimize warp interleaving, and predicate
+          dependencies are routed through a dedicated hardware resolver.
+          <strong>The single systematic miscalibration</strong> is the stall
+          counter on HMMA chains (11 → 12, detailed in the next subsection). The
+          <code>.reuse</code> field deserves a special note — it is a
+          <em>dual-natured</em> field: on ALU pipes, ptxas actively sets it and
+          the hardware honors it (+85% throughput in ILP-rich workloads); on TC
+          pipes, ptxas never sets it and the hardware ignores any value (true
+          no-op). Earlier patchers that targeted the wrong bits [48:46] entirely
+          missed this distinction and concluded ".reuse is universally inert" —
+          a cautionary tale for SASS-level reverse engineering.
+        </p>
+
+        <h4 class="sub-sub-title">
+          (ii) The Three Hardware Modes of the Stall Counter
+        </h4>
+        <p>
+          The stall counter is 4 bits wide (0-15), but it is
+          <strong>not a uniform "delay N cycles" knob</strong>. The hardware
+          enters three completely different modes depending on the value:
+        </p>
+        <figure class="diagram">
+          <object
+            data="svg/ch12/ch12_stall_hw_modes.svg"
+            type="image/svg+xml"
+            aria-label="Stall counter 3 hardware modes on SM_120 — Linear, Sentinel, Pipeline-Aligned with measured cyc/op data"
+          ></object>
+          <figcaption>
+            <span class="fig-num">FIG 12.3b</span>The three hardware modes of
+            the stall counter — the same field triggers completely different
+            mechanisms depending on its value
+          </figcaption>
+        </figure>
+        <p>
+          <strong>Mode A (Linear, stall ∈ [1..13])</strong> is the conventional
+          dispatch-interval control: each stall unit corresponds to exactly one
+          cycle of inter-issue delay. ptxas is at hardware optimum throughout
+          this range for ALU pipes — FFMA chains use stall=1, tight loops use
+          stall=4, and the Case 17 sweep confirms total cycles follow the strict
+          linear model <code>stall × N + 1</code>.
+        </p>
+        <p>
+          <strong>Mode B (Sentinel, stall ∈ {0, 14, 15})</strong> triggers the
+          hardware dependency resolver's full-replay path, bypassing the linear
+          interval mechanism entirely. stall=0 makes FFMA crawl at 31 cyc/op
+          (22× slowdown); HMMA stall=14 measures 55.51 cyc/op. These values are
+          ptxas's <em>forbidden zone</em> — it never produces them. SASS-level
+          patchers must be careful here: accidentally landing on a sentinel
+          value silently triggers catastrophic slowdown.
+        </p>
+        <p>
+          <strong>Mode C (Pipeline-Aligned)</strong> is the most interesting
+          finding. The HMMA stall sweep shows a counter-intuitive result:
+          stall=11 (ptxas default) takes 34.34 cyc, while stall=12 is
+          <em>faster</em> at 32.23 cyc. The cause is that the stall counter only
+          governs the SMSP dispatch interval — it does not directly control the
+          TC pipeline's internal re-issue logic. stall=11 mis-aligns with the TC
+          writeback's 1-cycle granularity, producing a 1-cyc partial-replay
+          bubble; stall=12 aligns with the writeback slot. ptxas's internal
+          latency model does not capture this granularity. CuAssembler patching
+          from stall=11 to stall=12 immediately recovers 6.1% throughput —
+          <strong
+            >this is the only SASS-level optimization headroom on the entire
+            SM_120 microarchitecture</strong
+          >.
+        </p>
+
+        <h4 class="sub-sub-title">
+          (iii) Operand Delivery: 3-Tier Model with ALU/TC Bifurcation
+        </h4>
+        <p>
+          SM_120's register-operand path operates as a three-tier hierarchy.
+          ptxas actively selects the tier — by combining register parity (which
+          controls RF bank routing) with <code>.reuse</code> bits (which control
+          RFC caching) — rather than relying on hardware fallback:
+        </p>
+        <figure class="diagram">
+          <object
+            data="svg/ch12/ch12_operand_pipeline.svg"
+            type="image/svg+xml"
+            aria-label="Operand delivery 3-tier model on SM_120 — RFC hit / RF mixed / RF same-parity, plus ALU vs TC pipeline differentiation"
+          ></object>
+          <figcaption>
+            <span class="fig-num">FIG 12.3c</span>The 3-tier operand delivery
+            model and the ALU/TC bifurcation of the .reuse field
+          </figcaption>
+        </figure>
+        <ul>
+          <li>
+            <strong>Tier 1 (RFC Hit, 1.34 cyc/FFMA)</strong> —
+            <code>.reuse</code> bits set and the RFC cache hits. Operands are
+            read directly from the cache, completely bypassing the RF read
+            ports. This is the default path ptxas takes for ILP-rich ALU code,
+            delivering +85% over Tier 2.
+          </li>
+          <li>
+            <strong>Tier 2 (RF Mixed Parity, 2.04 cyc/FFMA)</strong> — three
+            source operands are split across even/odd banks, so the two RF read
+            ports can serve all three reads in a single OC cycle. This is the
+            baseline.
+          </li>
+          <li>
+            <strong>Tier 3 (RF Same Parity, 3.03 cyc/FFMA)</strong> — three
+            sources are all even (or all odd), forcing ⌈3/2⌉ = 2 OC cycles to
+            serialize the reads. ptxas never produces this pattern; observing it
+            requires CuAssembler binary patching to force same-parity registers.
+          </li>
+        </ul>
+        <p>
+          The lower half of the figure highlights how ALU and TC pipes interpret
+          the same <code>.reuse</code> field differently. ALU pipes consult the
+          RFC and <code>.reuse</code> is functionally active. TC pipes have
+          their own operand fetch network and do not query the RFC at all. This
+          is why all 456 HMMA instructions in the test cubin have
+          <code>.reuse</code> bits = 000, and why forcing them to 111 produces
+          zero performance delta.
+        </p>
+
+        <h4 class="sub-sub-title">
+          (iv) Optimization Headroom Map: 4 Bottlenecks ptxas Cannot
+          Auto-Resolve
+        </h4>
+        <p>
+          After all the microarchitecture-aware decisions are accounted for,
+          ptxas is near-optimal on SM_120. The remaining headroom concentrates
+          in four specific scenarios:
+        </p>
+        <figure class="diagram">
+          <object
+            data="svg/ch12/ch12_optimization_headroom.svg"
+            type="image/svg+xml"
+            aria-label="ptxas optimization headroom map on SM_120 — 4 residual gaps after all microarchitecture-aware decisions"
+          ></object>
+          <figcaption>
+            <span class="fig-num">FIG 12.3d</span>ptxas optimization headroom
+            map — 4 residual bottlenecks requiring either SASS patching or
+            kernel-design intervention
+          </figcaption>
+        </figure>
+        <p>These four gaps split into two categories by intervention level:</p>
+        <ul>
+          <li>
+            <strong>SASS-level patch class</strong> — ① HMMA stall calibration.
+            No kernel source changes required; CuAssembler binary patching from
+            stall=11 to stall=12 recovers +6.1% throughput. This is the only
+            headroom that pure post-processing can capture.
+          </li>
+          <li>
+            <strong>Kernel-design class</strong> — ② missing auto-vectorization
+            (developers must explicitly use <code>float4</code> /
+            <code>int4</code>); ③ non-vectorized spills (must be avoided via
+            tile / <code>launch_bounds</code> tuning rather than fixed at the
+            spill site); ④ helper-function overhead (replace
+            <code>__cuda_sm20_*</code> calls with inline PTX). These are not
+            bugs in ptxas — they are deliberate design boundaries: ptxas does
+            not rewrite the instruction selection that the developer explicitly
+            wrote.
+          </li>
+        </ul>
+        <p>
+          Overall, ptxas is a deeply microarchitecture-aware code generator on
+          SM_120: it knows the RF has 2 banks, that the OC tolerates
+          cross-parity reads, that the RFC has ≥24 entries, that the 6 SB
+          counters hit a cliff at N=6, that TC pipes do not participate in the
+          RFC, and that REDG and ATOMG are two physically distinct hardware
+          paths. This level of SM_120-specific awareness is far beyond what any
+          "generic compiler optimization pipeline" can express — and it is the
+          lens developers should bring when reading the SASS that ptxas emits.
+        </p>
+        <h3 class="sub-title" id="12-3-5-nvcc--o0-pass-through">
+          12.3.5 nvcc -O0 Pass-Through
+        </h3>
+        <p>
+          The nvcc <code>-O0</code>/<code>-O3</code> flag controls only the host
+          C++ compiler (cicc/cudafe). The PTX-to-SASS compilation by ptxas runs
+          at its own default optimization level regardless of nvcc's flag:
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Compilation Mode</th>
+                <th style="text-align: center">Effect on Inline Asm</th>
+                <th style="text-align: center">Clock Overhead</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>nvcc -O3 (default)</td>
+                <td style="text-align: center">Baseline</td>
+                <td style="text-align: center">1 cyc</td>
+              </tr>
+              <tr>
+                <td>nvcc -O0</td>
+                <td style="text-align: center">
+                  <strong>Zero effect</strong> (bit-identical SASS)
+                </td>
+                <td style="text-align: center">1 cyc</td>
+              </tr>
+              <tr>
+                <td>nvcc -O3 + <code>--ptxas-options=-O0</code></td>
+                <td style="text-align: center">8.6-31.3x inflation</td>
+                <td style="text-align: center">102 cyc</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          To disable ptxas optimization, the explicit
+          <code>--ptxas-options=-O0</code> flag must be used. This inflates
+          measured latencies by: - ALU operations: 8.6x (4 cyc -&gt; 34 cyc) -
+          SFU operations: 12.7-31.3x (18-44 cyc -&gt; 559 cyc) - SEL
+          (SETP+SELP): 6.8x (10 cyc -&gt; 68 cyc)
+        </p>
+        <p>[source: <code>S21/case_13</code>]</p>
+        <h3
+          class="sub-title"
+          id="12-3-6-uniform-datapath-promotion-uffmauiadd3"
+        >
+          12.3.6 Uniform Datapath Promotion (UFFMA/UIADD3)
+        </h3>
+        <p>
+          ptxas promotes operations on uniform (warp-invariant) data to the
+          <strong>uniform datapath</strong>, using UFFMA and UIADD3
+          instructions. These uniform operations dispatch to a dedicated
+          execution unit with free (zero-cost) issue, not competing with the
+          main FP32/INT pipe.
+        </p>
+        <ul>
+          <li>
+            Detected via SASS: <code>UFFMA</code>, <code>UIADD3</code>,
+            <code>UIMAD</code> prefixed instructions
+          </li>
+          <li>
+            Uniform registers: <code>UR0</code>-<code>UR63</code> (distinct from
+            per-thread <code>R0</code>-<code>R255</code>)
+          </li>
+          <li>
+            Transfer cost: R2UR optimized away by ptxas; REDUX-UR-R = 45 cyc
+            when explicit transfer is needed
+          </li>
+        </ul>
+        <p>[source: <code>S11/case_85</code>, <code>S21/case_120</code>]</p>
+        <hr />
+        <h2 class="ch-title" id="12-4-missed-optimizations-ptxas-limitations">
+          12.4 Missed Optimizations (ptxas Limitations)
+        </h2>
+        <h3 class="sub-title" id="12-4-1-no-auto-vectorization">
+          12.4.1 No Auto-Vectorization
+        </h3>
+        <p>
+          ptxas does <strong>NOT</strong> merge contiguous scalar loads into
+          wider vector loads, even when the pattern is trivially recognizable:
+        </p>
+        <pre><code>  Source pattern: 8 consecutive float loads from base+0 to base+28 (32B total)
+
+  ptxas output (8 scalar loads):
+    LDG.E.CONSTANT R0, desc[UR4][R2.64]
+    LDG.E.CONSTANT R7, desc[UR4][R2.64+0x4]
+    LDG.E.CONSTANT R6, desc[UR4][R2.64+0x8]
+    ...
+    LDG.E.CONSTANT R12, desc[UR4][R2.64+0x1c]
+
+  Optimal output (2 vector loads):
+    LDG.E.128.CONSTANT R12, desc[UR4][R2.64]
+    LDG.E.128.CONSTANT R4, desc[UR4][R2.64+0x10]</code></pre>
+        <p>
+          <strong>Performance impact</strong>: Manual float4 vectorization
+          provides 1.27-1.31x speedup for L2-resident data, and 1.02x for
+          DRAM-bound workloads (where the memory controller already handles
+          request coalescing).
+        </p>
+        <p>
+          <strong>Recommendation</strong>: Always use <code>float4</code>,
+          <code>int4</code>, or <code>__int128</code> types for contiguous
+          memory access patterns. Do not rely on the compiler to vectorize
+          scalar access patterns.
+        </p>
+        <p>[source: <code>S21/case_116-117</code>]</p>
+        <h3 class="sub-title" id="12-4-2-suboptimal-mma-chain-stall-assignment">
+          12.4.2 Suboptimal MMA Chain Stall Assignment
+        </h3>
+        <p>
+          ptxas assigns stall=11 to HMMA instructions in dependency chains, but
+          the hardware-optimal value is stall=12-13:
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Configuration</th>
+                <th style="text-align: center">Throughput (cyc/HMMA)</th>
+                <th style="text-align: center">Delta vs Optimal</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>ptxas default (stall=11)</td>
+                <td style="text-align: center">34.34</td>
+                <td style="text-align: center">-6.1%</td>
+              </tr>
+              <tr>
+                <td>CuAssembler stall=12</td>
+                <td style="text-align: center">32.23</td>
+                <td style="text-align: center">Optimal</td>
+              </tr>
+              <tr>
+                <td>CuAssembler stall=13</td>
+                <td style="text-align: center">32.23</td>
+                <td style="text-align: center">Optimal</td>
+              </tr>
+              <tr>
+                <td>CuAssembler stall&gt;=14</td>
+                <td style="text-align: center">55.51</td>
+                <td style="text-align: center">HW sentinel (broken)</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          The 6.1% throughput loss is consistent across HMMA, QMMA, and OMMA.SF
+          chains, suggesting ptxas uses a single stall heuristic for all MMA
+          families that is calibrated slightly below the hardware optimum.
+        </p>
+        <p>
+          <strong>Recommendation for kernel developers</strong>: Use CuAssembler
+          binary patching to set stall=12 on HMMA/QMMA/OMMA.SF instructions in
+          performance-critical MMA chains. The 6.1% improvement is free (no code
+          change required, only control-code patching).
+        </p>
+        <p>[source: <code>S21/case_82</code>]</p>
+        <h3
+          class="sub-title"
+          id="12-4-3-integer-chain-constant-folding-masks-real-sass"
+        >
+          12.4.3 Integer Chain Constant Folding Masks Real SASS
+        </h3>
+        <p>
+          ptxas constant-folds integer chains with compile-time visible
+          operands, which can produce SASS that does not reflect the intended
+          computation:
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>PTX Pattern</th>
+                <th>Expected SASS</th>
+                <th>Actual SASS</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>128x <code>add.s32 %0, %0, 1</code></td>
+                <td>128 IADD3</td>
+                <td>Single IADD3 (add 128)</td>
+              </tr>
+              <tr>
+                <td>Address arithmetic (constant stride)</td>
+                <td>Multiple IMAD</td>
+                <td>Single IMAD with folded offset</td>
+              </tr>
+              <tr>
+                <td>Loop counter increment (constant trip)</td>
+                <td>Per-iteration IADD3</td>
+                <td>Fully unrolled (no counter)</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          This makes it
+          <strong>impossible to measure integer ALU latency</strong> using the
+          naive pattern <code>add.s32 %0, %0, 1</code> in a loop -- ptxas folds
+          the entire chain. To measure true integer latency, use a
+          runtime-variable addend loaded from global memory.
+        </p>
+        <p>[source: <code>S21/case_13</code>]</p>
+        <h3 class="sub-title" id="12-4-4-no-spill-vectorization">
+          12.4.4 No Spill Vectorization
+        </h3>
+        <p>
+          When ptxas does spill registers to local memory, it uses
+          <strong>scalar</strong> STL and LDL.LU instructions exclusively --
+          never vectorized STL.128 or LDL.128:
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Spill Pattern</th>
+                <th>Instructions Generated</th>
+                <th>Theoretical Alternative</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>32 accumulators at maxreg=24</td>
+                <td>233 STL + 231 LDL.LU (scalar)</td>
+                <td>58 STL.128 + 58 LDL.128</td>
+              </tr>
+              <tr>
+                <td>Cost per spill operation</td>
+                <td>0.32-0.43 cyc</td>
+                <td>(would be similar per 128-bit op)</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          While the per-operation cost is low (0.32 cyc), the 4x instruction
+          count overhead compared to vectorized spills increases I-cache
+          pressure and adds decode overhead for spill-heavy kernels.
+        </p>
+        <p>[source: <code>S21/case_113-114</code>]</p>
+        <hr />
+        <h2 class="ch-title" id="12-5-sass-encoding-and-control-code-structure">
+          12.5 SASS Encoding and Control Code Structure
+        </h2>
+        <h3 class="sub-title" id="12-5-1-control-code-field-layout">
+          12.5.1 Control Code Field Layout
+        </h3>
+        <p>
+          Each 128-bit SASS instruction on SM_120 contains a 17-bit control code
+          field at bits [121:105] of the instruction word, which maps to the
+          following layout in the upper 64-bit word:
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Field</th>
+                <th style="text-align: center">Bits (upper word)</th>
+                <th style="text-align: center">Width</th>
+                <th>Purpose</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Stall count</td>
+                <td style="text-align: center">[44:41]</td>
+                <td style="text-align: center">4 bits</td>
+                <td>Minimum inter-issue delay (0-15 cycles)</td>
+              </tr>
+              <tr>
+                <td>Yield bit</td>
+                <td style="text-align: center">[45]</td>
+                <td style="text-align: center">1 bit</td>
+                <td>Warp scheduling yield hint</td>
+              </tr>
+              <tr>
+                <td>Reuse bits</td>
+                <td style="text-align: center">[60:58]</td>
+                <td style="text-align: center">3 bits</td>
+                <td>
+                  Operand reuse hint (<strong>functionally active</strong> on
+                  SM_120 for throughput-bound code)
+                </td>
+              </tr>
+              <tr>
+                <td>SB wait mask</td>
+                <td style="text-align: center">[57:54]</td>
+                <td style="text-align: center">4 bits</td>
+                <td>Scoreboard dependency wait bitmask</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>[source: <code>S21/case_110</code>]</p>
+        <h3 class="sub-title" id="12-5-2-yield-bit-effect">
+          12.5.2 Yield Bit Effect
+        </h3>
+        <p>
+          The yield bit (bit [45]) provides a scheduling hint to the warp
+          scheduler:
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th style="text-align: center">Yield Value</th>
+                <th>Effect</th>
+                <th style="text-align: center">Performance Delta</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="text-align: center">0</td>
+                <td>Do not yield after this instruction</td>
+                <td style="text-align: center">2.4-4.7% slower</td>
+              </tr>
+              <tr>
+                <td style="text-align: center">1 (ptxas default)</td>
+                <td>Yield after this instruction</td>
+                <td style="text-align: center">Baseline (faster)</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          ptxas sets yield=1 as its default for most instructions. Setting
+          yield=0 via CuAssembler causes 2.4-4.7% degradation that grows with
+          warp count, suggesting the yield bit enables better warp interleaving
+          at the scheduler level.
+        </p>
+        <p>[source: <code>S21/case_106</code>]</p>
+        <h3 class="sub-title" id="12-5-3-scoreboard-mechanics">
+          12.5.3 Scoreboard Mechanics
+        </h3>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Finding</th>
+                <th>Value / Evidence</th>
+                <th>Source</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Co-consumed SB grouping saves</td>
+                <td>3 cyc (1 vs 4 cyc for L1-cached loads)</td>
+                <td><code>S21/case_105</code></td>
+              </tr>
+              <tr>
+                <td>Multi-SB wait bitmask cost</td>
+                <td>0% delta vs single-SB wait</td>
+                <td><code>S21/case_110</code></td>
+              </tr>
+              <tr>
+                <td>Fire-and-forget STG</td>
+                <td>4.3 cyc/store; no SB wait required</td>
+                <td><code>S21/case_107</code></td>
+              </tr>
+              <tr>
+                <td>@!PT LDS RZ,[RZ] marker</td>
+                <td>0.00 cyc overhead; scheduling hint only</td>
+                <td><code>S21/case_108</code></td>
+              </tr>
+              <tr>
+                <td>Address IMAD interleaving</td>
+                <td>Each dep IMAD adds ~4-5 cyc/load (blocks hiding)</td>
+                <td><code>S21/case_109</code></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          <strong>Key finding on co-consumed grouping</strong>: When multiple
+          loads are consumed by the same instruction, grouping them under a
+          single scoreboard bit (co-consumed) saves 3 cycles compared to
+          assigning distinct SB bits. This occurs because a single SB wait
+          resolves all loads simultaneously, while distinct SB bits require
+          sequential resolution.
+        </p>
+        <p>[source: <code>S21/case_105</code>]</p>
+        <h3
+          class="sub-title"
+          id="12-5-4-predicate-dependencies-bypass-stall-counters"
+        >
+          12.5.4 Predicate Dependencies Bypass Stall Counters
+        </h3>
+        <p>
+          Hardware predicate resolution is
+          <strong>independent of the stall counter field</strong>. All stall
+          values 0-15 produce identical timing (37.00 cyc/iter) for
+          predicate-consuming instructions:
+        </p>
+        <ul>
+          <li>
+            Predicate dependencies resolve via dedicated hardware, not the
+            stall-based scheduling
+          </li>
+          <li>
+            ptxas conservatively sets stall=13 before predicate consumers (costs
+            nothing because HW handles it)
+          </li>
+          <li>
+            No stall-counter optimization is possible for predicate-dependent
+            code paths
+          </li>
+        </ul>
+        <p>[source: <code>S21/case_103</code>]</p>
+        <hr />
+        <h2 class="ch-title" id="12-6-descriptor-based-addressing">
+          12.6 Descriptor-Based Addressing
+        </h2>
+        <h3
+          class="sub-title"
+          id="12-6-1-descriptor-is-the-only-addressing-mode"
+        >
+          12.6.1 Descriptor Is the ONLY Addressing Mode
+        </h3>
+        <p>
+          On SM_120, <strong>all</strong> <code>ld.global</code> and
+          <code>st.global</code> PTX instructions are lowered to
+          descriptor-based addressing (<code>desc[UR][R.64]</code> format),
+          regardless of the source-level addressing pattern:
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>PTX Source</th>
+                <th>SASS Output</th>
+                <th style="text-align: center">Delta</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>ld.global.f32 %f0, [%rd0]</code> (pointer)</td>
+                <td><code>LDG.E.CONSTANT desc[UR4][R2.64]</code></td>
+                <td style="text-align: center">0 cyc</td>
+              </tr>
+              <tr>
+                <td><code>ld.global.f32 %f0, [%rd0]</code> (TMA desc)</td>
+                <td><code>LDG.E.CONSTANT desc[UR4][R2.64]</code></td>
+                <td style="text-align: center">0 cyc</td>
+              </tr>
+              <tr>
+                <td><code>st.global.f32 [%rd0], %f0</code> (pointer)</td>
+                <td><code>STG.E desc[UR4][R2.64]</code></td>
+                <td style="text-align: center">0 cyc</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          There is <strong>zero performance delta</strong> between
+          "pointer-based" and "descriptor-based" global memory access at the
+          source level, because both lower to identical SASS. The descriptor
+          register pair (UR + R.64) encodes the base address and offset.
+        </p>
+        <p>[source: <code>S21/case_118-119</code>]</p>
+        <h3 class="sub-title" id="12-6-2-r2ur-transfer">
+          12.6.2 R2UR Transfer
+        </h3>
+        <p>
+          Register-to-uniform-register transfers (<code>R2UR</code>) are
+          <strong>optimized away</strong> by ptxas in most cases. When an
+          explicit transfer is required (e.g., broadcasting a per-thread value
+          to all threads), the mechanism is REDUX-UR-R with a measured latency
+          of 45 cycles.
+        </p>
+        <p>[source: <code>S21/case_120</code>]</p>
+        <hr />
+        <h2 class="ch-title" id="12-7-global-reduction-redg-native-support">
+          12.7 Global Reduction (REDG) Native Support
+        </h2>
+        <p>
+          ptxas lowers atomic reductions to native REDG instructions on SM_120,
+          providing efficient fire-and-forget semantics:
+        </p>
+        <h3 class="sub-title" id="12-7-1-integer-variants">
+          12.7.1 Integer Variants
+        </h3>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Operation</th>
+                <th>SASS Instruction</th>
+                <th style="text-align: center">Cost (cyc)</th>
+                <th>Semantics</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>atomicAdd (S32)</td>
+                <td>REDG.E.ADD.STRONG.GPU.S32</td>
+                <td style="text-align: center">2</td>
+                <td>Fire-and-forget</td>
+              </tr>
+              <tr>
+                <td>atomicAdd (U32)</td>
+                <td>REDG.E.ADD.STRONG.GPU.U32</td>
+                <td style="text-align: center">2</td>
+                <td>Fire-and-forget</td>
+              </tr>
+              <tr>
+                <td>atomicMin (S32)</td>
+                <td>REDG.E.MIN.STRONG.GPU.S32</td>
+                <td style="text-align: center">2</td>
+                <td>Fire-and-forget</td>
+              </tr>
+              <tr>
+                <td>atomicMin (U32)</td>
+                <td>REDG.E.MIN.STRONG.GPU.U32</td>
+                <td style="text-align: center">2</td>
+                <td>Fire-and-forget</td>
+              </tr>
+              <tr>
+                <td>atomicMax (S32)</td>
+                <td>REDG.E.MAX.STRONG.GPU.S32</td>
+                <td style="text-align: center">2</td>
+                <td>Fire-and-forget</td>
+              </tr>
+              <tr>
+                <td>atomicMax (U32)</td>
+                <td>REDG.E.MAX.STRONG.GPU.U32</td>
+                <td style="text-align: center">2</td>
+                <td>Fire-and-forget</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          All six integer REDG variants achieve identical 2 cyc fire-and-forget
+          dispatch cost.
+        </p>
+        <p>[source: <code>S21/case_121</code>]</p>
+        <h3 class="sub-title" id="12-7-2-fp16bf16-variants">
+          12.7.2 FP16/BF16 Variants
+        </h3>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Operation</th>
+                <th>SASS Instruction</th>
+                <th style="text-align: center">Cost (cyc)</th>
+                <th>Note</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>atomicAdd (FP16x2)</td>
+                <td>REDG.E.ADD.F16x2</td>
+                <td style="text-align: center">~6</td>
+                <td>Native, no CAS fallback</td>
+              </tr>
+              <tr>
+                <td>atomicAdd (BF16x2)</td>
+                <td>REDG.E.ADD.BF16x2</td>
+                <td style="text-align: center">~6</td>
+                <td>Native, no CAS fallback</td>
+              </tr>
+              <tr>
+                <td>ATOMG (dep chain)</td>
+                <td>ATOMG.E.ADD.STRONG.GPU</td>
+                <td style="text-align: center">409</td>
+                <td>L2 round-trip (compare-and-swap)</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          <strong>Critical correction</strong>: Section 7's finding that FP16
+          atomicAdd falls back to ATOM+CAS is corrected here. REDG provides the
+          native FP16x2 and BF16x2 reduction path at ~6 cyc fire-and-forget. The
+          CAS-based ATOMG path (409 cyc) is used only when the return value is
+          consumed (dependency chain semantics required).
+        </p>
+        <p>
+          The distinction is: - <strong>REDG</strong> (fire-and-forget): Used
+          when the old value is NOT needed. 2-6 cyc dispatch, no scoreboard
+          wait. - <strong>ATOMG</strong> (read-modify-write): Used when the old
+          value IS consumed. 409 cyc L2 round-trip.
+        </p>
+        <p>[source: <code>S21/case_121-123</code>]</p>
+        <hr />
+        <h2 class="ch-title" id="12-8-immediate-encoding-capabilities">
+          12.8 Immediate Encoding Capabilities
+        </h2>
+        <h3 class="sub-title" id="12-8-1-ffma-immediate-slots">
+          12.8.1 FFMA Immediate Slots
+        </h3>
+        <p>
+          SM_120 FFMA supports immediate constants in <strong>both</strong> the
+          multiplier and addend operand slots, contradicting some earlier
+          architectural assumptions:
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Operand Slot</th>
+                <th>Encoding</th>
+                <th style="text-align: center">Opcode</th>
+                <th style="text-align: center">Cost Delta vs Register</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Addend (c in a*b+c)</td>
+                <td>20-bit immediate</td>
+                <td style="text-align: center">0x7423</td>
+                <td style="text-align: center">0 cyc</td>
+              </tr>
+              <tr>
+                <td>Multiplier (b in a*b+c)</td>
+                <td>20-bit immediate</td>
+                <td style="text-align: center">0x7823</td>
+                <td style="text-align: center">0 cyc</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          ptxas exploits this by folding <code>MOV immediate</code> +
+          <code>FFMA</code> into a single FFMA with the constant in the
+          immediate slot. The <code>MOV</code> produces zero overhead -- it is
+          not a separate instruction in the SASS output.
+        </p>
+        <p>[source: <code>S21/case_88-90</code>]</p>
+        <h3 class="sub-title" id="12-8-2-constant-materialization-strategy">
+          12.8.2 Constant Materialization Strategy
+        </h3>
+        <p>
+          For polynomial evaluation and other patterns requiring multiple
+          constants:
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Strategy</th>
+                <th style="text-align: center">Measured Cost</th>
+                <th>Mechanism</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>HFMA2 constant materialization</td>
+                <td style="text-align: center">0 cyc overhead</td>
+                <td>Hidden behind dep-chain latency</td>
+              </tr>
+              <tr>
+                <td>FFMA immediate for 0.5f/1.0f</td>
+                <td style="text-align: center">0 cyc</td>
+                <td>Folded into instruction encoding</td>
+              </tr>
+              <tr>
+                <td>Preloaded register constants</td>
+                <td style="text-align: center">0 cyc</td>
+                <td>Same as inline immediate</td>
+              </tr>
+              <tr>
+                <td>Polynomial with 7 constants</td>
+                <td style="text-align: center">28.0 cyc (4.0 cyc/FMA)</td>
+                <td>Identical to pure register</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          All constant materialization strategies produce identical throughput
+          (4.00 cyc/FMA), confirming that constant loading is fully hidden
+          behind the FMA dependency chain on SM_120.
+        </p>
+        <p>[source: <code>S21/case_87-91</code>]</p>
+        <hr />
+        <h2 class="ch-title" id="12-9-function-call-abi">
+          12.9 Function Call ABI
+        </h2>
+        <h3 class="sub-title" id="12-9-1-callreturn-overhead">
+          12.9.1 Call/Return Overhead
+        </h3>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Operation</th>
+                <th style="text-align: center">Cost (cyc)</th>
+                <th>Mechanism</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>CALL.REL.NOINC + RET.REL.NODEC</td>
+                <td style="text-align: center">~56</td>
+                <td>Base call/return pair</td>
+              </tr>
+              <tr>
+                <td>Per-argument cost</td>
+                <td style="text-align: center">3.7-4.0 cyc/arg</td>
+                <td>Linear scaling</td>
+              </tr>
+              <tr>
+                <td>2-argument call</td>
+                <td style="text-align: center">60</td>
+                <td>56 + 2 * 2</td>
+              </tr>
+              <tr>
+                <td>9-argument call</td>
+                <td style="text-align: center">86</td>
+                <td>56 + 9 * 3.3</td>
+              </tr>
+              <tr>
+                <td>16-argument call</td>
+                <td style="text-align: center">114</td>
+                <td>56 + 16 * 3.6</td>
+              </tr>
+              <tr>
+                <td>Divergent noinline call</td>
+                <td style="text-align: center">107</td>
+                <td>+42 cyc (64.6%) vs uniform</td>
+              </tr>
+              <tr>
+                <td>Post-EXIT slowpath call</td>
+                <td style="text-align: center">53-59</td>
+                <td>4.7x vs inline equivalent</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>[source: <code>S21/case_92-93,97-98</code>]</p>
+        <h3 class="sub-title" id="12-9-2-helper-function-cost">
+          12.9.2 Helper Function Cost
+        </h3>
+        <p>
+          Compiler-generated helper functions (e.g.,
+          <code>__cuda_sm20_rem_u16</code>) incur significant overhead:
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Operation</th>
+                <th style="text-align: center">Cost (cyc)</th>
+                <th style="text-align: center">vs Inline PTX</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>__cuda_sm20_rem_u16</code> helper call</td>
+                <td style="text-align: center">174</td>
+                <td style="text-align: center">2.16x slower</td>
+              </tr>
+              <tr>
+                <td>Inline PTX equivalent</td>
+                <td style="text-align: center">80</td>
+                <td style="text-align: center">Baseline</td>
+              </tr>
+              <tr>
+                <td>Integer division (general i32)</td>
+                <td style="text-align: center">75</td>
+                <td style="text-align: center">19x FP32 FMA</td>
+              </tr>
+              <tr>
+                <td>Integer modulo (general i32)</td>
+                <td style="text-align: center">75</td>
+                <td style="text-align: center">Same as division</td>
+              </tr>
+              <tr>
+                <td>Power-of-2 division</td>
+                <td style="text-align: center">12</td>
+                <td style="text-align: center">6.25x faster than general</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          <strong>Recommendation</strong>: Replace compiler-generated helper
+          function calls with inline PTX for performance-critical paths. Avoid
+          general integer division in hot loops (75 cyc = 19x FP32 FMA cost);
+          use power-of-2 divisions where possible (12 cyc).
+        </p>
+        <p>[source: <code>S21/case_94-95</code>]</p>
+        <hr />
+        <h2 class="ch-title" id="12-10-impact-on-measurement-trustworthiness">
+          12.10 Impact on Measurement Trustworthiness
+        </h2>
+        <h3 class="sub-title" id="12-10-1-residual-uncertainty-budget">
+          12.10.1 Residual Uncertainty Budget
+        </h3>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Source of Uncertainty</th>
+                <th style="text-align: center">Magnitude</th>
+                <th>Mitigation</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>ptxas reordering (max distance 20)</td>
+                <td style="text-align: center">+/-1-2 cyc</td>
+                <td>Use dep-chain constraints in inline asm</td>
+              </tr>
+              <tr>
+                <td>Constant folding (integer chains)</td>
+                <td style="text-align: center">Complete elimination</td>
+                <td>Use global-memory-loaded operands</td>
+              </tr>
+              <tr>
+                <td>DCE (asm clobber without store)</td>
+                <td style="text-align: center">Complete elimination</td>
+                <td>Always use global store sink</td>
+              </tr>
+              <tr>
+                <td>Stall counter sensitivity</td>
+                <td style="text-align: center">+/-6.1% for MMA chains</td>
+                <td>Accept or patch via CuAssembler</td>
+              </tr>
+              <tr>
+                <td>Clock overhead variation</td>
+                <td style="text-align: center">
+                  1 cyc (O3) vs 102 cyc (ptxas-O0)
+                </td>
+                <td>Always compile with -O3</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <h3 class="sub-title" id="12-10-2-recommended-measurement-practices">
+          12.10.2 Recommended Measurement Practices
+        </h3>
+        <p>Based on the ptxas behaviors documented in this chapter:</p>
+        <ol>
+          <li>
+            <p>
+              <strong>Anti-DCE</strong>: Always use
+              <code>out[threadIdx.x] = val</code> (global store sink). Never
+              rely on <code>asm volatile</code> with only register clobbers.
+            </p>
+          </li>
+          <li>
+            <p>
+              <strong>Prevent constant folding</strong>: Load all operands from
+              global memory. Use volatile loop counters for non-unrolled loops.
+            </p>
+          </li>
+          <li>
+            <p>
+              <strong>Compiler flags</strong>: Always use
+              <code>-O3</code> (default ptxas optimization). Never use
+              <code>-O0</code> for timing measurements. The nvcc
+              <code>-O0</code>/<code>-O3</code> flag has zero effect on inline
+              asm -- only <code>--ptxas-options=-O0</code> matters.
+            </p>
+          </li>
+          <li>
+            <p>
+              <strong>SASS verification</strong>: Always confirm instruction
+              emission via <code>cuobjdump --dump-sass</code> before trusting
+              timing results. ptxas may eliminate, fold, or restructure code in
+              non-obvious ways.
+            </p>
+          </li>
+          <li>
+            <p>
+              <strong>Stall sensitivity</strong>: For MMA chain measurements, be
+              aware of the stall=11 suboptimality (6.1%). Report ptxas-default
+              timing and note the CuAssembler-optimal bound where applicable.
+            </p>
+          </li>
+        </ol>
+        <h3 class="sub-title" id="12-10-3-quantified-measurement-confidence">
+          12.10.3 Quantified Measurement Confidence
+        </h3>
+        <p>
+          Given the above mitigations, the residual measurement uncertainty for
+          this report's data is:
+        </p>
+        <ul>
+          <li>
+            <strong>Cycle-precise measurements (dep-chain latency)</strong>:
+            +/-2 cyc maximum
+          </li>
+          <li>
+            <strong>Throughput measurements (multi-instruction bodies)</strong>:
+            +/-5% maximum
+          </li>
+          <li>
+            <strong>MMA chain throughput</strong>: +/-6.1% (ptxas stall
+            suboptimality bound)
+          </li>
+        </ul>
+        <p>
+          All measurements in this report use the recommended practices above,
+          achieving the stated confidence bounds.
+        </p>
+        <h3
+          class="sub-title"
+          id="12-10-4-microarchitectural-analysis-the-complete-cuassembler-optimization-surface"
+        >
+          12.10.4 Microarchitectural Analysis: The Complete CuAssembler
+          Optimization Surface
+        </h3>
+        <p>
+          The comprehensive CuAssembler patching experiments across Sections 11,
+          12, and 21 establish the complete optimization surface available for
+          SASS-level tuning on SM_120:
+        </p>
+        <figure class="diagram">
+          <object
+            data="svg/ch12/ch12_s02_flow.svg"
+            type="image/svg+xml"
+            aria-label="12.10.4 Microarchitectural Analysis: The Complete CuAssembler Optimization Surfa (semantic SVG)"
+          ></object>
+          <figcaption>
+            12.10.4 Microarchitectural Analysis: The Complete CuAssembler
+            Optimization Surfa (semantic SVG)
+          </figcaption>
+        </figure>
+        <p>
+          <strong>Why ptxas is near-optimal on SM_120</strong>: The combination
+          of three architectural features makes SASS-level optimization uniquely
+          low-reward on this architecture:
+        </p>
+        <ol>
+          <li>
+            <p>
+              <strong>Zero bank-conflict cost</strong>: The operand collector
+              absorbs ALL RF bank conflicts (Chapter 3, §3.3.2), eliminating the
+              historically largest optimization opportunity (5-10% on
+              SM_80/SM_89)
+            </p>
+          </li>
+          <li>
+            <p>
+              <strong>.reuse bits are functionally active</strong>: The RFC
+              provides significant throughput benefit (+85%) in ILP-rich
+              throughput-bound code (stall=1); ptxas correctly sets these bits
+              in such regions
+            </p>
+          </li>
+          <li>
+            <p>
+              <strong>Linear stall counter semantics</strong>: The 1:1
+              cycle-per-stall-count model leaves no room for non-obvious
+              scheduling tricks — the optimal stall is simply the instruction's
+              known latency
+            </p>
+          </li>
+        </ol>
+        <p>
+          The only remaining optimization headroom comes from ptxas using
+          stall=11 instead of the hardware-optimal stall=12 for MMA instructions
+          — a single-value calibration error that CuAssembler can correct with
+          zero risk of corruption.
+        </p>
+        <hr />
+        <h2 class="ch-title" id="12-11-compilation-and-methodology-notes">
+          12.11 Compilation and Methodology Notes
+        </h2>
+        <ul>
+          <li>
+            <strong>Toolchain</strong>: nvcc CUDA 13.3,
+            <code
+              >-O3 -std=c++17 -lineinfo -gencode
+              arch=compute_120a,code=sm_120a</code
+            >
+          </li>
+          <li>
+            <strong>CuAssembler patching</strong>: pyelftools-based binary
+            patching of control codes (stall counters, .reuse bits, yield bits,
+            scoreboard assignments) in compiled cubins
+          </li>
+          <li>
+            <strong>Verification</strong>: cuobjdump --dump-sass for instruction
+            counting and control-code inspection
+          </li>
+          <li>
+            <strong>Cases using CuAssembler</strong>: 9, 16, 17, 18, 78-82, 103,
+            105, 106, 108, 110
+          </li>
+          <li>
+            <strong>Patched instruction counts</strong>: 324 FFMA (case 9), 1600
+            FFMA (case 18), 456 HMMA (case 78), 1712 QMMA.SF (case 80)
+          </li>
+          <li>
+            <strong>Clock pinning</strong>: nvidia-smi -lgc to suppress DVFS;
+            actual clock 2077-2497 MHz
+          </li>
+          <li>
+            <strong>Launch config</strong>: Single-warp
+            <code>&lt;&lt;&lt;1, 32&gt;&gt;&gt;</code> with
+            <code>__launch_bounds__(32)</code> for all scheduling/stall
+            measurements
+          </li>
+        </ul>
+
+        <footer class="page-footer">
+          <div class="foot-grid">
+            <div>
+              <strong>SM_120 / GB202 Blackwell</strong> · Microarchitecture
+              Analysis &amp; Reference · 2026
+            </div>
+            <div>1542 microbenchmark cases · 26 sections · ~13,400 lines</div>
+            <div class="foot-accent">
+              RTX PRO 5000 72GB · CUDA 13.3 · Data source: test_results/SM_120/
+            </div>
+          </div>
+        </footer>
+      </main>
+      <aside class="toc-right">
+        <h4>Chapter Navigation</h4>
+        <a href="#12-1-register-allocation">12.1 Register Allocation</a>
+        <a class="sub" href="#12-1-1-the-24-register-floor"
+          >12.1.1 The 24-Register Floor</a
+        >
+        <a class="sub" href="#12-1-2-restructuring-preference-over-spilling"
+          >12.1.2 Restructuring Preference Over Spilling</a
+        >
+        <a class="sub" href="#12-1-3-spill-onset-and-cost"
+          >12.1.3 Spill Onset and Cost</a
+        >
+        <a class="sub" href="#12-1-4-launch_bounds-impact"
+          >12.1.4 launch_bounds Impact</a
+        >
+        <a href="#12-2-instruction-scheduling">12.2 Instruction Scheduling</a>
+        <a class="sub" href="#12-2-1-stall-counter-semantics"
+          >12.2.1 Stall Counter Semantics</a
+        >
+        <a class="sub" href="#12-2-2-ptxas-stall-counter-optimality"
+          >12.2.2 ptxas Stall Counter Optimality</a
+        >
+        <a
+          class="sub"
+          href="#12-2-2a-microarchitectural-analysis-the-stall-counter-hardware-model"
+          >12.2.2a Microarchitectural Analysis: The Stall Counter Hardware
+          Model</a
+        >
+        <a class="sub" href="#12-2-3-instruction-reorder-distance"
+          >12.2.3 Instruction Reorder Distance</a
+        >
+        <a class="sub" href="#12-2-4-depbar-insertion-heuristic"
+          >12.2.4 DEPBAR Insertion Heuristic</a
+        >
+        <a href="#12-3-known-ptxas-optimizations-and-side-effects"
+          >12.3 Known ptxas Optimizations and Side-Effects</a
+        >
+        <a class="sub" href="#12-3-1-constant-folding"
+          >12.3.1 Constant Folding</a
+        >
+        <a class="sub" href="#12-3-2-loop-full-unrolling"
+          >12.3.2 Loop Full Unrolling</a
+        >
+        <a class="sub" href="#12-3-3-dead-code-elimination-dce"
+          >12.3.3 Dead-Code Elimination (DCE)</a
+        >
+        <a class="sub" href="#12-3-4--reuse-bit-behavior"
+          >12.3.4 .reuse Bit Behavior</a
+        >
+        <a
+          class="sub"
+          href="#12-3-4a-microarchitectural-analysis-ptxas-as-sm120-aware-scheduler"
+          >12.3.4a Microarchitectural Analysis: ptxas as an SM_120-Aware
+          Scheduler</a
+        >
+        <a class="sub" href="#12-3-5-nvcc--o0-pass-through"
+          >12.3.5 nvcc -O0 Pass-Through</a
+        >
+        <a class="sub" href="#12-3-6-uniform-datapath-promotion-uffmauiadd3"
+          >12.3.6 Uniform Datapath Promotion (UFFMA/UIADD3)</a
+        >
+        <a href="#12-4-missed-optimizations-ptxas-limitations"
+          >12.4 Missed Optimizations (ptxas Limitations)</a
+        >
+        <a class="sub" href="#12-4-1-no-auto-vectorization"
+          >12.4.1 No Auto-Vectorization</a
+        >
+        <a class="sub" href="#12-4-2-suboptimal-mma-chain-stall-assignment"
+          >12.4.2 Suboptimal MMA Chain Stall Assignment</a
+        >
+        <a
+          class="sub"
+          href="#12-4-3-integer-chain-constant-folding-masks-real-sass"
+          >12.4.3 Integer Chain Constant Folding Masks Real SASS</a
+        >
+        <a class="sub" href="#12-4-4-no-spill-vectorization"
+          >12.4.4 No Spill Vectorization</a
+        >
+        <a href="#12-5-sass-encoding-and-control-code-structure"
+          >12.5 SASS Encoding and Control Code Structure</a
+        >
+        <a class="sub" href="#12-5-1-control-code-field-layout"
+          >12.5.1 Control Code Field Layout</a
+        >
+        <a class="sub" href="#12-5-2-yield-bit-effect"
+          >12.5.2 Yield Bit Effect</a
+        >
+        <a class="sub" href="#12-5-3-scoreboard-mechanics"
+          >12.5.3 Scoreboard Mechanics</a
+        >
+        <a
+          class="sub"
+          href="#12-5-4-predicate-dependencies-bypass-stall-counters"
+          >12.5.4 Predicate Dependencies Bypass Stall Counters</a
+        >
+        <a href="#12-6-descriptor-based-addressing"
+          >12.6 Descriptor-Based Addressing</a
+        >
+        <a class="sub" href="#12-6-1-descriptor-is-the-only-addressing-mode"
+          >12.6.1 Descriptor Is the ONLY Addressing Mode</a
+        >
+        <a class="sub" href="#12-6-2-r2ur-transfer">12.6.2 R2UR Transfer</a>
+        <a href="#12-7-global-reduction-redg-native-support"
+          >12.7 Global Reduction (REDG) Native Support</a
+        >
+        <a class="sub" href="#12-7-1-integer-variants"
+          >12.7.1 Integer Variants</a
+        >
+        <a class="sub" href="#12-7-2-fp16bf16-variants"
+          >12.7.2 FP16/BF16 Variants</a
+        >
+        <a href="#12-8-immediate-encoding-capabilities"
+          >12.8 Immediate Encoding Capabilities</a
+        >
+        <a class="sub" href="#12-8-1-ffma-immediate-slots"
+          >12.8.1 FFMA Immediate Slots</a
+        >
+        <a class="sub" href="#12-8-2-constant-materialization-strategy"
+          >12.8.2 Constant Materialization Strategy</a
+        >
+        <a href="#12-9-function-call-abi">12.9 Function Call ABI</a>
+        <a class="sub" href="#12-9-1-callreturn-overhead"
+          >12.9.1 Call/Return Overhead</a
+        >
+        <a class="sub" href="#12-9-2-helper-function-cost"
+          >12.9.2 Helper Function Cost</a
+        >
+        <a href="#12-10-impact-on-measurement-trustworthiness"
+          >12.10 Impact on Measurement Trustworthiness</a
+        >
+        <a class="sub" href="#12-10-1-residual-uncertainty-budget"
+          >12.10.1 Residual Uncertainty Budget</a
+        >
+        <a class="sub" href="#12-10-2-recommended-measurement-practices"
+          >12.10.2 Recommended Measurement Practices</a
+        >
+        <a class="sub" href="#12-10-3-quantified-measurement-confidence"
+          >12.10.3 Quantified Measurement Confidence</a
+        >
+        <a
+          class="sub"
+          href="#12-10-4-microarchitectural-analysis-the-complete-cuassembler-optimization-surface"
+          >12.10.4 Microarchitectural Analysis: The Complete CuAssembler
+          Optimization Surface</a
+        >
+        <a href="#12-11-compilation-and-methodology-notes"
+          >12.11 Compilation and Methodology Notes</a
+        >
+      </aside>
+    </div>
+    <script
+      defer
+      src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"
+      integrity="sha384-7zkQWkzuo3B5mTepMUcHkMB5jZaolc2xDwL6VFqjFALcbeS9Ggm/Yr2r3Dy4lfFg"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      defer
+      src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+      integrity="sha384-43gviWU0YVjaDtb/GhzOouOXtZMP/7XUzwPTstBeZFe/+rCMvRwr4yROQP43s0Xk"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      defer
+      src="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/lib/highlight.min.js"
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (window.renderMathInElement) {
+          renderMathInElement(document.body, {
+            delimiters: [
+              { left: "$$", right: "$$", display: true },
+              { left: "$", right: "$", display: false },
+            ],
+            throwOnError: false,
+          });
+        }
+        if (window.hljs) {
+          document
+            .querySelectorAll("pre code[class^='language-']")
+            .forEach(function (el) {
+              try {
+                hljs.highlightElement(el);
+              } catch (e) {}
+            });
+        }
+      });
+    </script>
+    <script src="assets/js/toc.js" defer></script>
+  </body>
+</html>

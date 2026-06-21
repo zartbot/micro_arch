@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 380" role="img"
+     aria-label="L2 sectored cache line: 128B tag granularity, 32B sector fetch granularity">
+  <defs>
+    <linearGradient id="lineG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#E0E7FF"/>
+      <stop offset="1" stop-color="#EEF2FF"/>
+    </linearGradient>
+    <linearGradient id="secG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FEF3C7"/>
+      <stop offset="1" stop-color="#FFFBEB"/>
+    </linearGradient>
+    <style><![CDATA[
+      .ttl{font:600 14px "Fraunces",serif;fill:#0b1220}
+      .sub{font:italic 11px "Fraunces",serif;fill:#5b6679}
+      .lbl{font:600 11px "JetBrains Mono",monospace;fill:#2a3548}
+      .lbl-sm{font:500 10px "JetBrains Mono",monospace;fill:#5b6679}
+    ]]></style>
+  </defs>
+  <rect width="1080" height="380" fill="#ffffff"/>
+  <text x="36" y="32" class="ttl">L2 Cache Line Structure · 128B Tag Granularity · 32B Sector Fetch</text>
+  <text x="36" y="52" class="sub">Tag entry covers 128B; transfer to L1 happens at 32B sector granularity; eviction is whole-line</text>
+
+  <!-- 128B line container -->
+  <g transform="translate(36,90)">
+    <rect x="0" y="0" width="960" height="180" rx="14" fill="url(#lineG)" stroke="#1e40af" stroke-width="1"/>
+    <text x="20" y="24" class="lbl" fill="#1e40af">128B Cache Line — Tag Unit</text>
+    <text x="20" y="40" class="lbl-sm" fill="#1e40af">1 tag entry · 4 sector-valid bits · pseudo-LRU eviction · ~16-way set associativity (XOR-hashed)</text>
+
+    <!-- 4 sectors -->
+    <g transform="translate(20,60)">
+      <rect x="0"   y="0" width="225" height="100" rx="10" fill="url(#secG)" stroke="#b45309" stroke-width="0.8"/>
+      <text x="112" y="26" class="lbl" fill="#92400e" text-anchor="middle">Sector 0</text>
+      <text x="112" y="50" font-family="Fraunces, serif" font-size="22" font-weight="600" fill="#92400e" text-anchor="middle">32 B</text>
+      <text x="112" y="70" class="lbl-sm" fill="#92400e" text-anchor="middle">independent fetch granularity</text>
+      <text x="112" y="86" class="lbl-sm" fill="#92400e" text-anchor="middle">valid bit 0</text>
+
+      <g transform="translate(232,0)">
+        <rect x="0"   y="0" width="225" height="100" rx="10" fill="url(#secG)" stroke="#b45309" stroke-width="0.8"/>
+        <text x="112" y="26" class="lbl" fill="#92400e" text-anchor="middle">Sector 1</text>
+        <text x="112" y="50" font-family="Fraunces, serif" font-size="22" font-weight="600" fill="#92400e" text-anchor="middle">32 B</text>
+        <text x="112" y="70" class="lbl-sm" fill="#92400e" text-anchor="middle">independent fetch granularity</text>
+        <text x="112" y="86" class="lbl-sm" fill="#92400e" text-anchor="middle">valid bit 1</text>
+      </g>
+      <g transform="translate(464,0)">
+        <rect x="0"   y="0" width="225" height="100" rx="10" fill="url(#secG)" stroke="#b45309" stroke-width="0.8"/>
+        <text x="112" y="26" class="lbl" fill="#92400e" text-anchor="middle">Sector 2</text>
+        <text x="112" y="50" font-family="Fraunces, serif" font-size="22" font-weight="600" fill="#92400e" text-anchor="middle">32 B</text>
+        <text x="112" y="70" class="lbl-sm" fill="#92400e" text-anchor="middle">independent fetch granularity</text>
+        <text x="112" y="86" class="lbl-sm" fill="#92400e" text-anchor="middle">valid bit 2</text>
+      </g>
+      <g transform="translate(696,0)">
+        <rect x="0"   y="0" width="225" height="100" rx="10" fill="url(#secG)" stroke="#b45309" stroke-width="0.8"/>
+        <text x="112" y="26" class="lbl" fill="#92400e" text-anchor="middle">Sector 3</text>
+        <text x="112" y="50" font-family="Fraunces, serif" font-size="22" font-weight="600" fill="#92400e" text-anchor="middle">32 B</text>
+        <text x="112" y="70" class="lbl-sm" fill="#92400e" text-anchor="middle">independent fetch granularity</text>
+        <text x="112" y="86" class="lbl-sm" fill="#92400e" text-anchor="middle">valid bit 3</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- Stride latency model formula -->
+  <g transform="translate(36,290)">
+    <rect x="0" y="0" width="960" height="74" rx="10" fill="#fcfbf6" stroke="#e6e4da"/>
+    <foreignObject x="14" y="10" width="932" height="56">
+      <div xmlns="http://www.w3.org/1999/xhtml" style="font:500 12.5px 'IBM Plex Sans',sans-serif;color:#2a3548;line-height:1.5;">
+        <strong>Stride model</strong>: <em>latency</em> = (<em>L</em><sub>2_hit</sub> + (<em>S</em><sub>sector</sub>/<em>stride</em> − 1) × <em>L</em><sub>1_hit</sub>) / (<em>S</em><sub>sector</sub>/<em>stride</em>),
+        where <em>S</em><sub>sector</sub> = 32 B. At stride &lt; 32 B multiple accesses share an already-fetched sector;
+        at stride ≥ 32 B every access requires a new L2 sector fetch (full 354 cyc).
+        Validated to &lt;0.1 % error across stride 4 B → 32 B [S8/case_77].
+      </div>
+    </foreignObject>
+  </g>
+</svg>

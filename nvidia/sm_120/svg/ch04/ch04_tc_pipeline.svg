@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 540" role="img"
+     aria-label="TC pipeline depth: HMMA 1.81 vs IMMA 4.09">
+  <defs>
+    <linearGradient id="hmmaG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFE4E6"/>
+      <stop offset="1" stop-color="#FFF1F2"/>
+    </linearGradient>
+    <linearGradient id="immaG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#E0E7FF"/>
+      <stop offset="1" stop-color="#EEF2FF"/>
+    </linearGradient>
+    <style><![CDATA[
+      .ttl{font:600 14px "Fraunces",serif;fill:#0b1220}
+      .sub{font:italic 11px "Fraunces",serif;fill:#5b6679}
+      .lbl{font:600 11px "JetBrains Mono",monospace;fill:#2a3548}
+      .lbl-sm{font:500 10px "JetBrains Mono",monospace;fill:#5b6679}
+      .stage{font:600 10.5px "JetBrains Mono",monospace}
+      .num{font:600 22px "Fraunces",serif;fill:#0b1220;letter-spacing:-0.01em}
+      .axL{font:500 9.5px "JetBrains Mono",monospace;fill:#5b6679}
+    ]]></style>
+  </defs>
+  <rect width="1080" height="540" fill="#ffffff"/>
+  <text x="36" y="32" class="ttl">TensorCore Pipeline Depth · HMMA (1.81) vs IMMA (4.09) · Steady-State cyc/mma</text>
+  <text x="36" y="52" class="sub">Two parallel TC subpipes: hmma (FP16/FP8/FP6/FP4) and imma (INT8). IMMA pipeline is wider — 2.4× higher throughput.</text>
+
+  <!-- HMMA pipeline -->
+  <g transform="translate(90,90)">
+    <text x="0" y="0" class="lbl" fill="#e11d48">HMMA · pipe_tensor.hmma · 2-slot pipeline</text>
+    <text x="0" y="16" class="lbl-sm">Issued every ~16 cyc · 29 cyc total latency · 15.88 cyc/mma steady-state @ ILP≥4</text>
+    <!-- 2 slots, each 16 cyc wide -->
+    <g transform="translate(0,30)">
+      <!-- Time axis 0..32 cyc -->
+      <line x1="0" y1="0" x2="800" y2="0" stroke="#5b6679" stroke-width="1"/>
+      <g class="axL">
+        <text x="0"   y="16" text-anchor="middle">0</text>
+        <text x="100" y="16" text-anchor="middle">4</text>
+        <text x="200" y="16" text-anchor="middle">8</text>
+        <text x="300" y="16" text-anchor="middle">12</text>
+        <text x="400" y="16" text-anchor="middle">16</text>
+        <text x="500" y="16" text-anchor="middle">20</text>
+        <text x="600" y="16" text-anchor="middle">24</text>
+        <text x="700" y="16" text-anchor="middle">28</text>
+        <text x="800" y="16" text-anchor="middle">32 cyc</text>
+      </g>
+      <!-- 2 slots × 4 boxes shows ILP=4 saturating 2 slots -->
+      <g transform="translate(0,28)">
+        <text x="-12" y="14" class="lbl" text-anchor="end">Slot 0</text>
+        <rect x="0"   y="0" width="397" height="20" rx="4" fill="url(#hmmaG)" stroke="#e11d48"/>
+        <text x="198" y="14" class="stage" text-anchor="middle" fill="#9f1239">MMA #1 (~16 cyc)</text>
+        <rect x="397" y="0" width="397" height="20" rx="4" fill="url(#hmmaG)" stroke="#e11d48"/>
+        <text x="596" y="14" class="stage" text-anchor="middle" fill="#9f1239">MMA #3 (~16 cyc)</text>
+      </g>
+      <g transform="translate(0,52)">
+        <text x="-12" y="14" class="lbl" text-anchor="end">Slot 1</text>
+        <rect x="0"   y="0" width="397" height="20" rx="4" fill="url(#hmmaG)" stroke="#e11d48"/>
+        <text x="198" y="14" class="stage" text-anchor="middle" fill="#9f1239">MMA #2 (~16 cyc)</text>
+        <rect x="397" y="0" width="397" height="20" rx="4" fill="url(#hmmaG)" stroke="#e11d48"/>
+        <text x="596" y="14" class="stage" text-anchor="middle" fill="#9f1239">MMA #4 (~16 cyc)</text>
+      </g>
+      <text x="0" y="100" class="lbl-sm">↑ depth = 1.81 → ⌈issue/depth⌉ ≈ 16 cyc per mma steady-state</text>
+    </g>
+  </g>
+
+  <!-- IMMA pipeline -->
+  <g transform="translate(90,260)">
+    <text x="0" y="0" class="lbl" fill="#1e40af">IMMA · pipe_tensor.imma · 4-slot pipeline</text>
+    <text x="0" y="16" class="lbl-sm">Issued every ~6.55 cyc · 27 cyc total latency · 6.55 cyc/mma steady-state @ ILP≥4 (2.4× HMMA throughput)</text>
+    <g transform="translate(0,30)">
+      <line x1="0" y1="0" x2="800" y2="0" stroke="#5b6679" stroke-width="1"/>
+      <g class="axL">
+        <text x="0"   y="16" text-anchor="middle">0</text>
+        <text x="100" y="16" text-anchor="middle">4</text>
+        <text x="200" y="16" text-anchor="middle">8</text>
+        <text x="300" y="16" text-anchor="middle">12</text>
+        <text x="400" y="16" text-anchor="middle">16</text>
+        <text x="500" y="16" text-anchor="middle">20</text>
+        <text x="600" y="16" text-anchor="middle">24</text>
+        <text x="700" y="16" text-anchor="middle">28</text>
+        <text x="800" y="16" text-anchor="middle">32 cyc</text>
+      </g>
+      <!-- 4 slots × 4 issues -->
+      <g transform="translate(0,28)">
+        <text x="-12" y="14" class="lbl" text-anchor="end">Slot 0</text>
+        <rect x="0"   y="0" width="164" height="20" rx="4" fill="url(#immaG)" stroke="#1e40af"/>
+        <text x="82" y="14" class="stage" text-anchor="middle" fill="#1e40af">MMA #1 (6.55 cyc)</text>
+        <rect x="164" y="0" width="164" height="20" rx="4" fill="url(#immaG)" stroke="#1e40af"/>
+        <text x="246" y="14" class="stage" text-anchor="middle" fill="#1e40af">MMA #5</text>
+        <rect x="328" y="0" width="164" height="20" rx="4" fill="url(#immaG)" stroke="#1e40af"/>
+        <text x="410" y="14" class="stage" text-anchor="middle" fill="#1e40af">MMA #9</text>
+        <rect x="492" y="0" width="164" height="20" rx="4" fill="url(#immaG)" stroke="#1e40af"/>
+        <text x="574" y="14" class="stage" text-anchor="middle" fill="#1e40af">MMA #13</text>
+      </g>
+      <g transform="translate(0,52)">
+        <text x="-12" y="14" class="lbl" text-anchor="end">Slot 1</text>
+        <rect x="0"   y="0" width="164" height="20" rx="4" fill="url(#immaG)" stroke="#1e40af" opacity="0.85"/>
+        <text x="82" y="14" class="stage" text-anchor="middle" fill="#1e40af">MMA #2</text>
+        <rect x="164" y="0" width="164" height="20" rx="4" fill="url(#immaG)" stroke="#1e40af" opacity="0.85"/>
+        <rect x="328" y="0" width="164" height="20" rx="4" fill="url(#immaG)" stroke="#1e40af" opacity="0.85"/>
+        <rect x="492" y="0" width="164" height="20" rx="4" fill="url(#immaG)" stroke="#1e40af" opacity="0.85"/>
+      </g>
+      <g transform="translate(0,76)">
+        <text x="-12" y="14" class="lbl" text-anchor="end">Slot 2</text>
+        <rect x="0"   y="0" width="164" height="20" rx="4" fill="url(#immaG)" stroke="#1e40af" opacity="0.7"/>
+        <text x="82" y="14" class="stage" text-anchor="middle" fill="#1e40af">MMA #3</text>
+        <rect x="164" y="0" width="164" height="20" rx="4" fill="url(#immaG)" stroke="#1e40af" opacity="0.7"/>
+        <rect x="328" y="0" width="164" height="20" rx="4" fill="url(#immaG)" stroke="#1e40af" opacity="0.7"/>
+        <rect x="492" y="0" width="164" height="20" rx="4" fill="url(#immaG)" stroke="#1e40af" opacity="0.7"/>
+      </g>
+      <g transform="translate(0,100)">
+        <text x="-12" y="14" class="lbl" text-anchor="end">Slot 3</text>
+        <rect x="0"   y="0" width="164" height="20" rx="4" fill="url(#immaG)" stroke="#1e40af" opacity="0.55"/>
+        <text x="82" y="14" class="stage" text-anchor="middle" fill="#1e40af">MMA #4</text>
+        <rect x="164" y="0" width="164" height="20" rx="4" fill="url(#immaG)" stroke="#1e40af" opacity="0.55"/>
+        <rect x="328" y="0" width="164" height="20" rx="4" fill="url(#immaG)" stroke="#1e40af" opacity="0.55"/>
+        <rect x="492" y="0" width="164" height="20" rx="4" fill="url(#immaG)" stroke="#1e40af" opacity="0.55"/>
+      </g>
+      <text x="0" y="148" class="lbl-sm">↑ depth = 4.09 → 6.55 cyc per mma steady-state (2.4× HMMA throughput)</text>
+    </g>
+  </g>
+
+  <!-- KPI cards bottom -->
+  <g transform="translate(36,452)">
+    <rect x="0"   y="0" width="246" height="68" rx="10" fill="#fcfbf6" stroke="#e11d48" stroke-width="0.6"/>
+    <text x="14" y="22" class="lbl" fill="#9f1239">HMMA / QMMA / OMMA.SF</text>
+    <text x="14" y="48" class="num">29 cyc<tspan font-size="11" dx="6" fill="#5b6679">latency</tspan></text>
+    <text x="170" y="48" class="num">15.88<tspan font-size="11" dx="6" fill="#5b6679">cyc/mma</tspan></text>
+
+    <g transform="translate(266,0)">
+      <rect x="0"   y="0" width="246" height="68" rx="10" fill="#fcfbf6" stroke="#1e40af" stroke-width="0.6"/>
+      <text x="14" y="22" class="lbl" fill="#1e40af">IMMA · INT8</text>
+      <text x="14" y="48" class="num">27 cyc<tspan font-size="11" dx="6" fill="#5b6679">latency</tspan></text>
+      <text x="170" y="48" class="num">6.55<tspan font-size="11" dx="6" fill="#5b6679">cyc/mma</tspan></text>
+    </g>
+    <g transform="translate(532,0)">
+      <rect x="0"   y="0" width="246" height="68" rx="10" fill="#fcfbf6" stroke="#76b900" stroke-width="0.6"/>
+      <text x="14" y="22" class="lbl" fill="#5a8e00">Block-scale (MX)</text>
+      <text x="14" y="48" class="num">+0%<tspan font-size="11" dx="6" fill="#5b6679">overhead vs dense</tspan></text>
+    </g>
+    <g transform="translate(798,0)">
+      <rect x="0"   y="0" width="218" height="68" rx="10" fill="#fcfbf6" stroke="#76b900" stroke-width="0.6"/>
+      <text x="14" y="22" class="lbl" fill="#5a8e00">Sparse 2:4</text>
+      <text x="14" y="48" class="num">+0%<tspan font-size="11" dx="6" fill="#5b6679">vs dense K</tspan></text>
+    </g>
+  </g>
+</svg>

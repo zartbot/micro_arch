@@ -1,0 +1,250 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 620" role="img" aria-label="P2P Bandwidth Matrix — 8x8 GPU Pairwise Throughput Heatmap">
+  <defs>
+    <linearGradient id="legGrad" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0" stop-color="#ef4444"/>
+      <stop offset="0.35" stop-color="#fb923c"/>
+      <stop offset="0.5" stop-color="#f59e0b"/>
+      <stop offset="0.65" stop-color="#f97316"/>
+      <stop offset="1" stop-color="#16a34a"/>
+    </linearGradient>
+    <style><![CDATA[
+      .ttl{font:600 15px "Fraunces",serif;fill:#0b1220}
+      .sub{font:italic 11px "Fraunces",serif;fill:#5b6679}
+      .hdr{font:600 11px "JetBrains Mono",monospace;fill:#0b1220}
+      .numa-lbl{font:600 11px "Fraunces",serif;fill:#6d28d9}
+      .numa-lbl2{font:600 11px "Fraunces",serif;fill:#1e40af}
+      .cell-val{font:600 11px "JetBrains Mono",monospace;fill:#0b1220}
+      .cell-val-w{font:600 11px "JetBrains Mono",monospace;fill:#ffffff}
+      .diag{font:600 12px "JetBrains Mono",monospace;fill:#8e97a5}
+      .quad{font:italic 9px "Fraunces",serif;fill:#5b6679;opacity:0.5}
+      .leg-lbl{font:500 9px "JetBrains Mono",monospace;fill:#5b6679}
+      .stat-val{font:700 14px "Fraunces",serif;fill:#0b1220;letter-spacing:-0.02em}
+      .stat-lbl{font:500 9px "JetBrains Mono",monospace;fill:#5b6679}
+    ]]></style>
+  </defs>
+
+  <rect width="1080" height="620" fill="#ffffff"/>
+
+  <!-- ===== Title ===== -->
+  <text x="36" y="28" class="ttl">P2P Bandwidth Matrix — 8×8 GPU Pairwise Throughput (64 MB transfers)</text>
+  <text x="36" y="48" class="sub">Color-coded heatmap reveals two-tier NUMA topology: intra-switch (~56 GB/s) vs cross-NUMA (~43 GB/s)</text>
+
+  <!-- ===== NUMA group labels ===== -->
+  <text x="264" y="68" class="numa-lbl" text-anchor="middle">NUMA Node 0</text>
+  <text x="552" y="68" class="numa-lbl2" text-anchor="middle">NUMA Node 1</text>
+
+  <!-- ===== Column headers ===== -->
+  <text x="156" y="82" class="hdr" text-anchor="middle">GPU0</text>
+  <text x="228" y="82" class="hdr" text-anchor="middle">GPU1</text>
+  <text x="300" y="82" class="hdr" text-anchor="middle">GPU2</text>
+  <text x="372" y="82" class="hdr" text-anchor="middle">GPU3</text>
+  <text x="444" y="82" class="hdr" text-anchor="middle">GPU4</text>
+  <text x="516" y="82" class="hdr" text-anchor="middle">GPU5</text>
+  <text x="588" y="82" class="hdr" text-anchor="middle">GPU6</text>
+  <text x="660" y="82" class="hdr" text-anchor="middle">GPU7</text>
+
+  <!-- ===== Row headers ===== -->
+  <text x="112" y="116" class="hdr" text-anchor="end">GPU0</text>
+  <text x="112" y="164" class="hdr" text-anchor="end">GPU1</text>
+  <text x="112" y="212" class="hdr" text-anchor="end">GPU2</text>
+  <text x="112" y="260" class="hdr" text-anchor="end">GPU3</text>
+  <text x="112" y="308" class="hdr" text-anchor="end">GPU4</text>
+  <text x="112" y="356" class="hdr" text-anchor="end">GPU5</text>
+  <text x="112" y="404" class="hdr" text-anchor="end">GPU6</text>
+  <text x="112" y="452" class="hdr" text-anchor="end">GPU7</text>
+
+  <!-- ===== Quadrant background labels ===== -->
+  <text x="264" y="180" class="quad" text-anchor="middle">Intra-NUMA0</text>
+  <text x="264" y="194" class="quad" text-anchor="middle">55.7–55.9 GB/s</text>
+  <text x="552" y="180" class="quad" text-anchor="middle">Cross-NUMA</text>
+  <text x="552" y="194" class="quad" text-anchor="middle">40.2–45.0 GB/s</text>
+  <text x="264" y="372" class="quad" text-anchor="middle">Cross-NUMA</text>
+  <text x="264" y="386" class="quad" text-anchor="middle">40.2–45.0 GB/s</text>
+  <text x="552" y="372" class="quad" text-anchor="middle">Intra-NUMA1</text>
+  <text x="552" y="386" class="quad" text-anchor="middle">55.7–55.9 GB/s</text>
+
+  <!-- ===== Heatmap cells ===== -->
+  <!-- Cell size: 72w x 48h, start x=120, y=88 -->
+
+  <!-- Row GPU0 -->
+  <rect x="120" y="88" width="72" height="48" fill="#e6e4da" stroke="#ffffff" stroke-width="1"/>
+  <text x="156" y="117" class="diag" text-anchor="middle">—</text>
+  <rect x="192" y="88" width="72" height="48" fill="#16a34a" opacity="0.85" stroke="#ffffff" stroke-width="1"/>
+  <text x="228" y="117" class="cell-val-w" text-anchor="middle">55.85</text>
+  <rect x="264" y="88" width="72" height="48" fill="#16a34a" opacity="0.85" stroke="#ffffff" stroke-width="1"/>
+  <text x="300" y="117" class="cell-val-w" text-anchor="middle">55.86</text>
+  <rect x="336" y="88" width="72" height="48" fill="#16a34a" opacity="0.85" stroke="#ffffff" stroke-width="1"/>
+  <text x="372" y="117" class="cell-val-w" text-anchor="middle">55.92</text>
+  <rect x="408" y="88" width="72" height="48" fill="#f97316" opacity="0.85" stroke="#ffffff" stroke-width="1"/>
+  <text x="444" y="117" class="cell-val" text-anchor="middle">44.23</text>
+  <rect x="480" y="88" width="72" height="48" fill="#f59e0b" opacity="0.85" stroke="#ffffff" stroke-width="1"/>
+  <text x="516" y="117" class="cell-val" text-anchor="middle">44.67</text>
+  <rect x="552" y="88" width="72" height="48" fill="#ef4444" opacity="0.85" stroke="#ffffff" stroke-width="1"/>
+  <text x="588" y="117" class="cell-val-w" text-anchor="middle">40.94</text>
+  <rect x="624" y="88" width="72" height="48" fill="#f97316" opacity="0.85" stroke="#ffffff" stroke-width="1"/>
+  <text x="660" y="117" class="cell-val" text-anchor="middle">44.18</text>
+
+  <!-- Row GPU1 -->
+  <rect x="120" y="136" width="72" height="48" fill="#16a34a" opacity="0.85" stroke="#ffffff" stroke-width="1"/>
+  <text x="156" y="165" class="cell-val-w" text-anchor="middle">55.75</text>
+  <rect x="192" y="136" width="72" height="48" fill="#e6e4da" stroke="#ffffff" stroke-width="1"/>
+  <text x="228" y="165" class="diag" text-anchor="middle">—</text>
+  <rect x="264" y="136" width="72" height="48" fill="#16a34a" opacity="0.85" stroke="#ffffff" stroke-width="1"/>
+  <text x="300" y="165" class="cell-val-w" text-anchor="middle">55.82</text>
+  <rect x="336" y="136" width="72" height="48" fill="#16a34a" opacity="0.85" stroke="#ffffff" stroke-width="1"/>
+  <text x="372" y="165" class="cell-val-w" text-anchor="middle">55.72</text>
+  <rect x="408" y="136" width="72" height="48" fill="#f97316" opacity="0.85" stroke="#ffffff" stroke-width="1"/>
+  <text x="444" y="165" class="cell-val" text-anchor="middle">43.85</text>
+  <rect x="480" y="136" width="72" height="48" fill="#f59e0b" opacity="0.85" stroke="#ffffff" stroke-width="1"/>
+  <text x="516" y="165" class="cell-val" text-anchor="middle">44.51</text>
+  <rect x="552" y="136" width="72" height="48" fill="#ef4444" opacity="0.85" stroke="#ffffff" stroke-width="1"/>
+  <text x="588" y="165" class="cell-val-w" text-anchor="middle">40.93</text>
+  <rect x="624" y="136" width="72" height="48" fill="#f97316" opacity="0.85" stroke="#ffffff" stroke-width="1"/>
+  <text x="660" y="165" class="cell-val" text-anchor="middle">44.21</text>
+
+  <!-- Row GPU2 -->
+  <rect x="120" y="184" width="72" height="48" fill="#16a34a" opacity="0.85" stroke="#ffffff" stroke-width="1"/>
+  <text x="156" y="213" class="cell-val-w" text-anchor="middle">55.89</text>
+  <rect x="192" y="184" width="72" height="48" fill="#16a34a" opacity="0.85" stroke="#ffffff" stroke-width="1"/>
+  <text x="228" y="213" class="cell-val-w" text-anchor="middle">55.86</text>
+  <rect x="264" y="184" width="72" height="48" fill="#e6e4da" stroke="#ffffff" stroke-width="1"/>
+  <text x="300" y="213" class="diag" text-anchor="middle">—</text>
+  <rect x="336" y="184" width="72" height="48" fill="#16a34a" opacity="0.85" stroke="#ffffff" stroke-width="1"/>
+  <text x="372" y="213" class="cell-val-w" text-anchor="middle">55.90</text>
+  <rect x="408" y="184" width="72" height="48" fill="#f59e0b" opacity="0.85" stroke="#ffffff" stroke-width="1"/>
+  <text x="444" y="213" class="cell-val" text-anchor="middle">44.72</text>
+  <rect x="480" y="184" width="72" height="48" fill="#ef4444" opacity="0.85" stroke="#ffffff" stroke-width="1"/>
+  <text x="516" y="213" class="cell-val-w" text-anchor="middle">41.01</text>
+  <rect x="552" y="184" width="72" height="48" fill="#f97316" opacity="0.85" stroke="#ffffff" stroke-width="1"/>
+  <text x="588" y="213" class="cell-val" text-anchor="middle">44.28</text>
+  <rect x="624" y="184" width="72" height="48" fill="#f59e0b" opacity="0.85" stroke="#ffffff" stroke-width="1"/>
+  <text x="660" y="213" class="cell-val" text-anchor="middle">44.46</text>
+
+  <!-- Row GPU3 -->
+  <rect x="120" y="232" width="72" height="48" fill="#16a34a" opacity="0.85" stroke="#ffffff" stroke-width="1"/>
+  <text x="156" y="261" class="cell-val-w" text-anchor="middle">55.89</text>
+  <rect x="192" y="232" width="72" height="48" fill="#16a34a" opacity="0.85" stroke="#ffffff" stroke-width="1"/>
+  <text x="228" y="261" class="cell-val-w" text-anchor="middle">55.89</text>
+  <rect x="264" y="232" width="72" height="48" fill="#16a34a" opacity="0.85" stroke="#ffffff" stroke-width="1"/>
+  <text x="300" y="261" class="cell-val-w" text-anchor="middle">55.85</text>
+  <rect x="336" y="232" width="72" height="48" fill="#e6e4da" stroke="#ffffff" stroke-width="1"/>
+  <text x="372" y="261" class="diag" text-anchor="middle">—</text>
+  <rect x="408" y="232" width="72" height="48" fill="#f59e0b" opacity="0.85" stroke="#ffffff" stroke-width="1"/>
+  <text x="444" y="261" class="cell-val" text-anchor="middle">44.94</text>
+  <rect x="480" y="232" width="72" height="48" fill="#ef4444" opacity="0.85" stroke="#ffffff" stroke-width="1"/>
+  <text x="516" y="261" class="cell-val-w" text-anchor="middle">41.13</text>
+  <rect x="552" y="232" width="72" height="48" fill="#f59e0b" opacity="0.85" stroke="#ffffff" stroke-width="1"/>
+  <text x="588" y="261" class="cell-val" text-anchor="middle">44.58</text>
+  <rect x="624" y="232" width="72" height="48" fill="#f59e0b" opacity="0.85" stroke="#ffffff" stroke-width="1"/>
+  <text x="660" y="261" class="cell-val" text-anchor="middle">44.68</text>
+
+  <!-- ===== Bold NUMA separator lines ===== -->
+  <line x1="408" y1="88" x2="408" y2="472" stroke="#0b1220" stroke-width="2"/>
+  <line x1="120" y1="280" x2="696" y2="280" stroke="#0b1220" stroke-width="2"/>
+
+  <!-- Row GPU4 -->
+  <rect x="120" y="280" width="72" height="48" fill="#ef4444" opacity="0.85" stroke="#ffffff" stroke-width="1"/>
+  <text x="156" y="309" class="cell-val-w" text-anchor="middle">40.23</text>
+  <rect x="192" y="280" width="72" height="48" fill="#ef4444" opacity="0.85" stroke="#ffffff" stroke-width="1"/>
+  <text x="228" y="309" class="cell-val-w" text-anchor="middle">41.10</text>
+  <rect x="264" y="280" width="72" height="48" fill="#f97316" opacity="0.85" stroke="#ffffff" stroke-width="1"/>
+  <text x="300" y="309" class="cell-val" text-anchor="middle">44.26</text>
+  <rect x="336" y="280" width="72" height="48" fill="#ef4444" opacity="0.85" stroke="#ffffff" stroke-width="1"/>
+  <text x="372" y="309" class="cell-val-w" text-anchor="middle">40.90</text>
+  <rect x="408" y="280" width="72" height="48" fill="#e6e4da" stroke="#ffffff" stroke-width="1"/>
+  <text x="444" y="309" class="diag" text-anchor="middle">—</text>
+  <rect x="480" y="280" width="72" height="48" fill="#16a34a" opacity="0.85" stroke="#ffffff" stroke-width="1"/>
+  <text x="516" y="309" class="cell-val-w" text-anchor="middle">55.79</text>
+  <rect x="552" y="280" width="72" height="48" fill="#16a34a" opacity="0.85" stroke="#ffffff" stroke-width="1"/>
+  <text x="588" y="309" class="cell-val-w" text-anchor="middle">55.91</text>
+  <rect x="624" y="280" width="72" height="48" fill="#16a34a" opacity="0.85" stroke="#ffffff" stroke-width="1"/>
+  <text x="660" y="309" class="cell-val-w" text-anchor="middle">55.84</text>
+
+  <!-- Row GPU5 -->
+  <rect x="120" y="328" width="72" height="48" fill="#f59e0b" opacity="0.85" stroke="#ffffff" stroke-width="1"/>
+  <text x="156" y="357" class="cell-val" text-anchor="middle">44.47</text>
+  <rect x="192" y="328" width="72" height="48" fill="#f59e0b" opacity="0.85" stroke="#ffffff" stroke-width="1"/>
+  <text x="228" y="357" class="cell-val" text-anchor="middle">44.59</text>
+  <rect x="264" y="328" width="72" height="48" fill="#ef4444" opacity="0.85" stroke="#ffffff" stroke-width="1"/>
+  <text x="300" y="357" class="cell-val-w" text-anchor="middle">41.09</text>
+  <rect x="336" y="328" width="72" height="48" fill="#f59e0b" opacity="0.85" stroke="#ffffff" stroke-width="1"/>
+  <text x="372" y="357" class="cell-val" text-anchor="middle">44.75</text>
+  <rect x="408" y="328" width="72" height="48" fill="#16a34a" opacity="0.85" stroke="#ffffff" stroke-width="1"/>
+  <text x="444" y="357" class="cell-val-w" text-anchor="middle">55.88</text>
+  <rect x="480" y="328" width="72" height="48" fill="#e6e4da" stroke="#ffffff" stroke-width="1"/>
+  <text x="516" y="357" class="diag" text-anchor="middle">—</text>
+  <rect x="552" y="328" width="72" height="48" fill="#16a34a" opacity="0.85" stroke="#ffffff" stroke-width="1"/>
+  <text x="588" y="357" class="cell-val-w" text-anchor="middle">55.89</text>
+  <rect x="624" y="328" width="72" height="48" fill="#16a34a" opacity="0.85" stroke="#ffffff" stroke-width="1"/>
+  <text x="660" y="357" class="cell-val-w" text-anchor="middle">55.70</text>
+
+  <!-- Row GPU6 -->
+  <rect x="120" y="376" width="72" height="48" fill="#f97316" opacity="0.85" stroke="#ffffff" stroke-width="1"/>
+  <text x="156" y="405" class="cell-val" text-anchor="middle">44.32</text>
+  <rect x="192" y="376" width="72" height="48" fill="#f59e0b" opacity="0.85" stroke="#ffffff" stroke-width="1"/>
+  <text x="228" y="405" class="cell-val" text-anchor="middle">44.44</text>
+  <rect x="264" y="376" width="72" height="48" fill="#f59e0b" opacity="0.85" stroke="#ffffff" stroke-width="1"/>
+  <text x="300" y="405" class="cell-val" text-anchor="middle">44.75</text>
+  <rect x="336" y="376" width="72" height="48" fill="#f97316" opacity="0.85" stroke="#ffffff" stroke-width="1"/>
+  <text x="372" y="405" class="cell-val" text-anchor="middle">44.06</text>
+  <rect x="408" y="376" width="72" height="48" fill="#16a34a" opacity="0.85" stroke="#ffffff" stroke-width="1"/>
+  <text x="444" y="405" class="cell-val-w" text-anchor="middle">55.93</text>
+  <rect x="480" y="376" width="72" height="48" fill="#16a34a" opacity="0.85" stroke="#ffffff" stroke-width="1"/>
+  <text x="516" y="405" class="cell-val-w" text-anchor="middle">55.91</text>
+  <rect x="552" y="376" width="72" height="48" fill="#e6e4da" stroke="#ffffff" stroke-width="1"/>
+  <text x="588" y="405" class="diag" text-anchor="middle">—</text>
+  <rect x="624" y="376" width="72" height="48" fill="#16a34a" opacity="0.85" stroke="#ffffff" stroke-width="1"/>
+  <text x="660" y="405" class="cell-val-w" text-anchor="middle">55.91</text>
+
+  <!-- Row GPU7 -->
+  <rect x="120" y="424" width="72" height="48" fill="#f97316" opacity="0.85" stroke="#ffffff" stroke-width="1"/>
+  <text x="156" y="453" class="cell-val" text-anchor="middle">44.32</text>
+  <rect x="192" y="424" width="72" height="48" fill="#f97316" opacity="0.85" stroke="#ffffff" stroke-width="1"/>
+  <text x="228" y="453" class="cell-val" text-anchor="middle">44.34</text>
+  <rect x="264" y="424" width="72" height="48" fill="#f59e0b" opacity="0.85" stroke="#ffffff" stroke-width="1"/>
+  <text x="300" y="453" class="cell-val" text-anchor="middle">44.95</text>
+  <rect x="336" y="424" width="72" height="48" fill="#f97316" opacity="0.85" stroke="#ffffff" stroke-width="1"/>
+  <text x="372" y="453" class="cell-val" text-anchor="middle">44.16</text>
+  <rect x="408" y="424" width="72" height="48" fill="#16a34a" opacity="0.85" stroke="#ffffff" stroke-width="1"/>
+  <text x="444" y="453" class="cell-val-w" text-anchor="middle">55.87</text>
+  <rect x="480" y="424" width="72" height="48" fill="#16a34a" opacity="0.85" stroke="#ffffff" stroke-width="1"/>
+  <text x="516" y="453" class="cell-val-w" text-anchor="middle">55.84</text>
+  <rect x="552" y="424" width="72" height="48" fill="#16a34a" opacity="0.85" stroke="#ffffff" stroke-width="1"/>
+  <text x="588" y="453" class="cell-val-w" text-anchor="middle">55.92</text>
+  <rect x="624" y="424" width="72" height="48" fill="#e6e4da" stroke="#ffffff" stroke-width="1"/>
+  <text x="660" y="453" class="diag" text-anchor="middle">—</text>
+
+  <!-- ===== Color Legend Bar ===== -->
+  <rect x="720" y="88" width="16" height="384" fill="url(#legGrad)" stroke="#8e97a5" stroke-width="0.5"/>
+  <text x="744" y="94" class="leg-lbl" fill="#16a34a">56 GB/s</text>
+  <text x="744" y="106" class="leg-lbl" fill="#16a34a">Intra-NUMA</text>
+  <text x="744" y="284" class="leg-lbl" fill="#f59e0b">~44 GB/s</text>
+  <text x="744" y="296" class="leg-lbl" fill="#f59e0b">Cross-NUMA</text>
+  <text x="744" y="308" class="leg-lbl" fill="#f59e0b">fast direction</text>
+  <text x="744" y="466" class="leg-lbl" fill="#ef4444">40 GB/s</text>
+  <text x="744" y="478" class="leg-lbl" fill="#ef4444">Cross-NUMA</text>
+  <text x="744" y="490" class="leg-lbl" fill="#ef4444">slow direction</text>
+
+  <!-- ===== Summary Stats ===== -->
+  <rect x="36" y="492" width="1008" height="108" rx="10" fill="#fcfbf6" stroke="#e6e4da"/>
+
+  <text x="80" y="518" class="stat-lbl">Intra-NUMA average</text>
+  <text x="80" y="540" class="stat-val" fill="#16a34a">55.85 GB/s</text>
+  <text x="80" y="556" class="leg-lbl">24 pairs · &lt;0.3% asymmetry</text>
+
+  <text x="290" y="518" class="stat-lbl">Cross-NUMA average</text>
+  <text x="290" y="540" class="stat-val" fill="#f59e0b">43.2 GB/s</text>
+  <text x="290" y="556" class="leg-lbl">32 pairs · 24% penalty vs intra</text>
+
+  <text x="530" y="518" class="stat-lbl">Cross-NUMA range</text>
+  <text x="530" y="540" class="stat-val" fill="#ef4444">40.2 – 45.0 GB/s</text>
+  <text x="530" y="556" class="leg-lbl">12% spread · direction-dependent</text>
+
+  <text x="770" y="518" class="stat-lbl">Max directional asymmetry</text>
+  <text x="770" y="540" class="stat-val" fill="#ea580c">8.9%</text>
+  <text x="770" y="556" class="leg-lbl">GPU3↔GPU5 · QPI port routing</text>
+
+  <text x="540" y="585" class="sub" text-anchor="middle">Bold lines separate NUMA0 (GPUs 0-3) from NUMA1 (GPUs 4-7) — all values in GB/s, 64 MB transfers, min of 100 iters</text>
+
+</svg>

@@ -1,0 +1,231 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 680" font-family="'Inter','Segoe UI',system-ui,sans-serif">
+<defs>
+  <style>
+    .bg{fill:#fcfbf6}
+    .panel{fill:#fff;stroke:#e2dfd8;stroke-width:1.2;rx:10}
+    .eyebrow{font-size:9px;font-weight:700;letter-spacing:1.2px;fill:#8b7e6a;text-transform:uppercase}
+    .title{font-size:13px;font-weight:700;fill:#1a1a1a}
+    .lbl{font-size:10.5px;fill:#444}
+    .lbl-bold{font-size:10.5px;font-weight:700;fill:#1a1a1a}
+    .lbl-mono{font-size:10px;font-family:'JetBrains Mono','Fira Code',monospace;fill:#333}
+    .lbl-sm{font-size:9px;fill:#6b7280}
+    .divider{stroke:#e2dfd8;stroke-width:0.8}
+    .axis{stroke:#94a3b8;stroke-width:1;fill:none}
+    .grid{stroke:#e5e7eb;stroke-width:0.5;stroke-dasharray:3,3}
+    .line-blue{stroke:#2563eb;stroke-width:2.5;fill:none}
+    .line-red{stroke:#dc2626;stroke-width:2;fill:none}
+    .line-green{stroke:#059669;stroke-width:2;fill:none}
+    .dot-blue{fill:#2563eb}
+    .dot-red{fill:#dc2626}
+    .highlight{fill:#eff6ff;stroke:#93c5fd;stroke-width:1;rx:5}
+  </style>
+</defs>
+<rect width="1280" height="680" class="bg"/>
+
+<text x="640" y="28" text-anchor="middle" class="eyebrow">SM_120 · GB202 — DVFS &amp; PER-SM POWER CHARACTERIZATION</text>
+
+<!-- ═══ Panel A: DVFS Throughput (left) ═══ -->
+<rect x="30" y="44" width="600" height="300" class="panel"/>
+<text x="50" y="68" class="eyebrow" style="fill:#2563eb">PANEL A</text>
+<text x="50" y="86" class="title">DVFS: Throughput vs Clock (FP32 FFMA)</text>
+
+<!-- Chart area: x=80-590, y=105-310 -->
+<!-- Y axis: 0-75 TFLOPS -->
+<line x1="80" y1="310" x2="80" y2="105" class="axis"/>
+<line x1="80" y1="310" x2="590" y2="310" class="axis"/>
+
+<!-- Y grid lines + labels -->
+<line x1="80" y1="242" x2="590" y2="242" class="grid"/>
+<text x="72" y="246" text-anchor="end" class="lbl-sm">25T</text>
+<line x1="80" y1="173" x2="590" y2="173" class="grid"/>
+<text x="72" y="177" text-anchor="end" class="lbl-sm">50T</text>
+<line x1="80" y1="105" x2="590" y2="105" class="grid"/>
+<text x="72" y="109" text-anchor="end" class="lbl-sm">75T</text>
+<text x="72" y="314" text-anchor="end" class="lbl-sm">0</text>
+
+<!-- X labels -->
+<text x="80" y="326" class="lbl-sm">575</text>
+<text x="165" y="326" class="lbl-sm">887</text>
+<text x="250" y="326" class="lbl-sm">1177</text>
+<text x="335" y="326" text-anchor="middle" class="lbl-sm">1492</text>
+<text x="420" y="326" class="lbl-sm">1792</text>
+<text x="490" y="326" class="lbl-sm">2092</text>
+<text x="545" y="326" class="lbl-sm">2392</text>
+<text x="590" y="326" class="lbl-sm">2606</text>
+<text x="335" y="340" text-anchor="middle" class="lbl-sm">Core Clock (MHz)</text>
+
+<!-- Ideal linear reference (dashed) -->
+<line x1="80" y1="267" x2="590" y2="109" stroke="#94a3b8" stroke-width="1" stroke-dasharray="5,3"/>
+<text x="500" y="105" class="lbl-sm" style="fill:#94a3b8">Ideal linear</text>
+
+<!-- Actual throughput curve (101-102% of ideal) -->
+<!-- 575→15.7, 887→24.5, 1177→32.5, 1492→41.5, 1792→49.8, 2092→58.3, 2392→66.6, 2606→72.7 -->
+<!-- Scale: x=(clk-575)/2031*510+80, y=310-(tflops/75*205) -->
+<polyline points="80,267 125,243 165,221 250,196 335,174 420,147 490,118 545,128 590,111" class="line-blue"/>
+<circle cx="80" cy="267" r="4" class="dot-blue"/>
+<circle cx="165" cy="243" r="4" class="dot-blue"/>
+<circle cx="250" cy="221" r="4" class="dot-blue"/>
+<circle cx="335" cy="196" r="4" class="dot-blue"/>
+<circle cx="420" cy="174" r="4" class="dot-blue"/>
+<circle cx="490" cy="147" r="4" class="dot-blue"/>
+<circle cx="545" cy="128" r="4" class="dot-blue"/>
+<circle cx="590" cy="111" r="4" class="dot-blue"/>
+
+<!-- Labels on key points -->
+<text x="85" y="250" class="lbl-mono" style="font-size:8px">15.7T</text>
+<text x="340" y="189" class="lbl-mono" style="font-size:8px">41.5T</text>
+<text x="495" y="140" class="lbl-mono" style="font-size:8px">58.3T</text>
+<text x="580" y="103" class="lbl-mono" style="font-size:8px">72.7T</text>
+
+<!-- Annotation: 101-102% linearity -->
+<rect x="380" y="250" width="180" height="28" rx="4" fill="#dbeafe" stroke="#93c5fd"/>
+<text x="390" y="268" class="lbl-mono" style="font-size:9px;fill:#1e40af">Linearity: 101–102% ideal</text>
+
+<!-- ═══ Panel B: DVFS Efficiency (right) ═══ -->
+<rect x="650" y="44" width="600" height="300" class="panel"/>
+<text x="670" y="68" class="eyebrow" style="fill:#059669">PANEL B</text>
+<text x="670" y="86" class="title">DVFS: Power Efficiency (TFLOPS/W)</text>
+
+<!-- Chart area: x=700-1210, y=105-310 -->
+<line x1="700" y1="310" x2="700" y2="105" class="axis"/>
+<line x1="700" y1="310" x2="1210" y2="310" class="axis"/>
+
+<!-- Y grid -->
+<line x1="700" y1="240" x2="1210" y2="240" class="grid"/>
+<text x="692" y="244" text-anchor="end" class="lbl-sm">0.35</text>
+<line x1="700" y1="173" x2="1210" y2="173" class="grid"/>
+<text x="692" y="177" text-anchor="end" class="lbl-sm">0.45</text>
+<line x1="700" y1="140" x2="1210" y2="140" class="grid"/>
+<text x="692" y="144" text-anchor="end" class="lbl-sm">0.50</text>
+<text x="692" y="314" text-anchor="end" class="lbl-sm">0.25</text>
+
+<!-- X labels (same frequencies) -->
+<text x="700" y="326" class="lbl-sm">575</text>
+<text x="783" y="326" class="lbl-sm">887</text>
+<text x="870" y="326" class="lbl-sm">1177</text>
+<text x="953" y="326" text-anchor="middle" class="lbl-sm">1492</text>
+<text x="1035" y="326" class="lbl-sm">1792</text>
+<text x="1105" y="326" class="lbl-sm">2092</text>
+<text x="1165" y="326" class="lbl-sm">2392</text>
+<text x="1210" y="326" class="lbl-sm">2606</text>
+
+<!-- Efficiency curve: 0.33, 0.37, 0.46, 0.49, 0.49, 0.41, 0.42, 0.37 -->
+<!-- Scale: y = 310 - (eff - 0.25) / 0.30 * 205 -->
+<polyline points="700,255 783,228 870,166 953,146 1035,146 1105,201 1165,194 1210,228" class="line-green"/>
+<circle cx="700" cy="255" r="4" fill="#059669"/>
+<circle cx="783" cy="228" r="4" fill="#059669"/>
+<circle cx="870" cy="166" r="4" fill="#059669"/>
+<circle cx="953" cy="146" r="5" fill="#059669" stroke="#fff" stroke-width="2"/>
+<circle cx="1035" cy="146" r="4" fill="#059669"/>
+<circle cx="1105" cy="201" r="4" fill="#059669"/>
+<circle cx="1165" cy="194" r="4" fill="#059669"/>
+<circle cx="1210" cy="228" r="4" fill="#059669"/>
+
+<!-- Peak annotation -->
+<line x1="953" y1="146" x2="953" y2="118" stroke="#059669" stroke-width="1" stroke-dasharray="2,2"/>
+<rect x="888" y="99" width="130" height="20" rx="4" fill="#ecfdf5" stroke="#6ee7b7"/>
+<text x="953" y="113" text-anchor="middle" class="lbl-bold" style="fill:#059669;font-size:9px">PEAK: 0.49 TFLOPS/W</text>
+
+<!-- Drop annotation at max clock -->
+<text x="1180" y="231" class="lbl-sm" style="fill:#dc2626">0.37</text>
+<text x="1145" y="272" class="lbl-mono" style="font-size:8px;fill:#dc2626">-32%</text>
+<line x1="1160" y1="228" x2="1160" y2="255" stroke="#dc2626" stroke-width="1" marker-end="url(#arrowR)"/>
+
+<!-- Power curve overlay (secondary axis, orange) -->
+<text x="1185" y="105" class="lbl-sm" style="fill:#d97706">Power (W)</text>
+<!-- 48, 66, 70, 85, 103, 143, 158, 204 → normalized to chart -->
+<polyline points="700,290 783,278 870,275 953,265 1035,252 1105,225 1165,214 1210,180" fill="none" stroke="#d97706" stroke-width="1.5" stroke-dasharray="4,2"/>
+
+<!-- ═══ Panel C: Per-SM Power Model (bottom) ═══ -->
+<rect x="30" y="360" width="740" height="300" class="panel"/>
+<text x="50" y="384" class="eyebrow" style="fill:#7c3aed">PANEL C</text>
+<text x="50" y="402" class="title">Per-SM Clock Gating: FMA vs MMA Power Scaling</text>
+
+<!-- Two-line chart: FMA linear, MMA saturating -->
+<!-- X axis: SM count 0-110 -->
+<line x1="80" y1="610" x2="700" y2="610" class="axis"/>
+<line x1="80" y1="610" x2="80" y2="420" class="axis"/>
+
+<!-- Y axis: 0-100W delta -->
+<text x="72" y="424" text-anchor="end" class="lbl-sm">100W</text>
+<text x="72" y="515" text-anchor="end" class="lbl-sm">50W</text>
+<text x="72" y="614" text-anchor="end" class="lbl-sm">0W</text>
+<line x1="80" y1="515" x2="700" y2="515" class="grid"/>
+
+<!-- X axis labels -->
+<text x="80" y="625" class="lbl-sm">0</text>
+<text x="193" y="625" class="lbl-sm">14</text>
+<text x="306" y="625" class="lbl-sm">28</text>
+<text x="420" y="625" class="lbl-sm">56</text>
+<text x="586" y="625" class="lbl-sm">98</text>
+<text x="700" y="625" class="lbl-sm">110</text>
+<text x="390" y="645" text-anchor="middle" class="lbl-sm">Active SM Count</text>
+
+<!-- FMA line (linear, R²=0.977): slope ~0.743 W/SM from stride scan -->
+<!-- At 110 SM: ~82W delta above intercept 15.5 = 97.5, measured 90W -->
+<polyline points="80,610 193,560 306,510 420,460 586,415 700,395" class="line-red" stroke-width="2.5"/>
+<text x="690" y="385" class="lbl-bold" style="fill:#dc2626;font-size:9px">FMA (R²=0.98)</text>
+<text x="710" y="398" class="lbl-mono" style="font-size:8px;fill:#dc2626">0.74 W/SM</text>
+
+<!-- MMA line (sub-linear, saturates ~30W) -->
+<polyline points="80,610 193,585 306,575 420,565 586,555 700,552" class="line-green" stroke-width="2.5"/>
+<text x="690" y="532" class="lbl-bold" style="fill:#059669;font-size:9px">MMA (saturates)</text>
+<text x="710" y="545" class="lbl-mono" style="font-size:8px;fill:#059669">0.15 W/SM</text>
+
+<!-- Saturation zone for MMA -->
+<rect x="420" y="548" width="280" height="16" rx="3" fill="#d1fae5" opacity="0.4"/>
+<text x="530" y="540" text-anchor="middle" class="lbl-sm" style="fill:#065f46">MMA saturates ~30W delta</text>
+
+<!-- FMA/MMA gap annotation -->
+<line x1="650" y1="395" x2="650" y2="552" stroke="#8b5cf6" stroke-width="1" stroke-dasharray="3,2"/>
+<text x="660" y="475" class="lbl-bold" style="fill:#7c3aed;font-size:10px">6.5×</text>
+<text x="660" y="488" class="lbl-sm" style="fill:#7c3aed">per-GPC gap</text>
+
+<!-- ═══ Panel D: Clock Gating Model (bottom-right) ═══ -->
+<rect x="790" y="360" width="460" height="300" class="panel"/>
+<text x="810" y="384" class="eyebrow" style="fill:#0891b2">PANEL D</text>
+<text x="810" y="402" class="title">Power Model: Step Function + Linear SM Term</text>
+
+<!-- Formula box -->
+<rect x="810" y="416" width="420" height="60" rx="6" fill="#f0fdfa" stroke="#99f6e4"/>
+<text x="830" y="438" class="lbl-mono" style="font-size:11px">P_total = P_idle + P_activation + N × slope</text>
+<text x="830" y="458" class="lbl-mono" style="font-size:9px;fill:#666">P_idle=48.4W  P_act≈15-22W  slope=0.15(MMA)/0.74(FMA)</text>
+<text x="830" y="470" class="lbl-sm">All pipes draw ~60.7W at nvidia-smi once any SM active</text>
+
+<!-- Per-pipe breakdown table -->
+<text x="810" y="502" class="lbl-bold">Per-Pipe Incremental Power (W/SM)</text>
+<line x1="810" y1="510" x2="1220" y2="510" class="divider"/>
+
+<text x="820" y="530" class="lbl">Pipe</text>
+<text x="960" y="530" class="lbl">W/SM</text>
+<text x="1060" y="530" class="lbl">Relative</text>
+<line x1="810" y1="536" x2="1220" y2="536" class="divider"/>
+
+<rect x="815" y="542" width="70" height="16" rx="3" fill="#fee2e2"/>
+<text x="820" y="554" class="lbl-mono" style="font-size:9px;fill:#991b1b">FMA (FFMA)</text>
+<text x="960" y="554" class="lbl-bold" style="fill:#dc2626">0.23</text>
+<text x="1060" y="554" class="lbl-mono" style="font-size:9px">3.5× LSU</text>
+
+<rect x="815" y="564" width="70" height="16" rx="3" fill="#d1fae5"/>
+<text x="820" y="576" class="lbl-mono" style="font-size:9px;fill:#065f46">TC (MMA)</text>
+<text x="960" y="576" class="lbl-bold" style="fill:#059669">0.15</text>
+<text x="1060" y="576" class="lbl-mono" style="font-size:9px">2.3× LSU</text>
+
+<rect x="815" y="586" width="70" height="16" rx="3" fill="#e0f2fe"/>
+<text x="820" y="598" class="lbl-mono" style="font-size:9px;fill:#075985">LSU (ld/st)</text>
+<text x="960" y="598" class="lbl-bold" style="fill:#0891b2">0.065</text>
+<text x="1060" y="598" class="lbl-mono" style="font-size:9px">1.0× (base)</text>
+
+<line x1="810" y1="610" x2="1220" y2="610" class="divider"/>
+<text x="820" y="628" class="lbl">• Clock gating confirmed (zero startup penalty)</text>
+<text x="820" y="644" class="lbl">• TC+FMA co-issue: +0.004 W/SM only</text>
+<text x="820" y="656" class="lbl-sm">Source: [S24/case_28-31]</text>
+
+<!-- Arrow marker -->
+<defs>
+  <marker id="arrowR" markerWidth="6" markerHeight="5" refX="6" refY="2.5" orient="auto">
+    <path d="M0,0 L6,2.5 L0,5 Z" fill="#dc2626"/>
+  </marker>
+</defs>
+</svg>

@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 820" role="img"
+     aria-label="SM_120 Instruction Scheduling Model: Hybrid Two-Mechanism Dependence Tracking">
+  <defs>
+    <marker id="ar" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto">
+      <path d="M0,0 L7,3.5 L0,7 Z" fill="#5b6679"/>
+    </marker>
+    <marker id="ar-purple" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto">
+      <path d="M0,0 L7,3.5 L0,7 Z" fill="#6d28d9"/>
+    </marker>
+    <marker id="ar-orange" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto">
+      <path d="M0,0 L7,3.5 L0,7 Z" fill="#ea580c"/>
+    </marker>
+    <linearGradient id="fixedG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#EDE7FB"/><stop offset="1" stop-color="#F8F5FF"/>
+    </linearGradient>
+    <linearGradient id="varG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFF7ED"/><stop offset="1" stop-color="#FFFBF5"/>
+    </linearGradient>
+    <style><![CDATA[
+      .ttl{font:600 15px "Fraunces",serif;fill:#0b1220}
+      .sub{font:italic 11.5px "Fraunces",serif;fill:#5b6679}
+      .sect{font:600 13px "Fraunces",serif}
+      .lbl{font:600 11.5px "JetBrains Mono",monospace}
+      .desc{font:500 10px "JetBrains Mono",monospace;fill:#5b6679}
+      .badge{font:600 9.5px "JetBrains Mono",monospace}
+      .warn{font:600 10px "JetBrains Mono",monospace;fill:#dc2626}
+      .safe{font:600 10px "JetBrains Mono",monospace;fill:#16a34a}
+      .note{font:500 9.5px "JetBrains Mono",monospace;fill:#8e97a5}
+      .big-num{font:700 22px "JetBrains Mono",monospace}
+    ]]></style>
+  </defs>
+
+  <rect width="1080" height="820" fill="#ffffff"/>
+
+  <!-- Title -->
+  <text x="36" y="32" class="ttl">SM_120 Hybrid Instruction Scheduling Model</text>
+  <text x="36" y="52" class="sub">Two-Mechanism Dependence Tracking [S11/case_77, S13/case_12]</text>
+
+  <!-- Top dispatcher box -->
+  <g transform="translate(280,72)">
+    <rect x="0" y="0" width="520" height="52" rx="10" fill="#f8fafc" stroke="#334155" stroke-width="1.2"/>
+    <text x="20" y="22" class="sect" fill="#334155">Warp Scheduler → Instruction Dispatch</text>
+    <text x="20" y="40" class="desc">Single-issue per SMSP · 1 insn/cyc · routes to two mechanisms</text>
+  </g>
+
+  <!-- Split arrows from dispatcher -->
+  <line x1="420" y1="124" x2="280" y2="160" stroke="#6d28d9" stroke-width="1.5" marker-end="url(#ar-purple)"/>
+  <line x1="660" y1="124" x2="800" y2="160" stroke="#ea580c" stroke-width="1.5" marker-end="url(#ar-orange)"/>
+
+  <!-- ============ LEFT COLUMN: Fixed-Latency ============ -->
+  <g transform="translate(36,164)">
+    <!-- Header -->
+    <rect x="0" y="0" width="490" height="44" rx="10" fill="url(#fixedG)" stroke="#6d28d9" stroke-width="1.2"/>
+    <text x="16" y="18" class="sect" fill="#6d28d9">Mechanism 1: Stall Counter</text>
+    <rect x="230" y="4" width="100" height="20" rx="10" fill="#6d28d9" opacity="0.12"/>
+    <text x="280" y="18" class="badge" fill="#6d28d9" text-anchor="middle">Fixed-Lat</text>
+    <rect x="336" y="4" width="110" height="20" rx="10" fill="#6d28d9" opacity="0.12"/>
+    <text x="391" y="18" class="badge" fill="#6d28d9" text-anchor="middle">Compiler Trust</text>
+    <text x="16" y="38" class="desc">ALU · FP32 · FP16 · TensorCore · all deterministic-latency ops</text>
+
+    <!-- Instruction types (2-line box) -->
+    <rect x="0" y="54" width="490" height="50" rx="8" fill="#f5f3ff" stroke="#6d28d9" stroke-width="0.6"/>
+    <text x="16" y="72" class="lbl" fill="#6d28d9">Target Instructions:</text>
+    <text x="16" y="90" class="desc">FFMA(4c) · IADD3(2c) · HADD2(4c) · HMMA(29c)</text>
+    <text x="300" y="90" class="desc">QMMA(29c) · MUFU(18-44c)</text>
+
+    <!-- How it works -->
+    <rect x="0" y="114" width="490" height="130" rx="10" fill="#ffffff" stroke="#6d28d9" stroke-width="0.7"/>
+    <text x="16" y="134" class="lbl" fill="#6d28d9">How It Works:</text>
+    <text x="16" y="154" class="desc">1. ptxas sets stall[3:0] = instruction latency</text>
+    <text x="300" y="154" class="desc">(4-bit, max 15)</text>
+    <text x="16" y="172" class="desc">2. Scheduler counts down stall cycles</text>
+    <text x="300" y="172" class="desc">before re-issuing warp</text>
+    <text x="16" y="190" class="desc">3. NO hardware RAW check when stall ≥ 1</text>
+    <text x="300" y="190" class="desc">(trusts compiler)</text>
+    <text x="16" y="208" class="desc">4. Consumer reads register at stall expiry</text>
+    <text x="300" y="208" class="desc">correct IFF stall ≥ latency</text>
+    <text x="16" y="232" class="note">Control word bits [108:105] · 4-bit field · per-instruction</text>
+
+    <!-- Consequences -->
+    <rect x="0" y="254" width="490" height="90" rx="10" fill="#fef2f2" stroke="#dc2626" stroke-width="0.7"/>
+    <text x="16" y="274" class="warn">⚠ Correctness Implications:</text>
+    <text x="16" y="294" class="desc">• stall &lt; latency → SILENT stale register read</text>
+    <text x="310" y="294" class="desc">(no trap, no error!)</text>
+    <text x="16" y="312" class="desc">• stall = 0 → HW scoreboard fallback</text>
+    <text x="270" y="312" class="desc">(always safe, but slow)</text>
+    <text x="16" y="330" class="desc">• stall ≥ latency → correct execution (normal operation)</text>
+
+    <!-- Safe fallback -->
+    <rect x="0" y="354" width="490" height="52" rx="10" fill="#f0fdf4" stroke="#16a34a" stroke-width="0.7"/>
+    <text x="16" y="374" class="safe">✓ Safe Fallback:</text>
+    <text x="140" y="374" class="desc">stall=0 engages full HW scoreboard</text>
+    <text x="16" y="392" class="desc">Used when ptxas cannot determine latency statically</text>
+  </g>
+
+  <!-- ============ RIGHT COLUMN: Variable-Latency ============ -->
+  <g transform="translate(554,164)">
+    <!-- Header -->
+    <rect x="0" y="0" width="490" height="44" rx="10" fill="url(#varG)" stroke="#ea580c" stroke-width="1.2"/>
+    <text x="16" y="18" class="sect" fill="#9a3412">Mechanism 2: Scoreboard Counters</text>
+    <rect x="260" y="4" width="100" height="20" rx="10" fill="#ea580c" opacity="0.12"/>
+    <text x="310" y="18" class="badge" fill="#9a3412" text-anchor="middle">Variable-Lat</text>
+    <rect x="366" y="4" width="100" height="20" rx="10" fill="#ea580c" opacity="0.12"/>
+    <text x="416" y="18" class="badge" fill="#9a3412" text-anchor="middle">HW Tracking</text>
+    <text x="16" y="38" class="desc">LDG · LDSM · STG · TMA · cp.async · all memory/async ops</text>
+
+    <!-- SB pool (2-line box) -->
+    <rect x="0" y="54" width="490" height="50" rx="8" fill="#fff7ed" stroke="#ea580c" stroke-width="0.6"/>
+    <text x="16" y="72" class="lbl" fill="#9a3412">Pool:</text>
+    <text x="60" y="72" class="desc">6 HW Scoreboard Counters (SB0–SB5) per warp</text>
+    <text x="16" y="90" class="desc">Dynamically assigned by ptxas at compile time</text>
+
+    <!-- How it works -->
+    <rect x="0" y="114" width="490" height="130" rx="10" fill="#ffffff" stroke="#ea580c" stroke-width="0.7"/>
+    <text x="16" y="134" class="lbl" fill="#9a3412">How It Works:</text>
+    <text x="16" y="154" class="desc">1. Producer (LDG) sets WrBarrier[112:110]</text>
+    <text x="300" y="154" class="desc">= SB_ID (0–5)</text>
+    <text x="16" y="172" class="desc">2. HW increments SB counter on dispatch</text>
+    <text x="16" y="190" class="desc">3. HW decrements SB counter on completion</text>
+    <text x="310" y="190" class="desc">(async notify)</text>
+    <text x="16" y="208" class="desc">4. Consumer sets WaitBarrier[121:116]</text>
+    <text x="290" y="208" class="desc">= (1 &lt;&lt; SB_ID) bitmask</text>
+    <text x="16" y="232" class="note">Consumer blocked until SB counter reaches 0 · no polling</text>
+
+    <!-- Exhaustion cliff -->
+    <rect x="0" y="254" width="490" height="90" rx="10" fill="#fffbeb" stroke="#d97706" stroke-width="0.7"/>
+    <text x="16" y="274" class="lbl" fill="#92400e">⚡ SB Exhaustion Cliff:</text>
+    <text x="16" y="294" class="desc">• N=2–5 outstanding loads: 17 cyc</text>
+    <text x="270" y="294" class="desc">(all overlap, SB available)</text>
+    <text x="16" y="312" class="desc">• N=6: 761 cyc (44.8× stall)</text>
+    <text x="240" y="312" class="desc">— 6th load has no free SB!</text>
+    <text x="16" y="330" class="desc">• L2-forced: cliff shifts to N=10–11 → 12 (SB sharing)</text>
+
+    <!-- Typical assignment -->
+    <rect x="0" y="354" width="490" height="52" rx="10" fill="#f8fafc" stroke="#64748b" stroke-width="0.6"/>
+    <text x="16" y="374" class="lbl" fill="#334155">Typical SB Assignment:</text>
+    <text x="16" y="392" class="desc">LDG → SB3–4 · LDS → SB0–1 · TMA → SB2 · cp.async → SB5</text>
+  </g>
+
+  <!-- ============ BOTTOM: Area Savings Comparison ============ -->
+  <g transform="translate(36,590)">
+    <rect x="0" y="0" width="1008" height="54" rx="10" fill="#f0f9ff" stroke="#0284c7" stroke-width="1"/>
+    <text x="20" y="22" class="sect" fill="#0369a1">Design Philosophy: Area Efficiency via Compiler Cooperation</text>
+    <text x="20" y="42" class="desc">The hybrid model trades hardware complexity for compiler intelligence</text>
+    <text x="440" y="42" class="desc">— correctness depends on ptxas, not silicon</text>
+  </g>
+
+  <!-- Area comparison boxes -->
+  <g transform="translate(36,658)">
+    <rect x="0" y="0" width="340" height="130" rx="12" fill="#f0fdf4" stroke="#16a34a" stroke-width="1"/>
+    <text x="20" y="24" class="sect" fill="#166534">SM_120 Hybrid Model</text>
+    <rect x="200" y="8" width="120" height="20" rx="10" fill="#16a34a" opacity="0.12"/>
+    <text x="260" y="22" class="badge" fill="#166534" text-anchor="middle">THIS DESIGN</text>
+    <line x1="16" y1="36" x2="324" y2="36" stroke="#16a34a" stroke-width="0.4" opacity="0.4"/>
+    <text x="20" y="62" class="big-num" fill="#166534">41 bits/warp</text>
+    <text x="20" y="82" class="desc">6×6 SB state bits = 36</text>
+    <text x="20" y="98" class="desc">4 stall bits + 1 yield bit = 5</text>
+    <text x="20" y="118" class="desc">Total: 41 bits · 48 warps → 1,968 bits/SM</text>
+  </g>
+
+  <g transform="translate(400,658)">
+    <text x="18" y="70" style="font:700 20px 'Fraunces',serif;fill:#8e97a5">vs</text>
+  </g>
+
+  <g transform="translate(460,658)">
+    <rect x="0" y="0" width="340" height="130" rx="12" fill="#fef2f2" stroke="#dc2626" stroke-width="1"/>
+    <text x="20" y="24" class="sect" fill="#991b1b">Full HW Scoreboard</text>
+    <rect x="200" y="8" width="120" height="20" rx="10" fill="#dc2626" opacity="0.12"/>
+    <text x="260" y="22" class="badge" fill="#991b1b" text-anchor="middle">ALTERNATIVE</text>
+    <line x1="16" y1="36" x2="324" y2="36" stroke="#dc2626" stroke-width="0.4" opacity="0.4"/>
+    <text x="20" y="62" class="big-num" fill="#991b1b">256+ bits/warp</text>
+    <text x="20" y="82" class="desc">Per-register dependency tracking</text>
+    <text x="20" y="98" class="desc">CAM lookup per source operand</text>
+    <text x="20" y="118" class="desc">Total: 12,288+ bits/SM (6.2× more)</text>
+  </g>
+
+  <g transform="translate(824,658)">
+    <rect x="0" y="0" width="220" height="130" rx="12" fill="#f8fafc" stroke="#64748b" stroke-width="0.8"/>
+    <text x="16" y="24" class="sect" fill="#334155">Savings</text>
+    <line x1="12" y1="36" x2="208" y2="36" stroke="#64748b" stroke-width="0.3" opacity="0.4"/>
+    <text x="16" y="62" class="big-num" fill="#0369a1">6.2×</text>
+    <text x="90" y="62" class="desc">fewer bits</text>
+    <text x="16" y="84" class="desc">~10,000 bits saved/SM</text>
+    <text x="16" y="102" class="desc">No CAM comparators</text>
+    <text x="16" y="120" class="desc">No bypass detect logic</text>
+  </g>
+</svg>

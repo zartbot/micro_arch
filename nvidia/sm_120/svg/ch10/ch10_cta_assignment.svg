@@ -1,0 +1,192 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 700" role="img"
+     aria-label="CTA Assignment Map — GPC-Aware Stride-20 Round-Robin Distribution">
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#5b6679"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1080" height="700" fill="#ffffff"/>
+
+  <!-- Title -->
+  <text x="36" y="32" style="font:600 15px 'Fraunces',serif;fill:#0b1220">CTA Assignment Map — GPC-Aware Stride-20 Round-Robin</text>
+  <text x="36" y="52" style="font:italic 11px 'Fraunces',serif;fill:#5b6679">First 40 CTAs mapped to SM IDs across 10 GPCs (110 SMs total, 2 SMs/TPC, 11 TPCs/GPC)</text>
+
+  <!-- ═══════════════ GPC HEADER ROW ═══════════════ -->
+  <text x="36" y="82" style="font:600 12px 'Fraunces',serif;fill:#5b6679">GPC:</text>
+  <!-- GPC labels across the top -->
+  <text x="148" y="82" style="font:600 11px 'JetBrains Mono',monospace;fill:#6d28d9" text-anchor="middle">GPC 0</text>
+  <text x="296" y="82" style="font:600 11px 'JetBrains Mono',monospace;fill:#1e40af" text-anchor="middle">GPC 1</text>
+  <text x="444" y="82" style="font:600 11px 'JetBrains Mono',monospace;fill:#76b900" text-anchor="middle">GPC 2</text>
+  <text x="592" y="82" style="font:600 11px 'JetBrains Mono',monospace;fill:#ea580c" text-anchor="middle">GPC 3</text>
+  <text x="740" y="82" style="font:600 11px 'JetBrains Mono',monospace;fill:#e11d48" text-anchor="middle">GPC 4</text>
+
+  <!-- ═══════════════ ROW 0: CTAs 0-9 ═══════════════ -->
+  <text x="36" y="112" style="font:600 11px 'JetBrains Mono',monospace;fill:#0b1220">Wave 0, TPC 0:</text>
+
+  <!-- GPC 0: CTA 0,1 → SM 0,1 -->
+  <rect x="88" y="96" width="120" height="44" rx="6" fill="#f5f1ff" stroke="#6d28d9" stroke-width="1"/>
+  <text x="148" y="114" style="font:500 10px 'JetBrains Mono',monospace;fill:#5b6679" text-anchor="middle">CTA 0, 1</text>
+  <text x="148" y="132" style="font:600 12px 'JetBrains Mono',monospace;fill:#6d28d9" text-anchor="middle">SM 0, 1</text>
+
+  <!-- GPC 1: CTA 2,3 → SM 20,21 -->
+  <rect x="236" y="96" width="120" height="44" rx="6" fill="#eff6ff" stroke="#1e40af" stroke-width="1"/>
+  <text x="296" y="114" style="font:500 10px 'JetBrains Mono',monospace;fill:#5b6679" text-anchor="middle">CTA 2, 3</text>
+  <text x="296" y="132" style="font:600 12px 'JetBrains Mono',monospace;fill:#1e40af" text-anchor="middle">SM 20, 21</text>
+
+  <!-- GPC 2: CTA 4,5 → SM 40,41 -->
+  <rect x="384" y="96" width="120" height="44" rx="6" fill="#f0fdf4" stroke="#76b900" stroke-width="1"/>
+  <text x="444" y="114" style="font:500 10px 'JetBrains Mono',monospace;fill:#5b6679" text-anchor="middle">CTA 4, 5</text>
+  <text x="444" y="132" style="font:600 12px 'JetBrains Mono',monospace;fill:#76b900" text-anchor="middle">SM 40, 41</text>
+
+  <!-- GPC 3: CTA 6,7 → SM 60,61 -->
+  <rect x="532" y="96" width="120" height="44" rx="6" fill="#fff7ed" stroke="#ea580c" stroke-width="1"/>
+  <text x="592" y="114" style="font:500 10px 'JetBrains Mono',monospace;fill:#5b6679" text-anchor="middle">CTA 6, 7</text>
+  <text x="592" y="132" style="font:600 12px 'JetBrains Mono',monospace;fill:#ea580c" text-anchor="middle">SM 60, 61</text>
+
+  <!-- GPC 4: CTA 8,9 → SM 80,81 -->
+  <rect x="680" y="96" width="120" height="44" rx="6" fill="#fef2f2" stroke="#e11d48" stroke-width="1"/>
+  <text x="740" y="114" style="font:500 10px 'JetBrains Mono',monospace;fill:#5b6679" text-anchor="middle">CTA 8, 9</text>
+  <text x="740" y="132" style="font:600 12px 'JetBrains Mono',monospace;fill:#e11d48" text-anchor="middle">SM 80, 81</text>
+
+  <!-- Stride annotation -->
+  <text x="860" y="122" style="font:italic 10px 'JetBrains Mono',monospace;fill:#5b6679">stride-20</text>
+  <text x="860" y="136" style="font:italic 10px 'JetBrains Mono',monospace;fill:#5b6679">between GPCs</text>
+
+  <!-- ═══════════════ ROW 1: CTAs 10-19 ═══════════════ -->
+  <text x="36" y="172" style="font:600 11px 'JetBrains Mono',monospace;fill:#0b1220">Wave 0, TPC 1:</text>
+
+  <!-- GPC 0: CTA 10,11 → SM 2,3 -->
+  <rect x="88" y="156" width="120" height="44" rx="6" fill="#f5f1ff" stroke="#6d28d9" stroke-width="1"/>
+  <text x="148" y="174" style="font:500 10px 'JetBrains Mono',monospace;fill:#5b6679" text-anchor="middle">CTA 10, 11</text>
+  <text x="148" y="192" style="font:600 12px 'JetBrains Mono',monospace;fill:#6d28d9" text-anchor="middle">SM 2, 3</text>
+
+  <!-- GPC 1: CTA 12,13 → SM 22,23 -->
+  <rect x="236" y="156" width="120" height="44" rx="6" fill="#eff6ff" stroke="#1e40af" stroke-width="1"/>
+  <text x="296" y="174" style="font:500 10px 'JetBrains Mono',monospace;fill:#5b6679" text-anchor="middle">CTA 12, 13</text>
+  <text x="296" y="192" style="font:600 12px 'JetBrains Mono',monospace;fill:#1e40af" text-anchor="middle">SM 22, 23</text>
+
+  <!-- GPC 2: CTA 14,15 → SM 42,43 -->
+  <rect x="384" y="156" width="120" height="44" rx="6" fill="#f0fdf4" stroke="#76b900" stroke-width="1"/>
+  <text x="444" y="174" style="font:500 10px 'JetBrains Mono',monospace;fill:#5b6679" text-anchor="middle">CTA 14, 15</text>
+  <text x="444" y="192" style="font:600 12px 'JetBrains Mono',monospace;fill:#76b900" text-anchor="middle">SM 42, 43</text>
+
+  <!-- GPC 3: CTA 16,17 → SM 62,63 -->
+  <rect x="532" y="156" width="120" height="44" rx="6" fill="#fff7ed" stroke="#ea580c" stroke-width="1"/>
+  <text x="592" y="174" style="font:500 10px 'JetBrains Mono',monospace;fill:#5b6679" text-anchor="middle">CTA 16, 17</text>
+  <text x="592" y="192" style="font:600 12px 'JetBrains Mono',monospace;fill:#ea580c" text-anchor="middle">SM 62, 63</text>
+
+  <!-- GPC 4: CTA 18,19 → SM 82,83 -->
+  <rect x="680" y="156" width="120" height="44" rx="6" fill="#fef2f2" stroke="#e11d48" stroke-width="1"/>
+  <text x="740" y="174" style="font:500 10px 'JetBrains Mono',monospace;fill:#5b6679" text-anchor="middle">CTA 18, 19</text>
+  <text x="740" y="192" style="font:600 12px 'JetBrains Mono',monospace;fill:#e11d48" text-anchor="middle">SM 82, 83</text>
+
+  <!-- ═══════════════ ROW 2: CTAs 20-29 ═══════════════ -->
+  <text x="36" y="232" style="font:600 11px 'JetBrains Mono',monospace;fill:#0b1220">Wave 0, TPC 2:</text>
+
+  <rect x="88" y="216" width="120" height="44" rx="6" fill="#f5f1ff" stroke="#6d28d9" stroke-width="1"/>
+  <text x="148" y="234" style="font:500 10px 'JetBrains Mono',monospace;fill:#5b6679" text-anchor="middle">CTA 20, 21</text>
+  <text x="148" y="252" style="font:600 12px 'JetBrains Mono',monospace;fill:#6d28d9" text-anchor="middle">SM 4, 5</text>
+
+  <rect x="236" y="216" width="120" height="44" rx="6" fill="#eff6ff" stroke="#1e40af" stroke-width="1"/>
+  <text x="296" y="234" style="font:500 10px 'JetBrains Mono',monospace;fill:#5b6679" text-anchor="middle">CTA 22, 23</text>
+  <text x="296" y="252" style="font:600 12px 'JetBrains Mono',monospace;fill:#1e40af" text-anchor="middle">SM 24, 25</text>
+
+  <rect x="384" y="216" width="120" height="44" rx="6" fill="#f0fdf4" stroke="#76b900" stroke-width="1"/>
+  <text x="444" y="234" style="font:500 10px 'JetBrains Mono',monospace;fill:#5b6679" text-anchor="middle">CTA 24, 25</text>
+  <text x="444" y="252" style="font:600 12px 'JetBrains Mono',monospace;fill:#76b900" text-anchor="middle">SM 44, 45</text>
+
+  <rect x="532" y="216" width="120" height="44" rx="6" fill="#fff7ed" stroke="#ea580c" stroke-width="1"/>
+  <text x="592" y="234" style="font:500 10px 'JetBrains Mono',monospace;fill:#5b6679" text-anchor="middle">CTA 26, 27</text>
+  <text x="592" y="252" style="font:600 12px 'JetBrains Mono',monospace;fill:#ea580c" text-anchor="middle">SM 64, 65</text>
+
+  <rect x="680" y="216" width="120" height="44" rx="6" fill="#fef2f2" stroke="#e11d48" stroke-width="1"/>
+  <text x="740" y="234" style="font:500 10px 'JetBrains Mono',monospace;fill:#5b6679" text-anchor="middle">CTA 28, 29</text>
+  <text x="740" y="252" style="font:600 12px 'JetBrains Mono',monospace;fill:#e11d48" text-anchor="middle">SM 84, 85</text>
+
+  <!-- ═══════════════ ROW 3: CTAs 30-39 ═══════════════ -->
+  <text x="36" y="292" style="font:600 11px 'JetBrains Mono',monospace;fill:#0b1220">Wave 0, TPC 3:</text>
+
+  <rect x="88" y="276" width="120" height="44" rx="6" fill="#f5f1ff" stroke="#6d28d9" stroke-width="1"/>
+  <text x="148" y="294" style="font:500 10px 'JetBrains Mono',monospace;fill:#5b6679" text-anchor="middle">CTA 30, 31</text>
+  <text x="148" y="312" style="font:600 12px 'JetBrains Mono',monospace;fill:#6d28d9" text-anchor="middle">SM 6, 7</text>
+
+  <rect x="236" y="276" width="120" height="44" rx="6" fill="#eff6ff" stroke="#1e40af" stroke-width="1"/>
+  <text x="296" y="294" style="font:500 10px 'JetBrains Mono',monospace;fill:#5b6679" text-anchor="middle">CTA 32, 33</text>
+  <text x="296" y="312" style="font:600 12px 'JetBrains Mono',monospace;fill:#1e40af" text-anchor="middle">SM 26, 27</text>
+
+  <rect x="384" y="276" width="120" height="44" rx="6" fill="#f0fdf4" stroke="#76b900" stroke-width="1"/>
+  <text x="444" y="294" style="font:500 10px 'JetBrains Mono',monospace;fill:#5b6679" text-anchor="middle">CTA 34, 35</text>
+  <text x="444" y="312" style="font:600 12px 'JetBrains Mono',monospace;fill:#76b900" text-anchor="middle">SM 46, 47</text>
+
+  <rect x="532" y="276" width="120" height="44" rx="6" fill="#fff7ed" stroke="#ea580c" stroke-width="1"/>
+  <text x="592" y="294" style="font:500 10px 'JetBrains Mono',monospace;fill:#5b6679" text-anchor="middle">CTA 36, 37</text>
+  <text x="592" y="312" style="font:600 12px 'JetBrains Mono',monospace;fill:#ea580c" text-anchor="middle">SM 66, 67</text>
+
+  <rect x="680" y="276" width="120" height="44" rx="6" fill="#fef2f2" stroke="#e11d48" stroke-width="1"/>
+  <text x="740" y="294" style="font:500 10px 'JetBrains Mono',monospace;fill:#5b6679" text-anchor="middle">CTA 38, 39</text>
+  <text x="740" y="312" style="font:600 12px 'JetBrains Mono',monospace;fill:#e11d48" text-anchor="middle">SM 86, 87</text>
+
+  <!-- NOTE: GPCs 5-9 are symmetric (shown as ellipsis) -->
+  <text x="880" y="200" style="font:italic 11px 'Fraunces',serif;fill:#5b6679">GPCs 5-9</text>
+  <text x="880" y="216" style="font:italic 11px 'Fraunces',serif;fill:#5b6679">symmetric</text>
+  <text x="880" y="232" style="font:italic 11px 'Fraunces',serif;fill:#5b6679">(omitted)</text>
+
+  <!-- ═══════════════ PATTERN RULES ═══════════════ -->
+  <line x1="40" y1="340" x2="1040" y2="340" stroke="#e6e4da" stroke-width="1"/>
+  <text x="540" y="368" style="font:600 13px 'Fraunces',serif;fill:#0b1220" text-anchor="middle">Assignment Pattern Rules</text>
+
+  <!-- Rule 1: Stride-2 within TPC -->
+  <rect x="40" y="384" width="310" height="72" rx="8" fill="#f5f1ff" stroke="#6d28d9" stroke-width="1"/>
+  <text x="195" y="406" style="font:600 11px 'JetBrains Mono',monospace;fill:#6d28d9" text-anchor="middle">Stride-2 within TPC</text>
+  <text x="195" y="426" style="font:500 10px 'JetBrains Mono',monospace;fill:#0b1220" text-anchor="middle">Consecutive CTAs (2k, 2k+1)</text>
+  <text x="195" y="444" style="font:500 10px 'JetBrains Mono',monospace;fill:#0b1220" text-anchor="middle">always land on same TPC pair</text>
+
+  <!-- Rule 2: Stride-20 between GPCs -->
+  <rect x="380" y="384" width="310" height="72" rx="8" fill="#eff6ff" stroke="#1e40af" stroke-width="1"/>
+  <text x="535" y="406" style="font:600 11px 'JetBrains Mono',monospace;fill:#1e40af" text-anchor="middle">Stride-20 between GPCs</text>
+  <text x="535" y="426" style="font:500 10px 'JetBrains Mono',monospace;fill:#0b1220" text-anchor="middle">SM IDs jump by 20 across GPCs</text>
+  <text x="535" y="444" style="font:500 10px 'JetBrains Mono',monospace;fill:#0b1220" text-anchor="middle">(0,20,40,60,80 = GPC 0-4 base)</text>
+
+  <!-- Rule 3: Perfect balance -->
+  <rect x="720" y="384" width="310" height="72" rx="8" fill="#f0fdf4" stroke="#76b900" stroke-width="1"/>
+  <text x="875" y="406" style="font:600 11px 'JetBrains Mono',monospace;fill:#76b900" text-anchor="middle">Perfect Load Balance</text>
+  <text x="875" y="426" style="font:500 10px 'JetBrains Mono',monospace;fill:#0b1220" text-anchor="middle">min CTAs/SM = max CTAs/SM</text>
+  <text x="875" y="444" style="font:500 10px 'JetBrains Mono',monospace;fill:#0b1220" text-anchor="middle">at all grid sizes (110-1100)</text>
+
+  <!-- ═══════════════ CLUSTER-2 GUARANTEE DIAGRAM ═══════════════ -->
+  <line x1="40" y1="476" x2="1040" y2="476" stroke="#e6e4da" stroke-width="1"/>
+  <text x="540" y="504" style="font:600 13px 'Fraunces',serif;fill:#0b1220" text-anchor="middle">Cluster-2 Placement Guarantee</text>
+
+  <!-- Show CTA pair landing on same TPC -->
+  <rect x="100" y="520" width="380" height="100" rx="8" fill="#fcfbf6" stroke="#e6e4da" stroke-width="1"/>
+  <text x="290" y="542" style="font:600 12px 'Fraunces',serif;fill:#5b6679" text-anchor="middle">TPC 0 within GPC 0</text>
+  <!-- SM 0 -->
+  <rect x="130" y="554" width="140" height="48" rx="6" fill="#f5f1ff" stroke="#6d28d9" stroke-width="1.2"/>
+  <text x="200" y="574" style="font:600 11px 'JetBrains Mono',monospace;fill:#6d28d9" text-anchor="middle">SM 0</text>
+  <text x="200" y="592" style="font:500 10px 'JetBrains Mono',monospace;fill:#0b1220" text-anchor="middle">CTA 0</text>
+  <!-- SM 1 -->
+  <rect x="310" y="554" width="140" height="48" rx="6" fill="#f5f1ff" stroke="#6d28d9" stroke-width="1.2"/>
+  <text x="380" y="574" style="font:600 11px 'JetBrains Mono',monospace;fill:#6d28d9" text-anchor="middle">SM 1</text>
+  <text x="380" y="592" style="font:500 10px 'JetBrains Mono',monospace;fill:#0b1220" text-anchor="middle">CTA 1</text>
+  <!-- Cluster bracket -->
+  <path d="M130,608 L130,616 L450,616 L450,608" stroke="#6d28d9" stroke-width="1.5" fill="none"/>
+  <text x="290" y="634" style="font:600 11px 'JetBrains Mono',monospace;fill:#6d28d9" text-anchor="middle">cluster-2: intra-TPC guaranteed</text>
+
+  <!-- Arrow showing equivalence -->
+  <path d="M510,570 L560,570" stroke="#5b6679" stroke-width="1.5" fill="none" marker-end="url(#arrow)"/>
+  <text x="535" y="562" style="font:italic 10px 'Fraunces',serif;fill:#5b6679" text-anchor="middle">implies</text>
+
+  <!-- Zero overhead box -->
+  <rect x="590" y="520" width="380" height="100" rx="8" fill="#f0fdf4" stroke="#76b900" stroke-width="1.2"/>
+  <text x="780" y="548" style="font:600 12px 'Fraunces',serif;fill:#76b900" text-anchor="middle">Zero Cluster Launch Overhead</text>
+  <text x="780" y="572" style="font:500 11px 'JetBrains Mono',monospace;fill:#0b1220" text-anchor="middle">No additional hardware negotiation</text>
+  <text x="780" y="592" style="font:500 11px 'JetBrains Mono',monospace;fill:#0b1220" text-anchor="middle">Scheduler default = cluster constraint</text>
+  <text x="780" y="612" style="font:600 11px 'JetBrains Mono',monospace;fill:#76b900" text-anchor="middle">1.54 us (same as non-cluster)</text>
+
+  <!-- ═══════════════ BOTTOM SUMMARY ═══════════════ -->
+  <rect x="40" y="650" width="1000" height="36" rx="6" fill="#fcfbf6" stroke="#e6e4da" stroke-width="1"/>
+  <text x="540" y="673" style="font:600 11px 'JetBrains Mono',monospace;fill:#0b1220" text-anchor="middle">SM_i = CTA_id % 110 (after GPC reordering) | Multi-block stride = 110 | 10 GPCs x 11 TPCs x 2 SMs = 220 SMSP = 110 SM</text>
+</svg>

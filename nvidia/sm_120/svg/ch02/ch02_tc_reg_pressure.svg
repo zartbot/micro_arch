@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 440" role="img"
+     aria-label="SM_120 TensorCore Register Pressure — Little's Law showing pipeline saturation zones and spill cliff">
+  <defs>
+    <linearGradient id="zoneOk" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#D1FAE5"/><stop offset="1" stop-color="#ECFDF5"/>
+    </linearGradient>
+    <linearGradient id="zoneWarn" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#FEF3C7"/><stop offset="1" stop-color="#FFFBEB"/>
+    </linearGradient>
+    <linearGradient id="zoneDanger" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#FEE2E2"/><stop offset="1" stop-color="#FEF2F2"/>
+    </linearGradient>
+    <style><![CDATA[
+      .ttl{font:600 15px "Fraunces",serif;fill:#0b1220}
+      .sub{font:italic 11px "Fraunces",serif;fill:#5b6679}
+      .lbl{font:600 11px "JetBrains Mono",monospace;fill:#2a3548}
+      .lbl-sm{font:500 10px "JetBrains Mono",monospace;fill:#5b6679}
+      .num{font:700 13px "JetBrains Mono",monospace}
+      .num-lg{font:700 18px "JetBrains Mono",monospace}
+      .sect{font:600 12px "Fraunces",serif;fill:#374151}
+      .zone-lbl{font:700 11px "JetBrains Mono",monospace}
+      .badge-txt{font:700 10px "JetBrains Mono",monospace;fill:#fff}
+      .insight{font:600 10.5px "IBM Plex Sans",sans-serif;fill:#9f1239}
+    ]]></style>
+  </defs>
+  <rect width="1080" height="440" fill="#ffffff"/>
+
+  <!-- Title -->
+  <text x="36" y="28" class="ttl">Register Pressure vs TensorCore Throughput — Little's Law Saturation Zones</text>
+  <text x="36" y="46" class="sub">MMA pipeline depth = 1.83; only 2 chains needed for 97% peak; spill onset at 62 chains (252 regs)</text>
+
+  <!-- ═══════════ HORIZONTAL BAR CHART: Register usage zones ═══════════ -->
+  <text x="36" y="78" class="sect">REGISTER FILE BUDGET (255 regs/thread max)</text>
+
+  <!-- Zone 1: Starved (1 chain, 20 regs) -->
+  <g transform="translate(36,90)">
+    <rect width="80" height="50" rx="6" fill="url(#zoneDanger)" stroke="#DC2626" stroke-width="1.2"/>
+    <text x="40" y="18" class="zone-lbl" fill="#DC2626" text-anchor="middle">STARVED</text>
+    <text x="40" y="34" class="num" fill="#DC2626" text-anchor="middle">1 chain</text>
+    <text x="40" y="46" class="lbl-sm" text-anchor="middle">20 regs</text>
+  </g>
+
+  <!-- Zone 2: Near-saturated (2 chains, 24 regs) -->
+  <g transform="translate(120,90)">
+    <rect width="80" height="50" rx="6" fill="url(#zoneWarn)" stroke="#D97706" stroke-width="1.2"/>
+    <text x="40" y="18" class="zone-lbl" fill="#92400E" text-anchor="middle">97%</text>
+    <text x="40" y="34" class="num" fill="#92400E" text-anchor="middle">2 chains</text>
+    <text x="40" y="46" class="lbl-sm" text-anchor="middle">24 regs</text>
+  </g>
+
+  <!-- Zone 3: Saturated (4-60 chains) — the big green zone -->
+  <g transform="translate(204,90)">
+    <rect width="560" height="50" rx="6" fill="url(#zoneOk)" stroke="#059669" stroke-width="1.5"/>
+    <text x="280" y="18" class="zone-lbl" fill="#065F46" text-anchor="middle">100% PEAK — FULL SATURATION (4–60 chains)</text>
+    <text x="280" y="34" class="num-lg" fill="#065F46" text-anchor="middle">15.88 cyc/mma</text>
+    <text x="280" y="46" class="lbl-sm" text-anchor="middle">32–252 regs (safe zone for production GEMM)</text>
+  </g>
+
+  <!-- Zone 4: Spill onset (62 chains) -->
+  <g transform="translate(768,90)">
+    <rect width="130" height="50" rx="6" fill="url(#zoneWarn)" stroke="#D97706" stroke-width="1.2"/>
+    <text x="65" y="18" class="zone-lbl" fill="#92400E" text-anchor="middle">SPILL +12%</text>
+    <text x="65" y="34" class="num" fill="#92400E" text-anchor="middle">62 chains</text>
+    <text x="65" y="46" class="lbl-sm" text-anchor="middle">255 regs + 4KB</text>
+  </g>
+
+  <!-- Zone 5: Heavy spill (64 chains) -->
+  <g transform="translate(902,90)">
+    <rect width="130" height="50" rx="6" fill="url(#zoneDanger)" stroke="#DC2626" stroke-width="1.2"/>
+    <text x="65" y="18" class="zone-lbl" fill="#DC2626" text-anchor="middle">SPILL +19%</text>
+    <text x="65" y="34" class="num" fill="#DC2626" text-anchor="middle">64 chains</text>
+    <text x="65" y="46" class="lbl-sm" text-anchor="middle">255 regs + 9KB</text>
+  </g>
+
+  <!-- Throughput degradation annotations -->
+  <text x="76" y="156" class="num" fill="#DC2626" text-anchor="middle">27.25</text>
+  <text x="76" y="170" class="lbl-sm" text-anchor="middle">+70.5%</text>
+  <text x="160" y="156" class="num" fill="#92400E" text-anchor="middle">16.47</text>
+  <text x="160" y="170" class="lbl-sm" text-anchor="middle">+3.1%</text>
+  <text x="484" y="156" class="num" fill="#065F46" text-anchor="middle">15.88 cyc/mma</text>
+  <text x="484" y="170" class="lbl-sm" text-anchor="middle">0% degradation</text>
+  <text x="833" y="156" class="num" fill="#92400E" text-anchor="middle">17.87</text>
+  <text x="967" y="156" class="num" fill="#DC2626" text-anchor="middle">18.93</text>
+
+  <!-- ═══════════ BOTTOM: Production kernel mapping ═══════════ -->
+  <text x="36" y="206" class="sect">PRODUCTION KERNEL REGISTER BUDGETS (all within safe zone)</text>
+
+  <!-- CUTLASS m64n64 -->
+  <g transform="translate(36,220)">
+    <rect width="300" height="60" rx="8" fill="#F0FDF4" stroke="#059669" stroke-width="1"/>
+    <text x="15" y="18" class="lbl" fill="#065F46">CUTLASS m64n64</text>
+    <text x="15" y="36" class="lbl-sm">32 accum tiles × 4 regs = 128 regs</text>
+    <text x="15" y="50" class="lbl-sm">→ well within 252 reg safe zone ✓</text>
+  </g>
+
+  <!-- DeepGeMM m64n64 -->
+  <g transform="translate(356,220)">
+    <rect width="300" height="60" rx="8" fill="#F0FDF4" stroke="#059669" stroke-width="1"/>
+    <text x="15" y="18" class="lbl" fill="#065F46">DeepGeMM m64n64</text>
+    <text x="15" y="36" class="lbl-sm">32 tiles + 32 staging = 160 regs total</text>
+    <text x="15" y="50" class="lbl-sm">→ well within 252 reg safe zone ✓</text>
+  </g>
+
+  <!-- Occupancy note -->
+  <g transform="translate(676,220)">
+    <rect width="360" height="60" rx="8" fill="#FFFBEB" stroke="#D97706" stroke-width="1"/>
+    <text x="15" y="18" class="lbl" fill="#92400E">Occupancy Trade-off</text>
+    <text x="15" y="36" class="lbl-sm">252 regs → 1 warp/SMSP (255 max)</text>
+    <text x="15" y="50" class="lbl-sm">128 regs → 2 warps/SMSP (2× TC utilization)</text>
+  </g>
+
+  <!-- ═══════════ BANDWIDTH SUPPLY vs DEMAND ═══════════ -->
+  <text x="36" y="310" class="sect">BANDWIDTH SUPPLY vs TENSORCORE DEMAND (per warp, m16n8k16 FP16)</text>
+
+  <!-- Supply/demand bars -->
+  <g transform="translate(36,325)">
+    <!-- RF→TC -->
+    <text x="0" y="14" class="lbl-sm">RF → TC</text>
+    <rect x="100" y="4" width="320" height="16" rx="3" fill="#059669" opacity="0.3"/>
+    <rect x="100" y="4" width="228" height="16" rx="3" fill="#059669"/>
+    <text x="340" y="16" class="lbl-sm">demand 80.3 B/cyc</text>
+    <text x="460" y="16" class="lbl-sm" fill="#059669">supply 112.4 B/cyc (1.40× headroom)</text>
+
+    <!-- Smem→RF -->
+    <text x="0" y="40" class="lbl-sm">Smem → RF</text>
+    <rect x="100" y="30" width="216" height="16" rx="3" fill="#2563EB" opacity="0.3"/>
+    <rect x="100" y="30" width="138" height="16" rx="3" fill="#2563EB"/>
+    <text x="250" y="42" class="lbl-sm">demand 48.5 B/cyc</text>
+    <text x="460" y="42" class="lbl-sm" fill="#2563EB">supply 76.2 B/cyc (1.57× headroom)</text>
+
+    <!-- SM aggregate -->
+    <text x="0" y="66" class="lbl-sm">SM agg.</text>
+    <rect x="100" y="56" width="182" height="16" rx="3" fill="#DC2626" opacity="0.3"/>
+    <rect x="100" y="56" width="182" height="16" rx="3" fill="#DC2626"/>
+    <text x="290" y="68" class="lbl-sm">demand ≈ supply = 64 B/cyc</text>
+    <text x="460" y="68" class="insight">← SM-LEVEL BOTTLENECK (8W saturated)</text>
+  </g>
+
+  <!-- Key insight -->
+  <g transform="translate(36,408)">
+    <rect width="1008" height="24" rx="5" fill="#F0FDF4" stroke="#059669" stroke-width="0.8"/>
+    <text x="20" y="16" class="insight">RULE: Single-warp ldmatrix is FREE (1.57× headroom). SM bottleneck is aggregate smem port BW (64 B/cyc) — solve with double-buffering.</text>
+  </g>
+</svg>

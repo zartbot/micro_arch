@@ -1,0 +1,219 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 640" role="img" aria-label="SM_120 Pipeline Depth Summary — Complete Execution Unit Characterization with Co-Issue Matrix">
+  <defs>
+    <marker id="arr" markerWidth="7" markerHeight="5" refX="7" refY="2.5" orient="auto">
+      <path d="M0,0 L7,2.5 L0,5 Z" fill="#475569"/>
+    </marker>
+  </defs>
+
+  <rect width="1080" height="640" fill="#fafbfc"/>
+
+  <!-- Title -->
+  <text x="540" y="28" text-anchor="middle" style="font:700 15px 'Inter','Segoe UI',sans-serif;fill:#0f172a">SM_120 Pipeline Depth Summary Model</text>
+  <text x="540" y="48" text-anchor="middle" style="font:italic 11px 'Inter','Segoe UI',sans-serif;fill:#64748b">Pipeline depth = ceil(latency / issue_interval) — determines useful ILP chains per pipe</text>
+
+  <!-- ═══════ Main Table: Pipeline Properties ═══════ -->
+  <g transform="translate(30,62)">
+    <rect x="0" y="0" width="1020" height="280" rx="8" fill="#f8fafc" stroke="#94a3b8" stroke-width="0.8"/>
+    <text x="510" y="22" text-anchor="middle" style="font:700 12px 'Inter',sans-serif;fill:#1e293b">Execution Pipeline Internal Structure (per SMSP)</text>
+
+    <!-- Table header -->
+    <g transform="translate(10,36)">
+      <rect x="0" y="0" width="1000" height="18" rx="3" fill="#1e293b"/>
+      <text x="60" y="13" text-anchor="middle" style="font:700 8.5px 'JetBrains Mono',monospace;fill:#f1f5f9">Pipe</text>
+      <text x="170" y="13" text-anchor="middle" style="font:700 8.5px 'JetBrains Mono',monospace;fill:#f1f5f9">Stages</text>
+      <text x="260" y="13" text-anchor="middle" style="font:700 8.5px 'JetBrains Mono',monospace;fill:#f1f5f9">Latency</text>
+      <text x="360" y="13" text-anchor="middle" style="font:700 8.5px 'JetBrains Mono',monospace;fill:#f1f5f9">Throughput</text>
+      <text x="470" y="13" text-anchor="middle" style="font:700 8.5px 'JetBrains Mono',monospace;fill:#f1f5f9">ILP_sat</text>
+      <text x="570" y="13" text-anchor="middle" style="font:700 8.5px 'JetBrains Mono',monospace;fill:#f1f5f9">Pipelined?</text>
+      <text x="680" y="13" text-anchor="middle" style="font:700 8.5px 'JetBrains Mono',monospace;fill:#f1f5f9">EUs/SM</text>
+      <text x="850" y="13" text-anchor="middle" style="font:700 8.5px 'JetBrains Mono',monospace;fill:#f1f5f9">Notes</text>
+    </g>
+
+    <!-- Row data -->
+    <g transform="translate(10,58)">
+      <!-- INT (IADD3) -->
+      <rect x="0" y="0" width="1000" height="20" rx="2" fill="#f0fdf4" opacity="0.5"/>
+      <text x="60" y="14" text-anchor="middle" style="font:600 8.5px 'JetBrains Mono',monospace;fill:#166534">INT (IADD3)</text>
+      <text x="170" y="14" text-anchor="middle" style="font:500 8.5px 'JetBrains Mono',monospace;fill:#374151">2</text>
+      <text x="260" y="14" text-anchor="middle" style="font:500 8.5px 'JetBrains Mono',monospace;fill:#374151">2 cyc</text>
+      <text x="360" y="14" text-anchor="middle" style="font:500 8.5px 'JetBrains Mono',monospace;fill:#374151">1/cyc</text>
+      <text x="470" y="14" text-anchor="middle" style="font:700 8.5px 'JetBrains Mono',monospace;fill:#166534">2</text>
+      <text x="570" y="14" text-anchor="middle" style="font:500 8.5px 'JetBrains Mono',monospace;fill:#374151">Yes</text>
+      <text x="680" y="14" text-anchor="middle" style="font:500 8.5px 'JetBrains Mono',monospace;fill:#374151">4</text>
+      <text x="850" y="14" text-anchor="middle" style="font:400 8px 'Inter',sans-serif;fill:#6b7280">Shallowest pipe</text>
+
+      <!-- FMA (FFMA) -->
+      <rect x="0" y="22" width="1000" height="20" rx="2" fill="#dbeafe" opacity="0.3"/>
+      <text x="60" y="36" text-anchor="middle" style="font:600 8.5px 'JetBrains Mono',monospace;fill:#1e40af">FMA (FFMA)</text>
+      <text x="170" y="36" text-anchor="middle" style="font:500 8.5px 'JetBrains Mono',monospace;fill:#374151">4</text>
+      <text x="260" y="36" text-anchor="middle" style="font:500 8.5px 'JetBrains Mono',monospace;fill:#374151">4 cyc</text>
+      <text x="360" y="36" text-anchor="middle" style="font:500 8.5px 'JetBrains Mono',monospace;fill:#374151">1/cyc</text>
+      <text x="470" y="36" text-anchor="middle" style="font:700 8.5px 'JetBrains Mono',monospace;fill:#1e40af">4</text>
+      <text x="570" y="36" text-anchor="middle" style="font:500 8.5px 'JetBrains Mono',monospace;fill:#374151">Yes</text>
+      <text x="680" y="36" text-anchor="middle" style="font:500 8.5px 'JetBrains Mono',monospace;fill:#374151">4</text>
+      <text x="850" y="36" text-anchor="middle" style="font:400 8px 'Inter',sans-serif;fill:#6b7280">Full-rate FP32</text>
+
+      <!-- FMA (IMAD) -->
+      <rect x="0" y="44" width="1000" height="20" rx="2" fill="#fef9c3" opacity="0.3"/>
+      <text x="60" y="58" text-anchor="middle" style="font:600 8.5px 'JetBrains Mono',monospace;fill:#854d0e">FMA (IMAD)</text>
+      <text x="170" y="58" text-anchor="middle" style="font:500 8.5px 'JetBrains Mono',monospace;fill:#374151">4</text>
+      <text x="260" y="58" text-anchor="middle" style="font:500 8.5px 'JetBrains Mono',monospace;fill:#374151">4 cyc</text>
+      <text x="360" y="58" text-anchor="middle" style="font:500 8.5px 'JetBrains Mono',monospace;fill:#374151">0.5/cyc</text>
+      <text x="470" y="58" text-anchor="middle" style="font:700 8.5px 'JetBrains Mono',monospace;fill:#854d0e">2*</text>
+      <text x="570" y="58" text-anchor="middle" style="font:500 8.5px 'JetBrains Mono',monospace;fill:#374151">Yes</text>
+      <text x="680" y="58" text-anchor="middle" style="font:500 8.5px 'JetBrains Mono',monospace;fill:#374151">4</text>
+      <text x="850" y="58" text-anchor="middle" style="font:400 8px 'Inter',sans-serif;fill:#6b7280">Half-rate (2 cyc issue)</text>
+
+      <!-- HFMA2 -->
+      <rect x="0" y="66" width="1000" height="20" rx="2" fill="#fef9c3" opacity="0.3"/>
+      <text x="60" y="80" text-anchor="middle" style="font:600 8.5px 'JetBrains Mono',monospace;fill:#854d0e">FMA (HFMA2)</text>
+      <text x="170" y="80" text-anchor="middle" style="font:500 8.5px 'JetBrains Mono',monospace;fill:#374151">4</text>
+      <text x="260" y="80" text-anchor="middle" style="font:500 8.5px 'JetBrains Mono',monospace;fill:#374151">4 cyc</text>
+      <text x="360" y="80" text-anchor="middle" style="font:500 8.5px 'JetBrains Mono',monospace;fill:#374151">0.5/cyc</text>
+      <text x="470" y="80" text-anchor="middle" style="font:700 8.5px 'JetBrains Mono',monospace;fill:#854d0e">2**</text>
+      <text x="570" y="80" text-anchor="middle" style="font:500 8.5px 'JetBrains Mono',monospace;fill:#374151">Yes</text>
+      <text x="680" y="80" text-anchor="middle" style="font:500 8.5px 'JetBrains Mono',monospace;fill:#374151">4</text>
+      <text x="850" y="80" text-anchor="middle" style="font:400 8px 'Inter',sans-serif;fill:#6b7280">TDM (2-cyc issue)</text>
+
+      <!-- IDP.4A -->
+      <rect x="0" y="88" width="1000" height="20" rx="2" fill="#dbeafe" opacity="0.3"/>
+      <text x="60" y="102" text-anchor="middle" style="font:600 8.5px 'JetBrains Mono',monospace;fill:#1e40af">IDP.4A</text>
+      <text x="170" y="102" text-anchor="middle" style="font:500 8.5px 'JetBrains Mono',monospace;fill:#374151">4</text>
+      <text x="260" y="102" text-anchor="middle" style="font:500 8.5px 'JetBrains Mono',monospace;fill:#374151">4 cyc</text>
+      <text x="360" y="102" text-anchor="middle" style="font:500 8.5px 'JetBrains Mono',monospace;fill:#374151">0.5/cyc</text>
+      <text x="470" y="102" text-anchor="middle" style="font:700 8.5px 'JetBrains Mono',monospace;fill:#1e40af">2</text>
+      <text x="570" y="102" text-anchor="middle" style="font:500 8.5px 'JetBrains Mono',monospace;fill:#374151">Yes</text>
+      <text x="680" y="102" text-anchor="middle" style="font:500 8.5px 'JetBrains Mono',monospace;fill:#374151">4</text>
+      <text x="850" y="102" text-anchor="middle" style="font:400 8px 'Inter',sans-serif;fill:#6b7280">Half-rate dot product</text>
+
+      <!-- SFU bare -->
+      <rect x="0" y="110" width="1000" height="20" rx="2" fill="#fef3c7" opacity="0.3"/>
+      <text x="60" y="124" text-anchor="middle" style="font:600 8.5px 'JetBrains Mono',monospace;fill:#92400e">SFU (bare)</text>
+      <text x="170" y="124" text-anchor="middle" style="font:500 8.5px 'JetBrains Mono',monospace;fill:#374151">~6</text>
+      <text x="260" y="124" text-anchor="middle" style="font:500 8.5px 'JetBrains Mono',monospace;fill:#374151">18 cyc</text>
+      <text x="360" y="124" text-anchor="middle" style="font:500 8.5px 'JetBrains Mono',monospace;fill:#374151">~0.11/cyc</text>
+      <text x="470" y="124" text-anchor="middle" style="font:700 8.5px 'JetBrains Mono',monospace;fill:#92400e">6</text>
+      <text x="570" y="124" text-anchor="middle" style="font:500 8.5px 'JetBrains Mono',monospace;fill:#374151">Partial</text>
+      <text x="680" y="124" text-anchor="middle" style="font:500 8.5px 'JetBrains Mono',monospace;fill:#374151">4</text>
+      <text x="850" y="124" text-anchor="middle" style="font:400 8px 'Inter',sans-serif;fill:#6b7280">XU pipe only</text>
+
+      <!-- SFU PTX -->
+      <rect x="0" y="132" width="1000" height="20" rx="2" fill="#fef3c7" opacity="0.3"/>
+      <text x="60" y="146" text-anchor="middle" style="font:600 8.5px 'JetBrains Mono',monospace;fill:#92400e">SFU (PTX rcp)</text>
+      <text x="170" y="146" text-anchor="middle" style="font:500 8.5px 'JetBrains Mono',monospace;fill:#374151">~5</text>
+      <text x="260" y="146" text-anchor="middle" style="font:500 8.5px 'JetBrains Mono',monospace;fill:#374151">47 cyc</text>
+      <text x="360" y="146" text-anchor="middle" style="font:500 8.5px 'JetBrains Mono',monospace;fill:#374151">~0.11/cyc</text>
+      <text x="470" y="146" text-anchor="middle" style="font:700 8.5px 'JetBrains Mono',monospace;fill:#92400e">5</text>
+      <text x="570" y="146" text-anchor="middle" style="font:500 8.5px 'JetBrains Mono',monospace;fill:#374151">Composite</text>
+      <text x="680" y="146" text-anchor="middle" style="font:500 8.5px 'JetBrains Mono',monospace;fill:#374151">4</text>
+      <text x="850" y="146" text-anchor="middle" style="font:400 8px 'Inter',sans-serif;fill:#6b7280">XU + P0 wrapper</text>
+
+      <!-- CVT -->
+      <rect x="0" y="154" width="1000" height="20" rx="2" fill="#dbeafe" opacity="0.2"/>
+      <text x="60" y="168" text-anchor="middle" style="font:600 8.5px 'JetBrains Mono',monospace;fill:#1e40af">CVT</text>
+      <text x="170" y="168" text-anchor="middle" style="font:500 8.5px 'JetBrains Mono',monospace;fill:#374151">var</text>
+      <text x="260" y="168" text-anchor="middle" style="font:500 8.5px 'JetBrains Mono',monospace;fill:#374151">7-19 cyc</text>
+      <text x="360" y="168" text-anchor="middle" style="font:500 8.5px 'JetBrains Mono',monospace;fill:#374151">varies</text>
+      <text x="470" y="168" text-anchor="middle" style="font:700 8.5px 'JetBrains Mono',monospace;fill:#1e40af">--</text>
+      <text x="570" y="168" text-anchor="middle" style="font:500 8.5px 'JetBrains Mono',monospace;fill:#374151">Yes</text>
+      <text x="680" y="168" text-anchor="middle" style="font:500 8.5px 'JetBrains Mono',monospace;fill:#374151">4</text>
+      <text x="850" y="168" text-anchor="middle" style="font:400 8px 'Inter',sans-serif;fill:#6b7280">Independent unit</text>
+
+      <!-- FP64 -->
+      <rect x="0" y="176" width="1000" height="20" rx="2" fill="#ede9fe" opacity="0.3"/>
+      <text x="60" y="190" text-anchor="middle" style="font:600 8.5px 'JetBrains Mono',monospace;fill:#5b21b6">FP64 (DFMA)</text>
+      <text x="170" y="190" text-anchor="middle" style="font:500 8.5px 'JetBrains Mono',monospace;fill:#374151">1</text>
+      <text x="260" y="190" text-anchor="middle" style="font:500 8.5px 'JetBrains Mono',monospace;fill:#374151">63 cyc</text>
+      <text x="360" y="190" text-anchor="middle" style="font:500 8.5px 'JetBrains Mono',monospace;fill:#374151">1/64 cyc</text>
+      <text x="470" y="190" text-anchor="middle" style="font:700 8.5px 'JetBrains Mono',monospace;fill:#5b21b6">1</text>
+      <text x="570" y="190" text-anchor="middle" style="font:500 8.5px 'JetBrains Mono',monospace;fill:#374151">No</text>
+      <text x="680" y="190" text-anchor="middle" style="font:500 8.5px 'JetBrains Mono',monospace;fill:#374151">4 (1/SMSP)</text>
+      <text x="850" y="190" text-anchor="middle" style="font:400 8px 'Inter',sans-serif;fill:#6b7280">Non-pipelined EU</text>
+
+      <!-- SHFL -->
+      <rect x="0" y="198" width="1000" height="20" rx="2" fill="#fee2e2" opacity="0.3"/>
+      <text x="60" y="212" text-anchor="middle" style="font:600 8.5px 'JetBrains Mono',monospace;fill:#991b1b">SHFL</text>
+      <text x="170" y="212" text-anchor="middle" style="font:500 8.5px 'JetBrains Mono',monospace;fill:#374151">~7</text>
+      <text x="260" y="212" text-anchor="middle" style="font:500 8.5px 'JetBrains Mono',monospace;fill:#374151">29 cyc</text>
+      <text x="360" y="212" text-anchor="middle" style="font:500 8.5px 'JetBrains Mono',monospace;fill:#374151">0.22/cyc</text>
+      <text x="470" y="212" text-anchor="middle" style="font:700 8.5px 'JetBrains Mono',monospace;fill:#991b1b">7</text>
+      <text x="570" y="212" text-anchor="middle" style="font:500 8.5px 'JetBrains Mono',monospace;fill:#374151">Partial</text>
+      <text x="680" y="212" text-anchor="middle" style="font:500 8.5px 'JetBrains Mono',monospace;fill:#374151">4</text>
+      <text x="850" y="212" text-anchor="middle" style="font:400 8px 'Inter',sans-serif;fill:#6b7280">+.sync barrier</text>
+    </g>
+
+    <!-- Footnotes -->
+    <g transform="translate(10,312)">
+      <text x="10" y="-18" style="font:italic 8.5px 'Inter',sans-serif;fill:#6b7280">* IMAD: depth=2 not 4 because half-rate issue (2 cyc/issue) → ceil(4/2)=2    ** HFMA2: depth=2 because 2-cycle TDM issue occupies pipe for both halves</text>
+    </g>
+  </g>
+
+  <!-- ═══════ Bottom-Left: Co-Issue Matrix ═══════ -->
+  <g transform="translate(30,360)">
+    <rect x="0" y="0" width="520" height="266" rx="8" fill="#eff6ff" stroke="#bfdbfe" stroke-width="1"/>
+    <text x="260" y="22" text-anchor="middle" style="font:700 11.5px 'Inter',sans-serif;fill:#1d4ed8">Co-Issue Matrix (measured overlap %)</text>
+
+    <g transform="translate(16,38)">
+      <text x="0" y="14" style="font:600 9.5px 'JetBrains Mono',monospace;fill:#374151">fmalite ↔ fmaheavy:</text>
+      <rect x="200" y="2" width="280" height="14" rx="2" fill="#16a34a" opacity="0.7"/>
+      <text x="340" y="14" text-anchor="middle" style="font:700 9px 'JetBrains Mono',monospace;fill:#fff">100% co-issue (MIX/MAX = 1.001)</text>
+
+      <text x="0" y="38" style="font:600 9.5px 'JetBrains Mono',monospace;fill:#374151">P0 ↔ P1 (FP32↔FP64):</text>
+      <rect x="200" y="26" width="280" height="14" rx="2" fill="#16a34a" opacity="0.7"/>
+      <text x="340" y="38" text-anchor="middle" style="font:700 9px 'JetBrains Mono',monospace;fill:#fff">100% co-issue</text>
+
+      <text x="0" y="62" style="font:600 9.5px 'JetBrains Mono',monospace;fill:#374151">P0 ↔ P2 (FP32↔SFU):</text>
+      <rect x="200" y="50" width="280" height="14" rx="2" fill="#16a34a" opacity="0.7"/>
+      <text x="340" y="62" text-anchor="middle" style="font:700 9px 'JetBrains Mono',monospace;fill:#fff">100% co-issue</text>
+
+      <text x="0" y="86" style="font:600 9.5px 'JetBrains Mono',monospace;fill:#374151">P0 ↔ CVT:</text>
+      <rect x="200" y="74" width="266" height="14" rx="2" fill="#16a34a" opacity="0.6"/>
+      <text x="333" y="86" text-anchor="middle" style="font:700 9px 'JetBrains Mono',monospace;fill:#fff">95.3% co-issue</text>
+
+      <text x="0" y="110" style="font:600 9.5px 'JetBrains Mono',monospace;fill:#374151">P0 ↔ LSU:</text>
+      <rect x="200" y="98" width="280" height="14" rx="2" fill="#16a34a" opacity="0.7"/>
+      <text x="340" y="110" text-anchor="middle" style="font:700 9px 'JetBrains Mono',monospace;fill:#fff">100% co-issue</text>
+
+      <text x="0" y="134" style="font:600 9.5px 'JetBrains Mono',monospace;fill:#374151">P1 ↔ P2:</text>
+      <rect x="200" y="122" width="280" height="14" rx="2" fill="#16a34a" opacity="0.7"/>
+      <text x="340" y="134" text-anchor="middle" style="font:700 9px 'JetBrains Mono',monospace;fill:#fff">100% co-issue</text>
+    </g>
+
+    <!-- Conclusion -->
+    <g transform="translate(16,198)">
+      <rect x="0" y="0" width="488" height="50" rx="4" fill="#1e293b" opacity="0.9"/>
+      <text x="244" y="18" text-anchor="middle" style="font:700 9.5px 'Inter',sans-serif;fill:#f1f5f9">All pipe pairs except SHFL achieve ≥92% co-issue</text>
+      <text x="244" y="36" text-anchor="middle" style="font:500 9px 'Inter',sans-serif;fill:#94a3b8">SM_120 SMSP = multi-pipe in-order processor with parallel backend dispatch</text>
+    </g>
+  </g>
+
+  <!-- ═══════ Bottom-Right: Key Insight Diagram ═══════ -->
+  <g transform="translate(570,360)">
+    <rect x="0" y="0" width="480" height="266" rx="8" fill="#fef3c7" stroke="#d97706" stroke-width="1"/>
+    <text x="240" y="22" text-anchor="middle" style="font:700 11.5px 'Inter',sans-serif;fill:#92400e">Key Insight: Depth ≠ Latency</text>
+
+    <!-- Formula -->
+    <g transform="translate(20,40)">
+      <rect x="0" y="0" width="440" height="36" rx="4" fill="#ffffff" stroke="#d97706" stroke-width="0.8"/>
+      <text x="220" y="24" text-anchor="middle" style="font:700 12px 'JetBrains Mono',monospace;fill:#92400e">depth = ⌈ latency / issue_interval ⌉</text>
+    </g>
+
+    <!-- Examples -->
+    <g transform="translate(20,90)">
+      <text x="0" y="14" style="font:600 10px 'Inter',sans-serif;fill:#1e293b">Examples from SM_120:</text>
+
+      <text x="0" y="38" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#374151">FFMA:  depth = ⌈4/1⌉ = 4  (full-rate, 4 chains useful)</text>
+      <text x="0" y="58" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#374151">IMAD:  depth = ⌈4/2⌉ = 2  (half-rate, only 2 chains)</text>
+      <text x="0" y="78" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#374151">HFMA2: depth = ⌈4/2⌉ = 2  (TDM, same as IMAD)</text>
+      <text x="0" y="98" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#374151">DFMA:  depth = ⌈63/63⌉= 1  (non-pipelined, no ILP)</text>
+      <text x="0" y="118" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#374151">SHFL:  depth = ⌈29/4.6⌉= 7 (6-7 stages internally)</text>
+    </g>
+
+    <!-- Implication -->
+    <g transform="translate(20,220)">
+      <rect x="0" y="0" width="440" height="30" rx="4" fill="#78350f" opacity="0.9"/>
+      <text x="220" y="20" text-anchor="middle" style="font:700 9.5px 'Inter',sans-serif;fill:#ffffff">Register pressure = depth × operands_per_chain (not latency)</text>
+    </g>
+  </g>
+</svg>

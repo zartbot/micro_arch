@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 560" role="img"
+     aria-label="SM_120 decoupled accept-resolve shared memory controller — bank conflict resolution pipeline with per-warp isolation">
+  <defs>
+    <linearGradient id="stageA" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#DBEAFE"/><stop offset="1" stop-color="#EFF6FF"/>
+    </linearGradient>
+    <linearGradient id="stageR" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FEF3C7"/><stop offset="1" stop-color="#FFFBEB"/>
+    </linearGradient>
+    <linearGradient id="stageD" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#D1FAE5"/><stop offset="1" stop-color="#ECFDF5"/>
+    </linearGradient>
+    <style><![CDATA[
+      .ttl{font:600 15px "Fraunces",serif;fill:#0b1220}
+      .sub{font:italic 11px "Fraunces",serif;fill:#5b6679}
+      .lbl{font:600 11px "JetBrains Mono",monospace;fill:#2a3548}
+      .lbl-sm{font:500 10px "JetBrains Mono",monospace;fill:#5b6679}
+      .num{font:700 13px "JetBrains Mono",monospace}
+      .ev{font:500 10px "JetBrains Mono",monospace;fill:#374151}
+    ]]></style>
+  </defs>
+  <rect width="1080" height="560" fill="#ffffff"/>
+
+  <!-- Title -->
+  <text x="36" y="30" class="ttl">SM_120 Shared Memory Controller — Decoupled Accept-Resolve Pipeline</text>
+  <text x="36" y="48" class="sub">Throughput governed by ACCEPT stage (penalty-free); latency governed by RESOLVE stage (2 cyc/way serialized)</text>
+
+  <!-- Three Pipeline Stages -->
+  <!-- ACCEPT -->
+  <g transform="translate(36,70)">
+    <rect x="0" y="0" width="300" height="210" rx="12" fill="url(#stageA)" stroke="#2563EB" stroke-width="1.2"/>
+    <text x="150" y="22" class="lbl" fill="#1D4ED8" text-anchor="middle">ACCEPT STAGE</text>
+    <line x1="20" y1="30" x2="280" y2="30" stroke="#2563EB" stroke-width="0.5"/>
+    <text x="20" y="48" class="lbl-sm">Accepts new warp load</text>
+    <text x="20" y="62" class="lbl-sm">requests at full rate</text>
+    <text x="20" y="82" class="num" fill="#1D4ED8">~2 cyc/request issue rate</text>
+    <text x="20" y="102" class="lbl-sm">NOT blocked by pending</text>
+    <text x="20" y="116" class="lbl-sm">conflict resolution</text>
+    <text x="20" y="140" class="ev">Evidence (Case 211):</text>
+    <text x="20" y="155" class="ev">ILP=1, 32-way: 2.12 cyc/op</text>
+    <text x="20" y="170" class="ev">= 0-way baseline (ZERO penalty)</text>
+    <text x="20" y="190" class="ev">Evidence (Case 213):</text>
+    <text x="20" y="205" class="ev" fill="#1D4ED8">Per-warp isolated (0% interference)</text>
+  </g>
+
+  <!-- Arrow A->R -->
+  <g transform="translate(340,150)">
+    <line x1="0" y1="0" x2="48" y2="0" stroke="#374151" stroke-width="2" marker-end="url(#arr)"/>
+  </g>
+  <defs><marker id="arr" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+    <polygon points="0 0, 8 3, 0 6" fill="#374151"/>
+  </marker></defs>
+
+  <!-- RESOLVE -->
+  <g transform="translate(392,70)">
+    <rect x="0" y="0" width="300" height="210" rx="12" fill="url(#stageR)" stroke="#D97706" stroke-width="1.2"/>
+    <text x="150" y="22" class="lbl" fill="#92400E" text-anchor="middle">CONFLICT RESOLVE STAGE</text>
+    <line x1="20" y1="30" x2="280" y2="30" stroke="#D97706" stroke-width="0.5"/>
+    <text x="20" y="48" class="lbl-sm">Serializes conflicting bank</text>
+    <text x="20" y="62" class="lbl-sm">accesses within each request</text>
+    <text x="20" y="82" class="num" fill="#92400E">+2 cyc per conflict way</text>
+    <text x="20" y="102" class="lbl-sm">Does NOT stall accept stage</text>
+    <text x="20" y="116" class="lbl-sm">Absorbs multiple concurrent</text>
+    <text x="20" y="130" class="lbl-sm">requests in parallel</text>
+    <text x="20" y="154" class="ev">Evidence (Case 119):</text>
+    <text x="20" y="169" class="ev">latency = 38.3 + (N-1)×2 cyc</text>
+    <text x="20" y="184" class="ev">(perfectly linear, 2 cyc/way)</text>
+    <text x="20" y="205" class="ev" fill="#92400E">Evidence (Case 212): K=4 free</text>
+  </g>
+
+  <!-- Arrow R->D -->
+  <g transform="translate(696,150)">
+    <line x1="0" y1="0" x2="48" y2="0" stroke="#374151" stroke-width="2" marker-end="url(#arr)"/>
+  </g>
+
+  <!-- DATA RETURN -->
+  <g transform="translate(748,70)">
+    <rect x="0" y="0" width="296" height="210" rx="12" fill="url(#stageD)" stroke="#059669" stroke-width="1.2"/>
+    <text x="148" y="22" class="lbl" fill="#065F46" text-anchor="middle">DATA RETURN STAGE</text>
+    <line x1="20" y1="30" x2="276" y2="30" stroke="#059669" stroke-width="0.5"/>
+    <text x="20" y="48" class="lbl-sm">Returns data to register</text>
+    <text x="20" y="62" class="lbl-sm">file after resolve completes</text>
+    <text x="20" y="82" class="num" fill="#065F46">Dep chain: wait full resolve</text>
+    <text x="20" y="102" class="lbl-sm">Indep loads: data arrives</text>
+    <text x="20" y="116" class="lbl-sm">out-of-order (non-blocking)</text>
+    <text x="20" y="140" class="ev">Throughput (indep): 2.12 cyc/op</text>
+    <text x="20" y="155" class="ev">Latency (dep, 32-way):</text>
+    <text x="20" y="170" class="ev">38.3 + 62 = 100.3 cyc</text>
+    <text x="20" y="190" class="ev" fill="#065F46">Asymmetry explained:</text>
+    <text x="20" y="205" class="ev" fill="#065F46">tput=accept rate, lat=resolve time</text>
+  </g>
+
+  <!-- Summary metrics bar -->
+  <g transform="translate(36,290)">
+    <rect x="0" y="0" width="1008" height="72" rx="8" fill="#F9FAFB" stroke="#D1D5DB" stroke-width="1"/>
+    <text x="20" y="20" class="lbl">Measured Performance Summary (32-way worst case)</text>
+    <!-- Throughput -->
+    <rect x="20" y="32" width="240" height="30" rx="4" fill="#DBEAFE" stroke="#2563EB" stroke-width="0.8"/>
+    <text x="140" y="52" class="num" fill="#1D4ED8" text-anchor="middle">Throughput: 1.00–1.43× penalty</text>
+    <!-- Latency -->
+    <rect x="280" y="32" width="240" height="30" rx="4" fill="#FEF3C7" stroke="#D97706" stroke-width="0.8"/>
+    <text x="400" y="52" class="num" fill="#92400E" text-anchor="middle">Latency: 2.62× penalty</text>
+    <!-- Cross-warp -->
+    <rect x="540" y="32" width="240" height="30" rx="4" fill="#D1FAE5" stroke="#059669" stroke-width="0.8"/>
+    <text x="660" y="52" class="num" fill="#065F46" text-anchor="middle">Cross-warp: 0% interference</text>
+    <!-- ILP -->
+    <rect x="800" y="32" width="200" height="30" rx="4" fill="#EDE9FE" stroke="#7C3AED" stroke-width="0.8"/>
+    <text x="900" y="52" class="num" fill="#5B21B6" text-anchor="middle">ILP=1: ZERO penalty</text>
+  </g>
+
+  <!-- Latency formula -->
+  <g transform="translate(36,380)">
+    <rect x="0" y="0" width="504" height="160" rx="8" fill="#FFFBEB" stroke="#D97706" stroke-width="0.8"/>
+    <text x="16" y="20" class="lbl" fill="#92400E">Latency Model (RESOLVE stage, pointer-chase)</text>
+    <text x="16" y="42" class="ev">latency(N-way) = 38.30 + (N−1) × 2.00 cyc</text>
+    <text x="16" y="62" class="lbl-sm">Verified data (Case 119):</text>
+    <text x="16" y="80" class="ev">1-way: 38.30 cyc (baseline)</text>
+    <text x="16" y="94" class="ev">2-way: 40.30 cyc (+2.0)</text>
+    <text x="16" y="108" class="ev">4-way: 44.30 cyc (+6.0)</text>
+    <text x="180" y="80" class="ev">8-way:  52.30 cyc (+14.0)</text>
+    <text x="180" y="94" class="ev">16-way: 68.30 cyc (+30.0)</text>
+    <text x="180" y="108" class="ev">32-way: 100.30 cyc (+62.0)</text>
+    <text x="16" y="130" class="ev" fill="#92400E">Formula fits all 6 points with 0.00 cyc error</text>
+    <text x="16" y="148" class="ev">Confirms serialized resolve at exactly 2 cyc/bank-replay</text>
+  </g>
+
+  <!-- Throughput table -->
+  <g transform="translate(556,380)">
+    <rect x="0" y="0" width="488" height="160" rx="8" fill="#EFF6FF" stroke="#2563EB" stroke-width="0.8"/>
+    <text x="16" y="20" class="lbl" fill="#1D4ED8">Throughput Model (ACCEPT stage, ILP sweep)</text>
+    <text x="16" y="42" class="ev">Accept rate ≈ constant regardless of conflict degree</text>
+    <text x="16" y="62" class="lbl-sm">Verified data (Case 211, 32-way):</text>
+    <text x="16" y="80" class="ev">ILP=1: 2.12 cyc/op (= 0-way baseline)</text>
+    <text x="16" y="94" class="ev">ILP=2: 1.79 cyc/op (pipeline saturated)</text>
+    <text x="16" y="108" class="ev">ILP=4–32: 1.79–1.82 cyc/op (stable)</text>
+    <text x="16" y="130" class="ev" fill="#1D4ED8">Key: ILP=1 penalty = 1.00× proves true</text>
+    <text x="16" y="148" class="ev" fill="#1D4ED8">HW pipelining, not ILP-dependent hiding</text>
+  </g>
+</svg>

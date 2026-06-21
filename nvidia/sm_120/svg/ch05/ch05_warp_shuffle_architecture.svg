@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 600" role="img" aria-label="SM_120 Warp Shuffle Architecture — 29-Cycle Latency Breakdown and Reduction Cost Comparison">
+  <defs>
+    <marker id="arr" markerWidth="7" markerHeight="5" refX="7" refY="2.5" orient="auto">
+      <path d="M0,0 L7,2.5 L0,5 Z" fill="#475569"/>
+    </marker>
+    <marker id="arr-red" markerWidth="7" markerHeight="5" refX="7" refY="2.5" orient="auto">
+      <path d="M0,0 L7,2.5 L0,5 Z" fill="#dc2626"/>
+    </marker>
+  </defs>
+
+  <rect width="1080" height="600" fill="#fafbfc"/>
+
+  <!-- Title -->
+  <text x="540" y="28" text-anchor="middle" style="font:700 15px 'Inter','Segoe UI',sans-serif;fill:#0f172a">SM_120 Warp Shuffle (shfl.sync) — Architecture &amp; Latency Analysis</text>
+  <text x="540" y="48" text-anchor="middle" style="font:italic 11px 'Inter','Segoe UI',sans-serif;fill:#64748b">28.95 cyc uniform latency across all modes — 6-14x slower than Ampere/Hopper due to mandatory .sync convergence</text>
+
+  <!-- ═══════ Left: Shuffle Modes Visualization ═══════ -->
+  <rect x="30" y="64" width="480" height="260" rx="10" fill="#f8fafc" stroke="#94a3b8" stroke-width="1"/>
+  <text x="270" y="86" text-anchor="middle" style="font:700 11.5px 'Inter',sans-serif;fill:#1e293b">Shuffle Modes (all same hardware, same 29-cyc latency)</text>
+
+  <!-- Lane diagram for shfl.up -->
+  <g transform="translate(50,100)">
+    <text x="0" y="0" style="font:700 10px 'JetBrains Mono',monospace;fill:#2563eb">shfl.sync.up (delta=1)</text>
+    <text x="0" y="16" style="font:italic 8.5px 'Inter',sans-serif;fill:#6b7280">Each lane reads from lane (id - delta)</text>
+    <!-- Lanes -->
+    <rect x="0" y="22" width="28" height="20" rx="3" fill="#dbeafe" stroke="#2563eb" stroke-width="0.8"/>
+    <text x="14" y="36" text-anchor="middle" style="font:600 8px 'JetBrains Mono',monospace;fill:#1e40af">L0</text>
+    <rect x="32" y="22" width="28" height="20" rx="3" fill="#dbeafe" stroke="#2563eb" stroke-width="0.8"/>
+    <text x="46" y="36" text-anchor="middle" style="font:600 8px 'JetBrains Mono',monospace;fill:#1e40af">L1</text>
+    <rect x="64" y="22" width="28" height="20" rx="3" fill="#dbeafe" stroke="#2563eb" stroke-width="0.8"/>
+    <text x="78" y="36" text-anchor="middle" style="font:600 8px 'JetBrains Mono',monospace;fill:#1e40af">L2</text>
+    <rect x="96" y="22" width="28" height="20" rx="3" fill="#dbeafe" stroke="#2563eb" stroke-width="0.8"/>
+    <text x="110" y="36" text-anchor="middle" style="font:600 8px 'JetBrains Mono',monospace;fill:#1e40af">L3</text>
+    <text x="130" y="36" style="font:500 8px 'JetBrains Mono',monospace;fill:#94a3b8">...</text>
+    <rect x="148" y="22" width="28" height="20" rx="3" fill="#dbeafe" stroke="#2563eb" stroke-width="0.8"/>
+    <text x="162" y="36" text-anchor="middle" style="font:600 8px 'JetBrains Mono',monospace;fill:#1e40af">L31</text>
+    <!-- Arrows showing data movement -->
+    <path d="M14,42 L46,52" fill="none" stroke="#2563eb" stroke-width="1" marker-end="url(#arr)"/>
+    <path d="M46,42 L78,52" fill="none" stroke="#2563eb" stroke-width="1" marker-end="url(#arr)"/>
+    <path d="M78,42 L110,52" fill="none" stroke="#2563eb" stroke-width="1" marker-end="url(#arr)"/>
+    <text x="200" y="50" style="font:500 8px 'Inter',sans-serif;fill:#6b7280">data flows →</text>
+  </g>
+
+  <!-- Lane diagram for shfl.bfly (xor) -->
+  <g transform="translate(50,170)">
+    <text x="0" y="0" style="font:700 10px 'JetBrains Mono',monospace;fill:#16a34a">shfl.sync.bfly (mask=1)</text>
+    <text x="0" y="16" style="font:italic 8.5px 'Inter',sans-serif;fill:#6b7280">Each lane reads from lane (id XOR mask) — butterfly pattern</text>
+    <rect x="0" y="22" width="28" height="20" rx="3" fill="#f0fdf4" stroke="#16a34a" stroke-width="0.8"/>
+    <text x="14" y="36" text-anchor="middle" style="font:600 8px 'JetBrains Mono',monospace;fill:#166534">L0</text>
+    <rect x="32" y="22" width="28" height="20" rx="3" fill="#f0fdf4" stroke="#16a34a" stroke-width="0.8"/>
+    <text x="46" y="36" text-anchor="middle" style="font:600 8px 'JetBrains Mono',monospace;fill:#166534">L1</text>
+    <rect x="64" y="22" width="28" height="20" rx="3" fill="#f0fdf4" stroke="#16a34a" stroke-width="0.8"/>
+    <text x="78" y="36" text-anchor="middle" style="font:600 8px 'JetBrains Mono',monospace;fill:#166534">L2</text>
+    <rect x="96" y="22" width="28" height="20" rx="3" fill="#f0fdf4" stroke="#16a34a" stroke-width="0.8"/>
+    <text x="110" y="36" text-anchor="middle" style="font:600 8px 'JetBrains Mono',monospace;fill:#166534">L3</text>
+    <!-- XOR=1 swap arrows -->
+    <path d="M14,42 C14,56 46,56 46,42" fill="none" stroke="#16a34a" stroke-width="1.2"/>
+    <path d="M78,42 C78,56 110,56 110,42" fill="none" stroke="#16a34a" stroke-width="1.2"/>
+    <text x="30" y="62" text-anchor="middle" style="font:600 7px 'JetBrains Mono',monospace;fill:#16a34a">swap</text>
+    <text x="94" y="62" text-anchor="middle" style="font:600 7px 'JetBrains Mono',monospace;fill:#16a34a">swap</text>
+    <text x="200" y="50" style="font:500 8px 'Inter',sans-serif;fill:#6b7280">pairs exchange ↔</text>
+  </g>
+
+  <!-- Latency comparison -->
+  <g transform="translate(50,244)">
+    <text x="0" y="0" style="font:700 10px 'Inter',sans-serif;fill:#991b1b">Latency: ALL modes = 28.95 cyc (uniform)</text>
+    <text x="0" y="16" style="font:500 9px 'Inter',sans-serif;fill:#374151">Mode selection is purely a routing decision in the crossbar — adds zero cost.</text>
+    <text x="0" y="32" style="font:500 9px 'Inter',sans-serif;fill:#374151">Issue interval: 4.6 cyc/op → internal pipeline depth ≈ 6-7 stages.</text>
+    <text x="0" y="48" style="font:500 9px 'Inter',sans-serif;fill:#374151">Throughput at ILP=8: 0.22 ops/cyc (pipeline saturated).</text>
+  </g>
+
+  <!-- ═══════ Right: 29-Cycle Latency Breakdown ═══════ -->
+  <rect x="530" y="64" width="520" height="260" rx="10" fill="#fef2f2" stroke="#fecaca" stroke-width="1"/>
+  <text x="790" y="86" text-anchor="middle" style="font:700 11.5px 'Inter',sans-serif;fill:#991b1b">Why 29 Cycles? — Latency Breakdown (Hypothesis)</text>
+
+  <!-- Pipeline stages -->
+  <g transform="translate(550,100)">
+    <!-- Stage 1: Convergence check -->
+    <rect x="0" y="0" width="480" height="38" rx="5" fill="#fee2e2" stroke="#dc2626" stroke-width="1"/>
+    <text x="12" y="16" style="font:700 9.5px 'JetBrains Mono',monospace;fill:#991b1b">Phase 1: .sync Convergence Barrier Check (~8-10 cyc)</text>
+    <text x="12" y="32" style="font:400 8.5px 'Inter',sans-serif;fill:#4b5563">Verify all threads in mask have reached this point (independent thread scheduling model)</text>
+
+    <!-- Stage 2: Crossbar permutation -->
+    <rect x="0" y="46" width="480" height="38" rx="5" fill="#fef3c7" stroke="#d97706" stroke-width="1"/>
+    <text x="12" y="62" style="font:700 9.5px 'JetBrains Mono',monospace;fill:#92400e">Phase 2: Register Crossbar Permutation (~12-14 cyc)</text>
+    <text x="12" y="78" style="font:400 8.5px 'Inter',sans-serif;fill:#4b5563">32-lane warp-wide register shuffle through dedicated crossbar network</text>
+
+    <!-- Stage 3: Writeback -->
+    <rect x="0" y="92" width="480" height="38" rx="5" fill="#f0fdf4" stroke="#16a34a" stroke-width="1"/>
+    <text x="12" y="108" style="font:700 9.5px 'JetBrains Mono',monospace;fill:#166534">Phase 3: Result Writeback + Predicate Set (~6-8 cyc)</text>
+    <text x="12" y="124" style="font:400 8.5px 'Inter',sans-serif;fill:#4b5563">Write shuffled value to dest register + set validity predicate for boundary lanes</text>
+
+    <!-- Total -->
+    <rect x="0" y="140" width="480" height="26" rx="4" fill="#7f1d1d" opacity="0.9"/>
+    <text x="240" y="158" text-anchor="middle" style="font:700 10.5px 'JetBrains Mono',monospace;fill:#ffffff">Total: ~28-29 cycles (measured: 28.95 cyc)</text>
+  </g>
+
+  <!-- Prior arch comparison -->
+  <g transform="translate(550,282)">
+    <text x="0" y="0" style="font:600 9.5px 'Inter',sans-serif;fill:#475569">Prior architectures (Ampere/Hopper): 2-5 cycles</text>
+    <text x="0" y="16" style="font:500 9px 'Inter',sans-serif;fill:#6b7280">No .sync check needed (warp-synchronous execution model)</text>
+    <text x="0" y="32" style="font:500 9px 'Inter',sans-serif;fill:#6b7280">SM_120 regression: 6-14x due to independent thread scheduling</text>
+  </g>
+
+  <!-- ═══════ Bottom: Reduction Cost Comparison ═══════ -->
+  <rect x="30" y="340" width="1020" height="246" rx="10" fill="#eff6ff" stroke="#bfdbfe" stroke-width="1"/>
+  <text x="540" y="364" text-anchor="middle" style="font:700 12px 'Inter',sans-serif;fill:#1d4ed8">Warp Reduction Cost Comparison on SM_120 (32 threads → 1 result)</text>
+
+  <!-- Method bars (proportional to cost) -->
+  <g transform="translate(50,380)">
+    <!-- shfl.sync.bfly x 5 -->
+    <text x="0" y="12" style="font:600 9.5px 'JetBrains Mono',monospace;fill:#374151">shfl.sync.bfly × 5 stages</text>
+    <rect x="240" y="2" width="580" height="16" rx="3" fill="#dc2626" opacity="0.75"/>
+    <text x="830" y="14" style="font:700 9.5px 'JetBrains Mono',monospace;fill:#991b1b">145 cyc (1.0×)</text>
+
+    <!-- smem write + read -->
+    <text x="0" y="40" style="font:600 9.5px 'JetBrains Mono',monospace;fill:#374151">smem write + read + IADD</text>
+    <rect x="240" y="30" width="160" height="16" rx="3" fill="#d97706" opacity="0.75"/>
+    <text x="408" y="42" style="font:700 9.5px 'JetBrains Mono',monospace;fill:#92400e">~40 cyc (3.6× faster)</text>
+
+    <!-- atomicAdd.shared -->
+    <text x="0" y="68" style="font:600 9.5px 'JetBrains Mono',monospace;fill:#374151">atomicAdd.shared (tree)</text>
+    <rect x="240" y="58" width="96" height="16" rx="3" fill="#2563eb" opacity="0.75"/>
+    <text x="344" y="70" style="font:700 9.5px 'JetBrains Mono',monospace;fill:#1e40af">~24 cyc (6.0× faster)</text>
+
+    <!-- MMA-based rowsum -->
+    <text x="0" y="96" style="font:600 9.5px 'JetBrains Mono',monospace;fill:#374151">MMA-based rowsum</text>
+    <rect x="240" y="86" width="28" height="16" rx="3" fill="#16a34a" opacity="0.75"/>
+    <text x="276" y="98" style="font:700 9.5px 'JetBrains Mono',monospace;fill:#166534">~7 cyc (20× faster)</text>
+  </g>
+
+  <!-- Key insight callout -->
+  <rect x="50" y="496" width="980" height="76" rx="6" fill="#ffffff" stroke="#2563eb" stroke-width="1.2"/>
+  <text x="70" y="518" style="font:700 10.5px 'Inter',sans-serif;fill:#1d4ed8">Optimization Guidance for SM_120</text>
+  <text x="70" y="538" style="font:500 10px 'Inter',sans-serif;fill:#374151">• Avoid shuffle-based reductions (5-stage butterfly costs 145 cyc). Prefer shared memory (40 cyc) or atomicAdd.shared (24 cyc).</text>
+  <text x="70" y="556" style="font:500 10px 'Inter',sans-serif;fill:#374151">• For Tensor Core workloads, MMA-based rowsum (7 cyc amortized) is 20× faster than shuffle chains.</text>
+</svg>

@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 480" role="img"
+     aria-label="SM_120 L1 Cache vs Shared Memory access path — latency breakdown showing 10-cycle coherence overhead">
+  <defs>
+    <linearGradient id="smemG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#D1FAE5"/><stop offset="1" stop-color="#ECFDF5"/>
+    </linearGradient>
+    <linearGradient id="l1G" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#DBEAFE"/><stop offset="1" stop-color="#EFF6FF"/>
+    </linearGradient>
+    <linearGradient id="extraG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FEE2E2"/><stop offset="1" stop-color="#FEF2F2"/>
+    </linearGradient>
+    <linearGradient id="sramG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#F3E8FF"/><stop offset="1" stop-color="#FAF5FF"/>
+    </linearGradient>
+    <marker id="arr" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#374151"/>
+    </marker>
+    <style><![CDATA[
+      .ttl{font:600 15px "Fraunces",serif;fill:#0b1220}
+      .sub{font:italic 11px "Fraunces",serif;fill:#5b6679}
+      .lbl{font:600 11px "JetBrains Mono",monospace;fill:#2a3548}
+      .lbl-sm{font:500 10px "JetBrains Mono",monospace;fill:#5b6679}
+      .num{font:700 13px "JetBrains Mono",monospace}
+      .stage{font:600 10px "JetBrains Mono",monospace;fill:#fff}
+      .note{font:italic 10px "Fraunces",serif;fill:#6b7280}
+      .badge-txt{font:700 10px "JetBrains Mono",monospace;fill:#fff}
+      .sect{font:600 12px "Fraunces",serif;fill:#374151}
+    ]]></style>
+  </defs>
+  <rect width="1080" height="480" fill="#ffffff"/>
+
+  <!-- Title -->
+  <text x="36" y="28" class="ttl">L1 Cache vs Shared Memory — Access Path Latency Breakdown</text>
+  <text x="36" y="46" class="sub">Both paths access the same 100 KB SRAM; the 10-cycle delta reveals L1 tag lookup + coherence protocol overhead</text>
+
+  <!-- ═══════════ SMEM PATH (top) ═══════════ -->
+  <text x="36" y="80" class="sect">SHARED MEMORY PATH — 33.9 cyc total (direct SRAM access, no tag/coherence)</text>
+
+  <!-- Smem Stage 1: Address Decode -->
+  <g transform="translate(36,95)">
+    <rect width="180" height="70" rx="10" fill="url(#smemG)" stroke="#059669" stroke-width="1.2"/>
+    <rect x="10" y="8" width="100" height="16" rx="4" fill="#059669"/>
+    <text x="60" y="20" class="stage" text-anchor="middle">ADDR DECODE</text>
+    <text x="90" y="42" class="lbl" text-anchor="middle">Address decode</text>
+    <text x="90" y="56" class="lbl-sm" text-anchor="middle">&amp; bank select</text>
+  </g>
+  <!-- Arrow -->
+  <line x1="220" y1="130" x2="256" y2="130" stroke="#374151" stroke-width="1.8" marker-end="url(#arr)"/>
+
+  <!-- Smem Stage 2: SRAM Read -->
+  <g transform="translate(260,95)">
+    <rect width="180" height="70" rx="10" fill="url(#sramG)" stroke="#7C3AED" stroke-width="1.2"/>
+    <rect x="10" y="8" width="90" height="16" rx="4" fill="#7C3AED"/>
+    <text x="55" y="20" class="stage" text-anchor="middle">SRAM READ</text>
+    <text x="90" y="42" class="lbl" text-anchor="middle">Physical SRAM</text>
+    <text x="90" y="56" class="lbl-sm" text-anchor="middle">100 KB array access</text>
+  </g>
+  <!-- Arrow -->
+  <line x1="444" y1="130" x2="480" y2="130" stroke="#374151" stroke-width="1.8" marker-end="url(#arr)"/>
+
+  <!-- Smem Stage 3: Data Return -->
+  <g transform="translate(484,95)">
+    <rect width="180" height="70" rx="10" fill="url(#smemG)" stroke="#059669" stroke-width="1.2"/>
+    <rect x="10" y="8" width="100" height="16" rx="4" fill="#059669"/>
+    <text x="60" y="20" class="stage" text-anchor="middle">DATA RETURN</text>
+    <text x="90" y="42" class="lbl" text-anchor="middle">Result → RF</text>
+    <text x="90" y="56" class="lbl-sm" text-anchor="middle">register file write</text>
+  </g>
+
+  <!-- Smem total badge -->
+  <g transform="translate(700,105)">
+    <rect width="130" height="50" rx="8" fill="#059669"/>
+    <text x="65" y="22" class="badge-txt" text-anchor="middle">33.9 cyc</text>
+    <text x="65" y="38" class="stage" text-anchor="middle">TOTAL LATENCY</text>
+  </g>
+
+  <!-- ═══════════ L1 PATH (bottom) ═══════════ -->
+  <text x="36" y="200" class="sect">L1 CACHE PATH — 43.9 cyc total (same SRAM + tag CAM + coherence check)</text>
+
+  <!-- L1 Stage 1: Address Decode -->
+  <g transform="translate(36,215)">
+    <rect width="140" height="70" rx="10" fill="url(#l1G)" stroke="#2563EB" stroke-width="1.2"/>
+    <rect x="10" y="8" width="100" height="16" rx="4" fill="#2563EB"/>
+    <text x="60" y="20" class="stage" text-anchor="middle">ADDR DECODE</text>
+    <text x="70" y="42" class="lbl" text-anchor="middle">Address</text>
+    <text x="70" y="56" class="lbl-sm" text-anchor="middle">decode</text>
+  </g>
+  <!-- Arrow -->
+  <line x1="180" y1="250" x2="200" y2="250" stroke="#374151" stroke-width="1.8" marker-end="url(#arr)"/>
+
+  <!-- L1 Stage 2: Tag CAM (EXTRA - highlighted) -->
+  <g transform="translate(204,215)">
+    <rect width="160" height="70" rx="10" fill="url(#extraG)" stroke="#DC2626" stroke-width="1.8" stroke-dasharray="4 2"/>
+    <rect x="10" y="8" width="120" height="16" rx="4" fill="#DC2626"/>
+    <text x="70" y="20" class="stage" text-anchor="middle">TAG CAM LOOKUP</text>
+    <text x="80" y="42" class="lbl" text-anchor="middle">~712-entry fully</text>
+    <text x="80" y="56" class="lbl-sm" text-anchor="middle">associative CAM</text>
+  </g>
+  <!-- Arrow -->
+  <line x1="368" y1="250" x2="388" y2="250" stroke="#374151" stroke-width="1.8" marker-end="url(#arr)"/>
+
+  <!-- L1 Stage 3: Coherence Check (EXTRA - highlighted) -->
+  <g transform="translate(392,215)">
+    <rect width="160" height="70" rx="10" fill="url(#extraG)" stroke="#DC2626" stroke-width="1.8" stroke-dasharray="4 2"/>
+    <rect x="10" y="8" width="130" height="16" rx="4" fill="#DC2626"/>
+    <text x="75" y="20" class="stage" text-anchor="middle">COHERENCE CHECK</text>
+    <text x="80" y="42" class="lbl" text-anchor="middle">Hit/miss + state</text>
+    <text x="80" y="56" class="lbl-sm" text-anchor="middle">MOESI-like protocol</text>
+  </g>
+  <!-- Arrow -->
+  <line x1="556" y1="250" x2="576" y2="250" stroke="#374151" stroke-width="1.8" marker-end="url(#arr)"/>
+
+  <!-- L1 Stage 4: SRAM Read -->
+  <g transform="translate(580,215)">
+    <rect width="140" height="70" rx="10" fill="url(#sramG)" stroke="#7C3AED" stroke-width="1.2"/>
+    <rect x="10" y="8" width="90" height="16" rx="4" fill="#7C3AED"/>
+    <text x="55" y="20" class="stage" text-anchor="middle">SRAM READ</text>
+    <text x="70" y="42" class="lbl" text-anchor="middle">Same SRAM</text>
+    <text x="70" y="56" class="lbl-sm" text-anchor="middle">array as smem</text>
+  </g>
+  <!-- Arrow -->
+  <line x1="724" y1="250" x2="744" y2="250" stroke="#374151" stroke-width="1.8" marker-end="url(#arr)"/>
+
+  <!-- L1 Stage 5: Data Return -->
+  <g transform="translate(748,215)">
+    <rect width="140" height="70" rx="10" fill="url(#l1G)" stroke="#2563EB" stroke-width="1.2"/>
+    <rect x="10" y="8" width="100" height="16" rx="4" fill="#2563EB"/>
+    <text x="60" y="20" class="stage" text-anchor="middle">DATA RETURN</text>
+    <text x="70" y="42" class="lbl" text-anchor="middle">Result → RF</text>
+    <text x="70" y="56" class="lbl-sm" text-anchor="middle">+ mux select</text>
+  </g>
+
+  <!-- L1 total badge -->
+  <g transform="translate(920,225)">
+    <rect width="130" height="50" rx="8" fill="#2563EB"/>
+    <text x="65" y="22" class="badge-txt" text-anchor="middle">43.9 cyc</text>
+    <text x="65" y="38" class="stage" text-anchor="middle">TOTAL LATENCY</text>
+  </g>
+
+  <!-- ═══════════ OVERHEAD BREAKDOWN ═══════════ -->
+  <!-- Delta bracket connecting the two extra stages -->
+  <g transform="translate(204,295)">
+    <rect width="348" height="3" rx="1" fill="#DC2626"/>
+    <text x="174" y="18" class="num" fill="#DC2626" text-anchor="middle">+10 cyc overhead (L1-only stages)</text>
+  </g>
+
+  <!-- Breakdown section -->
+  <text x="36" y="340" class="sect">10-CYCLE OVERHEAD DECOMPOSITION [speculative — not directly measured per-stage]</text>
+
+  <!-- Component 1: Tag CAM -->
+  <g transform="translate(36,355)">
+    <rect width="300" height="55" rx="8" fill="#FEF2F2" stroke="#FECACA" stroke-width="1"/>
+    <rect x="10" y="8" width="120" height="15" rx="4" fill="#DC2626"/>
+    <text x="70" y="19" class="stage" text-anchor="middle">TAG CAM LOOKUP</text>
+    <text x="160" y="20" class="num" fill="#DC2626">~4–5 cyc</text>
+    <text x="20" y="42" class="lbl-sm">Search ~712-entry fully-associative tag array</text>
+  </g>
+
+  <!-- Component 2: Coherence -->
+  <g transform="translate(360,355)">
+    <rect width="300" height="55" rx="8" fill="#FEF2F2" stroke="#FECACA" stroke-width="1"/>
+    <rect x="10" y="8" width="140" height="15" rx="4" fill="#DC2626"/>
+    <text x="80" y="19" class="stage" text-anchor="middle">COHERENCE STATE</text>
+    <text x="180" y="20" class="num" fill="#DC2626">~3–4 cyc</text>
+    <text x="20" y="42" class="lbl-sm">MOESI-like state machine check</text>
+  </g>
+
+  <!-- Component 3: Mux -->
+  <g transform="translate(684,355)">
+    <rect width="300" height="55" rx="8" fill="#FEF2F2" stroke="#FECACA" stroke-width="1"/>
+    <rect x="10" y="8" width="100" height="15" rx="4" fill="#DC2626"/>
+    <text x="60" y="19" class="stage" text-anchor="middle">MUX/SELECT</text>
+    <text x="140" y="20" class="num" fill="#DC2626">~1–2 cyc</text>
+    <text x="20" y="42" class="lbl-sm">Hit-data multiplexer selection</text>
+  </g>
+
+  <!-- Key insight -->
+  <g transform="translate(36,430)">
+    <rect width="1008" height="38" rx="6" fill="#F0FDF4" stroke="#059669" stroke-width="0.8"/>
+    <text x="20" y="16" class="lbl" fill="#065F46">KEY INSIGHT:</text>
+    <text x="130" y="16" class="lbl-sm">Smem bypasses tag/coherence entirely — it uses software-managed addressing (bank select) instead of hardware tag matching.</text>
+    <text x="20" y="32" class="lbl-sm">Both paths read the same physical SRAM; the 10-cyc delta is pure protocol overhead, not memory access time.</text>
+  </g>
+</svg>

@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 550" role="img" aria-label="SM_120 Conversion Pipeline Routing — Four-Tier Model with Independent CVT Execution Unit">
+  <defs>
+    <marker id="arr" markerWidth="7" markerHeight="5" refX="7" refY="2.5" orient="auto">
+      <path d="M0,0 L7,2.5 L0,5 Z" fill="#475569"/>
+    </marker>
+  </defs>
+
+  <rect width="1080" height="550" fill="#fafbfc"/>
+
+  <!-- Title -->
+  <text x="540" y="28" text-anchor="middle" style="font:700 15px 'Inter','Segoe UI',sans-serif;fill:#0f172a">SM_120 Type Conversion Pipeline — Four-Tier Routing Model</text>
+  <text x="540" y="48" text-anchor="middle" style="font:italic 11px 'Inter','Segoe UI',sans-serif;fill:#64748b">Dedicated CVT unit independent from FP32 and INT pipes (95% co-issue overlap verified)</text>
+
+  <!-- ═══════ Source Instruction ═══════ -->
+  <rect x="370" y="64" width="340" height="34" rx="5" fill="#1e293b"/>
+  <text x="540" y="86" text-anchor="middle" style="font:600 11px 'JetBrains Mono',monospace;fill:#f1f5f9">CVT Instruction (PTX cvt.* / SASS F2F/I2FP/F2I)</text>
+
+  <!-- Arrow down to router -->
+  <line x1="540" y1="98" x2="540" y2="118" stroke="#475569" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- Router box -->
+  <rect x="390" y="120" width="300" height="30" rx="5" fill="#e0e7ff" stroke="#6366f1" stroke-width="1.2"/>
+  <text x="540" y="140" text-anchor="middle" style="font:600 10.5px 'JetBrains Mono',monospace;fill:#4338ca">Hardware Routing Decision (by operand types)</text>
+
+  <!-- Four arrows branching to aligned tier boxes -->
+  <path d="M440,150 L170,176" fill="none" stroke="#475569" stroke-width="1.3" marker-end="url(#arr)"/>
+  <path d="M500,150 L410,176" fill="none" stroke="#475569" stroke-width="1.3" marker-end="url(#arr)"/>
+  <path d="M580,150 L660,176" fill="none" stroke="#475569" stroke-width="1.3" marker-end="url(#arr)"/>
+  <path d="M640,150 L900,176" fill="none" stroke="#475569" stroke-width="1.3" marker-end="url(#arr)"/>
+
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <!-- All 4 Tiers in ONE ROW (y=178, equal height=150) -->
+  <!-- ═══════════════════════════════════════════════════════════ -->
+
+  <!-- ═══════ Tier 1: INT pipe ═══════ -->
+  <rect x="30" y="178" width="240" height="150" rx="8" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.4"/>
+  <rect x="30" y="178" width="240" height="26" rx="8" fill="#dcfce7" stroke="#16a34a" stroke-width="1.4"/>
+  <rect x="30" y="198" width="240" height="6" fill="#dcfce7"/>
+  <text x="150" y="196" text-anchor="middle" style="font:700 10.5px 'JetBrains Mono',monospace;fill:#15803d">Tier 1: INT Pipe</text>
+
+  <text x="46" y="222" style="font:600 9.5px 'Inter',sans-serif;fill:#166534">Pure integer width change</text>
+  <text x="46" y="240" style="font:500 9px 'JetBrains Mono',monospace;fill:#374151">u32 ↔ u64, s32 ↔ s64</text>
+  <text x="46" y="256" style="font:500 9px 'JetBrains Mono',monospace;fill:#374151">SASS: MOV + zero-extend</text>
+  <text x="46" y="274" style="font:italic 8.5px 'Inter',sans-serif;fill:#6b7280">Route: fmalite pipe (trivial)</text>
+  <rect x="46" y="286" width="208" height="22" rx="3" fill="#065f46" opacity="0.88"/>
+  <text x="150" y="302" text-anchor="middle" style="font:700 10px 'JetBrains Mono',monospace;fill:#ffffff">~2.5 cyc</text>
+
+  <!-- ═══════ Tier 2: CVT unit (F2F) ═══════ -->
+  <rect x="286" y="178" width="240" height="150" rx="8" fill="#dbeafe" stroke="#2563eb" stroke-width="1.4"/>
+  <rect x="286" y="178" width="240" height="26" rx="8" fill="#bfdbfe" stroke="#2563eb" stroke-width="1.4"/>
+  <rect x="286" y="198" width="240" height="6" fill="#bfdbfe"/>
+  <text x="406" y="196" text-anchor="middle" style="font:700 10.5px 'JetBrains Mono',monospace;fill:#1e40af">Tier 2: CVT Unit</text>
+
+  <text x="302" y="222" style="font:600 9.5px 'Inter',sans-serif;fill:#1e40af">FP-to-FP width change</text>
+  <text x="302" y="240" style="font:500 9px 'JetBrains Mono',monospace;fill:#374151">f16 ↔ f32 (F2F / F2FP)</text>
+  <text x="302" y="256" style="font:500 9px 'JetBrains Mono',monospace;fill:#374151">Independent from P0 + INT</text>
+  <text x="302" y="274" style="font:italic 8.5px 'Inter',sans-serif;fill:#6b7280">Route: dedicated CVT execution unit</text>
+  <rect x="302" y="286" width="208" height="22" rx="3" fill="#1e40af" opacity="0.88"/>
+  <text x="406" y="302" text-anchor="middle" style="font:700 10px 'JetBrains Mono',monospace;fill:#ffffff">~7.5 cyc</text>
+
+  <!-- ═══════ Tier 3: CVT unit (I2FP/F2I) ═══════ -->
+  <rect x="542" y="178" width="240" height="150" rx="8" fill="#fef3c7" stroke="#d97706" stroke-width="1.4"/>
+  <rect x="542" y="178" width="240" height="26" rx="8" fill="#fde68a" stroke="#d97706" stroke-width="1.4"/>
+  <rect x="542" y="198" width="240" height="6" fill="#fde68a"/>
+  <text x="662" y="196" text-anchor="middle" style="font:700 10.5px 'JetBrains Mono',monospace;fill:#92400e">Tier 3: CVT Unit</text>
+
+  <text x="558" y="222" style="font:600 9.5px 'Inter',sans-serif;fill:#92400e">INT ↔ FP domain crossing</text>
+  <text x="558" y="240" style="font:500 9px 'JetBrains Mono',monospace;fill:#374151">u32/s32 ↔ f32 (I2FP / F2I)</text>
+  <text x="558" y="256" style="font:500 9px 'JetBrains Mono',monospace;fill:#374151">u16/s16 ↔ f32 (+pack cost)</text>
+  <text x="558" y="274" style="font:italic 8.5px 'Inter',sans-serif;fill:#6b7280">Route: same CVT unit, higher latency</text>
+  <rect x="558" y="286" width="100" height="22" rx="3" fill="#92400e" opacity="0.88"/>
+  <text x="608" y="302" text-anchor="middle" style="font:700 9.5px 'JetBrains Mono',monospace;fill:#ffffff">12.4c (32b)</text>
+  <rect x="664" y="286" width="100" height="22" rx="3" fill="#78350f" opacity="0.88"/>
+  <text x="714" y="302" text-anchor="middle" style="font:700 9.5px 'JetBrains Mono',monospace;fill:#ffffff">18.9c (16b)</text>
+
+  <!-- ═══════ Tier 4: FP64 pipe ═══════ -->
+  <rect x="798" y="178" width="240" height="150" rx="8" fill="#ede9fe" stroke="#7c3aed" stroke-width="1.4"/>
+  <rect x="798" y="178" width="240" height="26" rx="8" fill="#ddd6fe" stroke="#7c3aed" stroke-width="1.4"/>
+  <rect x="798" y="198" width="240" height="6" fill="#ddd6fe"/>
+  <text x="918" y="196" text-anchor="middle" style="font:700 10.5px 'JetBrains Mono',monospace;fill:#5b21b6">Tier 4: FP64 Pipe (P1)</text>
+
+  <text x="814" y="222" style="font:600 9.5px 'Inter',sans-serif;fill:#5b21b6">FP64-involving conversions</text>
+  <text x="814" y="240" style="font:500 9px 'JetBrains Mono',monospace;fill:#374151">any ↔ f64 (F2F.F64)</text>
+  <text x="814" y="256" style="font:500 9px 'JetBrains Mono',monospace;fill:#374151">Same HW as DFMA — NOT CVT</text>
+  <text x="814" y="274" style="font:italic 8.5px 'Inter',sans-serif;fill:#6b7280">Route: P1 pipe (non-pipelined EU)</text>
+  <rect x="814" y="286" width="208" height="22" rx="3" fill="#4c1d95" opacity="0.88"/>
+  <text x="918" y="302" text-anchor="middle" style="font:700 10px 'JetBrains Mono',monospace;fill:#ffffff">~64 cyc (P1 bottleneck)</text>
+
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <!-- Co-issue evidence panel (below tiers, full width) -->
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <rect x="30" y="346" width="1018" height="80" rx="8" fill="#f8fafc" stroke="#94a3b8" stroke-width="0.8"/>
+  <text x="50" y="368" style="font:700 11px 'Inter',sans-serif;fill:#1e293b">Co-Issue Evidence: The CVT Unit (Tier 2/3) Is a Physically Separate Execution Unit</text>
+
+  <g transform="translate(50,378)">
+    <text x="0" y="14" style="font:500 10px 'JetBrains Mono',monospace;fill:#374151">CVT + FFMA simultaneously:  95.3% time overlap  →  CVT does NOT use the FP32 pipe (P0)</text>
+    <text x="0" y="34" style="font:500 10px 'JetBrains Mono',monospace;fill:#374151">CVT + IADD3 simultaneously: 92.8% time overlap  →  CVT does NOT use the INT pipe (fmalite/fmaheavy)</text>
+  </g>
+
+  <!-- ═══════ Latency scale bar (bottom) ═══════ -->
+  <rect x="30" y="442" width="1018" height="76" rx="8" fill="#eff6ff" stroke="#bfdbfe" stroke-width="1"/>
+  <text x="540" y="462" text-anchor="middle" style="font:700 10.5px 'Inter',sans-serif;fill:#1d4ed8">Latency Comparison (linear scale, normalized to max = 64 cyc)</text>
+
+  <!-- Scale bars (proportional widths: 2.5/64=4%, 7.5/64=12%, 12.4/64=19%, 18.9/64=30%, 64/64=100%) -->
+  <rect x="50" y="474" width="36" height="14" rx="2" fill="#16a34a" opacity="0.85"/>
+  <text x="90" y="485" style="font:600 9px 'JetBrains Mono',monospace;fill:#374151">2.5 cyc (Tier 1)</text>
+
+  <rect x="240" y="474" width="108" height="14" rx="2" fill="#2563eb" opacity="0.85"/>
+  <text x="352" y="485" style="font:600 9px 'JetBrains Mono',monospace;fill:#374151">7.5 cyc (Tier 2)</text>
+
+  <rect x="490" y="474" width="180" height="14" rx="2" fill="#d97706" opacity="0.85"/>
+  <text x="674" y="485" style="font:600 9px 'JetBrains Mono',monospace;fill:#374151">12.4–18.9 cyc (Tier 3)</text>
+
+  <rect x="50" y="494" width="910" height="14" rx="2" fill="#7c3aed" opacity="0.6"/>
+  <text x="965" y="505" style="font:600 9px 'JetBrains Mono',monospace;fill:#374151">64 cyc (Tier 4)</text>
+
+  <!-- 25x span annotation -->
+  <text x="540" y="534" text-anchor="middle" style="font:italic 9.5px 'Inter',sans-serif;fill:#6b7280">Tier 4 is 25.6× slower than Tier 1 — FP64 conversions should be avoided in latency-critical paths</text>
+</svg>

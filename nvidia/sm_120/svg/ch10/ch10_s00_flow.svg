@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 820" role="img" aria-label="10.1.1 Physical Topology — 8-GPU PCIe Gen5 System">
+  <defs>
+    <style><![CDATA[
+      .ttl{font:600 15px "Fraunces",serif;fill:#0b1220}
+      .sub{font:italic 11px "Fraunces",serif;fill:#5b6679}
+      .numa-lbl{font:600 13px "Fraunces",serif;fill:#6d28d9}
+      .numa-lbl2{font:600 13px "Fraunces",serif;fill:#1e40af}
+      .cpu-lbl{font:600 11px "JetBrains Mono",monospace;fill:#2a3548}
+      .rc-lbl{font:500 10px "JetBrains Mono",monospace;fill:#1e40af}
+      .sw-lbl{font:600 11px "JetBrains Mono",monospace;fill:#92400e}
+      .gpu-name{font:700 12px "JetBrains Mono",monospace;fill:#0b1220}
+      .gpu-detail{font:500 9px "JetBrains Mono",monospace;fill:#5b6679}
+      .bw-lbl{font:500 9px "JetBrains Mono",monospace;fill:#5b6679}
+      .qpi-lbl{font:600 11px "Fraunces",serif;fill:#9f1239}
+      .qpi-detail{font:500 9px "JetBrains Mono",monospace;fill:#9f1239}
+      .path-lbl{font:600 10px "JetBrains Mono",monospace;fill:#2a3548}
+      .path-detail{font:500 9px "JetBrains Mono",monospace;fill:#5b6679}
+      .legend-ttl{font:600 12px "Fraunces",serif;fill:#0b1220}
+      .badge-txt{font:600 10px "JetBrains Mono",monospace;fill:#ffffff}
+    ]]></style>
+    <marker id="arr-rose" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#9f1239"/>
+    </marker>
+  </defs>
+
+  <rect width="1080" height="820" fill="#ffffff"/>
+
+  <!-- ===== Title ===== -->
+  <text x="36" y="28" class="ttl">8-GPU PCIe Gen5 System Topology (RTX PRO 5000 72GB)</text>
+  <text x="36" y="48" class="sub">Dual-socket NUMA topology — QPI/UPI inter-socket link is the cross-NUMA bottleneck</text>
+
+  <!-- No NVLink badge -->
+  <rect x="910" y="16" width="120" height="22" rx="11" fill="#9f1239"/>
+  <text x="970" y="31" class="badge-txt" text-anchor="middle">NO NVLink</text>
+
+  <!-- ===== NUMA Node 0 ===== -->
+  <rect x="30" y="68" width="1020" height="292" rx="12" fill="#faf8ff" stroke="#6d28d9" stroke-width="1"/>
+  <text x="48" y="90" class="numa-lbl">NUMA Node 0</text>
+
+  <!-- CPU Socket 0 -->
+  <rect x="370" y="98" width="340" height="42" rx="8" fill="#f3f4f6" stroke="#8e97a5" stroke-width="0.8"/>
+  <text x="540" y="124" class="cpu-lbl" text-anchor="middle">CPU Socket 0  (cores 0-63, 128-191)</text>
+
+  <!-- Connector: CPU to RC -->
+  <line x1="540" y1="140" x2="540" y2="152" stroke="#5b6679" stroke-width="1.2"/>
+
+  <!-- PCIe Root Complex 0 -->
+  <rect x="430" y="152" width="220" height="26" rx="6" fill="#e0e7ff" stroke="#1e40af" stroke-width="0.6"/>
+  <text x="540" y="170" class="rc-lbl" text-anchor="middle">PCIe Root Complex 0</text>
+
+  <!-- Connector: RC to Switch -->
+  <line x1="540" y1="178" x2="540" y2="192" stroke="#5b6679" stroke-width="1.2"/>
+  <text x="552" y="189" class="bw-lbl">PCIe Gen5 x16 uplink</text>
+
+  <!-- PCIe Switch 0 -->
+  <rect x="320" y="192" width="440" height="34" rx="8" fill="#ffedd5" stroke="#ea580c" stroke-width="0.8"/>
+  <text x="540" y="214" class="sw-lbl" text-anchor="middle">PCIe Switch 0</text>
+
+  <!-- Connector lines: Switch to 4 GPUs -->
+  <line x1="360" y1="226" x2="203" y2="254" stroke="#ea580c" stroke-width="1"/>
+  <line x1="470" y1="226" x2="428" y2="254" stroke="#ea580c" stroke-width="1"/>
+  <line x1="610" y1="226" x2="653" y2="254" stroke="#ea580c" stroke-width="1"/>
+  <line x1="720" y1="226" x2="878" y2="254" stroke="#ea580c" stroke-width="1"/>
+
+  <!-- Bandwidth label -->
+  <text x="540" y="244" class="bw-lbl" text-anchor="middle">PCIe Gen5 x16 per GPU  (55.8 GB/s)</text>
+
+  <!-- GPU 0 -->
+  <rect x="118" y="254" width="170" height="80" rx="8" fill="#e9f3d2" stroke="#76b900" stroke-width="0.8"/>
+  <text x="203" y="274" class="gpu-name" text-anchor="middle">GPU 0</text>
+  <text x="203" y="292" class="gpu-detail" text-anchor="middle">BDF: 03:00.0</text>
+  <text x="203" y="308" class="gpu-detail" text-anchor="middle">72 GB GDDR7</text>
+  <text x="203" y="324" class="gpu-detail" text-anchor="middle">RTX PRO 5000</text>
+
+  <!-- GPU 1 -->
+  <rect x="343" y="254" width="170" height="80" rx="8" fill="#e9f3d2" stroke="#76b900" stroke-width="0.8"/>
+  <text x="428" y="274" class="gpu-name" text-anchor="middle">GPU 1</text>
+  <text x="428" y="292" class="gpu-detail" text-anchor="middle">BDF: 96:00.0</text>
+  <text x="428" y="308" class="gpu-detail" text-anchor="middle">72 GB GDDR7</text>
+  <text x="428" y="324" class="gpu-detail" text-anchor="middle">RTX PRO 5000</text>
+
+  <!-- GPU 2 -->
+  <rect x="568" y="254" width="170" height="80" rx="8" fill="#e9f3d2" stroke="#76b900" stroke-width="0.8"/>
+  <text x="653" y="274" class="gpu-name" text-anchor="middle">GPU 2</text>
+  <text x="653" y="292" class="gpu-detail" text-anchor="middle">BDF: d7:00.0</text>
+  <text x="653" y="308" class="gpu-detail" text-anchor="middle">72 GB GDDR7</text>
+  <text x="653" y="324" class="gpu-detail" text-anchor="middle">RTX PRO 5000</text>
+
+  <!-- GPU 3 -->
+  <rect x="793" y="254" width="170" height="80" rx="8" fill="#e9f3d2" stroke="#76b900" stroke-width="0.8"/>
+  <text x="878" y="274" class="gpu-name" text-anchor="middle">GPU 3</text>
+  <text x="878" y="292" class="gpu-detail" text-anchor="middle">BDF: ed:00.0</text>
+  <text x="878" y="308" class="gpu-detail" text-anchor="middle">72 GB GDDR7</text>
+  <text x="878" y="324" class="gpu-detail" text-anchor="middle">RTX PRO 5000</text>
+
+  <!-- ===== QPI/UPI Inter-socket Link ===== -->
+  <line x1="520" y1="360" x2="520" y2="408" stroke="#9f1239" stroke-width="2" marker-end="url(#arr-rose)"/>
+  <line x1="560" y1="408" x2="560" y2="360" stroke="#9f1239" stroke-width="2" marker-end="url(#arr-rose)"/>
+  <text x="580" y="374" class="qpi-lbl">QPI/UPI Inter-socket Link</text>
+  <text x="580" y="390" class="qpi-detail">41-45 GB/s  (24% cross-NUMA penalty)</text>
+  <text x="580" y="404" class="qpi-detail">8.9% direction asymmetry</text>
+
+  <!-- ===== NUMA Node 1 ===== -->
+  <rect x="30" y="408" width="1020" height="292" rx="12" fill="#f6f8ff" stroke="#1e40af" stroke-width="1"/>
+  <text x="48" y="430" class="numa-lbl2">NUMA Node 1</text>
+
+  <!-- CPU Socket 1 -->
+  <rect x="370" y="438" width="340" height="42" rx="8" fill="#f3f4f6" stroke="#8e97a5" stroke-width="0.8"/>
+  <text x="540" y="464" class="cpu-lbl" text-anchor="middle">CPU Socket 1  (cores 64-127, 192-255)</text>
+
+  <!-- Connector: CPU to RC -->
+  <line x1="540" y1="480" x2="540" y2="492" stroke="#5b6679" stroke-width="1.2"/>
+
+  <!-- PCIe Root Complex 1 -->
+  <rect x="430" y="492" width="220" height="26" rx="6" fill="#e0e7ff" stroke="#1e40af" stroke-width="0.6"/>
+  <text x="540" y="510" class="rc-lbl" text-anchor="middle">PCIe Root Complex 1</text>
+
+  <!-- Connector: RC to Switch -->
+  <line x1="540" y1="518" x2="540" y2="532" stroke="#5b6679" stroke-width="1.2"/>
+  <text x="552" y="529" class="bw-lbl">PCIe Gen5 x16 uplink</text>
+
+  <!-- PCIe Switch 1 -->
+  <rect x="320" y="532" width="440" height="34" rx="8" fill="#ffedd5" stroke="#ea580c" stroke-width="0.8"/>
+  <text x="540" y="554" class="sw-lbl" text-anchor="middle">PCIe Switch 1</text>
+
+  <!-- Connector lines: Switch to 4 GPUs -->
+  <line x1="360" y1="566" x2="203" y2="594" stroke="#ea580c" stroke-width="1"/>
+  <line x1="470" y1="566" x2="428" y2="594" stroke="#ea580c" stroke-width="1"/>
+  <line x1="610" y1="566" x2="653" y2="594" stroke="#ea580c" stroke-width="1"/>
+  <line x1="720" y1="566" x2="878" y2="594" stroke="#ea580c" stroke-width="1"/>
+
+  <!-- Bandwidth label -->
+  <text x="540" y="584" class="bw-lbl" text-anchor="middle">PCIe Gen5 x16 per GPU  (55.8 GB/s)</text>
+
+  <!-- GPU 4 -->
+  <rect x="118" y="594" width="170" height="80" rx="8" fill="#e9f3d2" stroke="#76b900" stroke-width="0.8"/>
+  <text x="203" y="614" class="gpu-name" text-anchor="middle">GPU 4</text>
+  <text x="203" y="632" class="gpu-detail" text-anchor="middle">BDF: 04:00.0</text>
+  <text x="203" y="648" class="gpu-detail" text-anchor="middle">72 GB GDDR7</text>
+  <text x="203" y="664" class="gpu-detail" text-anchor="middle">RTX PRO 5000</text>
+
+  <!-- GPU 5 -->
+  <rect x="343" y="594" width="170" height="80" rx="8" fill="#e9f3d2" stroke="#76b900" stroke-width="0.8"/>
+  <text x="428" y="614" class="gpu-name" text-anchor="middle">GPU 5</text>
+  <text x="428" y="632" class="gpu-detail" text-anchor="middle">BDF: 19:00.0</text>
+  <text x="428" y="648" class="gpu-detail" text-anchor="middle">72 GB GDDR7</text>
+  <text x="428" y="664" class="gpu-detail" text-anchor="middle">RTX PRO 5000</text>
+
+  <!-- GPU 6 -->
+  <rect x="568" y="594" width="170" height="80" rx="8" fill="#e9f3d2" stroke="#76b900" stroke-width="0.8"/>
+  <text x="653" y="614" class="gpu-name" text-anchor="middle">GPU 6</text>
+  <text x="653" y="632" class="gpu-detail" text-anchor="middle">BDF: 5c:00.0</text>
+  <text x="653" y="648" class="gpu-detail" text-anchor="middle">72 GB GDDR7</text>
+  <text x="653" y="664" class="gpu-detail" text-anchor="middle">RTX PRO 5000</text>
+
+  <!-- GPU 7 -->
+  <rect x="793" y="594" width="170" height="80" rx="8" fill="#e9f3d2" stroke="#76b900" stroke-width="0.8"/>
+  <text x="878" y="614" class="gpu-name" text-anchor="middle">GPU 7</text>
+  <text x="878" y="632" class="gpu-detail" text-anchor="middle">BDF: ee:00.0</text>
+  <text x="878" y="648" class="gpu-detail" text-anchor="middle">72 GB GDDR7</text>
+  <text x="878" y="664" class="gpu-detail" text-anchor="middle">RTX PRO 5000</text>
+
+  <!-- ===== Data Path Legend ===== -->
+  <rect x="30" y="716" width="1020" height="98" rx="10" fill="#fcfbf6" stroke="#e6e4da"/>
+  <text x="48" y="738" class="legend-ttl">Data Path Comparison</text>
+
+  <!-- Path 1: Intra-switch -->
+  <circle cx="58" cy="758" r="5" fill="#5a8e00"/>
+  <text x="72" y="762" class="path-lbl">Intra-switch (e.g. GPU0 ↔ GPU1):</text>
+  <text x="72" y="776" class="path-detail">GPU → PCIe Switch 0 → GPU  =  55.8 GB/s  (full PCIe Gen5 x16 rate, single-hop within same switch domain)</text>
+
+  <!-- Path 2: Cross-NUMA -->
+  <circle cx="58" cy="792" r="5" fill="#9f1239"/>
+  <text x="72" y="796" class="path-lbl">Cross-NUMA (e.g. GPU0 ↔ GPU4):</text>
+  <text x="72" y="810" class="path-detail">GPU → Switch 0 → RC0 → QPI/UPI → RC1 → Switch 1 → GPU  =  41-45 GB/s  (24% penalty from inter-socket QPI hop)</text>
+
+</svg>

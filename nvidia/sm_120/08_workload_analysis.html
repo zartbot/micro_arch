@@ -1,0 +1,3521 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Workload Analysis · SM_120 Microarch Reference</title>
+    <link rel="stylesheet" href="assets/css/style.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css"
+      integrity="sha384-nB0miv6/jRmo5UMMR1wu3Gz6NLsoTkbqJghGIsx//Rlm+ZU03BU6SQNC66uf4l5+"
+      crossorigin="anonymous"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/styles/atom-one-light.min.css"
+    />
+    <style>
+      /* protect non-color overrides over hljs theme */
+      pre code.hljs {
+        background: transparent !important;
+        padding: 0 !important;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="shell">
+      <aside class="toc">
+        <a class="toc-back" href="index.html">← Index</a>
+        <div class="toc-brand">
+          SM_120 <span class="accent">GB202</span> · <em>Microarch</em>
+        </div>
+        <span class="toc-tag">FINAL REPORT · 2026</span>
+        <h4>All Chapters</h4>
+        <a href="01_architecture_overview.html">01 · Architecture Overview</a>
+        <a href="02_memory_subsystem.html">02 · Memory Subsystem</a>
+        <a href="03_sm_microarchitecture.html">03 · SM Microarchitecture</a>
+        <a href="04_tensorcore_architecture.html"
+          >04 · TensorCore Architecture</a
+        >
+        <a href="05_instruction_level_characterization.html"
+          >05 · Instruction-Level Characterization</a
+        >
+        <a href="06_on_chip_network_async.html"
+          >06 · On-Chip Network &amp; Async</a
+        >
+        <a href="07_warp_scheduler_control.html"
+          >07 · Warp Scheduler &amp; Control</a
+        >
+        <a
+          href="08_workload_analysis.html"
+          style="font-weight: 600; color: var(--ink)"
+          >08 · Workload Analysis</a
+        >
+        <a href="09_power_thermal_efficiency.html"
+          >09 · Power, Thermal &amp; Efficiency</a
+        >
+        <a href="10_system_level_multi_gpu.html"
+          >10 · System-Level &amp; Multi-GPU</a
+        >
+        <a href="11_optimization_guidance.html">11 · Optimization Guidance</a>
+        <a href="12_ptxas_compiler_behavior.html"
+          >12 · ptxas Compiler Behavior</a
+        >
+        <a href="13_unified_performance_model.html"
+          >13 · Unified Performance Model</a
+        >
+        <a href="14_sm100_to_sm120_porting_guide.html"
+          >14 · SM_100 → SM_120 Porting Guide</a
+        >
+        <a href="15_agent_ground_truth.html">15 · Agent Ground Truth</a>
+        <a href="16_open_questions.html">16 · Open Questions</a>
+        <a href="17_cross_reference_map.html">17 · Cross-Reference Map</a>
+        <a href="18_appendix_a_test_coverage.html"
+          >18 · Appendix A — Test Coverage</a
+        >
+        <a href="19_appendix_b_machine_readable.html"
+          >19 · Appendix B — Machine-Readable Parameters</a
+        >
+        <a href="20_appendix_c_methodology.html"
+          >20 · Appendix C — Measurement Methodology</a
+        >
+      </aside>
+      <main class="content">
+        <header class="hero">
+          <div class="hero-eyebrow">
+            <span class="pulse"></span>CHAPTER 08 · SM_120 · GB202 BLACKWELL
+          </div>
+          <h1 class="hero-title">Workload Analysis</h1>
+          <p class="lede">
+            This chapter characterizes the NVIDIA SM_120 (GB202, RTX PRO 5000
+            72GB) under representative production workloads spanning the
+            compute-bound, memory-bound, and synchronization-bound regimes.
+            Through a systematic 588-shape GEMM sweep across 18
+            library/precision combinations, attention decomposition benchmarks,
+            and full-chip power profiling, we establish the achievable
+            throughput envelope, identify structural efficiency ceilings, and
+            derive actionable optimization guidelines. The measured data
+            demonstrates that SM_120 achieves up to 1076.5 TFLOPS (CUTLASS
+            MXFP4, 100.6% of theoretical peak) for compute-bound workloads, 879
+            GB/s (98% of DRAM peak) for memory-bound GEMV, and reveals that
+            FlashAttention efficiency is structurally capped at 46-61% by
+            thin-K/thin-N GEMM shapes rather than softmax computation.
+          </p>
+        </header>
+
+        <figure class="diagram">
+          <object
+            data="svg/ch08/ch08_summary.svg"
+            type="image/svg+xml"
+            aria-label="Chapter 8 Executive Summary — workload classification, peak throughput envelope, efficiency ceilings, and optimization decision framework across compute-bound GEMM, memory-bound GEMV, mixed attention, and power efficiency"
+          ></object>
+          <figcaption>
+            <span class="fig-num">FIG 08.0</span>Chapter 8 Executive Summary —
+            the six workload regimes characterized on SM_120: compute-bound GEMM
+            (up to 1077 TFLOPS MXFP4), memory-bound GEMV (879 GB/s
+            DRAM-saturated), mixed attention (46–61% structural cap), sync-bound
+            pipelines (12–20% overhead), multi-precision roofline (crossover AI
+            ladder), and power efficiency (5.3× TC/CUDA gap, 12.0 TFLOPS/W at
+            MXFP4). Key metrics, architectural bottlenecks, and optimization
+            levers summarized per regime.
+          </figcaption>
+        </figure>
+        <h2 class="ch-title" id="8-1-compute-bound-gemm">
+          8.1 Compute-Bound: GEMM
+        </h2>
+        <h3 class="sub-title" id="8-1-1-cublas-performance-sweep">
+          8.1.1 cuBLAS Performance Sweep
+        </h3>
+        <p>
+          The cuBLAS library provides the vendor-optimized performance ceiling
+          for SM_120 across all supported numerical precisions. Table 8.1
+          summarizes the peak achieved throughput per precision at M=N=K=8192
+          (Section 18, Case 3).
+        </p>
+        <p>
+          <strong
+            >Table 8.1: cuBLAS Peak Throughput by Precision (M=N=K=8192)</strong
+          >
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Precision</th>
+                <th>A/B Type</th>
+                <th>Compute</th>
+                <th style="text-align: center">Peak TFLOPS</th>
+                <th style="text-align: center">Efficiency</th>
+                <th style="text-align: center">Relative to FP16</th>
+                <th>Source</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>FP8 (E4M3)</td>
+                <td>FP8</td>
+                <td>FP32</td>
+                <td style="text-align: center">528.95</td>
+                <td style="text-align: center">98.7%</td>
+                <td style="text-align: center">1.95x</td>
+                <td><span class="cite">[S18/case_3]</span></td>
+              </tr>
+              <tr>
+                <td>INT8</td>
+                <td>INT8</td>
+                <td>INT32</td>
+                <td style="text-align: center">525.56</td>
+                <td style="text-align: center">88.8%</td>
+                <td style="text-align: center">1.94x</td>
+                <td><span class="cite">[S18/case_3]</span></td>
+              </tr>
+              <tr>
+                <td>FP16</td>
+                <td>FP16</td>
+                <td>FP32</td>
+                <td style="text-align: center">270.53</td>
+                <td style="text-align: center">85.0%</td>
+                <td style="text-align: center">1.00x</td>
+                <td><span class="cite">[S18/case_3]</span></td>
+              </tr>
+              <tr>
+                <td>BF16</td>
+                <td>BF16</td>
+                <td>FP32</td>
+                <td style="text-align: center">270.50</td>
+                <td style="text-align: center">86.0%</td>
+                <td style="text-align: center">1.00x</td>
+                <td><span class="cite">[S18/case_3]</span></td>
+              </tr>
+              <tr>
+                <td>FP32</td>
+                <td>FP32</td>
+                <td>FP32</td>
+                <td style="text-align: center">132.89</td>
+                <td style="text-align: center">--</td>
+                <td style="text-align: center">0.49x</td>
+                <td><span class="cite">[S18/case_3]</span></td>
+              </tr>
+              <tr>
+                <td>TF32</td>
+                <td>FP32</td>
+                <td>TF32</td>
+                <td style="text-align: center">125.74</td>
+                <td style="text-align: center">85.0%</td>
+                <td style="text-align: center">0.46x</td>
+                <td><span class="cite">[S18/case_3]</span></td>
+              </tr>
+              <tr>
+                <td>FP64</td>
+                <td>FP64</td>
+                <td>FP64</td>
+                <td style="text-align: center">0.96</td>
+                <td style="text-align: center">91.4%</td>
+                <td style="text-align: center">0.004x</td>
+                <td><span class="cite">[S18/case_3]</span></td>
+              </tr>
+              <tr>
+                <td>MX-FP4</td>
+                <td>E2M1</td>
+                <td>FP32</td>
+                <td style="text-align: center">455</td>
+                <td style="text-align: center">95.0%</td>
+                <td style="text-align: center">--</td>
+                <td><span class="cite">[S19/case_23]</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          The precision hierarchy follows the expected 2x scaling per halved
+          operand width: FP8/INT8 achieve approximately 2x FP16, confirming
+          identical 8-bit tensor core throughput via QMMA.16832. FP16 and BF16
+          are virtually identical (270.53 vs 270.50 TFLOPS), confirming both
+          share the same HMMA.16816 hardware pathway. FP64 is severely throttled
+          at 0.96 TFLOPS, consistent with RTX-class product positioning (minimal
+          DMMA support).
+        </p>
+        <h3
+          class="sub-title"
+          id="8-1-2-chip-level-sustained-throughput-588-shape-llm-sweep"
+        >
+          8.1.2 Chip-Level Sustained Throughput: 588-Shape LLM Sweep
+        </h3>
+        <p>
+          To characterize real-world GEMM performance beyond peak-only metrics,
+          we conducted a comprehensive sweep across 588 LLM-typical matrix
+          shapes per library/precision combination. The shape space covers:
+        </p>
+        <ul>
+          <li>
+            <strong>M</strong>: {1, 2, 4, 8, 32, 64, 128, 256, 1024, 2048, 3072,
+            4096, 8192, 16384}
+          </li>
+          <li><strong>N</strong>: {512, 1024, 2048, 4096, 7168, 16384}</li>
+          <li><strong>K</strong>: {128, 512, 1024, 1536, 4096, 7168, 16384}</li>
+        </ul>
+        <p>
+          Each shape was warmed up for 5 iterations and measured over 20
+          iterations. Raw per-shape CSVs are archived in
+          <code>test_results/SM_120/section_9/results/</code>.
+        </p>
+        <p>
+          <strong
+            >Table 8.2: 588-Shape Sweep Summary (Section 9, Cases
+            128-145)</strong
+          >
+        </p>
+        <figure class="diagram">
+          <object
+            data="svg/ch08/ch08_t2_sweep.svg"
+            type="image/svg+xml"
+            aria-label="Table 8.2 visualization — 588-shape GEMM sweep across libraries and precisions on SM_120"
+          ></object>
+          <figcaption>
+            <span class="fig-num">FIG 08.2</span>588-shape GEMM sweep visualised
+            — peak TFLOPS per (library, precision) plotted against the
+            chip-sustained 1068.5 TFLOPS baseline; star markers identify
+            per-category leaders, side panels report kernel efficiency and shape
+            coverage.
+          </figcaption>
+        </figure>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Library</th>
+                <th>Precision</th>
+                <th style="text-align: center">Peak TFLOPS</th>
+                <th>Peak Shape</th>
+                <th style="text-align: center">Eff%</th>
+                <th>Kernel Type</th>
+                <th style="text-align: center">Shapes OK</th>
+                <th>Source</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Chip sustained</td>
+                <td>MX-FP4</td>
+                <td style="text-align: center">1068.5</td>
+                <td>110SM x 48W, 50K iters</td>
+                <td style="text-align: center">99.0</td>
+                <td>Hand-tuned OMMA.SF.16864</td>
+                <td style="text-align: center">--</td>
+                <td><span class="cite">[S9/case_128]</span></td>
+              </tr>
+              <tr>
+                <td>cuBLAS</td>
+                <td>BF16</td>
+                <td style="text-align: center">253.6</td>
+                <td>16384x4096x7168</td>
+                <td style="text-align: center">94.8</td>
+                <td>cublasGemmEx</td>
+                <td style="text-align: center">588/588</td>
+                <td><span class="cite">[S9/case_131]</span></td>
+              </tr>
+              <tr>
+                <td>cuBLAS</td>
+                <td>FP8 E4M3</td>
+                <td style="text-align: center">551.1</td>
+                <td>(large shapes)</td>
+                <td style="text-align: center">102</td>
+                <td>cublasLtMatmul implicit-scale</td>
+                <td style="text-align: center">462/588</td>
+                <td><span class="cite">[S9/case_132]</span></td>
+              </tr>
+              <tr>
+                <td>cuBLAS</td>
+                <td>MXFP4</td>
+                <td style="text-align: center">1041.9</td>
+                <td>(large shapes)</td>
+                <td style="text-align: center">97.4</td>
+                <td>cublasLtMatmul VEC16_UE4M3</td>
+                <td style="text-align: center">504/588</td>
+                <td><span class="cite">[S9/case_133]</span></td>
+              </tr>
+              <tr>
+                <td>CUTLASS</td>
+                <td>BF16</td>
+                <td style="text-align: center">261.8</td>
+                <td>4096^3</td>
+                <td style="text-align: center">97.9</td>
+                <td>Cooperative 128x128 tile</td>
+                <td style="text-align: center">462/588</td>
+                <td><span class="cite">[S9/case_134]</span></td>
+              </tr>
+              <tr>
+                <td>CUTLASS</td>
+                <td>FP8 blockwise</td>
+                <td style="text-align: center">504.3</td>
+                <td>3072x16384x16384</td>
+                <td style="text-align: center">94.1</td>
+                <td>Blockwise per-row scale</td>
+                <td style="text-align: center">588/588</td>
+                <td><span class="cite">[S9/case_135]</span></td>
+              </tr>
+              <tr>
+                <td>CUTLASS</td>
+                <td>MXFP4</td>
+                <td style="text-align: center">1076.5</td>
+                <td>3072x16384x16384</td>
+                <td style="text-align: center">100.6</td>
+                <td>block_scaled_gemm 256x128x128</td>
+                <td style="text-align: center">588/588</td>
+                <td><span class="cite">[S9/case_136]</span></td>
+              </tr>
+              <tr>
+                <td>CUTLASS</td>
+                <td>NVFP4</td>
+                <td style="text-align: center">1011.6</td>
+                <td>3072x16384x16384</td>
+                <td style="text-align: center">94.5</td>
+                <td>block_scaled_gemm 128x128x128</td>
+                <td style="text-align: center">579/588</td>
+                <td><span class="cite">[S9/case_137]</span></td>
+              </tr>
+              <tr>
+                <td>CUTLASS</td>
+                <td>Sparse FP8</td>
+                <td style="text-align: center">682</td>
+                <td>(large shapes)</td>
+                <td style="text-align: center">--</td>
+                <td>Sparse 2:4, max 1.45x dense</td>
+                <td style="text-align: center">511/588</td>
+                <td><span class="cite">[S9/case_139]</span></td>
+              </tr>
+              <tr>
+                <td>CUTLASS</td>
+                <td>Sparse MXFP4</td>
+                <td style="text-align: center">1318</td>
+                <td>(large shapes)</td>
+                <td style="text-align: center">61.7</td>
+                <td>Sparse 2:4 + block-scale</td>
+                <td style="text-align: center">504/588</td>
+                <td><span class="cite">[S9/case_140]</span></td>
+              </tr>
+              <tr>
+                <td>CUTLASS</td>
+                <td>Sparse NVFP4</td>
+                <td style="text-align: center">751</td>
+                <td>3072x16384x16384</td>
+                <td style="text-align: center">35.0</td>
+                <td>Sparse 2:4 + block-scale</td>
+                <td style="text-align: center">503/588</td>
+                <td><span class="cite">[S9/case_141]</span></td>
+              </tr>
+              <tr>
+                <td>CUTLASS Grouped</td>
+                <td>BF16</td>
+                <td style="text-align: center">252.3</td>
+                <td>4096^3</td>
+                <td style="text-align: center">94.3</td>
+                <td>GroupedGemmUniversal3x, 8 groups</td>
+                <td style="text-align: center">588/588</td>
+                <td><span class="cite">[S9/case_142]</span></td>
+              </tr>
+              <tr>
+                <td>CUTLASS Grouped</td>
+                <td>FP8</td>
+                <td style="text-align: center">521.4</td>
+                <td>3072x2048x16384</td>
+                <td style="text-align: center">97.3</td>
+                <td>GroupedGemmUniversal3x, 8 groups</td>
+                <td style="text-align: center">336/588</td>
+                <td><span class="cite">[S9/case_143]</span></td>
+              </tr>
+              <tr>
+                <td>CUTLASS Grouped</td>
+                <td>MXFP4</td>
+                <td style="text-align: center">1036.4</td>
+                <td>3072x4096x16384</td>
+                <td style="text-align: center">96.9</td>
+                <td>GroupedBlockScaled 256x128x128</td>
+                <td style="text-align: center">588/588</td>
+                <td><span class="cite">[S9/case_144]</span></td>
+              </tr>
+              <tr>
+                <td>CUTLASS Grouped</td>
+                <td>NVFP4</td>
+                <td style="text-align: center">866.0</td>
+                <td>M=3072</td>
+                <td style="text-align: center">81.0</td>
+                <td>GroupedBlockScaled 128x128x128</td>
+                <td style="text-align: center">--</td>
+                <td><span class="cite">[S9/case_145]</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p><strong>Table footnotes:</strong></p>
+        <ol>
+          <li>
+            M={2,4,8} unsupported by cublasLtMatmul FP8 implicit-scaling path.
+          </li>
+          <li>
+            M={2,4} unsupported; requires VEC16_UE4M3 scale mode + TN format.
+          </li>
+          <li>M={1,2,4} unsupported by CUTLASS 128x128 tile minimum.</li>
+          <li>9 shapes OOM at large MxNxK.</li>
+          <li>K=128 NOT_SUPPORTED (cta_k=256 minimum alignment).</li>
+          <li>M&lt;128 not supported by 128x128 grouped tile.</li>
+        </ol>
+        <h3 class="sub-title" id="8-1-3-chip-level-efficiency-highlights">
+          8.1.3 Chip-Level Efficiency Highlights
+        </h3>
+        <p>
+          The 588-shape sweep reveals several notable efficiency
+          characteristics:
+        </p>
+        <ul>
+          <li>
+            <p>
+              <strong>CUTLASS MXFP4 achieves 100.6% of theoretical peak</strong>
+              (1076.5 vs 1070 TFLOPS). The slight super-theoretical measurement
+              arises from clock boost above the pinned frequency during
+              sustained computation. This confirms that the CUTLASS cooperative
+              kernel with 256x128x128 tiles and OMMA.SF.16864 instructions fully
+              saturates the tensor core array.
+            </p>
+          </li>
+          <li>
+            <p>
+              <strong>cuBLAS FP8 achieves 102% efficiency</strong> (551.1 vs 536
+              theoretical) at large shapes. The same clock-boost effect produces
+              the slight super-theoretical reading. cuBLAS FP8 requires cublasLt
+              API and cannot run at M&lt;8 due to implicit-scaling constraints.
+            </p>
+          </li>
+          <li>
+            <p>
+              <strong>Hand-tuned OMMA.SF sustains 99.0% of theoretical</strong>
+              (1068.5 vs 1079.1 TFLOPS) at chip-level with 110 SM x 220 blocks x
+              50K iterations. This represents the absolute hardware ceiling for
+              MX-FP4 computation on this chip.
+            </p>
+          </li>
+          <li>
+            <p>
+              <strong
+                >Sparse MXFP4 peaks at 1318 TFLOPS but achieves only 61.7%
+                efficiency.</strong
+              >
+              Tile alignment constraints (K=256 minimum) penalize small-K
+              shapes, suggesting significant room for tile-size optimization in
+              the CUTLASS sparse MXFP4 path.
+            </p>
+          </li>
+          <li>
+            <p>
+              <strong
+                >Grouped GEMM MXFP4 (1036.4 T) achieves 96.9% of single-GEMM
+                MXFP4 (1076.5 T).</strong
+              >
+              The 3.7% overhead from group dispatch is near-negligible,
+              validating grouped GEMM as an efficient MoE execution strategy.
+            </p>
+          </li>
+        </ul>
+        <h3 class="sub-title" id="8-1-4-m-scaling-behavior">
+          8.1.4 M-Scaling Behavior
+        </h3>
+        <p>
+          All formats exhibit a consistent three-regime M-scaling pattern across
+          the 588-shape sweep, but the transition points and saturation ceilings
+          differ significantly across precision, sparsity, and grouped execution
+          modes.
+        </p>
+        <figure class="diagram">
+          <object
+            data="svg/ch08/ch08_m_scaling.svg"
+            type="image/svg+xml"
+            aria-label="GEMM M-scaling three-regime model — launch-bound, occupancy-bound, TC peak"
+          ></object>
+          <figcaption>
+            <span class="fig-num">FIG 08.3</span>GEMM M-scaling three-regime
+            model — as M grows the dominant bottleneck shifts from kernel-launch
+            overhead (R1) through occupancy / wave quantisation (R2) to TC peak
+            throughput (R3); applies to all CUTLASS / cuBLAS variants below with
+            transition points that move with tile size and precision.
+          </figcaption>
+        </figure>
+        <p>
+          <strong
+            >Table 8.3: M-Scaling Efficiency Transitions (cuBLAS BF16)</strong
+          >
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>M</th>
+                <th style="text-align: center">Peak TFLOPS</th>
+                <th style="text-align: center">Efficiency</th>
+                <th>Regime</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>1</td>
+                <td style="text-align: center">1.7</td>
+                <td style="text-align: center">0.8%</td>
+                <td>Launch-bound</td>
+              </tr>
+              <tr>
+                <td>2</td>
+                <td style="text-align: center">5.7</td>
+                <td style="text-align: center">2.5%</td>
+                <td>Launch-bound</td>
+              </tr>
+              <tr>
+                <td>4</td>
+                <td style="text-align: center">11.4</td>
+                <td style="text-align: center">5.0%</td>
+                <td>Launch-bound</td>
+              </tr>
+              <tr>
+                <td>8</td>
+                <td style="text-align: center">22.7</td>
+                <td style="text-align: center">10.0%</td>
+                <td>Memory-bound</td>
+              </tr>
+              <tr>
+                <td>32</td>
+                <td style="text-align: center">91.2</td>
+                <td style="text-align: center">40.2%</td>
+                <td>Transition</td>
+              </tr>
+              <tr>
+                <td>64</td>
+                <td style="text-align: center">145.8</td>
+                <td style="text-align: center">64.2%</td>
+                <td>Transition</td>
+              </tr>
+              <tr>
+                <td>128</td>
+                <td style="text-align: center">155.8</td>
+                <td style="text-align: center">68.7%</td>
+                <td>Transition</td>
+              </tr>
+              <tr>
+                <td>256</td>
+                <td style="text-align: center">188.3</td>
+                <td style="text-align: center">82.9%</td>
+                <td>Compute-bound</td>
+              </tr>
+              <tr>
+                <td>1024</td>
+                <td style="text-align: center">219.3</td>
+                <td style="text-align: center">96.6%</td>
+                <td>Saturated</td>
+              </tr>
+              <tr>
+                <td>2048</td>
+                <td style="text-align: center">244.0</td>
+                <td style="text-align: center">107.5%</td>
+                <td>Saturated</td>
+              </tr>
+              <tr>
+                <td>4096</td>
+                <td style="text-align: center">254.6</td>
+                <td style="text-align: center">112.1%</td>
+                <td>Saturated</td>
+              </tr>
+              <tr>
+                <td>8192</td>
+                <td style="text-align: center">244.9</td>
+                <td style="text-align: center">107.9%</td>
+                <td>Saturated</td>
+              </tr>
+              <tr>
+                <td>16384</td>
+                <td style="text-align: center">253.6</td>
+                <td style="text-align: center">111.7%</td>
+                <td>Saturated</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <h4 class="minor" id="8-1-4b-cutlass-dense-fp8-fp4-m-scaling">
+          8.1.4b CUTLASS Dense FP8 / FP4 M-Scaling
+        </h4>
+        <figure class="diagram">
+          <object
+            data="svg/ch08/ch08_m_scaling_dense.svg"
+            type="image/svg+xml"
+            aria-label="CUTLASS dense kernels (FP8 blockwise + MXFP4) M-scaling efficiency curves"
+          ></object>
+          <figcaption>
+            <span class="fig-num">FIG 08.3a</span>CUTLASS dense kernels — FP8
+            blockwise saturates earlier (M≥1024 ≥87 %) thanks to its smaller
+            128×128 tile filling 110 SMs sooner; MXFP4 needs the larger 256×128
+            tile to break 90 % but reaches 100.6 % at M=3072 via free-boost
+            above the pinned 2.572 GHz clock.
+          </figcaption>
+        </figure>
+        <p>
+          <strong
+            >Table 8.3a: M-Scaling — CUTLASS Dense (Normal) Kernels</strong
+          >
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>M</th>
+                <th style="text-align: center">
+                  FP8 blockwise (TFLOPS / eff%)
+                </th>
+                <th style="text-align: center">MXFP4 (TFLOPS / eff%)</th>
+                <th style="text-align: center">NVFP4 (TFLOPS / eff%)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>1</td>
+                <td style="text-align: center">1.7 / 0.3%</td>
+                <td style="text-align: center">1.8 / 0.2%</td>
+                <td style="text-align: center">— (incomplete)</td>
+              </tr>
+              <tr>
+                <td>8</td>
+                <td style="text-align: center">13.6 / 2.5%</td>
+                <td style="text-align: center">14.8 / 1.4%</td>
+                <td style="text-align: center">—</td>
+              </tr>
+              <tr>
+                <td>32</td>
+                <td style="text-align: center">53.7 / 10.0%</td>
+                <td style="text-align: center">75.9 / 7.1%</td>
+                <td style="text-align: center">—</td>
+              </tr>
+              <tr>
+                <td>64</td>
+                <td style="text-align: center">106.8 / 19.9%</td>
+                <td style="text-align: center">150.0 / 14.0%</td>
+                <td style="text-align: center">—</td>
+              </tr>
+              <tr>
+                <td>128</td>
+                <td style="text-align: center">211.3 / 39.4%</td>
+                <td style="text-align: center">295.0 / 27.6%</td>
+                <td style="text-align: center">—</td>
+              </tr>
+              <tr>
+                <td>256</td>
+                <td style="text-align: center">356.7 / 66.6%</td>
+                <td style="text-align: center">575.2 / 53.8%</td>
+                <td style="text-align: center">—</td>
+              </tr>
+              <tr>
+                <td>1024</td>
+                <td style="text-align: center">466.5 / 87.1%</td>
+                <td style="text-align: center">982.4 / 91.8%</td>
+                <td style="text-align: center">—</td>
+              </tr>
+              <tr>
+                <td>2048</td>
+                <td style="text-align: center">495.3 / 92.5%</td>
+                <td style="text-align: center">998.8 / 93.3%</td>
+                <td style="text-align: center">—</td>
+              </tr>
+              <tr>
+                <td>3072</td>
+                <td style="text-align: center">
+                  <strong>504.3 / 94.1%</strong>
+                </td>
+                <td style="text-align: center">
+                  <strong>1076.5 / 100.6%</strong>
+                </td>
+                <td style="text-align: center">—</td>
+              </tr>
+              <tr>
+                <td>4096</td>
+                <td style="text-align: center">497.7 / 92.9%</td>
+                <td style="text-align: center">1064.2 / 99.5%</td>
+                <td style="text-align: center">—</td>
+              </tr>
+              <tr>
+                <td>16384</td>
+                <td style="text-align: center">499.1 / 93.2%</td>
+                <td style="text-align: center">1071.4 / 100.1%</td>
+                <td style="text-align: center">—</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          Sources: <code>S9/case_135</code> (FP8),
+          <code>S9/case_136</code> (MXFP4), <code>S9/case_137</code> (NVFP4,
+          incomplete — profiler OOM after 54/588 shapes at K=128 only).
+        </p>
+        <p><strong>Key observations for dense CUTLASS:</strong></p>
+        <ul>
+          <li>
+            <p>
+              <strong>FP8 blockwise</strong> (128x128x128 cooperative,
+              QMMA.16832): Saturates at M≥1024 (87%+), peaks at M=3072 (94.1%).
+              The 128x128 CTA tile means 3072/128=24 full tiles along M,
+              providing optimal wave quantization across 110 SMs. Unlike cuBLAS
+              FP8, CUTLASS blockwise supports all M values including M=1 (100%
+              shape coverage, 588/588) because blockwise per-row scaling does
+              not impose the implicit-scaling M≥8 constraint.
+            </p>
+          </li>
+          <li>
+            <p>
+              <strong>MXFP4</strong> (256x128x128 cooperative, OMMA.SF.16864):
+              Reaches 100.6% efficiency at M=3072 (clock boost above pinned
+              frequency). The larger 256×128 CTA tile means MXFP4 needs
+              proportionally larger M to fill the tile — at M=128 only 27.6% vs
+              FP8's 39.4%. However, MXFP4's 2× arithmetic density means absolute
+              TFLOPS at M=256 (575 T) already exceeds FP8's M=1024 (467 T). The
+              OMMA schedule (<code>_o_vs32</code>) is 1.9× faster than the
+              non-OMMA (<code>_q</code>) fallback at the same tile size.
+            </p>
+          </li>
+          <li>
+            <p>
+              <strong>NVFP4</strong> data is incomplete (profiler OOM after 54
+              shapes, all at K=128). The 128×128×128 tile with 19 kernel
+              variants causes simultaneous allocation exceeding GPU memory for
+              large shapes. Available K=128 data shows only 82 TFLOPS peak (7.7%
+              efficiency), which is entirely memory-bound and not representative
+              of compute-bound performance.
+            </p>
+          </li>
+        </ul>
+        <h4 class="minor" id="8-1-4c-cutlass-sparse-24-m-scaling">
+          8.1.4c CUTLASS Sparse 2:4 M-Scaling
+        </h4>
+        <figure class="diagram">
+          <object
+            data="svg/ch08/ch08_m_scaling_sparse.svg"
+            type="image/svg+xml"
+            aria-label="CUTLASS sparse 2:4 kernels (Sparse FP8 / Sparse MXFP4 / Sparse NVFP4) M-scaling efficiency curves"
+          ></object>
+          <figcaption>
+            <span class="fig-num">FIG 08.3b</span>CUTLASS sparse 2:4 kernels —
+            none of the three sparse variants exceed ≈64 % theoretical peak; the
+            2:4 metadata pipeline (doubled CTA-K=256, sparsity index loads, BF16
+            epilogue) caps the sparsity speedup at ≤1.45× versus dense FP8, far
+            from the nominal 2× density gain.
+          </figcaption>
+        </figure>
+        <p>
+          <strong>Table 8.3b: M-Scaling — CUTLASS Sparse 2:4 Kernels</strong>
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>M</th>
+                <th style="text-align: center">Sparse FP8 (TFLOPS / eff%)</th>
+                <th style="text-align: center">Sparse MXFP4 (TFLOPS / eff%)</th>
+                <th style="text-align: center">Sparse NVFP4 (TFLOPS / eff%)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>1</td>
+                <td style="text-align: center">—</td>
+                <td style="text-align: center">4.8 / 0.2%</td>
+                <td style="text-align: center">—</td>
+              </tr>
+              <tr>
+                <td>8</td>
+                <td style="text-align: center">—</td>
+                <td style="text-align: center">38.7 / 1.8%</td>
+                <td style="text-align: center">—</td>
+              </tr>
+              <tr>
+                <td>32</td>
+                <td style="text-align: center">—</td>
+                <td style="text-align: center">153.0 / 7.2%</td>
+                <td style="text-align: center">—</td>
+              </tr>
+              <tr>
+                <td>64</td>
+                <td style="text-align: center">—</td>
+                <td style="text-align: center">313.5 / 14.7%</td>
+                <td style="text-align: center">—</td>
+              </tr>
+              <tr>
+                <td>128</td>
+                <td style="text-align: center">—</td>
+                <td style="text-align: center">631.4 / 29.6%</td>
+                <td style="text-align: center">518.5 / 24.3%</td>
+              </tr>
+              <tr>
+                <td>256</td>
+                <td style="text-align: center">—</td>
+                <td style="text-align: center">906.3 / 42.4%</td>
+                <td style="text-align: center">685.5 / 32.1%</td>
+              </tr>
+              <tr>
+                <td>1024</td>
+                <td style="text-align: center">—</td>
+                <td style="text-align: center">1188.8 / 55.6%</td>
+                <td style="text-align: center">825.8 / 38.7%</td>
+              </tr>
+              <tr>
+                <td>2048</td>
+                <td style="text-align: center">667.2 / —</td>
+                <td style="text-align: center">1290.9 / 60.4%</td>
+                <td style="text-align: center">852.6 / 39.9%</td>
+              </tr>
+              <tr>
+                <td>3072</td>
+                <td style="text-align: center">674.3 / —</td>
+                <td style="text-align: center">
+                  <strong>1317.7 / 61.7%</strong>
+                </td>
+                <td style="text-align: center">
+                  <strong>866.4 / 40.6%</strong>
+                </td>
+              </tr>
+              <tr>
+                <td>4096</td>
+                <td style="text-align: center">679.3 / —</td>
+                <td style="text-align: center">1293.8 / 60.5%</td>
+                <td style="text-align: center">—</td>
+              </tr>
+              <tr>
+                <td>8192</td>
+                <td style="text-align: center"><strong>682.5 / —</strong></td>
+                <td style="text-align: center">1316.7 / 61.6%</td>
+                <td style="text-align: center">—</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          Theoretical peaks: Sparse FP8 ~1072T, Sparse MXFP4 ~2137T, Sparse
+          NVFP4 ~2136T. Sources: <code>S9/case_139</code> (Sparse FP8, 511/588),
+          <code>S9/case_140</code> (Sparse MXFP4, 504/588),
+          <code>S9/case_141</code> (Sparse NVFP4, 503/588).
+        </p>
+        <p><strong>Key observations for sparse CUTLASS:</strong></p>
+        <ul>
+          <li>
+            <p>
+              <strong>Sparse FP8</strong> (128x128x256 CTA, QMMA.SP): Peak 682.5
+              TFLOPS at M=8192. Versus dense cuBLAS FP8: average speedup is only
+              0.71× across all 469 matched shapes because CUTLASS library
+              kernels are compared against production-optimized cuBLAS. For
+              large shapes (M,N,K≥1024, 109 pairs) the average speedup is 1.23×
+              with 88% of shapes benefiting, but the theoretical 2× sparsity
+              speedup is never realized (max observed: 1.45× at M=16384, N=512,
+              K=4096). The sparse kernel's CTA tile K dimension is doubled (256
+              vs 128) to process 2:4 compressed data, which increases register
+              pressure and reduces occupancy for small shapes.
+            </p>
+          </li>
+          <li>
+            <p>
+              <strong>Sparse MXFP4</strong> (128x128x256 CTA, warp-specialized):
+              Peak 1317.7 TFLOPS at M=3072 but only 61.7% of the 2137T
+              theoretical peak. The ~38% efficiency gap comes from: (1) TMA data
+              movement overhead — the sparse MXFP4 kernel must load both the
+              compressed data and the sparsity metadata (2:4 index tensor); (2)
+              BF16 epilogue conversion cost; (3) cluster 1×1×1 configuration (no
+              TMA multicast on SM_120); (4) K=128 alignment constraint — all 84
+              shapes with K=128 are rejected because the 128×256 CTA tile
+              requires K divisible by 256. Sparse-vs-dense speedup: 1318/1069 =
+              1.23×, far from the theoretical 2×.
+            </p>
+          </li>
+          <li>
+            <p>
+              <strong>Sparse NVFP4</strong> (128x128x256 CTA, OMMA.SF.SP): Peak
+              866 TFLOPS (40.6% efficiency) — significantly lower than sparse
+              MXFP4 despite identical theoretical peak. The additional
+              efficiency gap versus sparse MXFP4 (40.6% vs 61.7%) suggests that
+              the NVFP4 kernel's block-scale handling path through the OMMA.SF
+              pipeline is less optimized in the current CUTLASS 4.5
+              implementation. K=128 shapes are also NOT_SUPPORTED (same
+              256-alignment constraint).
+            </p>
+          </li>
+          <li>
+            <p>
+              <strong>Common sparse constraint</strong>: All three sparse
+              kernels require K≥256 due to the doubled CTA K dimension for 2:4
+              compressed data, rejecting ~14% of shapes (84/588). This
+              structural constraint means sparse kernels cannot serve K=128
+              workloads (common in small-model inference).
+            </p>
+          </li>
+        </ul>
+        <h4 class="minor" id="8-1-4d-cutlass-grouped-gemm-m-scaling">
+          8.1.4d CUTLASS Grouped GEMM M-Scaling
+        </h4>
+        <figure class="diagram">
+          <object
+            data="svg/ch08/ch08_m_scaling_grouped.svg"
+            type="image/svg+xml"
+            aria-label="CUTLASS grouped GEMM (Grouped FP8 / Grouped MXFP4 / Grouped NVFP4) M-scaling efficiency curves"
+          ></object>
+          <figcaption>
+            <span class="fig-num">FIG 08.3c</span>CUTLASS grouped GEMM (8
+            groups) — grouped FP8 has a hard M≥128 floor (43 % shape coverage
+            loss), while warp-specialised grouped MXFP4 covers all 588/588
+            shapes and stays within 3.7 % of the single-GEMM MXFP4 peak, making
+            it the recommended kernel for MoE-style dispatch where per-expert M
+            varies widely.
+          </figcaption>
+        </figure>
+        <p>
+          <strong
+            >Table 8.3c: M-Scaling — CUTLASS Grouped GEMM (8 groups)</strong
+          >
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>M</th>
+                <th style="text-align: center">Grouped FP8 (TFLOPS / eff%)</th>
+                <th style="text-align: center">
+                  Grouped MXFP4 (TFLOPS / eff%)
+                </th>
+                <th style="text-align: center">
+                  Grouped NVFP4 (TFLOPS / eff%)
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>1</td>
+                <td style="text-align: center">N/A</td>
+                <td style="text-align: center">3.0 / 0.3%</td>
+                <td style="text-align: center">4.2 / 0.4%</td>
+              </tr>
+              <tr>
+                <td>8</td>
+                <td style="text-align: center">N/A</td>
+                <td style="text-align: center">24.9 / 2.3%</td>
+                <td style="text-align: center">32.7 / 3.1%</td>
+              </tr>
+              <tr>
+                <td>32</td>
+                <td style="text-align: center">N/A</td>
+                <td style="text-align: center">95.0 / 8.9%</td>
+                <td style="text-align: center">113.4 / 10.6%</td>
+              </tr>
+              <tr>
+                <td>64</td>
+                <td style="text-align: center">N/A</td>
+                <td style="text-align: center">216.0 / 20.2%</td>
+                <td style="text-align: center">264.3 / 24.7%</td>
+              </tr>
+              <tr>
+                <td>128</td>
+                <td style="text-align: center">324.7 / 60.6%</td>
+                <td style="text-align: center">445.0 / 41.6%</td>
+                <td style="text-align: center">518.5 / 48.5%</td>
+              </tr>
+              <tr>
+                <td>256</td>
+                <td style="text-align: center">408.5 / 76.3%</td>
+                <td style="text-align: center">870.0 / 81.3%</td>
+                <td style="text-align: center">685.5 / 64.1%</td>
+              </tr>
+              <tr>
+                <td>1024</td>
+                <td style="text-align: center">498.5 / 93.0%</td>
+                <td style="text-align: center">977.2 / 91.3%</td>
+                <td style="text-align: center">825.8 / 77.3%</td>
+              </tr>
+              <tr>
+                <td>2048</td>
+                <td style="text-align: center">513.0 / 95.8%</td>
+                <td style="text-align: center">1014.3 / 94.8%</td>
+                <td style="text-align: center">852.6 / 79.8%</td>
+              </tr>
+              <tr>
+                <td>3072</td>
+                <td style="text-align: center">
+                  <strong>521.4 / 97.3%</strong>
+                </td>
+                <td style="text-align: center">
+                  <strong>1036.4 / 96.9%</strong>
+                </td>
+                <td style="text-align: center">
+                  <strong>866.4 / 81.0%</strong>
+                </td>
+              </tr>
+              <tr>
+                <td>4096</td>
+                <td style="text-align: center">517.5 / 96.6%</td>
+                <td style="text-align: center">1017.8 / 95.1%</td>
+                <td style="text-align: center">—</td>
+              </tr>
+              <tr>
+                <td>16384</td>
+                <td style="text-align: center">507.8 / 94.8%</td>
+                <td style="text-align: center">987.7 / 92.3%</td>
+                <td style="text-align: center">—</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          Sources: <code>S9/case_143</code> (Grouped FP8, 336/588),
+          <code>S9/case_144</code> (Grouped MXFP4, 588/588),
+          <code>S9/case_145</code> (Grouped NVFP4, 30/42 representative).
+        </p>
+        <p><strong>Key observations for grouped CUTLASS:</strong></p>
+        <ul>
+          <li>
+            <p>
+              <strong>Grouped FP8</strong> (128x128x128 cooperative, 8 groups):
+              <strong>M&lt;128 is not supported</strong> — the 128×128 CTA tile
+              imposes a hard minimum M=128, rejecting 252/588 shapes (43%
+              coverage loss). This is the most restrictive minimum-M constraint
+              across all kernel variants. At M≥128, efficiency is excellent
+              (60.6%→97.3%), peaking at M=3072 (521.4 T, 97.3%). The grouped
+              kernel is actually 3.4% faster than single FP8 at peak because 8
+              independent groups improve SM utilization via inter-group wave
+              overlap. Optimal N is medium (2048–4096) rather than large — 8
+              concurrent groups compete for L2 bandwidth, causing throughput
+              regression at N=16384.
+            </p>
+          </li>
+          <li>
+            <p>
+              <strong>Grouped MXFP4</strong> (256x128x128 warp-specialized
+              cooperative, 8 groups): Supports all M values (588/588 coverage)
+              thanks to the warp-specialized schedule that handles sub-tile M
+              gracefully — a critical advantage over grouped FP8. Peak 1036.4
+              TFLOPS (96.9% efficiency) at M=3072, only 3.7% below the
+              single-GEMM MXFP4 peak (1076.5 T). The warp-specialized schedule
+              also means MXFP4 reaches 81.3% efficiency at M=256, where FP8
+              grouped is only at 76.3% despite the lower arithmetic density.
+              This makes grouped MXFP4 the best choice for MoE dispatch where
+              per-expert M varies widely.
+            </p>
+          </li>
+          <li>
+            <p>
+              <strong>Grouped NVFP4</strong> (128x128x128 warp-specialized
+              cooperative, 8 groups): Supports all M values but only 30/42
+              representative shapes were measured (GPU contention). Peak 866
+              TFLOPS (81.0%) at M=3072 — a significant gap below grouped MXFP4
+              (96.9%) at the same peak M. The 128×128 tile (vs MXFP4's 256×128)
+              may contribute to lower utilization. K-dimension sensitivity is
+              pronounced: at M=1024, K=1024 gives 413 T (38%) while K=4096 gives
+              826 T (77%), indicating the NVFP4 block-scale pipeline benefits
+              more from longer K reductions.
+            </p>
+          </li>
+        </ul>
+        <h4 class="minor" id="8-1-4e-cross-variant-m-scaling-summary">
+          8.1.4e Cross-Variant M-Scaling Summary
+        </h4>
+        <p>
+          <strong
+            >Table 8.3d: Regime Transition Comparison Across All
+            Variants</strong
+          >
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Variant</th>
+                <th style="text-align: center">Min M</th>
+                <th style="text-align: center">M for 50% eff</th>
+                <th style="text-align: center">M for 80% eff</th>
+                <th style="text-align: center">M for 90% eff</th>
+                <th style="text-align: center">Peak eff%</th>
+                <th style="text-align: center">Coverage</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>cuBLAS BF16</td>
+                <td style="text-align: center">1</td>
+                <td style="text-align: center">~64</td>
+                <td style="text-align: center">~256</td>
+                <td style="text-align: center">~1024</td>
+                <td style="text-align: center">112%</td>
+                <td style="text-align: center">588/588</td>
+              </tr>
+              <tr>
+                <td>CUTLASS FP8</td>
+                <td style="text-align: center">1</td>
+                <td style="text-align: center">~128</td>
+                <td style="text-align: center">~256</td>
+                <td style="text-align: center">~2048</td>
+                <td style="text-align: center">94.1%</td>
+                <td style="text-align: center">588/588</td>
+              </tr>
+              <tr>
+                <td>CUTLASS MXFP4</td>
+                <td style="text-align: center">1</td>
+                <td style="text-align: center">~256</td>
+                <td style="text-align: center">~256</td>
+                <td style="text-align: center">~1024</td>
+                <td style="text-align: center">100.6%</td>
+                <td style="text-align: center">588/588</td>
+              </tr>
+              <tr>
+                <td>Sparse FP8</td>
+                <td style="text-align: center">1</td>
+                <td style="text-align: center">—</td>
+                <td style="text-align: center">—</td>
+                <td style="text-align: center">—</td>
+                <td style="text-align: center">~63%*</td>
+                <td style="text-align: center">511/588</td>
+              </tr>
+              <tr>
+                <td>Sparse MXFP4</td>
+                <td style="text-align: center">1</td>
+                <td style="text-align: center">~256</td>
+                <td style="text-align: center">—</td>
+                <td style="text-align: center">—</td>
+                <td style="text-align: center">61.7%</td>
+                <td style="text-align: center">504/588</td>
+              </tr>
+              <tr>
+                <td>Sparse NVFP4</td>
+                <td style="text-align: center">1</td>
+                <td style="text-align: center">~256</td>
+                <td style="text-align: center">—</td>
+                <td style="text-align: center">—</td>
+                <td style="text-align: center">40.6%</td>
+                <td style="text-align: center">503/588</td>
+              </tr>
+              <tr>
+                <td>Grouped FP8</td>
+                <td style="text-align: center"><strong>128</strong></td>
+                <td style="text-align: center">128</td>
+                <td style="text-align: center">~256</td>
+                <td style="text-align: center">~1024</td>
+                <td style="text-align: center">97.3%</td>
+                <td style="text-align: center">336/588</td>
+              </tr>
+              <tr>
+                <td>Grouped MXFP4</td>
+                <td style="text-align: center">1</td>
+                <td style="text-align: center">~128</td>
+                <td style="text-align: center">~256</td>
+                <td style="text-align: center">~1024</td>
+                <td style="text-align: center">96.9%</td>
+                <td style="text-align: center">588/588</td>
+              </tr>
+              <tr>
+                <td>Grouped NVFP4</td>
+                <td style="text-align: center">1</td>
+                <td style="text-align: center">~128</td>
+                <td style="text-align: center">~1024</td>
+                <td style="text-align: center">—</td>
+                <td style="text-align: center">81.0%</td>
+                <td style="text-align: center">30/42</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          *Sparse FP8 efficiency is vs dense cuBLAS baseline (1.45× max speedup,
+          not vs theoretical sparse peak).
+        </p>
+        <p><strong>Key findings:</strong></p>
+        <ol>
+          <li>
+            <p>
+              <strong>M=3072 is universally optimal.</strong> Every dense and
+              grouped kernel peaks at M=3072, because 3072 divides evenly by
+              both 128-tile (24 tiles) and 256-tile (12 tiles) configurations,
+              providing optimal wave quantization across 110 SMs.
+            </p>
+          </li>
+          <li>
+            <p>
+              <strong
+                >MXFP4's 2× arithmetic density shifts the transition
+                earlier.</strong
+              >
+              MXFP4 achieves higher absolute TFLOPS than FP8 at every M, but its
+              efficiency percentage lags at small M (27.6% vs 39.4% at M=128)
+              because the 256×128 tile requires more output elements to fill.
+              The crossover for practical throughput advantage is at M≥32 where
+              MXFP4's absolute TFLOPS exceeds FP8.
+            </p>
+          </li>
+          <li>
+            <p>
+              <strong>Sparse kernels saturate at 35–62% efficiency.</strong> The
+              theoretical 2× sparsity speedup is never realized; observed
+              speedups range from 1.23–1.45× for large shapes. Three factors
+              explain the gap: (a) sparsity metadata (2:4 index tensor) loading
+              overhead, (b) doubled CTA K dimension (256 vs 128) increasing
+              register pressure, (c) K≥256 alignment constraint rejecting ~14%
+              of shapes.
+            </p>
+          </li>
+          <li>
+            <p>
+              <strong>Grouped FP8 has the most restrictive minimum M.</strong>
+              The 128×128 tile requires M≥128, losing 43% of shape coverage —
+              problematic for MoE with variable expert batch sizes. Grouped
+              MXFP4 with warp-specialized scheduling handles all M values,
+              making it the preferred MoE execution path.
+            </p>
+          </li>
+          <li>
+            <p>
+              <strong>Large-shape regression in grouped mode.</strong> All
+              grouped kernels show throughput regression at N≥16384 because 8
+              concurrent groups compete for L2 bandwidth. Optimal grouped N is
+              2048–4096, not 16384.
+            </p>
+          </li>
+        </ol>
+        <h4
+          class="minor"
+          id="8-1-4a-microarchitectural-analysis-the-three-regime-m-scaling-model"
+        >
+          8.1.4a Microarchitectural Analysis: The Three-Regime M-Scaling Model
+        </h4>
+        <p>
+          The M-scaling curve is governed by three distinct hardware
+          bottlenecks, each dominating at a different M range:
+        </p>
+        <p>
+          <strong>Practical implication for LLM serving</strong>: The transition
+          thresholds define the minimum viable batch sizes:
+        </p>
+        <ul>
+          <li>
+            Decode (M=1): Pure DRAM-bound at ~860 GB/s → weight quantization is
+            the only lever
+          </li>
+          <li>
+            Small batch (M=8-32): Memory-bound transition → batch aggregation
+            provides linear throughput scaling
+          </li>
+          <li>
+            Large batch (M≥256): Compute-bound → precision selection determines
+            throughput (FP8 = 2× FP16)
+          </li>
+          <li>
+            Saturation (M≥1024): Within 5% of peak → diminishing returns from
+            further batching
+          </li>
+        </ul>
+        <h3 class="sub-title" id="8-1-5-3-stage-software-pipeline">
+          8.1.5 3-Stage Software Pipeline
+        </h3>
+        <p>
+          The optimal software pipeline configuration for SM_120 GEMM is a
+          3-stage design achieving <strong>1.92x speedup</strong> over
+          unpipelined execution. The structure overlaps TMA loads with MMA
+          computation across three shared memory buffers, with each stage
+          consuming one buffer while the next is being filled asynchronously:
+        </p>
+        <figure class="diagram">
+          <object
+            data="svg/ch08/ch08_s01_flow.svg"
+            type="image/svg+xml"
+            aria-label="§ 8.1.5 3-Stage Software Pipeline — TMA/MMA overlap, mbarrier sync, bandwidth model, depth comparison"
+          ></object>
+          <figcaption>
+            <span class="fig-num">FIG 08.5</span>3-stage software pipeline — (A)
+            Gantt chart showing TMA load / MMA compute / sync barrier overlap
+            across 3 shared-memory buffers, (B) bandwidth model: TMA supply (6.5
+            B/cyc) vs TC consumption (28.9 B/cyc) = 4.4x data-starvation ratio,
+            (C) pipeline depth comparison showing diminishing returns beyond 3
+            stages, (D) synchronization overhead breakdown (34% structural
+            floor) and key metrics table
+          </figcaption>
+        </figure>
+        <p>
+          The pipeline operates by dedicating three shared-memory buffers to
+          interleave data movement with computation. In the steady state, while
+          the tensor cores compute on <code>buf[i]</code>, the TMA engine is
+          simultaneously loading <code>buf[i+1]</code> from DRAM. The third
+          buffer (<code>buf[i+2]</code>) acts as a decoupling buffer that
+          absorbs latency variation between TMA loads (479 cyc/tile) and the
+          variable MMA compute phase. The fundamental constraint is the
+          <strong>4.4x data-starvation ratio</strong>: TMA delivers data at only
+          6.5 B/cycle while the tensor cores can consume at 28.9 B/cycle, making
+          the pipeline <em>load-latency-bound</em> rather than compute-bound in
+          the innermost loop. This starvation ratio is the primary reason that
+          DRAM latency hiding requires approximately 64 FMA operations to
+          overlap with the canonical 362-cycle DRAM access latency (<span
+            class="cite"
+            >[S26/case_10-12]</span
+          >).
+        </p>
+        <p>
+          <strong>Synchronization overhead</strong> is the largest structural
+          efficiency loss: mbarrier arrive/wait and
+          <code>fence.proxy.async</code> operations collectively consume
+          <strong>34% of the mainloop</strong> (546 out of 1615 cycles). The
+          GPU-scope fence dominates at 163 cycles per invocation, establishing
+          an irreducible overhead floor. The CTA-scope fence (7 cycles) is
+          negligible by comparison. Adding a 4th pipeline stage yields only
+          +5.5% additional speedup because the marginal benefit of deeper
+          buffering is offset by increased shared-memory pressure — at 3 stages,
+          the smem budget is already consuming 99 KB (3 x 33 KB/buffer), leaving
+          minimal room for the CTA's other storage needs within the 228 KB
+          per-SM shared memory capacity.
+        </p>
+        <p>
+          [Source: <span class="cite">[S10/case_82]</span>,
+          <span class="cite">[S23/case_27]</span>,
+          <span class="cite">[S10/case_50]</span>,
+          <span class="cite">[S26/case_10-12]</span>]
+        </p>
+        <p><strong>Pipeline Analysis:</strong></p>
+        <ul>
+          <li>
+            <strong>TMA bandwidth gap</strong>: TMA delivers 6.5 B/cycle while
+            the tensor cores consume at 28.9 B/cycle — a 4.4x data-starvation
+            ratio. This makes the pipeline fundamentally load-latency-bound
+            rather than compute-bound in the innermost loop.
+          </li>
+          <li>
+            <strong>Optimal depth</strong>: 3-stage provides 1.92x speedup over
+            unpipelined; a 4th stage adds only +5.5% (diminishing returns from
+            smem pressure).
+          </li>
+          <li>
+            <strong>smem-to-RF-to-TC pipeline</strong>: 126 cycles total via LDG
+            path, 118 cycles via cp.async path.
+          </li>
+          <li>
+            <strong>DRAM latency hiding</strong>: Approximately 64 FMA
+            operations are needed to hide the canonical 362-cyc DRAM access
+            latency <span class="cite">[S26/case_10-12]</span>. Earlier draft
+            text quoted <code>345 cyc</code> from the original
+            <span class="cite">[S8/case_3]</span> first-pass measurement; the
+            controlled retest in <span class="cite">[S26/case_10-12]</span>
+            establishes 362±10 cyc as the authoritative value (page-hit 362 /
+            page-miss 372).
+          </li>
+          <li>
+            <strong>Sync overhead</strong>: Synchronization (mbarrier
+            arrive/wait + fence.proxy.async) consumes 34% of the mainloop (546
+            out of 1615 cycles), establishing a structural overhead floor.
+          </li>
+        </ul>
+        <h3 class="sub-title" id="8-1-6-non-square-shape-analysis">
+          8.1.6 Non-Square Shape Analysis
+        </h3>
+        <p>
+          Production LLM workloads rarely use square matrices. Key findings from
+          the non-square shape characterization (Section 19, Cases 16-22):
+        </p>
+        <p><strong>Table 8.4: Non-Square GEMM Behavior</strong></p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Shape Category</th>
+                <th style="text-align: center">Measured Effect</th>
+                <th>Optimization Implication</th>
+                <th>Source</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>M/N asymmetry</td>
+                <td style="text-align: center">1.95x at (64,8K) vs (8K,64)</td>
+                <td>N&gt;&gt;M preferred for output-column L2 locality</td>
+                <td><span class="cite">[S19/case_16,20]</span></td>
+              </tr>
+              <tr>
+                <td>Skinny M=1 (GEMV)</td>
+                <td style="text-align: center">1.83 TFLOPS / 1832 GB/s</td>
+                <td>Pure DRAM-BW-bound; no TC benefit</td>
+                <td><span class="cite">[S19/case_17]</span></td>
+              </tr>
+              <tr>
+                <td>Skinny M&lt;=32</td>
+                <td style="text-align: center">
+                  59.4 TFLOPS (M=32); mem-bound
+                </td>
+                <td>cuBLAS TC threshold at M=8, N=64</td>
+                <td><span class="cite">[S19/case_3]</span></td>
+              </tr>
+              <tr>
+                <td>Tall-thin M&gt;&gt;K</td>
+                <td style="text-align: center">
+                  K=64 caps at 78T; K=256 peaks at 146T
+                </td>
+                <td>K-dimension dominates over M/N ratio</td>
+                <td><span class="cite">[S19/case_18]</span></td>
+              </tr>
+              <tr>
+                <td>Wide K&gt;&gt;M,N</td>
+                <td style="text-align: center">Peak 222T at M=N=4K, K=16K</td>
+                <td>Gradient-accumulation friendly</td>
+                <td><span class="cite">[S19/case_19]</span></td>
+              </tr>
+              <tr>
+                <td>Small-K (K&lt;128)</td>
+                <td style="text-align: center">
+                  FP16: 0.76 to 95.7T (K=1 to 128)
+                </td>
+                <td>Sub-tile K overhead; 41% eff at K=128</td>
+                <td><span class="cite">[S19/case_21]</span></td>
+              </tr>
+              <tr>
+                <td>Batched GEMV (M=1, B=1-1024)</td>
+                <td style="text-align: center">
+                  1.8 to 205T linear amortization
+                </td>
+                <td>Batch &gt;= 512 for saturation</td>
+                <td><span class="cite">[S19/case_22]</span></td>
+              </tr>
+              <tr>
+                <td>Batch GEMM (M=N=K=64)</td>
+                <td style="text-align: center">
+                  Strided 1.5x faster than pointer-array
+                </td>
+                <td>Strided avoids indirect pointer load</td>
+                <td><span class="cite">[S19/case_59]</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          <strong>Split-K analysis</strong>: Manual split-K via multiple cuBLAS
+          calls is NEVER beneficial on SM_120. Split-16 loses 30-60% throughput
+          compared to standard cuBLAS, which already internally implements
+          optimal stream-K strategies. The performance penalty grows with split
+          factor: 4-10% (split-2) to 30-60% (split-16). The kernel launch
+          overhead of multiple sub-GEMM calls dominates any parallelism gain.
+        </p>
+        <p>
+          <strong>Tile swizzle</strong>: ColMajor block indexing provides 21-35%
+          improvement for wide/square GEMM shapes by exploiting L2 B-column
+          reuse patterns (<span class="cite">[S19/case_32]</span>).
+        </p>
+        <hr />
+        <h2 class="ch-title" id="8-2-memory-bound-gemv-and-decode">
+          8.2 Memory-Bound: GEMV and Decode
+        </h2>
+        <p>
+          Memory-bound workloads are dominated by DRAM bandwidth rather than
+          compute throughput. The primary representative is GEMV (M=1), which
+          characterizes LLM decode inference performance.
+        </p>
+        <p><strong>Table 8.5: Memory-Bound Workload Performance</strong></p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Workload</th>
+                <th style="text-align: center">Throughput</th>
+                <th style="text-align: center">BW Utilization</th>
+                <th>Source</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>GEMV M=1, FP16, N=K=4096</td>
+                <td style="text-align: center">1.83 TFLOPS / 1832 GB/s</td>
+                <td style="text-align: center">136% (L2-cached)</td>
+                <td><span class="cite">[S19/case_17]</span></td>
+              </tr>
+              <tr>
+                <td>GEMV M=1, INT8, N=K=8192</td>
+                <td style="text-align: center">5.56 TOPS / 2780 GB/s</td>
+                <td style="text-align: center">--</td>
+                <td><span class="cite">[S19/case_17]</span></td>
+              </tr>
+              <tr>
+                <td>Batched GEMV M=1, batch=1024</td>
+                <td style="text-align: center">205 TFLOPS (FP16)</td>
+                <td style="text-align: center">--</td>
+                <td><span class="cite">[S19/case_22]</span></td>
+              </tr>
+              <tr>
+                <td>DRAM BW saturation (GEMV)</td>
+                <td style="text-align: center">
+                  N&gt;=8192 (842-879 GB/s, 98% peak)
+                </td>
+                <td style="text-align: center">--</td>
+                <td><span class="cite">[S21/case_54]</span></td>
+              </tr>
+              <tr>
+                <td>Batched decode amortization</td>
+                <td style="text-align: center">
+                  212 to 3.3 us/token (M=1 to 64)
+                </td>
+                <td style="text-align: center">Linear</td>
+                <td><span class="cite">[S21/case_55]</span></td>
+              </tr>
+              <tr>
+                <td>INT4-quantized GEMV</td>
+                <td style="text-align: center">2.38x faster than FP16</td>
+                <td style="text-align: center">--</td>
+                <td><span class="cite">[S21/case_57]</span></td>
+              </tr>
+              <tr>
+                <td>Prefill-decode transition</td>
+                <td style="text-align: center">~5 us (negligible)</td>
+                <td style="text-align: center">--</td>
+                <td><span class="cite">[S21/case_59]</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p><strong>Three GEMV regimes</strong> are clearly identified:</p>
+        <ol>
+          <li>
+            <strong>Launch-limited (N&lt;=512)</strong>: Kernel launch overhead
+            dominates; BW utilization &lt;25%.
+          </li>
+          <li>
+            <strong>L2-cached (N=1024-4096)</strong>: Weight matrix fits in 96
+            MB L2 cache, achieving super-DRAM bandwidth up to 1488 GB/s (173% of
+            DRAM peak). The FP16 weight matrix at N=4096 is only 32 MB.
+          </li>
+          <li>
+            <strong>DRAM-saturated (N&gt;=8192)</strong>: Weight matrix exceeds
+            L2 capacity (128 MB at N=8192), achieving 98-102% of peak 860 GB/s
+            DRAM bandwidth.
+          </li>
+        </ol>
+        <p>
+          <strong>Implication for LLM inference</strong>: Models with hidden
+          dimension d&lt;=4096 (GPT-3 scale) benefit from L2 caching during
+          decode. Models with d&gt;=8192 (LLaMA-70B scale) are DRAM-bound at
+          ~860 GB/s. Batching amortizes linearly: token latency drops from 212
+          us (batch=1) to 3.3 us (batch=64).
+        </p>
+        <h3
+          class="sub-title"
+          id="8-2-1-microarchitectural-analysis-the-l2-caching-sweet-spot"
+        >
+          8.2.1 Microarchitectural Analysis: The L2 Caching Sweet Spot
+        </h3>
+        <p>
+          The GEMV performance data (Case 17) reveals a precision-dependent L2
+          caching threshold that fundamentally determines decode inference
+          throughput. The SM_120's 96 MB L2 cache creates a binary bandwidth
+          regime: when the weight matrix (N × K × bytes_per_element) fits
+          entirely within L2, effective bandwidth jumps 2–3× above DRAM peak;
+          once the matrix exceeds L2 capacity, bandwidth drops to the DRAM
+          ceiling of ~860 GB/s.
+        </p>
+        <figure class="diagram">
+          <object
+            data="svg/ch08/ch08_l2_caching.svg"
+            type="image/svg+xml"
+            aria-label="GEMV L2 Caching Sweet Spot — precision threshold, bandwidth amplification, decode implications"
+          ></object>
+          <figcaption>
+            <span class="fig-num">FIG 08.6</span>GEMV L2 Caching Architecture —
+            Panel A shows weight matrix size vs L2 capacity at N=K=4096 per
+            precision; Panel B plots measured bandwidth in each regime; Panel C
+            quantifies the L2 amplification factor (2.1–3.2×); Panel D maps
+            implications to LLM decode serving; Panel E resolves the BF16 &gt;
+            FP16 anomaly.
+            <span class="cite">[S19/case_17] · [S21/case_54]</span>
+          </figcaption>
+        </figure>
+        <p>
+          The architecture creates a sharp cliff at the L2 boundary: FP16 at
+          N=K=4096 produces a 32 MB weight matrix that fits comfortably in the
+          96 MB L2, delivering 1832 GB/s (2.1× DRAM peak). Doubling to N=K=8192
+          inflates the matrix to 128 MB — exceeding L2 capacity — and bandwidth
+          collapses to 860–879 GB/s (DRAM-saturated). INT8's 1-byte elements
+          shift this cliff dramatically: the same N=K=8192 shape produces only a
+          64 MB matrix that still fits in L2, achieving 2780 GB/s (3.2× DRAM
+          peak). This is the microarchitectural justification for W4/W8 weight
+          quantization in decode-heavy inference — the throughput gain comes
+          from L2 caching behavior, not from faster compute hardware.
+        </p>
+        <p>
+          A notable anomaly emerges in the BF16 vs FP16 comparison: at identical
+          N=K=4096 (both 32 MB, comfortably in L2), BF16 GEMV achieves 2297 GB/s
+          while FP16 delivers only 1832 GB/s — a 25% gap. Since both precisions
+          use the identical HMMA.16816 hardware pipe, this difference is purely
+          attributable to cuBLAS selecting a more L2-optimized kernel for BF16
+          GemmEx, likely employing different tiling granularity or more
+          aggressive prefetch depth. The practical implication for deployment:
+          BF16 weights are strictly preferable to FP16 for decode workloads on
+          SM_120, gaining 25% bandwidth at zero accuracy cost (the mantissa
+          precision difference is irrelevant for inference-only weights after
+          training convergence).
+        </p>
+        <hr />
+        <h2 class="ch-title" id="8-3-mixed-attention-and-softmax">
+          8.3 Mixed: Attention and Softmax
+        </h2>
+        <p>
+          Attention workloads occupy a mixed compute/memory regime due to their
+          thin-K GEMM shapes and interleaved non-GEMM operations (softmax,
+          rescale).
+        </p>
+        <p><strong>Table 8.6: Attention Component Performance</strong></p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Metric</th>
+                <th style="text-align: center">Value</th>
+                <th>Source</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>FlashAttention-2 forward peak</td>
+                <td style="text-align: center">
+                  64-125 TFLOPS (d=128, seq&lt;=16K)
+                </td>
+                <td><span class="cite">[S19/case_11]</span></td>
+              </tr>
+              <tr>
+                <td>Q x K^T GEMM peak</td>
+                <td style="text-align: center">
+                  107.5 TFLOPS (46%) at seq=8192, K=128
+                </td>
+                <td><span class="cite">[S19/case_62]</span></td>
+              </tr>
+              <tr>
+                <td>Score x V GEMM peak</td>
+                <td style="text-align: center">
+                  142.7 TFLOPS (60.7%) at seq=4096, hd=128
+                </td>
+                <td><span class="cite">[S19/case_66]</span></td>
+              </tr>
+              <tr>
+                <td>Softmax row reduction</td>
+                <td style="text-align: center">2.1-5.0 TB/s (L2-bound)</td>
+                <td><span class="cite">[S19/case_63]</span></td>
+              </tr>
+              <tr>
+                <td>Online softmax rescale</td>
+                <td style="text-align: center">
+                  21.1 cyc/rescale (sub+exp2+mul)
+                </td>
+                <td><span class="cite">[S19/case_65]</span></td>
+              </tr>
+              <tr>
+                <td>MMA+merge interleave</td>
+                <td style="text-align: center">
+                  80.6% overlap; +3.6% overhead over MMA-only
+                </td>
+                <td><span class="cite">[S5/case_98]</span></td>
+              </tr>
+              <tr>
+                <td>Causal mask (selp)</td>
+                <td style="text-align: center">0 cyc overhead (free)</td>
+                <td><span class="cite">[S19/case_67]</span></td>
+              </tr>
+              <tr>
+                <td>Causal mask (additive)</td>
+                <td style="text-align: center">+40.6% overhead</td>
+                <td><span class="cite">[S19/case_67]</span></td>
+              </tr>
+              <tr>
+                <td>GQA-8 speedup</td>
+                <td style="text-align: center">
+                  3.1x at seq=512 (mem-bound); &lt;6% at seq&gt;=2048
+                </td>
+                <td><span class="cite">[S19/case_70]</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          <strong>Accumulator datapath</strong>: FP16 and FP32 accumulator MMA
+          instructions exhibit identical throughput (ratio=1.000 at all warp
+          counts). There is no narrow-accumulator speedup on SM_120. [Source:
+          S9/cases_181-183]
+        </p>
+        <h3
+          class="sub-title"
+          id="8-3-1-flashattention-bottleneck-decomposition"
+        >
+          8.3.1 FlashAttention Bottleneck Decomposition
+        </h3>
+        <p>
+          The per-tile cycle budget for FlashAttention on SM_120 (d=128) reveals
+          that the dominant bottleneck is thin-K GEMM efficiency, not softmax.
+          Each attention tile processes ~520 cycles of work decomposed into four
+          pipeline stages — Q×K^T MMA, online softmax, Score×V MMA, and
+          accumulator reformat — with the critical insight that the SFU
+          executing softmax co-issues entirely free alongside the tensor core
+          pipe.
+        </p>
+        <figure class="diagram">
+          <object
+            data="svg/ch08/ch08_s02_flow.svg"
+            type="image/svg+xml"
+            aria-label="FlashAttention Bottleneck Decomposition — per-tile cycle budget, thin-K efficiency, SFU co-issue"
+          ></object>
+          <figcaption>
+            <span class="fig-num">FIG 08.7</span>FlashAttention Bottleneck
+            Decomposition — Panel A breaks down the per-tile cycle budget (520
+            cyc: 45% Q×K^T, 25% softmax, 25% Score×V, 5% reformat); Panel B
+            contrasts thin-K efficiency (46%) against standard GEMM (95–100%);
+            Panel C illustrates the SFU co-issue window where softmax runs free;
+            Panel D tabulates key metrics; Panel E maps the structural
+            efficiency cap from head_dim.
+            <span class="cite"
+              >[S19/cases_62-71] · [S5/case_98] · [S9/case_160]</span
+            >
+          </figcaption>
+        </figure>
+        <p>
+          The cycle budget reveals a counter-intuitive architecture: while
+          softmax nominally occupies 25% of wall time (130 cycles), the MUFU.EX2
+          instruction (18 cycles) and surrounding ALU operations execute
+          entirely within the XU/SFU pipe, which co-issues at 0% overhead with
+          the TC pipe (Chapter 3, §3.4.3). The real bottleneck is the Q×K^T GEMM
+          at only 46% tensor core efficiency — each m16n8k16 MMA processes 16 of
+          128 K-elements, creating an 8-iteration dependent chain where
+          accumulator feedback forces ILP=1 within the K-dimension. The three
+          efficiency killers are: (1) tile setup overhead (mbarrier + ldmatrix
+          per K-step), (2) zero K-reuse (operands loaded 8× but each used only
+          once per MMA), and (3) smem-to-RF transfer cost of 11 cycles per MMA ×
+          8 MMAs = 88 cycles overhead on 127 cycles of useful compute — a 69%
+          overhead fraction that is structurally unavoidable at K=128.
+        </p>
+        <p>
+          This analysis establishes that FlashAttention efficiency on SM_120 is
+          structurally capped by <code>head_dim</code>: at d=128 the K-loop has
+          only 8 iterations (46% eff), at d=256 it would double to 16 iterations
+          (~60–70% projected), while standard K=4096 GEMM achieves 95–100% via
+          full K-reuse amortization. The SM_120's lack of Tensor Memory (TMEM)
+          bypass — present on SM_100a via tcgen05 — adds +27.5% overhead on the
+          smem→RF path, further penalizing the short K-loop. Optimization
+          efforts should focus on maximizing the MMA-to-overhead ratio (larger
+          tiles, more ILP from M/N parallelism) rather than softmax fast-math,
+          which provides negligible benefit since the computation already runs
+          free in otherwise-idle pipe slots.
+        </p>
+        <h3
+          class="sub-title"
+          id="8-3-2-microarchitectural-analysis-why-thin-k-gemms-are-structurally-inefficient"
+        >
+          8.3.2 Microarchitectural Analysis: Why Thin-K GEMMs Are Structurally
+          Inefficient
+        </h3>
+        <p>
+          The Q×K^T GEMM efficiency of only 46% at K=128 (Case 62) is not a
+          software limitation — it is a structural consequence of the mma.sync
+          m16n8k16 tile shape interacting with the SM_120 pipeline. The 8
+          dependent MMAs forming the K-loop accumulator chain force ILP=1 within
+          the K-dimension, while three per-step overhead sources consume 69% of
+          useful compute time.
+        </p>
+        <figure class="diagram">
+          <object
+            data="svg/ch08/ch08_thin_k_model.svg"
+            type="image/svg+xml"
+            aria-label="Thin-K GEMM Efficiency Model — K-loop dependency chain, ILP scaling, overhead sources, K-dimension comparison"
+          ></object>
+          <figcaption>
+            <span class="fig-num">FIG 08.8</span>Thin-K GEMM Efficiency Model —
+            Panel A visualizes the 8-MMA accumulator dependency chain (ILP=1
+            within K); Panel B shows ILP scaling from M/N tile parallelism
+            (230→127 cyc); Panel C decomposes the three overhead sources
+            totaling 69%; Panel D compares efficiency across K-dimensions
+            (32%→100%); Panel E contrasts Q×K^T vs Score×V and lists
+            architectural implications.
+            <span class="cite">[S19/case_62] · [S19/case_66]</span>
+          </figcaption>
+        </figure>
+        <p>
+          The fundamental mechanism is the K-loop dependency chain: each
+          mma.sync.m16n8k16 instruction processes 16 elements of the K-dimension
+          and writes its result to an accumulator register that the next MMA
+          reads as input. At K=128, this creates an 8-iteration serial chain
+          where each MMA must wait for its predecessor's 29-cycle latency —
+          yielding 232 cycles per output tile at ILP=1. While M/N-dimension
+          parallelism (launching multiple output tiles) can raise ILP to 4 and
+          reduce per-tile cost to 127 cycles, the three per-K-step overheads
+          remain inescapable: (1) tile setup (mbarrier + ldmatrix) executes once
+          per K-step regardless of tile count, (2) zero K-reuse means operand
+          data is loaded 8 times but consumed only once per MMA with no register
+          temporal locality, and (3) the smem→RF transfer path costs 11 cycles
+          per MMA × 8 = 88 cycles overhead on 127 cycles of useful compute — a
+          69% overhead fraction that no software optimization can eliminate at
+          K=128.
+        </p>
+        <p>
+          The efficiency scales directly with K-dimension depth: at K=4096 (256
+          MMAs per tile), these same fixed overheads amortize over 32× more
+          compute iterations, achieving 95–100% efficiency. This explains why
+          attention's Q×K^T (K=head_dim=128) is structurally capped at 46% while
+          the Score×V multiplication achieves 61% — its effective K equals the
+          block column count Bc (typically 64–256), providing a longer reduction
+          chain. However, Score×V is still limited by its small output N
+          dimension (=head_dim=128), which constrains tile parallelism.
+          Increasing head_dim to 256 would double the K-loop to 16 iterations,
+          projecting 60–70% efficiency, but this is an algorithmic change
+          outside the hardware's control.
+        </p>
+        <h3
+          class="sub-title"
+          id="8-3-3-softmax-is-architecturally-free-the-sfu-co-issue-window"
+        >
+          8.3.3 Softmax Is Architecturally Free: The SFU Co-Issue Window
+        </h3>
+        <p>
+          The online softmax computation (max reduction → subtract → exp2 →
+          multiply scale) costs 130 cycles per tile in wall-clock time. However,
+          the SM_120 co-issue architecture allows these operations to execute
+          entirely within MMA latency stall windows: the SFU (MUFU.EX2, 18
+          cycles) co-issues at 100% with TC operations, while FMA instructions
+          achieve 93.6% overlap — making the net softmax overhead effectively
+          zero.
+        </p>
+        <figure class="diagram">
+          <object
+            data="svg/ch08/ch08_softmax_coissue.svg"
+            type="image/svg+xml"
+            aria-label="Softmax SFU Co-Issue Window — per-operation co-issue analysis, pipe overlap timeline, fast-math futility"
+          ></object>
+          <figcaption>
+            <span class="fig-num">FIG 08.9</span>Softmax SFU Co-Issue Window —
+            Panel A tabulates per-operation visible cost (total ~0.5 cyc/row);
+            Panel B visualizes the 29-cyc MMA window with TC/FMA/SFU pipes
+            active simultaneously; Panel C demonstrates why fast-math provides
+            zero benefit; Panel D summarizes co-issue characterization; Panel E
+            lists optimization implications.
+            <span class="cite">[S5/case_98] · [S19/case_65] · Ch3 §3.4.3</span>
+          </figcaption>
+        </figure>
+        <p>
+          The mechanism exploits SM_120's multi-pipe architecture: during each
+          29-cycle MMA latency window (while the tensor core computes but
+          results are not yet available), the warp scheduler can dispatch
+          independent instructions to the FMA and XU/SFU pipes at zero
+          additional cost. The softmax operations — MUFU.EX2 (exp2, 18 cycles in
+          XU/SFU), sub.f32 and mul.f32 (4 cycles each in FMA) — execute
+          precisely in these idle slots. The co-issue matrix from Chapter 3
+          §3.4.3 confirms: XU+Tensor = 0% overhead (perfect overlap), FMA+Tensor
+          = 6.4% overhead (93.6% overlap). This means the 130 cycles of softmax
+          wall-clock time contributes only ~0.5 visible cycles per row — a 0–3%
+          net overhead rather than the 25% that a naive analysis might suggest.
+        </p>
+        <p>
+          This architecture has a profound implication for kernel optimization:
+          softmax fast-math variants (approximate exp2, reduced-precision
+          accumulation) cannot improve FlashAttention throughput because the
+          standard MUFU.EX2 path is already executing for free in an
+          otherwise-idle pipe. Reducing the SFU instruction from 18 to 8 cycles
+          gains nothing when both latencies fall entirely within the 29-cycle
+          MMA stall window. Optimization effort should instead target the thin-K
+          GEMM bottleneck (§8.3.2) which is the actual throughput limiter — the
+          softmax computation is architecturally invisible.
+        </p>
+        <hr />
+        <h2 class="ch-title" id="8-4-sync-bound-cluster-and-dsmem-pipelines">
+          8.4 Sync-Bound: Cluster and DSMEM Pipelines
+        </h2>
+        <p>
+          Synchronization overhead becomes the dominant concern in production
+          pipelines that require inter-CTA coordination. Table 8.7 quantifies
+          the sync fraction for representative patterns.
+        </p>
+        <p>
+          <strong
+            >Table 8.7: Synchronization Overhead in Production Patterns</strong
+          >
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Pattern</th>
+                <th style="text-align: center">Sync Fraction</th>
+                <th>Source</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>DeepGemm-style pipeline (2000-4000 cyc compute)</td>
+                <td style="text-align: center">12.4-20.6%</td>
+                <td><span class="cite">[S23/case_49]</span></td>
+              </tr>
+              <tr>
+                <td>FlashAttention cluster sync</td>
+                <td style="text-align: center">19% at realistic compute</td>
+                <td><span class="cite">[S23/case_50]</span></td>
+              </tr>
+              <tr>
+                <td>MoE token dispatch</td>
+                <td style="text-align: center">~5% at production loads</td>
+                <td><span class="cite">[S23/case_51]</span></td>
+              </tr>
+              <tr>
+                <td>Persistent kernel inter-tile</td>
+                <td style="text-align: center">+166 cyc/tile-transition</td>
+                <td><span class="cite">[S23/case_52]</span></td>
+              </tr>
+              <tr>
+                <td>DSMEM pipeline (2-stage)</td>
+                <td style="text-align: center">
+                  952 cyc/iter (3.5x faster than L2)
+                </td>
+                <td><span class="cite">[S17/case_36]</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          The DeepGemm-style warp-specialized pipeline (1 producer + 3 consumer
+          warps, 4-stage) shows that synchronization overhead scales inversely
+          with compute load: at 4000 cycles of MMA compute per stage, sync
+          fraction drops to 12.4%, while at 2000 cycles it rises to 20.6%. For
+          FlashAttention with cluster-level coordination, the 19% sync overhead
+          is dominated by cluster barrier arrival latency across SMs.
+        </p>
+        <p>
+          MoE token dispatch achieves the lowest sync fraction (~5%) because the
+          production-scale token count provides sufficient parallelism to
+          amortize the dispatch overhead. However, per-expert kernel launches
+          remain expensive at 35 us/expert for serial execution.
+        </p>
+        <hr />
+        <h2 class="ch-title" id="8-5-multi-precision-roofline-model">
+          8.5 Multi-Precision Roofline Model
+        </h2>
+        <p>
+          The roofline model provides the fundamental framework for classifying
+          workloads as compute-bound or memory-bound. Table 8.8 presents the
+          measured parameters for all supported precisions.
+        </p>
+        <p>
+          <strong>Table 8.8: SM_120 Multi-Precision Roofline Parameters</strong>
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Precision</th>
+                <th style="text-align: center">Peak TFLOPS</th>
+                <th style="text-align: center">AI Crossover (FLOP/B)</th>
+                <th style="text-align: center">Crossover M=N=K</th>
+                <th>Source</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>FP64</td>
+                <td style="text-align: center">0.96</td>
+                <td style="text-align: center">0.78</td>
+                <td style="text-align: center">~27</td>
+                <td><span class="cite">[S18/case_3]</span></td>
+              </tr>
+              <tr>
+                <td>FP32 (CUDA)</td>
+                <td style="text-align: center">58</td>
+                <td style="text-align: center">47</td>
+                <td style="text-align: center">~98</td>
+                <td>
+                  <span class="cite">[S20/case_9]</span> (pinned 2092 MHz, 143
+                  W)
+                </td>
+              </tr>
+              <tr>
+                <td>FP32-extended</td>
+                <td style="text-align: center">133</td>
+                <td style="text-align: center">108</td>
+                <td style="text-align: center">~228</td>
+                <td>
+                  <span class="cite">[S19/case_25]</span> (FFMA+IMAD co-issued
+                  sweep; not pure CUDA-core path)
+                </td>
+              </tr>
+              <tr>
+                <td>TF32</td>
+                <td style="text-align: center">129</td>
+                <td style="text-align: center">105</td>
+                <td style="text-align: center">~300</td>
+                <td>
+                  AppB §B.15 <code>fp32_tensor_tf32</code> (theoretical) / 126
+                  measured <span class="cite">[S18/case_3]</span>
+                </td>
+              </tr>
+              <tr>
+                <td>BF16</td>
+                <td style="text-align: center">271</td>
+                <td style="text-align: center">220</td>
+                <td style="text-align: center">~610</td>
+                <td><span class="cite">[S18/case_3]</span></td>
+              </tr>
+              <tr>
+                <td>FP16</td>
+                <td style="text-align: center">271</td>
+                <td style="text-align: center">220</td>
+                <td style="text-align: center">~610</td>
+                <td><span class="cite">[S18/case_3]</span></td>
+              </tr>
+              <tr>
+                <td>FP8</td>
+                <td style="text-align: center">529</td>
+                <td style="text-align: center">430</td>
+                <td style="text-align: center">~1024</td>
+                <td><span class="cite">[S18/case_3]</span></td>
+              </tr>
+              <tr>
+                <td>INT8</td>
+                <td style="text-align: center">526</td>
+                <td style="text-align: center">427</td>
+                <td style="text-align: center">~1024</td>
+                <td><span class="cite">[S18/case_3]</span></td>
+              </tr>
+              <tr>
+                <td>MX-FP4</td>
+                <td style="text-align: center">1069</td>
+                <td style="text-align: center">869</td>
+                <td style="text-align: center">~2048</td>
+                <td><span class="cite">[S9/case_128]</span></td>
+              </tr>
+              <tr>
+                <td>NV-FP4</td>
+                <td style="text-align: center">1012</td>
+                <td style="text-align: center">822</td>
+                <td style="text-align: center">~1900</td>
+                <td><span class="cite">[S9/case_137]</span></td>
+              </tr>
+              <tr>
+                <td>Sparse FP8</td>
+                <td style="text-align: center">682</td>
+                <td style="text-align: center">554</td>
+                <td style="text-align: center">~1400</td>
+                <td><span class="cite">[S9/case_139]</span></td>
+              </tr>
+              <tr>
+                <td>Sparse MX-FP4</td>
+                <td style="text-align: center">1318</td>
+                <td style="text-align: center">1071</td>
+                <td style="text-align: center">~3000</td>
+                <td><span class="cite">[S9/case_140]</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          <strong>FP32 row clarification (M-23/M-25 RESOLVED 2026-06-11)</strong
+          >: Earlier draft conflated two distinct "FP32-class" peaks under one
+          row labelled <code>FP32 = 133 TFLOPS</code>: (a) pure FP32 CUDA-core
+          sweep = 58 TFLOPS [<span class="cite">[S20/case_9]</span>, AppB §B.15
+          <code>fp32_cuda_cores</code>], representing the FFMA-only path at
+          pinned clock; (b) extended-path observation = 133 TFLOPS
+          <span class="cite">[S19/case_25]</span>, representing FFMA + IMAD
+          co-issued sustained workload that uses both fmalite + fmaheavy
+          subpipes. They are now split into separate rows. The TF32 tensor row
+          (129 TFLOPS theoretical / 126 measured) is also distinct — it's the
+          tensor-core path with TF32-quantized inputs, unrelated to the
+          CUDA-core paths above.
+        </p>
+        <p>
+          <strong>Measured DRAM bandwidth</strong>: 1231 GB/s achieved (1114
+          GB/s effective sustained in STREAM-like kernels, 86.8% of 1283 GB/s
+          theoretical).
+        </p>
+        <p>
+          <strong>AI crossover formula</strong>: AI_crossover = Peak_TFLOPS /
+          BW(TB/s).
+        </p>
+        <figure class="diagram">
+          <object
+            data="svg/ch08/ch08_roofline.svg"
+            type="image/svg+xml"
+            aria-label="SM_120 multi-precision roofline — peak TFLOPS vs DRAM bandwidth, crossover AI per precision"
+          ></object>
+          <figcaption>
+            <span class="fig-num">FIG 08.4</span>SM_120 multi-precision roofline
+            — log-log plot of TFLOPS against arithmetic intensity (FLOP/byte).
+            The 1231 GB/s DRAM-bandwidth roof intersects each compute roof at
+            the precision-specific crossover AI*: FP32=47, FP16/BF16=220,
+            FP8=430, MXFP4=869. Below each crossover the kernel is memory-bound
+            (lower-left); above it the kernel is compute-bound and capped at the
+            corresponding peak TFLOPS plateau.
+          </figcaption>
+        </figure>
+        <aside class="callout callout-info">
+          <p>
+            <strong>Crossover-AI canonical values</strong> (AppB §B.15
+            <code>roofline.crossover_ai_*</code>, M-24 RESOLVED 2026-06-11):
+            FP16/BF16 = 220, FP8 = 430, INT8 = 427, MX-FP4 = 869, TF32 = 105,
+            FP32-CUDA = 47, FP64 = 0.78. All values derived as
+            <code>Peak_TFLOPS / 1.231 TB/s</code> against the canonical DRAM BW
+            <span class="cite">[S8/case_81]</span>. The earlier ladder draft of
+            <code>38 / 203 / 406 / 822 / 1071</code> mixed methodologies (some
+            entries used 1283 operational ceiling or legacy peak constants) and
+            was internally inconsistent with the per-row peak/BW columns of
+            Table 8.8 — retracted. Use the unified ladder above in all roofline
+            calculations across Ch8/Ch13/Ch15.
+          </p>
+        </aside>
+        <p>
+          <strong>Arithmetic Intensity formula (GEMM)</strong>:
+          <code>AI = 2MNK / (p_A * MK + p_B * KN + p_C * MN)</code>, where p =
+          bytes/element. For square M=N=K with uniform precision:
+          <code>AI ~ 2K/(3p)</code>.
+        </p>
+        <p><strong>Table 8.9: Measured Workload Roofline Position</strong></p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Workload</th>
+                <th style="text-align: center">AI</th>
+                <th style="text-align: center">Bottleneck</th>
+                <th style="text-align: center">Efficiency</th>
+                <th>Source</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>GEMM FP16 4096^3</td>
+                <td style="text-align: center">1365</td>
+                <td style="text-align: center">Compute</td>
+                <td style="text-align: center">86%</td>
+                <td><span class="cite">[S19/case_1]</span></td>
+              </tr>
+              <tr>
+                <td>GEMM FP8 4096^3</td>
+                <td style="text-align: center">2731</td>
+                <td style="text-align: center">Compute</td>
+                <td style="text-align: center">98.7%</td>
+                <td><span class="cite">[S18/case_3]</span></td>
+              </tr>
+              <tr>
+                <td>GEMM MX-FP4 16K^3</td>
+                <td style="text-align: center">10923</td>
+                <td style="text-align: center">Compute</td>
+                <td style="text-align: center">95%</td>
+                <td><span class="cite">[S19/case_23]</span></td>
+              </tr>
+              <tr>
+                <td>GEMV FP16 M=1</td>
+                <td style="text-align: center">1.0</td>
+                <td style="text-align: center">DRAM</td>
+                <td style="text-align: center">136% (L2)</td>
+                <td><span class="cite">[S19/case_17]</span></td>
+              </tr>
+              <tr>
+                <td>FlashAttn fwd d=128</td>
+                <td style="text-align: center">~50</td>
+                <td style="text-align: center">Mixed (thin-K)</td>
+                <td style="text-align: center">46-61%</td>
+                <td><span class="cite">[S19/case_62]</span></td>
+              </tr>
+              <tr>
+                <td>Softmax</td>
+                <td style="text-align: center">~0.5</td>
+                <td style="text-align: center">L2-bound</td>
+                <td style="text-align: center">--</td>
+                <td><span class="cite">[S19/case_63]</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          <strong>Memory hierarchy bandwidth ladder</strong> (Section 8, Case
+          93): L1=675 GB/s, L2=13768 GB/s, DRAM=1219 GB/s.
+        </p>
+        <h3
+          class="sub-title"
+          id="8-5-1-microarchitectural-analysis-the-roofline-defines-three-workload-classes"
+        >
+          8.5.1 Microarchitectural Analysis: The Roofline Defines Three Workload
+          Classes
+        </h3>
+        <p>
+          The roofline data from Case 25, combined with the M-scaling curves,
+          definitively establishes three workload classes on SM_120, each with a
+          distinct optimization strategy. The classification is determined by
+          the relationship between a kernel's arithmetic intensity and the
+          precision-specific crossover AI*, but a critical third class emerges
+          when thin dimensions prevent full TC utilization regardless of the AI
+          position.
+        </p>
+        <figure class="diagram">
+          <object
+            data="svg/ch08/ch08_workload_classes.svg"
+            type="image/svg+xml"
+            aria-label="SM_120 Three Workload Classes — compute-bound, memory-bound, mixed/thin-K, crossover AI scaling, attention paradox"
+          ></object>
+          <figcaption>
+            <span class="fig-num">FIG 08.10</span>SM_120 Workload Classification
+            via Roofline — Panels A/B/C define the three classes (compute-bound,
+            memory-bound, mixed/thin-K) with examples, evidence, and
+            optimization levers; Panel D shows crossover AI scaling across
+            precisions; Panel E resolves the attention paradox; Panel F provides
+            an optimization decision flowchart.
+            <span class="cite"
+              >[S19/case_25] · [S9/case_128-136] · AppB §B.15</span
+            >
+          </figcaption>
+        </figure>
+        <p>
+          The three classes correspond to distinct hardware regimes: Class 1
+          (compute-bound) occurs when AI exceeds the precision-specific
+          crossover — the tensor core pipeline at 15.88 cyc/MMA throughput
+          becomes the sole bottleneck, and optimizations target ILP, operand
+          reuse, and tile sizing while memory bandwidth is irrelevant. Class 2
+          (memory-bound) applies when AI falls below crossover with large data
+          volumes — DRAM bandwidth at ~860 GB/s (or L2 at 2–3× amplification for
+          cached matrices) determines throughput, and the levers are weight
+          quantization, L2 residency engineering, and batching. Class 3
+          (mixed/thin-dimension) is the most insidious: the kernel's AI suggests
+          it should be memory-bound, yet the actual bottleneck is structural TC
+          underutilization from thin K or M×N dimensions. FlashAttention
+          epitomizes this class — its AI of ~50 places it below the FP16
+          crossover of 220, but the true limitation is the 46% TC efficiency
+          from K=128 thin tiles, not insufficient memory bandwidth.
+        </p>
+        <p>
+          <strong>The attention paradox</strong>: FlashAttention's per-tile
+          arithmetic intensity (~50 FLOP/byte) places it below the FP16
+          crossover (220), classifying it as memory-bound. Yet the bottleneck is
+          NOT DRAM bandwidth — it is thin-K TC underutilization. This violates
+          the simple roofline model because the roofline assumes perfect compute
+          efficiency. When TC utilization is only 46% (due to K=128 thin tiles),
+          the effective compute ceiling drops to 0.46 × 271 = 125 TFLOPS, which
+          shifts the effective crossover to AI ~102. At AI~50, attention is thus
+          operating at ~50% of its (reduced) compute ceiling — correctly
+          classified as "structurally inefficient" rather than simply
+          "memory-bound."
+        </p>
+        <hr />
+        <h2 class="ch-title" id="8-6-workload-power-and-thermal-profile">
+          8.6 Workload Power and Thermal Profile
+        </h2>
+        <p>
+          Understanding the power envelope per workload type is critical for
+          datacenter capacity planning and inference serving optimization. Table
+          8.10 presents measured per-workload power and efficiency.
+        </p>
+        <p>
+          <strong
+            >Table 8.10: Per-Workload Power Consumption and Efficiency</strong
+          >
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Workload</th>
+                <th style="text-align: center">Power (W)</th>
+                <th style="text-align: center">TFLOPS</th>
+                <th style="text-align: center">TFLOPS/W</th>
+                <th style="text-align: center">Thermal</th>
+                <th>Source</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Idle (with context)</td>
+                <td style="text-align: center">48.4</td>
+                <td style="text-align: center">--</td>
+                <td style="text-align: center">--</td>
+                <td style="text-align: center">Ambient</td>
+                <td><span class="cite">[S20/case_5]</span></td>
+              </tr>
+              <tr>
+                <td>CUDA FP32 FFMA (110 SM)</td>
+                <td style="text-align: center">143</td>
+                <td style="text-align: center">119</td>
+                <td style="text-align: center">0.83</td>
+                <td style="text-align: center">48 C</td>
+                <td><span class="cite">[S20/case_7,9]</span></td>
+              </tr>
+              <tr>
+                <td>CUDA INT32 (110 SM)</td>
+                <td style="text-align: center">164</td>
+                <td style="text-align: center">--</td>
+                <td style="text-align: center">--</td>
+                <td style="text-align: center">53 C (hottest)</td>
+                <td><span class="cite">[S20/case_9]</span></td>
+              </tr>
+              <tr>
+                <td>TC FP16 HMMA (110 SM)</td>
+                <td style="text-align: center">108</td>
+                <td style="text-align: center">235</td>
+                <td style="text-align: center">2.18</td>
+                <td style="text-align: center">45 C</td>
+                <td><span class="cite">[S20/case_7,9]</span></td>
+              </tr>
+              <tr>
+                <td>TC FP8 QMMA</td>
+                <td style="text-align: center">~110</td>
+                <td style="text-align: center">529</td>
+                <td style="text-align: center">4.81</td>
+                <td style="text-align: center">~45 C</td>
+                <td>
+                  <span class="cite">[S9/case_89]</span>,
+                  <span class="cite">[S20/case_1]</span>
+                </td>
+              </tr>
+              <tr>
+                <td>TC MX-FP4 OMMA.SF</td>
+                <td style="text-align: center">89</td>
+                <td style="text-align: center">1069 †</td>
+                <td style="text-align: center">12.0 †</td>
+                <td style="text-align: center">~42 C</td>
+                <td>
+                  Power: <span class="cite">[S20/case_16]</span>; TFLOPS:
+                  <span class="cite">[S9/case_128]</span>
+                </td>
+              </tr>
+              <tr>
+                <td>TC NV-FP4 OMMA.SF</td>
+                <td style="text-align: center">89</td>
+                <td style="text-align: center">1012 †</td>
+                <td style="text-align: center">11.4 †</td>
+                <td style="text-align: center">~42 C</td>
+                <td>
+                  Power: <span class="cite">[S20/case_16]</span>; TFLOPS:
+                  <span class="cite">[S9/case_137]</span>
+                </td>
+              </tr>
+              <tr>
+                <td>TC Sparse INT8 IMMA.SP</td>
+                <td style="text-align: center">97.8</td>
+                <td style="text-align: center">928.7</td>
+                <td style="text-align: center">9.49</td>
+                <td style="text-align: center">~44 C</td>
+                <td><span class="cite">[S20/case_17]</span></td>
+              </tr>
+              <tr>
+                <td>Memory-bound streaming</td>
+                <td style="text-align: center">106</td>
+                <td style="text-align: center">--</td>
+                <td style="text-align: center">--</td>
+                <td style="text-align: center">~43 C</td>
+                <td><span class="cite">[S20/case_7]</span></td>
+              </tr>
+              <tr>
+                <td>MMA FP16 sustained (boost)</td>
+                <td style="text-align: center">232</td>
+                <td style="text-align: center">271</td>
+                <td style="text-align: center">1.17</td>
+                <td style="text-align: center">65 C at 10 min</td>
+                <td><span class="cite">[S20/case_8,10]</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <aside class="callout callout-info">
+          <p>
+            † MX-FP4 and NV-FP4 TFLOPS are chip-level peaks from Section 9 GEMM
+            sweeps at full occupancy. Power (89W) is from
+            <span class="cite">[S20/case_16]</span> single-warp TC power
+            measurement. The per-SM TC power draw (89W) is occupancy-invariant
+            (identical at 1-warp and full-chip), making the TFLOPS/W ratio valid
+            as a peak-efficiency metric. <span class="cite">[S20/case_16]</span>
+            separately measured: MXFP4 QMMA.SF = 105 TFLOPS at 89W = 1.18
+            TFLOPS/W; NVFP4 OMMA.SF = 210 TFLOPS at 89W = 2.36 TFLOPS/W
+            (single-warp throughput, not chip-level peak).
+          </p>
+        </aside>
+        <p><strong>Key observations:</strong></p>
+        <ol>
+          <li>
+            <p>
+              <strong
+                >TC workloads are paradoxically cooler than CUDA cores</strong
+              >
+              at similar SM utilization. TC MMA draws 108 W vs FP32 FFMA at 143
+              W (0.76x power for 2.18x TFLOPS). The tensor core datapath is
+              fundamentally more energy-efficient per operation.
+            </p>
+          </li>
+          <li>
+            <p>
+              <strong
+                >All TC formats draw approximately 57 W average regardless of
+                precision.</strong
+              >
+              TOPS scales 4x (FP16 to MX-FP4) while power remains constant,
+              meaning power/TOP halves per precision step.
+            </p>
+          </li>
+          <li>
+            <p>
+              <strong>No thermal throttle under any workload</strong>: Maximum
+              observed temperature is 65 C after 10 minutes of sustained TC FP16
+              at boost clocks, with 27 C headroom below the 92 C threshold.
+            </p>
+          </li>
+          <li>
+            <p>
+              <strong>DVFS is perfectly linear from 574 to 2606 MHz</strong>
+              with no clock wall below the maximum sustained frequency. Best
+              energy efficiency occurs at ~1500 MHz (0.479 TFLOPS/W, 32% better
+              than maximum clock).
+            </p>
+          </li>
+          <li>
+            <p>
+              <strong>Per-SM power gating is functional</strong>: MMA draws 0.15
+              W/SM incremental, FMA draws 0.23 W/SM (FMA is 1.54x more
+              power-hungry per SM).
+            </p>
+          </li>
+        </ol>
+        <p>
+          <strong>GDDR7 bandwidth vs memory clock</strong> (<span class="cite"
+            >[S20/case_13]</span
+          >): Three effective clock bins exist (810 MHz -&gt; 53 GB/s, 7001 MHz
+          -&gt; 603 GB/s, 13365 MHz -&gt; 1112 GB/s) with near-linear scaling.
+          Peak measured is 1112 GB/s (87% of 1283 theoretical). Triad is 3-5%
+          faster than Copy.
+        </p>
+        <p>
+          <strong>Power-efficiency optimization rule</strong>: For inference
+          serving, running at ~1500 MHz provides 32% better TFLOPS/W with only
+          42% throughput loss. For batch training requiring maximum throughput,
+          maximize clock frequency and accept the power cost.
+        </p>
+        <h3
+          class="sub-title"
+          id="8-6-1-microarchitectural-analysis-power-gating-and-the-tccuda-efficiency-gap"
+        >
+          8.6.1 Microarchitectural Analysis: Power Gating and the TC/CUDA
+          Efficiency Gap
+        </h3>
+        <p>
+          The per-workload power data reveals a fundamental asymmetry in the
+          SM_120 power architecture — tensor cores deliver an order-of-magnitude
+          better energy efficiency than CUDA cores, while power gating operates
+          at GPC granularity rather than per-SM:
+        </p>
+        <figure class="diagram">
+          <object
+            data="svg/ch08/ch08_power_gating.svg"
+            type="image/svg+xml"
+            aria-label="SM_120 power architecture model — static/dynamic breakdown, per-GPC incremental, TFLOPS/W efficiency ladder, 5.3× TC/CUDA gap, GPC-level power gating"
+          ></object>
+          <figcaption>
+            <span class="fig-num">FIG 08.11</span>SM_120 power architecture
+            model — Panel A decomposes the 48.4 W static floor into memory/L2/IO
+            components; Panel B shows full-chip dynamic power per workload type
+            (89–164 W range); Panel C ranks all precisions by TFLOPS/W from
+            MX-FP4 (12.0) down to FP32 FFMA (0.41); Panel D quantifies the 5.3×
+            TC/CUDA efficiency gap; Panel E illustrates GPC-granularity power
+            gating (minimum unit = 1 GPC ≈ 14 SMs); Panel F provides a
+            precision-selection decision flowchart for optimal energy
+            efficiency.
+            <span class="cite">[S20/case_5-17, S9/case_128-137]</span>
+          </figcaption>
+        </figure>
+        <p>
+          The core finding is a <strong>5.3× TFLOPS/W advantage</strong> for
+          tensor cores over CUDA cores: FP16 HMMA delivers 235 TFLOPS at 108 W
+          (2.18 TFLOPS/W) versus FP32 FFMA at 58 TFLOPS / 143 W (0.41 TFLOPS/W).
+          This gap widens dramatically with lower precisions — MX-FP4 achieves
+          12.0 TFLOPS/W (29.3× the FP32 baseline), establishing that each
+          halving of operand precision approximately doubles energy efficiency
+          while holding total chip power nearly constant at 89–110 W for all TC
+          formats. Even FP32 computation should use the TF32 tensor-core path
+          when accuracy permits: TF32 at 1.15 TFLOPS/W is 2.8× more efficient
+          than FFMA, with no hardware-level precision penalty.
+        </p>
+        <p>
+          <strong>Power gating operates at GPC granularity, not per-SM</strong>:
+          the per-SM incremental measurement (Cases 12, 14) reveals discrete
+          steps of +10.4 W (FMA) or +1.6 W (MMA) per GPC (~14 SMs), not smooth
+          per-SM scaling. This means the minimum power-management unit is one
+          entire GPC — fine-grained SM-level gating is architecturally
+          unavailable. The FMA/MMA power ratio per GPC is 6.5× (10.4/1.6),
+          explaining why tensor-core workloads are paradoxically cooler than
+          CUDA-core workloads at equivalent SM utilization. No thermal throttle
+          was observed under any workload: maximum temperature reached 53°C
+          (INT32 at 164 W), leaving 39°C of headroom below the 92°C thermal
+          limit. The 350 W TDP envelope is sized for simultaneous worst-case
+          mixed operation (compute + memory + display), not for any single
+          compute path in isolation.
+        </p>
+        <h3
+          class="sub-title"
+          id="8-6-2-dvfs-perfect-linearity-enables-frequency-as-a-knob"
+        >
+          8.6.2 DVFS: Perfect Linearity Enables Frequency-as-a-Knob
+        </h3>
+        <p>
+          The DVFS sweep (Case 11) shows
+          <strong>near-perfect linear throughput scaling</strong> (101-102% of
+          ideal) from 575 to 2572 MHz — no clock wall, no throttling, no
+          saturation:
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th style="text-align: center">Clock (MHz)</th>
+                <th style="text-align: center">TFLOPS</th>
+                <th style="text-align: center">TFLOPS/W</th>
+                <th>Efficiency Window</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="text-align: center">575</td>
+                <td style="text-align: center">15.7</td>
+                <td style="text-align: center">0.326</td>
+                <td>Minimum power (48 W static floor)</td>
+              </tr>
+              <tr>
+                <td style="text-align: center">1492</td>
+                <td style="text-align: center">41.6</td>
+                <td style="text-align: center"><strong>0.492</strong></td>
+                <td><strong>Optimal efficiency</strong> (+51% vs min)</td>
+              </tr>
+              <tr>
+                <td style="text-align: center">2092</td>
+                <td style="text-align: center">58.3</td>
+                <td style="text-align: center">0.410</td>
+                <td>Default production clock</td>
+              </tr>
+              <tr>
+                <td style="text-align: center">2572</td>
+                <td style="text-align: center">71.8</td>
+                <td style="text-align: center">0.373</td>
+                <td>Maximum throughput (−24% efficiency)</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          The optimal efficiency point at ~1500 MHz is where static power (48 W)
+          transitions from dominating to being diluted by dynamic power. Below
+          1500 MHz, the static floor wastes proportionally more power per TFLOP.
+          Above 1500 MHz, the cubic voltage-frequency relationship makes each
+          additional MHz more expensive in watts.
+        </p>
+        <p>
+          <strong>Practical inference serving strategy</strong>: For
+          latency-tolerant batch inference, running at 1500 MHz reduces power by
+          41% (84 W vs 143 W) while maintaining 71% of peak throughput (41.6 vs
+          58.3 TFLOPS). For datacenter deployments at scale, this 1.2×
+          improvement in TFLOPS/W translates directly to reduced cooling costs
+          and higher rack density.
+        </p>
+        <hr />
+        <h2 class="ch-title" id="8-7-key-insights">8.7 Key Insights</h2>
+        <h3
+          class="sub-title"
+          id="ki-8-1-fp16-roofline-crossover-at-ai203----mnk610-is-the-transition"
+        >
+          KI-8.1: FP16 Roofline Crossover at AI=203 -- M=N=K~610 is the
+          Transition
+        </h3>
+        <ul>
+          <li>
+            <strong>Phenomenon</strong>: Below AI=203, workloads are
+            memory-bound; above, compute-bound. FP32 crossover occurs at AI=38
+            (M~228). Peak achieved bandwidth is 1114 GB/s (87% of 1283 GB/s
+            theoretical).
+          </li>
+          <li>
+            <strong>Mechanism</strong>: The high FP16 roofline ridge (271 TFLOPS
+            vs 1.231 TB/s DRAM) means most practical LLM shapes (except GEMV and
+            very small batch sizes) are compute-bound. The 4.4x TMA starvation
+            ratio reinforces the compute-bound characteristic: even with perfect
+            pipelining, TMA cannot deliver data fast enough.
+          </li>
+          <li>
+            <strong>Implication</strong>: For LLM inference at batch&gt;=8, the
+            dominant optimization target is compute efficiency (tile selection,
+            operand reuse), not memory bandwidth. Only at M=1 (decode) or
+            M&lt;=8 (small-batch) does memory optimization matter.
+          </li>
+          <li><strong>Confidence</strong>: H</li>
+        </ul>
+        <h3
+          class="sub-title"
+          id="ki-8-2-attention-limited-by-thin-kthin-n-gemms-not-softmax"
+        >
+          KI-8.2: Attention Limited by Thin-K/Thin-N GEMMs, Not Softmax
+        </h3>
+        <ul>
+          <li>
+            <strong>Phenomenon</strong>: Q x K^T achieves only 46% efficiency at
+            K=128 (107.5 TFLOPS). Score x V achieves only 61% at N=128 (142.7
+            TFLOPS). Meanwhile softmax runs at 2.1-5.0 TB/s (L2-bound, trivial).
+            Online softmax rescale costs only 21.1 cycles.
+          </li>
+          <li>
+            <strong>Mechanism</strong>: With K=128, each m16n8k16 MMA
+            instruction processes only 16 of 128 K-elements, requiring 8
+            sequential MMAs with no opportunity for inter-tile parallelism. The
+            SFU (MUFU.EX2) operates completely free during MMA pipeline stalls,
+            making softmax effectively zero-cost.
+          </li>
+          <li>
+            <strong>Implication</strong>: Optimizing FlashAttention on SM_120
+            should focus on maximizing Q x K^T tile efficiency via larger Br
+            tiles, not softmax fast-math optimizations. Using MMA-based rowsum
+            (96x faster than shuffle-based) and selp causal mask (free) provides
+            the best leverage.
+          </li>
+          <li><strong>Confidence</strong>: H</li>
+        </ul>
+        <h3
+          class="sub-title"
+          id="ki-8-3-gemv-is-dram-bw-bound-saturates-at-n8192"
+        >
+          KI-8.3: GEMV is DRAM-BW-Bound; Saturates at N&gt;=8192
+        </h3>
+        <ul>
+          <li>
+            <strong>Phenomenon</strong>: GEMV M=1 achieves 842-879 GB/s at
+            N&gt;=8192 (98% of DRAM peak). L2-cached regime (N&lt;=4096)
+            achieves 1488 GB/s. Batching amortizes linearly: 212 to 3.3 us/token
+            (M=1 to 64).
+          </li>
+          <li>
+            <strong>Mechanism</strong>: GEMV is a pure streaming workload with
+            AI~1.0. The working set (NxN weight matrix in FP16) exceeds L2
+            capacity at N=8192, forcing DRAM-speed operation. No compute
+            optimization can help.
+          </li>
+          <li>
+            <strong>Implication</strong>: For decode-phase optimization, the
+            only levers are: (1) weight quantization to reduce bytes transferred
+            (INT4 achieves 2.38x speedup), (2) batching to amortize launch
+            overhead, and (3) ensuring N&lt;=4096 weights fit in L2 when
+            possible.
+          </li>
+          <li><strong>Confidence</strong>: H</li>
+        </ul>
+        <h3
+          class="sub-title"
+          id="ki-8-4-moe-dispatch-dominated-by-kernel-launch-overhead"
+        >
+          KI-8.4: MoE Dispatch Dominated by Kernel Launch Overhead
+        </h3>
+        <ul>
+          <li>
+            <strong>Phenomenon</strong>: Expert serial launch costs 35
+            us/expert. Grouped GEMM is 1.75-12.7x slower than a fused single
+            kernel. M=8/expert achieves only 7.3 TFLOPS. Router GEMM at M=1-4 is
+            capped at a 65 us launch floor (0.01% efficiency).
+          </li>
+          <li>
+            <strong>Mechanism</strong>: Small-M GEMM is launch-latency
+            dominated, not compute-limited. Each cuBLAS call incurs 2-5 us of
+            launch overhead that dominates when the actual compute takes only
+            3-5 us.
+          </li>
+          <li>
+            <strong>Implication</strong>: Persistent kernel scheduling with
+            work-stealing eliminates per-expert launch overhead. Grouped GEMM
+            with batch&gt;=8 tokens per expert is the minimum for reasonable
+            efficiency. Router GEMM should be fused with the preceding layer.
+          </li>
+          <li><strong>Confidence</strong>: H</li>
+        </ul>
+        <h3
+          class="sub-title"
+          id="ki-8-5-all-normalizationactivation-fusions-save-1-3-1-9x-from-eliminating-memory-round-trips"
+        >
+          KI-8.5: All Normalization+Activation Fusions Save 1.3-1.9x from
+          Eliminating Memory Round-Trips
+        </h3>
+        <ul>
+          <li>
+            <strong>Phenomenon</strong>: Fused RMSNorm+SiLU 1.28-1.41x faster;
+            fused QK RMSNorm+RoPE 1.5-1.9x; fused LayerNorm+SiLU 1.5x; fused
+            bias+activation+residual 2.4-3.7x. All are memory-BW-bound.
+          </li>
+          <li>
+            <strong>Mechanism</strong>: Each unfused kernel requires one full
+            DRAM round-trip (read input, write output). Fusion eliminates
+            intermediate materializations. The benefit is proportional to the
+            number of eliminated memory passes, not compute savings.
+          </li>
+          <li>
+            <strong>Implication</strong>: Always fuse normalization, activation,
+            and residual operations. The fusion benefit is purely from bandwidth
+            savings, making it universally beneficial regardless of sequence
+            length or model size. The 2.4-3.7x speedup for
+            bias+activation+residual (3 operations -&gt; 1 kernel) confirms the
+            linear scaling of fusion benefit with operation count.
+          </li>
+          <li><strong>Confidence</strong>: H</li>
+        </ul>
+        <h3 class="sub-title" id="ki-8-6-split-k-never-helps-on-sm_120">
+          KI-8.6: Split-K Never Helps on SM_120
+        </h3>
+        <ul>
+          <li>
+            <strong>Phenomenon</strong>: Manual split-K always performs worse
+            than standard cuBLAS. Split-16 loses 30-60%. Even thin M=64 shapes
+            achieve 70 TFLOPS without splitting.
+          </li>
+          <li>
+            <strong>Mechanism</strong>: cuBLAS internally optimizes K-splitting
+            via stream-K strategies. External split-K via multiple API calls
+            adds atomic reduction overhead and wave quantization penalties that
+            exceed any load-balancing benefit on the 110-SM chip.
+          </li>
+          <li>
+            <strong>Implication</strong>: Never manually split-K via multiple
+            cuBLAS calls on SM_120. For custom kernels requiring explicit
+            split-K, use single-launch kernels with shared-memory reduction
+            rather than multi-launch approaches.
+          </li>
+          <li><strong>Confidence</strong>: H</li>
+        </ul>
+        <h3
+          class="sub-title"
+          id="ki-8-7-causal-mask-selp-is-free-additive-mask-costs-40-6"
+        >
+          KI-8.7: Causal Mask (selp) is Free; Additive Mask Costs +40.6%
+        </h3>
+        <ul>
+          <li>
+            <strong>Phenomenon</strong>: Predicated MMA with selp mask adds 0
+            cycles overhead (completely free, hidden behind MMA pipeline).
+            Additive mask (add + compare) costs +12.1 cyc/tile (+40.6% over 29.9
+            cycle baseline).
+          </li>
+          <li>
+            <strong>Mechanism</strong>: selp generates a predicate that gates
+            the MMA accumulator write without stalling the TC pipeline. The
+            predicate evaluation is entirely overlapped with MMA execution.
+            Additive masking requires extra FFMA/FADD operations that contend
+            with the FMA pipe.
+          </li>
+          <li>
+            <strong>Implication</strong>: All attention implementations should
+            use predicated (selp-based) causal masking. Additive masking should
+            only be used when relative position biases require actual
+            floating-point addition.
+          </li>
+          <li><strong>Confidence</strong>: H</li>
+        </ul>
+        <h3
+          class="sub-title"
+          id="ki-8-8-sm_120-gemm-efficiency-is-workload-dependent-best-91-4-sweep-cap-73"
+        >
+          KI-8.8: SM_120 GEMM Efficiency is Workload-Dependent (Best 91.4% /
+          Sweep-cap 73%)
+        </h3>
+        <ul>
+          <li>
+            <strong>Phenomenon</strong>: Best-case cuBLAS FP16 reaches
+            <strong>270.53 TFLOPS at M=N=K=8192</strong> (<span class="cite"
+              >[S18/case_3]</span
+            >
+            single-shape benchmark, 85% of 318 TFLOPS theoretical-per-cuBLAS /
+            91.4% of measured chip peak); sweep cap from a multi-shape grid run
+            is lower at <strong>232 TFLOPS at M=N=K=16384</strong> (<span
+              class="cite"
+              >[S19/case_1]</span
+            >, 73% of 3224 theoretical when all 588 shapes are averaged after
+            thin-K and small-M penalties). Power-instrumented
+            <span class="cite">[S20/case_7]</span> runs at sustained boost see
+            ~232–235 TFLOPS, matching the steady-state regime, not the best-case
+            point. cuBLAS FP8 peaks at 529 TFLOPS (98.7% of
+            theoretical-per-cuBLAS but ~49% of raw TC peak 1070T). CUTLASS MXFP4
+            achieves 100.6% (1076.5 vs 1070T), but this is 100% of the MXFP4
+            peak which itself is only ~50% of the full theoretical.
+          </li>
+          <li>
+            <strong>Cross-reference</strong>: The 27.5% overhead per MMA from
+            smem-to-RF loading (11.0 cyc/MMA, Section 4.4) is the structural
+            bottleneck. Even perfect software pipelining cannot eliminate this:
+            the ldmatrix-to-RF-to-MMA path is serialized within each warp. The
+            3-stage pipeline (1.92x speedup) hides TMA latency but NOT the
+            per-MMA RF loading cost. SM_100's Tensor Memory (256 KB
+            direct-to-TC) bypasses this entirely.
+          </li>
+          <li>
+            <strong>Implication</strong>: On SM_120, the most impactful
+            optimization is NOT pipeline depth or tile size -- it is operand
+            reuse. 4x reuse saves 12.6 cyc/MMA (Section 4.4/case_34), directly
+            reducing the smem-to-RF fraction. For attention workloads where
+            K-dim is short (d=128), operand reuse is limited, so the structural
+            efficiency cap applies. For large-K GEMM, K-unrolling enables high
+            reuse and approaches TC peak.
+          </li>
+          <li><strong>Confidence</strong>: H</li>
+        </ul>
+        <h3
+          class="sub-title"
+          id="ki-8-9-flashattention-bottleneck-hierarchy-thin-k-gemm-45-softmax-alu-25-accumulator-reformat-5"
+        >
+          KI-8.9: FlashAttention Bottleneck Hierarchy: Thin-K GEMM (45%) &gt;
+          Softmax ALU (25%) &gt; Accumulator Reformat (5%)
+        </h3>
+        <ul>
+          <li>
+            <strong>Phenomenon</strong>: Per-tile cycle budget: Q x K^T MMA =
+            232 cyc (45%), softmax rescale = 130 cyc (25%), Score x V MMA = 232
+            cyc (25%), D-to-smem-to-A reformat = 102.8 cyc (5% due to sync
+            overhead). Q x K^T efficiency is only 46% at K=128.
+          </li>
+          <li>
+            <strong>Cross-reference</strong>: The 46% Q x K^T efficiency is
+            caused by thin-K: with K=128, each m16n8k16 MMA processes only 16 of
+            128 K-elements, requiring 8 sequential MMAs with limited inter-tile
+            parallelism. The softmax SFU (MUFU.EX2, 18 cyc) runs 100% free
+            during MMA stalls (TC+XU 0% overhead,
+            <span class="cite">[S22/case_50]</span>), so softmax is NOT the
+            actual bottleneck despite occupying 25% of wall time.
+          </li>
+          <li>
+            <strong>Implication</strong>: Optimizing FlashAttention on SM_120
+            should prioritize: (1) maximizing Q x K^T tile efficiency via larger
+            Br tiles (more rows per MMA batch), (2) using MMA-based rowsum (96x
+            faster than shuffle-based reduction) instead of scalar
+            warp-reduction, (3) using selp causal mask (free) instead of
+            additive mask (+40.6%). Softmax SFU optimization (fast_math) has
+            minimal impact because EX2 already co-issues free with MMA.
+          </li>
+          <li><strong>Confidence</strong>: H</li>
+        </ul>
+        <hr />
+        <h2
+          class="ch-title"
+          id="8-8-caqr-quantitative-framework-section-25-supplementary-data"
+        >
+          8.8 CAQR Quantitative Framework (Section 25 Supplementary Data)
+        </h2>
+        <h3 class="sub-title" id="8-8-1-instruction-mix-profiles-caqr-3-2">
+          8.8.1 Instruction Mix Profiles (CAQR §3.2)
+        </h3>
+        <p>
+          NCU-measured per-pipe instruction fractions for three representative
+          workloads (Cases 11-13):
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Pipe</th>
+                <th style="text-align: center">GEMM BF16 4096³</th>
+                <th style="text-align: center">FlashAttention-2 Fwd</th>
+                <th style="text-align: center">GEMV Decode (M=1)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Tensor</strong></td>
+                <td style="text-align: center"><strong>33.1%</strong></td>
+                <td style="text-align: center">27.3%</td>
+                <td style="text-align: center">10.3%</td>
+              </tr>
+              <tr>
+                <td><strong>FMA</strong></td>
+                <td style="text-align: center">1.3%</td>
+                <td style="text-align: center"><strong>29.1%</strong></td>
+                <td style="text-align: center">2.1%</td>
+              </tr>
+              <tr>
+                <td><strong>ALU</strong></td>
+                <td style="text-align: center">6.9%</td>
+                <td style="text-align: center">19.8%</td>
+                <td style="text-align: center"><strong>36.7%</strong></td>
+              </tr>
+              <tr>
+                <td><strong>LSU</strong></td>
+                <td style="text-align: center">15.7%</td>
+                <td style="text-align: center">14.8%</td>
+                <td style="text-align: center">21.3%</td>
+              </tr>
+              <tr>
+                <td><strong>Uniform</strong></td>
+                <td style="text-align: center">—</td>
+                <td style="text-align: center">0.9%</td>
+                <td style="text-align: center">20.4%</td>
+              </tr>
+              <tr>
+                <td>CBU</td>
+                <td style="text-align: center">3.6%</td>
+                <td style="text-align: center">&lt;0.1%</td>
+                <td style="text-align: center">—</td>
+              </tr>
+              <tr>
+                <td>Other</td>
+                <td style="text-align: center">39.4%</td>
+                <td style="text-align: center">8.1%</td>
+                <td style="text-align: center">9.2%</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p><strong>Three workload archetypes emerge</strong>:</p>
+        <ol>
+          <li>
+            <strong>TC-dominated</strong> (GEMM): Tensor pipe = 33.1%, ~3
+            overhead instructions per TC instruction
+          </li>
+          <li>
+            <strong>Mixed-pipe</strong> (FlashAttention): FMA 29.1% + Tensor
+            27.3% — softmax/rescale produces MORE instructions than TC matmuls
+            (~49% vs 27%)
+          </li>
+          <li>
+            <strong>ALU-dominated</strong> (GEMV decode): ALU 36.7% + LSU 21.3%
+            — address computation and data streaming dominate
+          </li>
+        </ol>
+        <p>
+          <strong>Surprising finding</strong>: cuBLAS uses WMMA tensor path even
+          for M=1 GEMV (10.3% TC instructions), contradicting the expectation of
+          zero MMA for a pure vector operation. [source: S25/cases_11-13]
+        </p>
+        <h3 class="sub-title" id="8-8-2-amdahls-law-validation-caqr-1-10">
+          8.8.2 Amdahl's Law Validation (CAQR §1.10)
+        </h3>
+        <p>
+          Both Amdahl experiments validated with
+          <strong>0.0% deviation</strong> (Cases 15, 17):
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Bottleneck</th>
+                <th style="text-align: center">Fraction</th>
+                <th style="text-align: center">Amdahl Predicted</th>
+                <th style="text-align: center">Measured Speedup</th>
+                <th style="text-align: center">Error</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>smem-to-RF overhead</td>
+                <td style="text-align: center">0.9% (ILP=1 test)</td>
+                <td style="text-align: center">1.010×</td>
+                <td style="text-align: center"><strong>1.010×</strong></td>
+                <td style="text-align: center"><strong>0.0%</strong></td>
+              </tr>
+              <tr>
+                <td>Dispatch tax (loop BRA)</td>
+                <td style="text-align: center">92.4%</td>
+                <td style="text-align: center">13.23×</td>
+                <td style="text-align: center"><strong>13.23×</strong></td>
+                <td style="text-align: center"><strong>0.0%</strong></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          The Amdahl validation confirms that SM_120's performance model is
+          perfectly decomposable — eliminating a bottleneck component yields
+          exactly the Amdahl-predicted speedup with zero residual interaction
+          effects. [source: S25/cases_15,17]
+        </p>
+        <h3
+          class="sub-title"
+          id="8-8-3-power-model-and-energy-delay-product-caqr-1-5-1-11"
+        >
+          8.8.3 Power Model and Energy-Delay Product (CAQR §1.5, §1.11)
+        </h3>
+        <p>
+          <strong>Dynamic power model</strong> (Case 18):
+          <code>P_dynamic ∝ f^α</code> with
+          <strong>α = 1.355</strong> (sublinear voltage scaling).
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th style="text-align: center">Freq (MHz)</th>
+                <th style="text-align: center">P_dynamic (W)</th>
+                <th style="text-align: center">TFLOPS (FP32)</th>
+                <th style="text-align: center">TFLOPS/W</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="text-align: center">800</td>
+                <td style="text-align: center">21</td>
+                <td style="text-align: center">10.4</td>
+                <td style="text-align: center">0.49</td>
+              </tr>
+              <tr>
+                <td style="text-align: center">1400</td>
+                <td style="text-align: center">37</td>
+                <td style="text-align: center">18.3</td>
+                <td style="text-align: center">0.49</td>
+              </tr>
+              <tr>
+                <td style="text-align: center">2000</td>
+                <td style="text-align: center">58</td>
+                <td style="text-align: center">26.0</td>
+                <td style="text-align: center">0.45</td>
+              </tr>
+              <tr>
+                <td style="text-align: center">2572</td>
+                <td style="text-align: center">99</td>
+                <td style="text-align: center">33.4</td>
+                <td style="text-align: center">0.34</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p><strong>Energy-Delay Product per workload</strong> (Case 19):</p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Workload</th>
+                <th style="text-align: center">EDP (J·s)</th>
+                <th style="text-align: center">TFLOPS/W</th>
+                <th style="text-align: center">vs BF16</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>BF16 GEMM</strong></td>
+                <td style="text-align: center"><strong>7.2×10⁻⁵</strong></td>
+                <td style="text-align: center"><strong>1.14</strong></td>
+                <td style="text-align: center"><strong>1.0× (best)</strong></td>
+              </tr>
+              <tr>
+                <td>FP16 GEMM</td>
+                <td style="text-align: center">1.0×10⁻⁴</td>
+                <td style="text-align: center">0.80</td>
+                <td style="text-align: center">1.4× worse</td>
+              </tr>
+              <tr>
+                <td>FP32 GEMM</td>
+                <td style="text-align: center">2.3×10⁻³</td>
+                <td style="text-align: center">0.17</td>
+                <td style="text-align: center">31× worse</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          <strong>BF16 is Pareto-optimal</strong>: identical TFLOPS to FP16 but
+          42% lower power (193W vs 286W), yielding the best EDP.
+        </p>
+        <h3 class="sub-title" id="8-8-4-cost-performance-metrics-caqr-1-11">
+          8.8.4 Cost-Performance Metrics (CAQR §1.11)
+        </h3>
+        <p>
+          RTX PRO 5000 retail price: ~$4,499 (NVIDIA Marketplace MSRP at
+          campaign date 2026-06-07; Case 21 records this as the input baseline
+          for the cost-performance ratios below — actual street price varies
+          ±10% across vendors and is not part of the measurement, only of the
+          derived $/TFLOPS row). (Case 21):
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Precision</th>
+                <th style="text-align: center">TFLOPS</th>
+                <th style="text-align: center">TFLOPS/$</th>
+                <th style="text-align: center">$/TFLOPS</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>FP8</td>
+                <td style="text-align: center">529</td>
+                <td style="text-align: center"><strong>0.118</strong></td>
+                <td style="text-align: center">$8.50</td>
+              </tr>
+              <tr>
+                <td>INT8</td>
+                <td style="text-align: center">526</td>
+                <td style="text-align: center">0.117</td>
+                <td style="text-align: center">$8.55</td>
+              </tr>
+              <tr>
+                <td>FP16/BF16</td>
+                <td style="text-align: center">246</td>
+                <td style="text-align: center">0.055</td>
+                <td style="text-align: center">$18.31</td>
+              </tr>
+              <tr>
+                <td>FP32</td>
+                <td style="text-align: center">49</td>
+                <td style="text-align: center">0.011</td>
+                <td style="text-align: center">$92.49</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p><strong>LLM inference cost model</strong> (7B model estimate):</p>
+        <ul>
+          <li>Decode: 433 tok/s → 0.096 tok/s/$</li>
+          <li>Prefill (M=512): 52,464 tok/s → 11.66 tok/s/$</li>
+          <li>
+            Prefill/decode gap: <strong>121×</strong> (the fundamental
+            memory-boundedness of autoregressive decode)
+          </li>
+        </ul>
+        <h3
+          class="sub-title"
+          id="8-8-5-measurement-confidence-dvfs-invariance-and-sm-scaling-cases-35-38"
+        >
+          8.8.5 Measurement Confidence: DVFS Invariance and SM Scaling (Cases
+          35, 38)
+        </h3>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Validation</th>
+                <th>Result</th>
+                <th>Source</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Cycle counts vs DVFS</td>
+                <td>Max CoV = 0.3% across 1000-2572 MHz</td>
+                <td><span class="cite">[S25/case_35]</span></td>
+              </tr>
+              <tr>
+                <td>SM scaling linearity</td>
+                <td>109.74× at 110 CTAs (99.8% of 110×)</td>
+                <td><span class="cite">[S25/case_38]</span></td>
+              </tr>
+              <tr>
+                <td>NCU vs clock64 (FFMA)</td>
+                <td>4.00 cyc both methods</td>
+                <td><span class="cite">[S25/case_31]</span></td>
+              </tr>
+              <tr>
+                <td>NCU vs clock64 (MMA)</td>
+                <td>NCU CPI=6.59, clock64=15.88 (different metric levels)</td>
+                <td><span class="cite">[S25/case_32]</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          All cycle-based measurements are confirmed DVFS-invariant (constant in
+          cycles regardless of clock frequency), and SM throughput scales
+          perfectly linearly.
+        </p>
+        <hr />
+        <h2 class="ch-title" id="8-9-fallacies-and-pitfalls">
+          8.9 Fallacies and Pitfalls
+        </h2>
+        <aside class="callout callout-info">
+          <p>
+            Following CAQR §1.12, this section catalogs common misconceptions
+            refuted by SM_120 measurements.
+          </p>
+        </aside>
+        <p>
+          <strong
+            >Fallacy: "FP16 ALU packing provides 2× throughput over
+            FP32."</strong
+          >
+          FALSE on SM_120. HFMA2 achieves 1 FP16 element/cycle = identical to
+          FP32 FFMA rate. The 2-cycle issue interval time-multiplexes both FP16
+          lanes through the same 32-bit datapath. FP16 throughput advantage
+          comes exclusively from Tensor Cores (258× ALU rate). [source:
+          <span class="cite">[S5/case_39]</span>,
+          <span class="cite">[S9/case_1]</span>]
+        </p>
+        <p>
+          <strong
+            >Fallacy: "Higher occupancy always improves performance."</strong
+          >
+          FALSE. Single warp at ILP=4 achieves 92% of peak FP32 throughput. 48
+          warps can regress 19% for mixed workloads due to L1/L2 cache
+          contention. [source: <span class="cite">[S11/case_122]</span>,
+          <span class="cite">[S21/case_53]</span>]
+        </p>
+        <p>
+          <strong>Fallacy: "Softmax is the FlashAttention bottleneck."</strong>
+          FALSE. NCU profiling shows softmax/rescale produces 49% of
+          FlashAttention instructions (FMA+ALU), but SFU (MUFU.EX2) co-issues
+          100% free with TC operations. The actual bottleneck is thin-K GEMM at
+          46% efficiency. [source: <span class="cite">[S25/case_12]</span>,
+          <span class="cite">[S19/case_62]</span>]
+        </p>
+        <p>
+          <strong
+            >Pitfall: "Using <code>asm volatile</code> with memory clobber
+            prevents DCE."</strong
+          >
+          FALSE. ptxas eliminates
+          <code>asm volatile("" :: "f"(val) : "memory")</code> entirely. Must
+          use global memory store for anti-DCE. [source:
+          <span class="cite">[S21/case_15]</span>]
+        </p>
+        <p>
+          <strong
+            >Pitfall: "Setting stall counter below write-back latency merely
+            reduces performance."</strong
+          >
+          FALSE. It causes <strong>silent data corruption</strong> — no CUDA
+          error, no trap. Only stall=0 triggers the hardware safety net.
+          [source: <span class="cite">[S11/case_132]</span>]
+        </p>
+        <p>
+          <strong>Fallacy: "TMA multicast works on all Blackwell GPUs."</strong>
+          FALSE. GB202 (SM_120) lacks the LRC multicast crossbar. All multicast
+          calls are SW-emulated at 2400-7500× penalty via
+          <code>CALL.ABS.NOINC</code>. [source:
+          <span class="cite">[S10/case_28]</span>]
+        </p>
+        <hr />
+        <h2 class="ch-title" id="8-10-summary">8.10 Summary</h2>
+        <p>
+          SM_120 demonstrates a well-defined performance hierarchy across
+          workload types:
+        </p>
+        <ol>
+          <li>
+            <p>
+              <strong>Compute-bound GEMM</strong> achieves 94-101% of
+              theoretical peak for large shapes (M&gt;=1024) across all
+              precisions, with CUTLASS MXFP4 slightly exceeding theoretical due
+              to clock boost effects.
+            </p>
+          </li>
+          <li>
+            <p>
+              <strong>Memory-bound GEMV</strong> saturates DRAM at 98%
+              utilization for N&gt;=8192, with L2 providing 1.5-1.7x
+              amplification for smaller working sets.
+            </p>
+          </li>
+          <li>
+            <p>
+              <strong>Attention workloads</strong> are structurally limited to
+              46-61% efficiency by thin-K GEMM shapes, not by softmax
+              computation.
+            </p>
+          </li>
+          <li>
+            <p>
+              <strong>Synchronization overhead</strong> ranges from 5% (MoE
+              dispatch at production scale) to 20.6% (DeepGemm pipeline at
+              moderate compute loads).
+            </p>
+          </li>
+          <li>
+            <p>
+              <strong>Power efficiency</strong> favors tensor core operations:
+              MX-FP4 achieves 12.0 TFLOPS/W while FP32 FFMA achieves only 0.83
+              TFLOPS/W -- a 14.5x efficiency gap. [SPECULATIVE] This suggests
+              that future architectures will further widen the TC/CUDA-core
+              efficiency gap, potentially deprecating CUDA-core FP32 paths
+              entirely for AI workloads.
+            </p>
+          </li>
+        </ol>
+        <p>
+          The structural ceiling imposed by the smem-to-RF data path (KI-8.8)
+          represents the single most impactful architectural limitation of
+          SM_120 compared to SM_100. The lack of Tensor Memory forces all
+          operands through a serialized ldmatrix-to-register-to-MMA pipeline,
+          consuming 27.5% of each MMA's cycle budget. Operand reuse remains the
+          primary lever for approaching theoretical peak on this architecture.
+        </p>
+
+        <footer class="page-footer">
+          <div class="foot-grid">
+            <div>
+              <strong>SM_120 / GB202 Blackwell</strong> · Microarchitecture
+              Analysis &amp; Reference · 2026
+            </div>
+            <div>1542 microbenchmark cases · 26 sections · ~13,400 lines</div>
+            <div class="foot-accent">
+              RTX PRO 5000 72GB · CUDA 13.3 · Data source: test_results/SM_120/
+            </div>
+          </div>
+        </footer>
+      </main>
+      <aside class="toc-right">
+        <h4>Chapter Navigation</h4>
+        <a href="#8-1-compute-bound-gemm">8.1 Compute-Bound: GEMM</a>
+        <a class="sub" href="#8-1-1-cublas-performance-sweep"
+          >8.1.1 cuBLAS Performance Sweep</a
+        >
+        <a
+          class="sub"
+          href="#8-1-2-chip-level-sustained-throughput-588-shape-llm-sweep"
+          >8.1.2 Chip-Level Sustained Throughput: 588-Shape LLM Sweep</a
+        >
+        <a class="sub" href="#8-1-3-chip-level-efficiency-highlights"
+          >8.1.3 Chip-Level Efficiency Highlights</a
+        >
+        <a class="sub" href="#8-1-4-m-scaling-behavior"
+          >8.1.4 M-Scaling Behavior</a
+        >
+        <a class="sub" href="#8-1-5-3-stage-software-pipeline"
+          >8.1.5 3-Stage Software Pipeline</a
+        >
+        <a class="sub" href="#8-1-6-non-square-shape-analysis"
+          >8.1.6 Non-Square Shape Analysis</a
+        >
+        <a href="#8-2-memory-bound-gemv-and-decode"
+          >8.2 Memory-Bound: GEMV and Decode</a
+        >
+        <a
+          class="sub"
+          href="#8-2-1-microarchitectural-analysis-the-l2-caching-sweet-spot"
+          >8.2.1 Microarchitectural Analysis: The L2 Caching Sweet Spot</a
+        >
+        <a href="#8-3-mixed-attention-and-softmax"
+          >8.3 Mixed: Attention and Softmax</a
+        >
+        <a class="sub" href="#8-3-1-flashattention-bottleneck-decomposition"
+          >8.3.1 FlashAttention Bottleneck Decomposition</a
+        >
+        <a
+          class="sub"
+          href="#8-3-2-microarchitectural-analysis-why-thin-k-gemms-are-structurally-inefficient"
+          >8.3.2 Microarchitectural Analysis: Why Thin-K GEMMs Are Structurally
+          Inefficient</a
+        >
+        <a
+          class="sub"
+          href="#8-3-3-softmax-is-architecturally-free-the-sfu-co-issue-window"
+          >8.3.3 Softmax Is Architecturally Free: The SFU Co-Issue Window</a
+        >
+        <a href="#8-4-sync-bound-cluster-and-dsmem-pipelines"
+          >8.4 Sync-Bound: Cluster and DSMEM Pipelines</a
+        >
+        <a href="#8-5-multi-precision-roofline-model"
+          >8.5 Multi-Precision Roofline Model</a
+        >
+        <a
+          class="sub"
+          href="#8-5-1-microarchitectural-analysis-the-roofline-defines-three-workload-classes"
+          >8.5.1 Microarchitectural Analysis: The Roofline Defines Three
+          Workload Classes</a
+        >
+        <a href="#8-6-workload-power-and-thermal-profile"
+          >8.6 Workload Power and Thermal Profile</a
+        >
+        <a
+          class="sub"
+          href="#8-6-1-microarchitectural-analysis-power-gating-and-the-tccuda-efficiency-gap"
+          >8.6.1 Microarchitectural Analysis: Power Gating and the TC/CUDA
+          Efficiency Gap</a
+        >
+        <a
+          class="sub"
+          href="#8-6-2-dvfs-perfect-linearity-enables-frequency-as-a-knob"
+          >8.6.2 DVFS: Perfect Linearity Enables Frequency-as-a-Knob</a
+        >
+        <a href="#8-7-key-insights">8.7 Key Insights</a>
+        <a
+          class="sub"
+          href="#ki-8-1-fp16-roofline-crossover-at-ai203----mnk610-is-the-transition"
+          >KI-8.1: FP16 Roofline Crossover at AI=203 -- M=N=K~610 is the
+          Transition</a
+        >
+        <a
+          class="sub"
+          href="#ki-8-2-attention-limited-by-thin-kthin-n-gemms-not-softmax"
+          >KI-8.2: Attention Limited by Thin-K/Thin-N GEMMs, Not Softmax</a
+        >
+        <a class="sub" href="#ki-8-3-gemv-is-dram-bw-bound-saturates-at-n8192"
+          >KI-8.3: GEMV is DRAM-BW-Bound; Saturates at N&amp;gt;=8192</a
+        >
+        <a
+          class="sub"
+          href="#ki-8-4-moe-dispatch-dominated-by-kernel-launch-overhead"
+          >KI-8.4: MoE Dispatch Dominated by Kernel Launch Overhead</a
+        >
+        <a
+          class="sub"
+          href="#ki-8-5-all-normalizationactivation-fusions-save-1-3-1-9x-from-eliminating-memory-round-trips"
+          >KI-8.5: All Normalization+Activation Fusions Save 1.3-1.9x from
+          Eliminating Memory Round-Trips</a
+        >
+        <a class="sub" href="#ki-8-6-split-k-never-helps-on-sm_120"
+          >KI-8.6: Split-K Never Helps on SM_120</a
+        >
+        <a
+          class="sub"
+          href="#ki-8-7-causal-mask-selp-is-free-additive-mask-costs-40-6"
+          >KI-8.7: Causal Mask (selp) is Free; Additive Mask Costs +40.6%</a
+        >
+        <a
+          class="sub"
+          href="#ki-8-8-sm_120-gemm-efficiency-is-workload-dependent-best-91-4-sweep-cap-73"
+          >KI-8.8: SM_120 GEMM Efficiency is Workload-Dependent (Best 91.4% /
+          Sweep-cap 73%)</a
+        >
+        <a
+          class="sub"
+          href="#ki-8-9-flashattention-bottleneck-hierarchy-thin-k-gemm-45-softmax-alu-25-accumulator-reformat-5"
+          >KI-8.9: FlashAttention Bottleneck Hierarchy: Thin-K GEMM (45%)
+          &amp;gt; Softmax ALU (25%) &amp;gt; Accumulator Reformat (5%)</a
+        >
+        <a href="#8-8-caqr-quantitative-framework-section-25-supplementary-data"
+          >8.8 CAQR Quantitative Framework (Section 25 Supplementary Data)</a
+        >
+        <a class="sub" href="#8-8-1-instruction-mix-profiles-caqr-3-2"
+          >8.8.1 Instruction Mix Profiles (CAQR §3.2)</a
+        >
+        <a class="sub" href="#8-8-2-amdahls-law-validation-caqr-1-10"
+          >8.8.2 Amdahl&#x27;s Law Validation (CAQR §1.10)</a
+        >
+        <a
+          class="sub"
+          href="#8-8-3-power-model-and-energy-delay-product-caqr-1-5-1-11"
+          >8.8.3 Power Model and Energy-Delay Product (CAQR §1.5, §1.11)</a
+        >
+        <a class="sub" href="#8-8-4-cost-performance-metrics-caqr-1-11"
+          >8.8.4 Cost-Performance Metrics (CAQR §1.11)</a
+        >
+        <a
+          class="sub"
+          href="#8-8-5-measurement-confidence-dvfs-invariance-and-sm-scaling-cases-35-38"
+          >8.8.5 Measurement Confidence: DVFS Invariance and SM Scaling (Cases
+          35, 38)</a
+        >
+        <a href="#8-9-fallacies-and-pitfalls">8.9 Fallacies and Pitfalls</a>
+        <a href="#8-10-summary">8.10 Summary</a>
+      </aside>
+    </div>
+    <script
+      defer
+      src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"
+      integrity="sha384-7zkQWkzuo3B5mTepMUcHkMB5jZaolc2xDwL6VFqjFALcbeS9Ggm/Yr2r3Dy4lfFg"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      defer
+      src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+      integrity="sha384-43gviWU0YVjaDtb/GhzOouOXtZMP/7XUzwPTstBeZFe/+rCMvRwr4yROQP43s0Xk"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      defer
+      src="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/lib/highlight.min.js"
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (window.renderMathInElement) {
+          renderMathInElement(document.body, {
+            delimiters: [
+              { left: "$$", right: "$$", display: true },
+              { left: "$", right: "$", display: false },
+            ],
+            throwOnError: false,
+          });
+        }
+        if (window.hljs) {
+          document
+            .querySelectorAll("pre code[class^='language-']")
+            .forEach(function (el) {
+              try {
+                hljs.highlightElement(el);
+              } catch (e) {}
+            });
+        }
+      });
+    </script>
+    <script src="assets/js/toc.js" defer></script>
+  </body>
+</html>

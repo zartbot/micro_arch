@@ -1,0 +1,456 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" role="img"
+     aria-label="SM_120 6-stage instruction pipeline — Fetch / Decode / Schedule / Operand Collect / Execute / Writeback">
+  <defs>
+    <style><![CDATA[
+      .eyebrow { font: 600 11px "JetBrains Mono", monospace; letter-spacing: 0.16em; text-transform: uppercase }
+      .title   { font: 500 24px "Fraunces", serif; fill: #0b1220; letter-spacing: -0.02em }
+      .sub     { font: italic 12px "Fraunces", serif; fill: #5b6679 }
+      .stage-num { font: 700 11px "JetBrains Mono", monospace; letter-spacing: 0.10em; fill: #ffffff; opacity: 0.85 }
+      .stage-name{ font: 600 16px "Fraunces", serif; fill: #ffffff; letter-spacing: -0.01em }
+      .stage-sub { font: 500 9px "JetBrains Mono", monospace; fill: #ffffff; opacity: 0.75; letter-spacing: 0.10em; text-transform: uppercase }
+      .panel-h { font: 600 13px "JetBrains Mono", monospace; letter-spacing: 0.06em; fill: #0b1220 }
+      .panel-sub { font: italic 10px "Fraunces", serif; fill: #5b6679 }
+      .lbl-sm  { font: 500 9px "JetBrains Mono", monospace; fill: #5b6679; letter-spacing: 0.05em; text-transform: uppercase }
+      .lbl-mono{ font: 500 10px "JetBrains Mono", monospace; fill: #2a3548 }
+      .lbl-mono-em { font: 600 10px "JetBrains Mono", monospace; fill: #0b1220 }
+      .lbl-w   { font: 600 10px "IBM Plex Sans", sans-serif; fill: #ffffff }
+      .accent  { fill: #b45309 }
+      .pipe-arrow { stroke: #94a3b8; stroke-width: 1.5; fill: none }
+      .conn { stroke-width: 1.5; fill: none }
+    ]]></style>
+    <marker id="arr-pipe" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M0,0 L8,4 L0,8 z" fill="#94a3b8"/>
+    </marker>
+  </defs>
+
+  <rect width="1280" height="720" fill="#fcfbf6"/>
+
+  <!-- ============ Header ============ -->
+  <g transform="translate(40,32)">
+    <rect x="0" y="0" width="3" height="68" fill="#0369a1"/>
+    <text x="16" y="30" class="title">Per-SMSP 6-Stage Pipeline — Fetch to Writeback</text>
+    <text x="16" y="54" class="sub">128-bit fixed-width encoding · CGGTY scheduler · operand collector · 6 execution backends</text>
+    <text x="16" y="92" class="lbl-sm">Source: [S11/c47,67] · [S12/c3,6,8] · [S13/c17] · Section 11/12/13</text>
+  </g>
+
+  <!-- ============ Stage banners (top row) ============ -->
+  <!-- Stage 1: FETCH -->
+  <g transform="translate(40,134)">
+    <rect x="0" y="0" width="188" height="50" rx="6" fill="#0369a1"/>
+    <text x="12" y="16" class="stage-num">STAGE 1</text>
+    <text x="12" y="34" class="stage-name">Fetch</text>
+    <text x="12" y="46" class="stage-sub">L0/L1 I-cache</text>
+  </g>
+  <!-- arrow -->
+  <line x1="230" y1="159" x2="242" y2="159" class="pipe-arrow" marker-end="url(#arr-pipe)"/>
+
+  <!-- Stage 2: DECODE -->
+  <g transform="translate(244,134)">
+    <rect x="0" y="0" width="188" height="50" rx="6" fill="#0284c7"/>
+    <text x="12" y="16" class="stage-num">STAGE 2</text>
+    <text x="12" y="34" class="stage-name">Decode</text>
+    <text x="12" y="46" class="stage-sub">128-bit ctrl word</text>
+  </g>
+  <line x1="434" y1="159" x2="446" y2="159" class="pipe-arrow" marker-end="url(#arr-pipe)"/>
+
+  <!-- Stage 3: SCHEDULE -->
+  <g transform="translate(448,134)">
+    <rect x="0" y="0" width="188" height="50" rx="6" fill="#0891b2"/>
+    <text x="12" y="16" class="stage-num">STAGE 3</text>
+    <text x="12" y="34" class="stage-name">Schedule</text>
+    <text x="12" y="46" class="stage-sub">CGGTY · 1 insn/cyc</text>
+  </g>
+  <line x1="638" y1="159" x2="650" y2="159" class="pipe-arrow" marker-end="url(#arr-pipe)"/>
+
+  <!-- Stage 4: OPERAND COLLECT -->
+  <g transform="translate(652,134)">
+    <rect x="0" y="0" width="188" height="50" rx="6" fill="#0d9488"/>
+    <text x="12" y="16" class="stage-num">STAGE 4</text>
+    <text x="12" y="34" class="stage-name">Operand Collect</text>
+    <text x="12" y="46" class="stage-sub">RF read · OC bypass</text>
+  </g>
+  <line x1="842" y1="159" x2="854" y2="159" class="pipe-arrow" marker-end="url(#arr-pipe)"/>
+
+  <!-- Stage 5: EXECUTE -->
+  <g transform="translate(856,134)">
+    <rect x="0" y="0" width="188" height="50" rx="6" fill="#059669"/>
+    <text x="12" y="16" class="stage-num">STAGE 5</text>
+    <text x="12" y="34" class="stage-name">Execute</text>
+    <text x="12" y="46" class="stage-sub">FMA/ALU/SFU/LSU/TC</text>
+  </g>
+  <line x1="1046" y1="159" x2="1058" y2="159" class="pipe-arrow" marker-end="url(#arr-pipe)"/>
+
+  <!-- Stage 6: WRITEBACK -->
+  <g transform="translate(1060,134)">
+    <rect x="0" y="0" width="188" height="50" rx="6" fill="#16a34a"/>
+    <text x="12" y="16" class="stage-num">STAGE 6</text>
+    <text x="12" y="34" class="stage-name">Writeback</text>
+    <text x="12" y="46" class="stage-sub">RF write · 1 cyc</text>
+  </g>
+
+  <!-- ============ Vertical drop arrows from banner to detail card ============ -->
+  <line x1="134"  y1="184" x2="134"  y2="208" class="pipe-arrow" marker-end="url(#arr-pipe)"/>
+  <line x1="338"  y1="184" x2="338"  y2="208" class="pipe-arrow" marker-end="url(#arr-pipe)"/>
+  <line x1="542"  y1="184" x2="542"  y2="208" class="pipe-arrow" marker-end="url(#arr-pipe)"/>
+  <line x1="746"  y1="184" x2="746"  y2="208" class="pipe-arrow" marker-end="url(#arr-pipe)"/>
+  <line x1="950"  y1="184" x2="950"  y2="208" class="pipe-arrow" marker-end="url(#arr-pipe)"/>
+  <line x1="1154" y1="184" x2="1154" y2="208" class="pipe-arrow" marker-end="url(#arr-pipe)"/>
+
+  <!-- ============ Detail card 1: FETCH ============ -->
+  <g transform="translate(40,212)">
+    <rect x="0" y="0" width="188" height="430" rx="8" fill="#ffffff" stroke="#e6e4da"/>
+    <rect x="0" y="0" width="188" height="3" rx="8" fill="#0369a1"/>
+    <text x="12" y="22" class="panel-h" fill="#0369a1">① FETCH</text>
+    <text x="12" y="38" class="panel-sub">Instruction fetch</text>
+
+    <!-- I-cache hierarchy -->
+    <g transform="translate(12,52)">
+      <rect x="0" y="0" width="164" height="32" rx="4" fill="#dbeafe" stroke="#0369a1"/>
+      <text x="8" y="14" class="lbl-mono-em" fill="#0369a1">L0 I-cache</text>
+      <text x="8" y="27" class="lbl-mono" fill="#1e3a8a">~4 KB / SMSP · isolated</text>
+
+      <rect x="0" y="38" width="164" height="32" rx="4" fill="#bfdbfe" stroke="#0369a1"/>
+      <text x="8" y="52" class="lbl-mono-em" fill="#0369a1">L1 I-cache</text>
+      <text x="8" y="65" class="lbl-mono" fill="#1e3a8a">~64 KB / SM · shared 4×</text>
+
+      <rect x="0" y="76" width="164" height="32" rx="4" fill="#0369a1"/>
+      <text x="8" y="90" class="lbl-w" font-weight="700">L2 / DRAM</text>
+      <text x="8" y="103" class="lbl-w" font-size="9">cold-fill ~50.6 B/cyc</text>
+    </g>
+
+    <!-- Stream prefetcher -->
+    <g transform="translate(12,176)">
+      <text x="0" y="0" class="lbl-sm" fill="#0369a1">STREAM PREFETCHER</text>
+      <text x="0" y="16" class="lbl-mono">Hides straight-line</text>
+      <text x="0" y="30" class="lbl-mono">fetch boundaries</text>
+      <text x="0" y="44" class="lbl-mono" fill="#5b6679">+18.5 cyc on switch</text>
+    </g>
+
+    <!-- Performance -->
+    <g transform="translate(12,236)">
+      <text x="0" y="0" class="lbl-sm" fill="#0369a1">MISS PENALTY</text>
+      <line x1="0" y1="6" x2="164" y2="6" stroke="#dbeafe"/>
+      <text x="0"   y="22" class="lbl-mono">L0 hit:</text>
+      <text x="100" y="22" class="lbl-mono-em" fill="#16a34a">0 extra cyc</text>
+      <text x="0"   y="38" class="lbl-mono">L0 miss:</text>
+      <text x="100" y="38" class="lbl-mono-em" fill="#f59e0b">+0.06 c/i</text>
+      <text x="0"   y="54" class="lbl-mono">L1 miss:</text>
+      <text x="100" y="54" class="lbl-mono-em" fill="#dc2626">+0.31 c/i</text>
+    </g>
+
+    <!-- Cliff -->
+    <g transform="translate(12,316)">
+      <text x="0" y="0" class="lbl-sm" fill="#dc2626">CODE FOOTPRINT CLIFF</text>
+      <line x1="0" y1="6" x2="164" y2="6" stroke="#fee2e2"/>
+      <text x="0"  y="22" class="lbl-mono">≤8 KB:</text>
+      <text x="80" y="22" class="lbl-mono" fill="#16a34a">1.08 c/i</text>
+      <text x="0"  y="38" class="lbl-mono">16 KB:</text>
+      <text x="80" y="38" class="lbl-mono" fill="#f59e0b">1.57 (-31%)</text>
+      <text x="0"  y="54" class="lbl-mono">≥32 KB:</text>
+      <text x="80" y="54" class="lbl-mono" fill="#dc2626">4.30 (-75%)</text>
+    </g>
+
+    <!-- source -->
+    <text x="12" y="416" class="lbl-sm" fill="#94a3b8">[S11/c67] [S13/c5,17]</text>
+  </g>
+
+  <!-- ============ Detail card 2: DECODE ============ -->
+  <g transform="translate(244,212)">
+    <rect x="0" y="0" width="188" height="430" rx="8" fill="#ffffff" stroke="#e6e4da"/>
+    <rect x="0" y="0" width="188" height="3" rx="8" fill="#0284c7"/>
+    <text x="12" y="22" class="panel-h" fill="#0284c7">② DECODE</text>
+    <text x="12" y="38" class="panel-sub">128-bit ctrl word</text>
+
+    <!-- Instruction layout illustration -->
+    <g transform="translate(12,52)">
+      <text x="0" y="0" class="lbl-sm" fill="#0284c7">INSTRUCTION LAYOUT</text>
+      <rect x="0" y="6" width="164" height="20" fill="#0284c7"/>
+      <line x1="80" y1="6" x2="80" y2="26" stroke="#ffffff" stroke-width="0.5"/>
+      <text x="40"  y="20" class="lbl-w" text-anchor="middle" font-size="9">opcode/operand</text>
+      <text x="120" y="20" class="lbl-w" text-anchor="middle" font-size="9">control</text>
+      <text x="0"   y="40" class="lbl-mono" fill="#5b6679">128 bits = 16 B / insn</text>
+    </g>
+
+    <!-- Control word fields -->
+    <g transform="translate(12,108)">
+      <text x="0" y="0" class="lbl-sm" fill="#0284c7">CTRL WORD FIELDS</text>
+      <line x1="0" y1="6" x2="164" y2="6" stroke="#dbeafe"/>
+
+      <rect x="0" y="14" width="164" height="22" rx="3" fill="#fef3c7"/>
+      <text x="6"  y="28" class="lbl-mono" fill="#b45309">stall[3:0]</text>
+      <text x="80" y="28" class="lbl-mono" fill="#5b6679">dep wait</text>
+
+      <rect x="0" y="40" width="164" height="22" rx="3" fill="#fef3c7"/>
+      <text x="6"  y="54" class="lbl-mono" fill="#b45309">yield[4]</text>
+      <text x="80" y="54" class="lbl-mono" fill="#5b6679">deprio next</text>
+
+      <rect x="0" y="66" width="164" height="22" rx="3" fill="#dbeafe"/>
+      <text x="6"   y="80" class="lbl-mono" fill="#0369a1">wrbar[10:5]</text>
+      <text x="92"  y="80" class="lbl-mono" fill="#5b6679">SB write</text>
+
+      <rect x="0" y="92" width="164" height="22" rx="3" fill="#dbeafe"/>
+      <text x="6"   y="106" class="lbl-mono" fill="#0369a1">rdbar[16:11]</text>
+      <text x="92"  y="106" class="lbl-mono" fill="#5b6679">SB read</text>
+
+      <rect x="0" y="118" width="164" height="22" rx="3" fill="#dbeafe"/>
+      <text x="6"   y="132" class="lbl-mono" fill="#0369a1">wtmask[22:17]</text>
+      <text x="92"  y="132" class="lbl-mono" fill="#5b6679">SB wait</text>
+
+      <rect x="0" y="144" width="164" height="22" rx="3" fill="#dcfce7"/>
+      <text x="6"   y="158" class="lbl-mono" fill="#16a34a">reuse[60:58]</text>
+      <text x="92"  y="158" class="lbl-mono" fill="#5b6679">RFC reuse</text>
+    </g>
+
+    <!-- Notes -->
+    <g transform="translate(12,290)">
+      <text x="0" y="0" class="lbl-sm" fill="#0284c7">DECODE COST</text>
+      <line x1="0" y1="6" x2="164" y2="6" stroke="#dbeafe"/>
+      <text x="0"  y="22" class="lbl-mono">Decode latency:</text>
+      <text x="0"  y="36" class="lbl-mono-em" fill="#16a34a">1 cyc (pipelined)</text>
+      <text x="0"  y="58" class="lbl-mono" fill="#5b6679">Combined w/ fetch</text>
+      <text x="0"  y="72" class="lbl-mono" fill="#5b6679">via prefetcher</text>
+    </g>
+
+    <!-- source -->
+    <text x="12" y="416" class="lbl-sm" fill="#94a3b8">[S13/c12,17]</text>
+  </g>
+
+  <!-- ============ Detail card 3: SCHEDULE ============ -->
+  <g transform="translate(448,212)">
+    <rect x="0" y="0" width="188" height="430" rx="8" fill="#ffffff" stroke="#e6e4da"/>
+    <rect x="0" y="0" width="188" height="3" rx="8" fill="#0891b2"/>
+    <text x="12" y="22" class="panel-h" fill="#0891b2">③ SCHEDULE</text>
+    <text x="12" y="38" class="panel-sub">CGGTY warp picker</text>
+
+    <!-- Issue rate -->
+    <g transform="translate(12,52)">
+      <rect x="0" y="0" width="164" height="40" rx="4" fill="#cffafe" stroke="#0891b2"/>
+      <text x="8"  y="16" class="lbl-mono-em" fill="#0891b2">DISPATCH RATE</text>
+      <text x="8"  y="32" class="lbl-mono" fill="#155e75">1 insn/cyc/SMSP · 4/SM</text>
+    </g>
+
+    <!-- Stall counter logic -->
+    <g transform="translate(12,104)">
+      <text x="0" y="0" class="lbl-sm" fill="#0891b2">STALL COUNTER LOGIC</text>
+      <line x1="0" y1="6" x2="164" y2="6" stroke="#cffafe"/>
+
+      <rect x="0" y="14" width="164" height="40" rx="4" fill="#fef3c7" stroke="#d97706"/>
+      <text x="8"  y="28" class="lbl-mono-em" fill="#b45309">stall = 0</text>
+      <text x="8"  y="44" class="lbl-mono" fill="#5b6679">→ HW SB fallback</text>
+
+      <rect x="0" y="58" width="164" height="40" rx="4" fill="#dcfce7" stroke="#16a34a"/>
+      <text x="8"  y="72" class="lbl-mono-em" fill="#15803d">stall = N</text>
+      <text x="8"  y="88" class="lbl-mono" fill="#5b6679">→ dec, issue when 0</text>
+    </g>
+
+    <!-- CGGTY policy -->
+    <g transform="translate(12,218)">
+      <text x="0" y="0" class="lbl-sm" fill="#0891b2">CGGTY POLICY</text>
+      <line x1="0" y1="6" x2="164" y2="6" stroke="#cffafe"/>
+      <text x="0"  y="22" class="lbl-mono"><tspan fill="#b45309" font-weight="700">G</tspan>reedy: same warp</text>
+      <text x="0"  y="38" class="lbl-mono"><tspan fill="#b45309" font-weight="700">T</tspan>hen <tspan fill="#b45309" font-weight="700">Y</tspan>oungest: min wid</text>
+      <text x="0"  y="60" class="lbl-mono" fill="#5b6679">W3/W0 = 3.96</text>
+      <text x="0"  y="74" class="lbl-mono" fill="#5b6679">(expected 4.0)</text>
+    </g>
+
+    <!-- Context switch -->
+    <g transform="translate(12,304)">
+      <text x="0" y="0" class="lbl-sm" fill="#16a34a">CONTEXT SWITCH</text>
+      <line x1="0" y1="6" x2="164" y2="6" stroke="#dcfce7"/>
+      <text x="0"  y="22" class="lbl-mono-em" fill="#15803d">0 cyc</text>
+      <text x="0"  y="38" class="lbl-mono" fill="#5b6679">RF-resident state</text>
+      <text x="0"  y="52" class="lbl-mono" fill="#5b6679">no save/restore</text>
+    </g>
+
+    <!-- source -->
+    <text x="12" y="416" class="lbl-sm" fill="#94a3b8">[S11/c28,47-49]</text>
+  </g>
+
+  <!-- ============ Detail card 4: OPERAND COLLECT ============ -->
+  <g transform="translate(652,212)">
+    <rect x="0" y="0" width="188" height="430" rx="8" fill="#ffffff" stroke="#e6e4da"/>
+    <rect x="0" y="0" width="188" height="3" rx="8" fill="#0d9488"/>
+    <text x="12" y="22" class="panel-h" fill="#0d9488">④ OPERAND COLLECT</text>
+    <text x="12" y="38" class="panel-sub">Register fetch + bypass</text>
+
+    <!-- RF visualization -->
+    <g transform="translate(12,52)">
+      <text x="0" y="0" class="lbl-sm" fill="#0d9488">REGISTER FILE</text>
+      <line x1="0" y1="6" x2="164" y2="6" stroke="#ccfbf1"/>
+      <rect x="0" y="14" width="80" height="36" rx="3" fill="#ccfbf1" stroke="#0d9488"/>
+      <text x="40"  y="30" class="lbl-mono-em" fill="#0d9488" text-anchor="middle">Bank 0</text>
+      <text x="40"  y="44" class="lbl-mono" fill="#5b6679" text-anchor="middle">even R</text>
+      <rect x="84" y="14" width="80" height="36" rx="3" fill="#ccfbf1" stroke="#0d9488"/>
+      <text x="124" y="30" class="lbl-mono-em" fill="#0d9488" text-anchor="middle">Bank 1</text>
+      <text x="124" y="44" class="lbl-mono" fill="#5b6679" text-anchor="middle">odd R</text>
+    </g>
+
+    <!-- Read ports -->
+    <g transform="translate(12,118)">
+      <text x="0" y="0" class="lbl-sm" fill="#0d9488">READ PORTS</text>
+      <line x1="0" y1="6" x2="164" y2="6" stroke="#ccfbf1"/>
+      <rect x="0"  y="14" width="46" height="22" rx="3" fill="#0d9488"/>
+      <text x="23" y="29" class="lbl-w" text-anchor="middle">Port A</text>
+      <rect x="58" y="14" width="46" height="22" rx="3" fill="#0d9488"/>
+      <text x="81" y="29" class="lbl-w" text-anchor="middle">Port B</text>
+      <rect x="116" y="14" width="46" height="22" rx="3" fill="#0d9488"/>
+      <text x="139" y="29" class="lbl-w" text-anchor="middle">Port C</text>
+      <text x="0"  y="52" class="lbl-mono" fill="#0d9488" font-weight="600">≥3 read ports</text>
+    </g>
+
+    <!-- Bank conflict -->
+    <g transform="translate(12,184)">
+      <rect x="0" y="0" width="164" height="40" rx="4" fill="#dcfce7" stroke="#16a34a"/>
+      <text x="8" y="16" class="lbl-mono-em" fill="#15803d">BANK CONFLICT = 0 cyc</text>
+      <text x="8" y="32" class="lbl-mono" fill="#5b6679">OC absorbs serialization</text>
+    </g>
+
+    <!-- RFC -->
+    <g transform="translate(12,236)">
+      <text x="0" y="0" class="lbl-sm" fill="#0d9488">RFC (REUSE CACHE)</text>
+      <line x1="0" y1="6" x2="164" y2="6" stroke="#ccfbf1"/>
+      <text x="0"  y="22" class="lbl-mono">≥24 entries / warp</text>
+      <text x="0"  y="38" class="lbl-mono">LRU eviction</text>
+      <text x="0"  y="54" class="lbl-mono" fill="#16a34a">.reuse activates RFC</text>
+    </g>
+
+    <!-- Bypass -->
+    <g transform="translate(12,316)">
+      <text x="0" y="0" class="lbl-sm" fill="#0d9488">BYPASS NETWORK</text>
+      <line x1="0" y1="6" x2="164" y2="6" stroke="#ccfbf1"/>
+      <text x="0"  y="22" class="lbl-mono">d=0..2 (forwarding)</text>
+      <text x="0"  y="38" class="lbl-mono" fill="#5b6679">WAR hazard = 0 cyc</text>
+    </g>
+
+    <!-- source -->
+    <text x="12" y="416" class="lbl-sm" fill="#94a3b8">[S12/c1-3,6-8]</text>
+  </g>
+
+  <!-- ============ Detail card 5: EXECUTE ============ -->
+  <g transform="translate(856,212)">
+    <rect x="0" y="0" width="188" height="430" rx="8" fill="#ffffff" stroke="#e6e4da"/>
+    <rect x="0" y="0" width="188" height="3" rx="8" fill="#059669"/>
+    <text x="12" y="22" class="panel-h" fill="#059669">⑤ EXECUTE</text>
+    <text x="12" y="38" class="panel-sub">6 backend pipes</text>
+
+    <!-- Pipe latency table -->
+    <g transform="translate(12,52)">
+      <text x="0" y="0" class="lbl-sm" fill="#059669">PIPE LATENCIES</text>
+      <line x1="0" y1="6" x2="164" y2="6" stroke="#dcfce7"/>
+
+      <!-- ALU (fastest, green) -->
+      <rect x="0" y="14" width="164" height="28" rx="3" fill="#dcfce7"/>
+      <text x="6"   y="26" class="lbl-mono-em" fill="#15803d">ALU</text>
+      <text x="50"  y="26" class="lbl-mono" fill="#15803d" font-weight="700">2 cyc</text>
+      <text x="6"   y="38" class="lbl-mono" fill="#5b6679" font-size="9">IADD3</text>
+
+      <!-- FMA -->
+      <rect x="0" y="46" width="164" height="28" rx="3" fill="#dcfce7"/>
+      <text x="6"   y="58" class="lbl-mono-em" fill="#15803d">FMA</text>
+      <text x="50"  y="58" class="lbl-mono" fill="#15803d" font-weight="700">4 cyc</text>
+      <text x="6"   y="70" class="lbl-mono" fill="#5b6679" font-size="9">FFMA / FADD / HFMA2</text>
+
+      <!-- SFU -->
+      <rect x="0" y="78" width="164" height="28" rx="3" fill="#fef3c7"/>
+      <text x="6"   y="90" class="lbl-mono-em" fill="#b45309">SFU</text>
+      <text x="50"  y="90" class="lbl-mono" fill="#b45309" font-weight="700">18-44 cyc</text>
+      <text x="6"   y="102" class="lbl-mono" fill="#5b6679" font-size="9">MUFU.RCP/RSQ/SIN</text>
+
+      <!-- TC -->
+      <rect x="0" y="110" width="164" height="28" rx="3" fill="#fef3c7"/>
+      <text x="6"   y="122" class="lbl-mono-em" fill="#b45309">TC</text>
+      <text x="50"  y="122" class="lbl-mono" fill="#b45309" font-weight="700">29 cyc</text>
+      <text x="6"   y="134" class="lbl-mono" fill="#5b6679" font-size="9">HMMA / QMMA / OMMA</text>
+
+      <!-- LSU (variable, orange) -->
+      <rect x="0" y="142" width="164" height="40" rx="3" fill="#ffedd5"/>
+      <text x="6"   y="154" class="lbl-mono-em" fill="#c2410c">LSU</text>
+      <text x="50"  y="154" class="lbl-mono" fill="#c2410c" font-weight="700">variable</text>
+      <text x="6"   y="166" class="lbl-mono" fill="#5b6679" font-size="9">L1=44 · L2=354</text>
+      <text x="6"   y="177" class="lbl-mono" fill="#5b6679" font-size="9">DRAM=470+ cyc</text>
+
+      <!-- FP64 (slowest, red) -->
+      <rect x="0" y="186" width="164" height="40" rx="3" fill="#fee2e2"/>
+      <text x="6"   y="198" class="lbl-mono-em" fill="#dc2626">FP64</text>
+      <text x="50"  y="198" class="lbl-mono" fill="#dc2626" font-weight="700">64 cyc</text>
+      <text x="6"   y="210" class="lbl-mono" fill="#5b6679" font-size="9">DFMA</text>
+      <text x="6"   y="221" class="lbl-mono" fill="#5b6679" font-size="9">non-pipelined</text>
+    </g>
+
+    <!-- Note -->
+    <g transform="translate(12,300)">
+      <text x="0" y="0" class="lbl-sm" fill="#059669">CO-ISSUE</text>
+      <line x1="0" y1="6" x2="164" y2="6" stroke="#dcfce7"/>
+      <text x="0"  y="22" class="lbl-mono" fill="#15803d">TC + ALU = 100% overlap</text>
+      <text x="0"  y="38" class="lbl-mono" fill="#15803d">SFU + FMA = 95.5%</text>
+      <text x="0"  y="54" class="lbl-mono" fill="#5b6679">INT/FP share FMA group</text>
+    </g>
+
+    <!-- source -->
+    <text x="12" y="416" class="lbl-sm" fill="#94a3b8">Chapter 3 / 5 latency tables</text>
+  </g>
+
+  <!-- ============ Detail card 6: WRITEBACK ============ -->
+  <g transform="translate(1060,212)">
+    <rect x="0" y="0" width="188" height="430" rx="8" fill="#ffffff" stroke="#e6e4da"/>
+    <rect x="0" y="0" width="188" height="3" rx="8" fill="#16a34a"/>
+    <text x="12" y="22" class="panel-h" fill="#16a34a">⑥ WRITEBACK</text>
+    <text x="12" y="38" class="panel-sub">RF write port</text>
+
+    <!-- Write cost -->
+    <g transform="translate(12,52)">
+      <rect x="0" y="0" width="164" height="48" rx="4" fill="#dcfce7" stroke="#16a34a"/>
+      <text x="8"  y="18" class="lbl-mono-em" fill="#15803d">RF WRITE LATENCY</text>
+      <text x="8"  y="36" class="lbl-mono" fill="#15803d" font-weight="700" font-size="14">1 cyc</text>
+      <text x="80" y="36" class="lbl-mono" fill="#5b6679">single port</text>
+    </g>
+
+    <!-- Hazards -->
+    <g transform="translate(12,116)">
+      <text x="0" y="0" class="lbl-sm" fill="#16a34a">HAZARD HANDLING</text>
+      <line x1="0" y1="6" x2="164" y2="6" stroke="#dcfce7"/>
+
+      <rect x="0" y="14" width="164" height="40" rx="3" fill="#dcfce7"/>
+      <text x="6"  y="28" class="lbl-mono-em" fill="#15803d">WAR hazard</text>
+      <text x="6"  y="44" class="lbl-mono" fill="#5b6679">0 extra cyc (OC absorbs)</text>
+
+      <rect x="0" y="58" width="164" height="40" rx="3" fill="#dcfce7"/>
+      <text x="6"  y="72" class="lbl-mono-em" fill="#15803d">RAW forwarding</text>
+      <text x="6"  y="88" class="lbl-mono" fill="#5b6679">IADD3: 2 cyc latency</text>
+    </g>
+
+    <!-- Stall decrement -->
+    <g transform="translate(12,228)">
+      <text x="0" y="0" class="lbl-sm" fill="#b45309">STALL DECREMENT</text>
+      <line x1="0" y1="6" x2="164" y2="6" stroke="#fef3c7"/>
+      <text x="0"  y="22" class="lbl-mono">After issue,</text>
+      <text x="0"  y="38" class="lbl-mono">consumer's stall counter</text>
+      <text x="0"  y="54" class="lbl-mono">decrements each cycle.</text>
+      <text x="0"  y="76" class="lbl-mono" fill="#dc2626">⚠ stall &lt; lat</text>
+      <text x="0"  y="92" class="lbl-mono" fill="#dc2626">→ silent stale read</text>
+    </g>
+
+    <!-- RF capacity -->
+    <g transform="translate(12,332)">
+      <text x="0" y="0" class="lbl-sm" fill="#16a34a">RF CAPACITY</text>
+      <line x1="0" y1="6" x2="164" y2="6" stroke="#dcfce7"/>
+      <text x="0"  y="22" class="lbl-mono">256 KB / SM</text>
+      <text x="0"  y="38" class="lbl-mono" fill="#5b6679">65,536 × 32-bit</text>
+    </g>
+
+    <!-- source -->
+    <text x="12" y="416" class="lbl-sm" fill="#94a3b8">[S12/c8-9] · KI-7.1</text>
+  </g>
+
+  <!-- ============ Bottom legend / cycle budget summary ============ -->
+  <g transform="translate(40,662)">
+    <rect x="0" y="0" width="1208" height="40" rx="6" fill="rgba(88,88,88,0.143)"/>
+
+    <text x="14" y="14" class="lbl-sm" fill="#9ca3af">CYCLE BUDGET (back-to-back same warp):</text>
+    <text x="14" y="30" class="lbl-mono" fill="#fbbf24" font-size="11">Fetch 0 + Decode 1 + Schedule 1 + OpCol 0 (bypass) + Execute [2..64] + Writeback 1 = 5 .. 67 cyc</text>
+
+    <text x="780" y="14" class="lbl-sm" fill="#9ca3af">DEPENDENCE MGMT:</text>
+    <text x="780" y="30" class="lbl-mono" fill="#fbbf24" font-size="11">stall counter (4-bit, fixed-lat)  ‖  6 SB counters (HW, variable-lat)</text>
+  </g>
+</svg>

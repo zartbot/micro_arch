@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 960" role="img"
+     aria-label="Chapter 14 Summary: SM_100 → SM_120 Porting Guide — Feature Mapping, Hard Constraints, and Case Studies">
+  <rect width="1080" height="960" fill="#fcfbf6"/>
+
+  <!-- ═══════════════ HEADER ═══════════════ -->
+  <rect x="0" y="0" width="1080" height="4" fill="#b45309"/>
+  <g transform="translate(36,28)">
+    <text x="0" y="16" style="font:600 11px 'JetBrains Mono',monospace;letter-spacing:0.16em;fill:#b45309">CHAPTER 14 · SM_100 (B200) → SM_120 (GB202) · NOT INCREMENTAL</text>
+    <text x="0" y="46" style="font:500 24px 'Fraunces',serif;fill:#0b1220;letter-spacing:-0.02em">SM_100 → SM_120 Porting Guide</text>
+    <text x="0" y="68" style="font:italic 12px 'Fraunces',serif;fill:#5b6679">Full mainloop restructure required · 10 absent features · 8 hard constraints · 3 case studies</text>
+  </g>
+
+  <!-- ═══════════════ DATA PATH COMPARISON ═══════════════ -->
+  <rect x="36" y="86" width="1008" height="130" rx="8" fill="#ffffff" stroke="#e6e4da"/>
+  <text x="56" y="108" style="font:600 9px 'JetBrains Mono',monospace;letter-spacing:0.08em;fill:#b45309">GEMM CRITICAL PATH COMPARISON</text>
+
+  <!-- SM_100 path -->
+  <text x="56" y="128" style="font:600 10px 'JetBrains Mono',monospace;fill:#1e40af">SM_100 (B200):</text>
+  <rect x="200" y="118" width="100" height="22" rx="4" fill="#dbeafe" stroke="#2563eb" stroke-width="0.6"/>
+  <text x="220" y="133" style="font:500 9px 'JetBrains Mono',monospace;fill:#1e40af">DRAM</text>
+  <text x="306" y="133" style="font:500 10px 'Fraunces',serif;fill:#5b6679">→</text>
+  <rect x="320" y="118" width="80" height="22" rx="4" fill="#dbeafe" stroke="#2563eb" stroke-width="0.6"/>
+  <text x="336" y="133" style="font:500 9px 'JetBrains Mono',monospace;fill:#1e40af">TMA</text>
+  <text x="406" y="133" style="font:500 10px 'Fraunces',serif;fill:#5b6679">→</text>
+  <rect x="420" y="118" width="120" height="22" rx="4" fill="#1e40af" opacity="0.15" stroke="#1e40af" stroke-width="0.8"/>
+  <text x="436" y="133" style="font:700 9px 'JetBrains Mono',monospace;fill:#1e40af">TM (256KB)</text>
+  <text x="546" y="133" style="font:500 10px 'Fraunces',serif;fill:#5b6679">→</text>
+  <rect x="560" y="118" width="120" height="22" rx="4" fill="#dbeafe" stroke="#2563eb" stroke-width="0.6"/>
+  <text x="576" y="133" style="font:600 9px 'JetBrains Mono',monospace;fill:#1e40af">wgmma (TC)</text>
+  <text x="700" y="133" style="font:italic 8px 'JetBrains Mono',monospace;fill:#1e40af">0 cyc smem→RF</text>
+
+  <!-- SM_120 path -->
+  <text x="56" y="162" style="font:600 10px 'JetBrains Mono',monospace;fill:#b45309">SM_120 (GB202):</text>
+  <rect x="200" y="152" width="100" height="22" rx="4" fill="#fef3c7" stroke="#d97706" stroke-width="0.6"/>
+  <text x="220" y="167" style="font:500 9px 'JetBrains Mono',monospace;fill:#92400e">DRAM</text>
+  <text x="306" y="167" style="font:500 10px 'Fraunces',serif;fill:#5b6679">→</text>
+  <rect x="320" y="152" width="80" height="22" rx="4" fill="#fef3c7" stroke="#d97706" stroke-width="0.6"/>
+  <text x="336" y="167" style="font:500 9px 'JetBrains Mono',monospace;fill:#92400e">TMA</text>
+  <text x="406" y="167" style="font:500 10px 'Fraunces',serif;fill:#5b6679">→</text>
+  <rect x="420" y="152" width="110" height="22" rx="4" fill="#fef3c7" stroke="#d97706" stroke-width="0.6"/>
+  <text x="430" y="167" style="font:500 9px 'JetBrains Mono',monospace;fill:#92400e">SMEM (99KB)</text>
+  <text x="536" y="167" style="font:500 10px 'Fraunces',serif;fill:#5b6679">→</text>
+  <rect x="550" y="152" width="90" height="22" rx="4" fill="#fef3c7" stroke="#d97706" stroke-width="0.6"/>
+  <text x="560" y="167" style="font:500 9px 'JetBrains Mono',monospace;fill:#92400e">ldmatrix</text>
+  <text x="646" y="167" style="font:500 10px 'Fraunces',serif;fill:#5b6679">→</text>
+  <rect x="660" y="152" width="50" height="22" rx="4" fill="#fef3c7" stroke="#d97706" stroke-width="0.6"/>
+  <text x="672" y="167" style="font:500 9px 'JetBrains Mono',monospace;fill:#92400e">RF</text>
+  <text x="716" y="167" style="font:500 10px 'Fraunces',serif;fill:#5b6679">→</text>
+  <rect x="730" y="152" width="110" height="22" rx="4" fill="#fef3c7" stroke="#d97706" stroke-width="0.6"/>
+  <text x="740" y="167" style="font:600 9px 'JetBrains Mono',monospace;fill:#92400e">mma.sync(TC)</text>
+  <text x="856" y="167" style="font:italic 8px 'JetBrains Mono',monospace;fill:#e11d48">+11 cyc overhead</text>
+
+  <!-- Delta annotation -->
+  <rect x="56" y="184" width="350" height="20" rx="4" fill="#fef2f2"/>
+  <text x="66" y="198" style="font:600 9px 'JetBrains Mono',monospace;fill:#e11d48">Delta: 4x instruction count, 2.6x less buffer, +27.5% per-MMA</text>
+
+  <rect x="480" y="184" width="270" height="20" rx="4" fill="#d1fae5"/>
+  <text x="490" y="198" style="font:600 9px 'JetBrains Mono',monospace;fill:#047857">BUT: per-SM TFLOPS 29.3 vs 28.1 (SM_120 wins!)</text>
+
+  <!-- ═══════════════ ABSENT FEATURES (left) + RETAINED/NEW (right) ═══════════════ -->
+  <g transform="translate(36,230)">
+    <!-- Absent features -->
+    <rect x="0" y="0" width="494" height="220" rx="8" fill="#ffffff" stroke="#e6e4da"/>
+    <text x="20" y="22" style="font:600 9px 'JetBrains Mono',monospace;letter-spacing:0.08em;fill:#e11d48">ABSENT ON SM_120 (REQUIRE FULL REWRITE)</text>
+
+    <text x="20" y="46" style="font:500 10px 'JetBrains Mono',monospace;fill:#e11d48">✗</text>
+    <text x="36" y="46" style="font:500 10px 'JetBrains Mono',monospace;fill:#0b1220">Tensor Memory (256 KB) → use SMEM 99 KB</text>
+    <text x="20" y="66" style="font:500 10px 'JetBrains Mono',monospace;fill:#e11d48">✗</text>
+    <text x="36" y="66" style="font:500 10px 'JetBrains Mono',monospace;fill:#0b1220">tcgen05 / wgmma → use mma.sync + ldmatrix</text>
+    <text x="20" y="86" style="font:500 10px 'JetBrains Mono',monospace;fill:#e11d48">✗</text>
+    <text x="36" y="86" style="font:500 10px 'JetBrains Mono',monospace;fill:#0b1220">TMA multicast → unicast + DSMEM (6.5x slower)</text>
+    <text x="20" y="106" style="font:500 10px 'JetBrains Mono',monospace;fill:#e11d48">✗</text>
+    <text x="36" y="106" style="font:500 10px 'JetBrains Mono',monospace;fill:#0b1220">2-SM cooperative → single-SM only</text>
+    <text x="20" y="126" style="font:500 10px 'JetBrains Mono',monospace;fill:#e11d48">✗</text>
+    <text x="36" y="126" style="font:500 10px 'JetBrains Mono',monospace;fill:#0b1220">Warp specialization → all-compute (2.5-3.1x better)</text>
+    <text x="20" y="146" style="font:500 10px 'JetBrains Mono',monospace;fill:#e11d48">✗</text>
+    <text x="36" y="146" style="font:500 10px 'JetBrains Mono',monospace;fill:#0b1220">cvt.rs stochastic rounding → .rn only</text>
+    <text x="20" y="166" style="font:500 10px 'JetBrains Mono',monospace;fill:#e11d48">✗</text>
+    <text x="36" y="166" style="font:500 10px 'JetBrains Mono',monospace;fill:#0b1220">NVLink (~900 GB/s) → PCIe (55.8 GB/s per link)</text>
+    <text x="20" y="186" style="font:500 10px 'JetBrains Mono',monospace;fill:#e11d48">✗</text>
+    <text x="36" y="186" style="font:500 10px 'JetBrains Mono',monospace;fill:#0b1220">Cluster 16 (non-portable) → max 8 portable</text>
+
+    <line x1="20" y1="196" x2="474" y2="196" stroke="#e6e4da" stroke-width="0.5"/>
+    <text x="20" y="214" style="font:italic 9px 'JetBrains Mono',monospace;fill:#e11d48">These are NOT incremental — require full mainloop restructure</text>
+
+    <!-- Retained / New -->
+    <rect x="514" y="0" width="494" height="220" rx="8" fill="#ffffff" stroke="#e6e4da"/>
+    <text x="534" y="22" style="font:600 9px 'JetBrains Mono',monospace;letter-spacing:0.08em;fill:#047857">RETAINED / NEW ON SM_120</text>
+
+    <text x="534" y="46" style="font:500 10px 'JetBrains Mono',monospace;fill:#047857">✓</text>
+    <text x="550" y="46" style="font:500 10px 'JetBrains Mono',monospace;fill:#0b1220">MX-FP4 OMMA.SF (1076.5 TFLOPS, 100.6%)</text>
+    <text x="534" y="66" style="font:500 10px 'JetBrains Mono',monospace;fill:#047857">✓</text>
+    <text x="550" y="66" style="font:500 10px 'JetBrains Mono',monospace;fill:#0b1220">2:4 Structured sparsity (2.00x exact gain)</text>
+    <text x="534" y="86" style="font:500 10px 'JetBrains Mono',monospace;fill:#047857">✓</text>
+    <text x="550" y="86" style="font:500 10px 'JetBrains Mono',monospace;fill:#0b1220">TMA 1D/2D/3D unicast (479 cyc/1D tile)</text>
+    <text x="534" y="106" style="font:500 10px 'JetBrains Mono',monospace;fill:#047857">✓</text>
+    <text x="550" y="106" style="font:500 10px 'JetBrains Mono',monospace;fill:#0b1220">FP6 (E3M2, E2M3) MMA, same 15.88 cyc</text>
+    <text x="534" y="126" style="font:500 10px 'JetBrains Mono',monospace;fill:#047857">✓</text>
+    <text x="550" y="126" style="font:500 10px 'JetBrains Mono',monospace;fill:#0b1220">st.bulk.weak (533-6322x faster than memset)</text>
+    <text x="534" y="146" style="font:500 10px 'JetBrains Mono',monospace;fill:#047857">✓</text>
+    <text x="550" y="146" style="font:500 10px 'JetBrains Mono',monospace;fill:#0b1220">setmaxnreg (compute_120a, 60 cyc one-time)</text>
+    <text x="534" y="166" style="font:500 10px 'JetBrains Mono',monospace;fill:#047857">✓</text>
+    <text x="550" y="166" style="font:500 10px 'JetBrains Mono',monospace;fill:#0b1220">Cluster (8 CTA, relaxed arrive 85 cyc)</text>
+    <text x="534" y="186" style="font:500 10px 'JetBrains Mono',monospace;fill:#047857">✓</text>
+    <text x="550" y="186" style="font:500 10px 'JetBrains Mono',monospace;fill:#0b1220">CUDA Graphs (1.67x for 10-kernel pipeline)</text>
+
+    <line x1="534" y1="196" x2="988" y2="196" stroke="#e6e4da" stroke-width="0.5"/>
+    <text x="534" y="214" style="font:italic 9px 'JetBrains Mono',monospace;fill:#047857">SM_120 achieves 100.6% MX-FP4 efficiency despite missing TM/wgmma</text>
+  </g>
+
+  <!-- ═══════════════ PORTING CASE STUDIES ═══════════════ -->
+  <rect x="36" y="464" width="1008" height="150" rx="8" fill="#ffffff" stroke="#e6e4da"/>
+  <text x="56" y="486" style="font:600 9px 'JetBrains Mono',monospace;letter-spacing:0.08em;fill:#b45309">PORTING CASE STUDIES</text>
+
+  <!-- Case 1: CUTLASS -->
+  <rect x="56" y="498" width="300" height="100" rx="6" fill="#76b900" opacity="0.06" stroke="#76b900" stroke-width="0.6"/>
+  <text x="70" y="516" style="font:600 10px 'JetBrains Mono',monospace;fill:#76b900">CUTLASS</text>
+  <text x="70" y="534" style="font:500 9px 'JetBrains Mono',monospace;fill:#0b1220">sm100_warpspec → sm120_cooperative</text>
+  <text x="70" y="550" style="font:500 9px 'JetBrains Mono',monospace;fill:#0b1220">Tile 256x128x128, 3-stage pipe</text>
+  <text x="70" y="566" style="font:500 9px 'JetBrains Mono',monospace;fill:#0b1220">XOR swizzle + all-compute</text>
+  <text x="70" y="584" style="font:700 9px 'JetBrains Mono',monospace;fill:#76b900">Result: 1076.5 TFLOPS (100.6%)</text>
+
+  <!-- Case 2: DeepGeMM -->
+  <rect x="376" y="498" width="300" height="100" rx="6" fill="#6d28d9" opacity="0.06" stroke="#6d28d9" stroke-width="0.6"/>
+  <text x="390" y="516" style="font:600 10px 'JetBrains Mono',monospace;fill:#6d28d9">DeepGeMM</text>
+  <text x="390" y="534" style="font:500 9px 'JetBrains Mono',monospace;fill:#0b1220">NVLink barrier → NCCL collectives</text>
+  <text x="390" y="550" style="font:500 9px 'JetBrains Mono',monospace;fill:#0b1220">red.release.sys: 947 cyc (PCIe)</text>
+  <text x="390" y="566" style="font:500 9px 'JetBrains Mono',monospace;fill:#0b1220">Custom AR 2.4 vs NCCL 35.2 GB/s</text>
+  <text x="390" y="584" style="font:700 9px 'JetBrains Mono',monospace;fill:#6d28d9">Fix: NCCL only, keep st.bulk/grid.sync</text>
+
+  <!-- Case 3: FlashInfer -->
+  <rect x="696" y="498" width="300" height="100" rx="6" fill="#ea580c" opacity="0.06" stroke="#ea580c" stroke-width="0.6"/>
+  <text x="710" y="516" style="font:600 10px 'JetBrains Mono',monospace;fill:#ea580c">FlashInfer MLA</text>
+  <text x="710" y="534" style="font:500 9px 'JetBrains Mono',monospace;fill:#0b1220">Multicast → unicast + DSMEM</text>
+  <text x="710" y="550" style="font:500 9px 'JetBrains Mono',monospace;fill:#0b1220">OMMA.SF m16n8k64 (28.86 cyc)</text>
+  <text x="710" y="566" style="font:500 9px 'JetBrains Mono',monospace;fill:#0b1220">Named bar 15 cyc (vs mbar 211)</text>
+  <text x="710" y="584" style="font:700 9px 'JetBrains Mono',monospace;fill:#ea580c">Pattern: unicast + DSMEM + 4-stage</text>
+
+  <!-- ═══════════════ SYNC PORTING + MULTI-GPU ═══════════════ -->
+  <g transform="translate(36,628)">
+    <!-- Sync porting -->
+    <rect x="0" y="0" width="494" height="140" rx="8" fill="#ffffff" stroke="#e6e4da"/>
+    <text x="20" y="22" style="font:600 9px 'JetBrains Mono',monospace;letter-spacing:0.08em;fill:#6d28d9">SYNCHRONIZATION PORTING</text>
+
+    <text x="20" y="46" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#0b1220">mbarrier (211 cyc) → named barrier (15 cyc)</text>
+    <text x="400" y="46" style="font:700 9px 'JetBrains Mono',monospace;fill:#76b900">14x</text>
+    <text x="20" y="66" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#0b1220">fence.gpu (285 cyc) → fence.cta (7 cyc)</text>
+    <text x="400" y="66" style="font:700 9px 'JetBrains Mono',monospace;fill:#76b900">40.7x</text>
+    <text x="20" y="86" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#0b1220">cluster full (371 cyc) → relaxed (85 cyc)</text>
+    <text x="400" y="86" style="font:700 9px 'JetBrains Mono',monospace;fill:#76b900">4.4x</text>
+    <text x="20" y="106" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#e11d48">fence.sys: 920 cyc on PCIe (vs ~200 NVLink)</text>
+    <text x="400" y="106" style="font:700 9px 'JetBrains Mono',monospace;fill:#e11d48">4.6x worse</text>
+    <line x1="20" y1="118" x2="474" y2="118" stroke="#e6e4da" stroke-width="0.5"/>
+    <text x="20" y="134" style="font:italic 9px 'JetBrains Mono',monospace;fill:#5b6679">Rule: always prefer CTA-scope; minimize sys-scope on PCIe</text>
+
+    <!-- Multi-GPU -->
+    <rect x="514" y="0" width="494" height="140" rx="8" fill="#ffffff" stroke="#e6e4da"/>
+    <text x="534" y="22" style="font:600 9px 'JetBrains Mono',monospace;letter-spacing:0.08em;fill:#e11d48">MULTI-GPU COMMUNICATION PORTING</text>
+
+    <text x="534" y="46" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#0b1220">AllReduce: NVLink ~900 → PCIe 35.2 GB/s (NCCL)</text>
+    <text x="534" y="66" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#e11d48">Custom AllReduce: 2.4 GB/s (14x worse!) → NEVER use</text>
+    <text x="534" y="86" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#0b1220">P2P raw memcpy: 53 GB/s (prefer for MoE)</text>
+    <text x="534" y="106" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#0b1220">griddepcontrol: 544 ns pipeline inter-stage</text>
+    <line x1="534" y1="118" x2="988" y2="118" stroke="#e6e4da" stroke-width="0.5"/>
+    <text x="534" y="134" style="font:italic 9px 'JetBrains Mono',monospace;fill:#5b6679">Strategy: pipeline/expert parallelism over TP (AllReduce-heavy)</text>
+  </g>
+
+  <!-- ═══════════════ KEY INSIGHTS ═══════════════ -->
+  <rect x="36" y="784" width="1008" height="160" rx="10" fill="#FEF3C7" stroke="#d97706" stroke-width="0.8"/>
+  <text x="56" y="806" style="font:600 11px 'JetBrains Mono',monospace;letter-spacing:0.08em;fill:#b45309">KEY INSIGHTS &amp; PORTING CHECKLIST</text>
+
+  <circle cx="60" cy="828" r="3" fill="#b45309"/>
+  <text x="72" y="832" style="font:500 11px 'IBM Plex Sans',sans-serif;fill:#2a3548">Porting SM_100→SM_120 is NOT incremental — requires full mainloop restructure (wgmma→mma.sync)</text>
+  <circle cx="60" cy="852" r="3" fill="#b45309"/>
+  <text x="72" y="856" style="font:500 11px 'IBM Plex Sans',sans-serif;fill:#2a3548">Despite 32x instruction count increase, SM_120 achieves 1.04x higher per-SM TFLOPS (clock advantage)</text>
+  <circle cx="60" cy="876" r="3" fill="#b45309"/>
+  <text x="72" y="880" style="font:500 11px 'IBM Plex Sans',sans-serif;fill:#2a3548">All-compute paradigm is 2.5-3.1x better than warp specialization on SM_120 (no TM bypass)</text>
+  <circle cx="60" cy="900" r="3" fill="#b45309"/>
+  <text x="72" y="904" style="font:500 11px 'IBM Plex Sans',sans-serif;fill:#2a3548">MX-FP4 at 100.6% efficiency proves SM_120 ceiling is achievable with correct porting approach</text>
+  <circle cx="60" cy="924" r="3" fill="#b45309"/>
+  <text x="72" y="928" style="font:500 11px 'IBM Plex Sans',sans-serif;fill:#2a3548">Replace NVLink-optimized patterns with NCCL + P2P; prefer pipeline parallelism over tensor parallelism</text>
+</svg>

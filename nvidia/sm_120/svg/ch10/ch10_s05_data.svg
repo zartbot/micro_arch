@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 720" role="img"
+     aria-label="GDDR7 12-Channel Row-Activation Pipelining — Why Page-Miss Cost Is Hidden">
+  <rect width="1080" height="720" fill="#ffffff"/>
+
+  <!-- Title -->
+  <text x="36" y="32" style="font:600 15px 'Fraunces',serif;fill:#0b1220">GDDR7 12-Channel Row-Activation Pipelining (384-bit bus)</text>
+  <text x="36" y="52" style="font:italic 11px 'Fraunces',serif;fill:#5b6679">Closed-page policy + 32B interleaving hides row-buffer miss cost via cross-channel parallelism</text>
+
+  <!-- ═══════════════ TOP: Address Interleaving Funnel ═══════════════ -->
+  <text x="540" y="82" style="font:600 12px 'Fraunces',serif;fill:#0b1220" text-anchor="middle">Single-Warp Pointer-Chase Request Stream</text>
+  <!-- Arrow down -->
+  <line x1="540" y1="88" x2="540" y2="104" stroke="#5b6679" stroke-width="1.5"/>
+  <polygon points="534,104 540,112 546,104" fill="#5b6679"/>
+
+  <!-- Interleaving box -->
+  <rect x="140" y="116" width="800" height="44" rx="8" fill="#eff6ff" stroke="#1e40af" stroke-width="1.2"/>
+  <text x="540" y="138" style="font:600 12px 'JetBrains Mono',monospace;fill:#1e40af" text-anchor="middle">32B Address Interleaving Across 12 Channels</text>
+  <text x="540" y="154" style="font:500 10px 'JetBrains Mono',monospace;fill:#5b6679" text-anchor="middle">consecutive 32B chunks routed to different channels (addr[8:4] mod 12)</text>
+
+  <!-- Fan-out arrows to 12 channels -->
+  <line x1="200" y1="160" x2="200" y2="178" stroke="#5b6679" stroke-width="0.8"/>
+  <line x1="270" y1="160" x2="270" y2="178" stroke="#5b6679" stroke-width="0.8"/>
+  <line x1="340" y1="160" x2="340" y2="178" stroke="#5b6679" stroke-width="0.8"/>
+  <line x1="410" y1="160" x2="410" y2="178" stroke="#5b6679" stroke-width="0.8"/>
+  <line x1="480" y1="160" x2="480" y2="178" stroke="#5b6679" stroke-width="0.8"/>
+  <line x1="540" y1="160" x2="540" y2="178" stroke="#5b6679" stroke-width="0.8"/>
+  <line x1="600" y1="160" x2="600" y2="178" stroke="#5b6679" stroke-width="0.8"/>
+  <line x1="660" y1="160" x2="660" y2="178" stroke="#5b6679" stroke-width="0.8"/>
+  <line x1="720" y1="160" x2="720" y2="178" stroke="#5b6679" stroke-width="0.8"/>
+  <line x1="780" y1="160" x2="780" y2="178" stroke="#5b6679" stroke-width="0.8"/>
+  <line x1="840" y1="160" x2="840" y2="178" stroke="#5b6679" stroke-width="0.8"/>
+  <line x1="900" y1="160" x2="900" y2="178" stroke="#5b6679" stroke-width="0.8"/>
+
+  <!-- 12 Channel boxes -->
+  <rect x="170" y="180" width="60" height="56" rx="5" fill="#f0fdf4" stroke="#76b900" stroke-width="1"/>
+  <text x="200" y="198" style="font:600 10px 'JetBrains Mono',monospace;fill:#76b900" text-anchor="middle">C0</text>
+  <text x="200" y="214" style="font:500 8px 'JetBrains Mono',monospace;fill:#5b6679" text-anchor="middle">RB</text>
+  <text x="200" y="228" style="font:italic 7px 'JetBrains Mono',monospace;fill:#5b6679" text-anchor="middle">closed-pg</text>
+
+  <rect x="240" y="180" width="60" height="56" rx="5" fill="#f0fdf4" stroke="#76b900" stroke-width="1"/>
+  <text x="270" y="198" style="font:600 10px 'JetBrains Mono',monospace;fill:#76b900" text-anchor="middle">C1</text>
+  <text x="270" y="214" style="font:500 8px 'JetBrains Mono',monospace;fill:#5b6679" text-anchor="middle">RB</text>
+  <text x="270" y="228" style="font:italic 7px 'JetBrains Mono',monospace;fill:#5b6679" text-anchor="middle">closed-pg</text>
+
+  <rect x="310" y="180" width="60" height="56" rx="5" fill="#f0fdf4" stroke="#76b900" stroke-width="1"/>
+  <text x="340" y="198" style="font:600 10px 'JetBrains Mono',monospace;fill:#76b900" text-anchor="middle">C2</text>
+  <text x="340" y="214" style="font:500 8px 'JetBrains Mono',monospace;fill:#5b6679" text-anchor="middle">RB</text>
+  <text x="340" y="228" style="font:italic 7px 'JetBrains Mono',monospace;fill:#5b6679" text-anchor="middle">closed-pg</text>
+
+  <rect x="380" y="180" width="60" height="56" rx="5" fill="#f0fdf4" stroke="#76b900" stroke-width="1"/>
+  <text x="410" y="198" style="font:600 10px 'JetBrains Mono',monospace;fill:#76b900" text-anchor="middle">C3</text>
+  <text x="410" y="214" style="font:500 8px 'JetBrains Mono',monospace;fill:#5b6679" text-anchor="middle">RB</text>
+  <text x="410" y="228" style="font:italic 7px 'JetBrains Mono',monospace;fill:#5b6679" text-anchor="middle">closed-pg</text>
+
+  <rect x="450" y="180" width="60" height="56" rx="5" fill="#f0fdf4" stroke="#76b900" stroke-width="1"/>
+  <text x="480" y="198" style="font:600 10px 'JetBrains Mono',monospace;fill:#76b900" text-anchor="middle">C4</text>
+  <text x="480" y="214" style="font:500 8px 'JetBrains Mono',monospace;fill:#5b6679" text-anchor="middle">RB</text>
+
+  <rect x="520" y="180" width="60" height="56" rx="5" fill="#f0fdf4" stroke="#76b900" stroke-width="1"/>
+  <text x="550" y="198" style="font:600 10px 'JetBrains Mono',monospace;fill:#76b900" text-anchor="middle">C5</text>
+  <text x="550" y="214" style="font:500 8px 'JetBrains Mono',monospace;fill:#5b6679" text-anchor="middle">RB</text>
+
+  <text x="615" y="210" style="font:600 14px 'JetBrains Mono',monospace;fill:#5b6679" text-anchor="middle">...</text>
+
+  <rect x="640" y="180" width="60" height="56" rx="5" fill="#f0fdf4" stroke="#76b900" stroke-width="1"/>
+  <text x="670" y="198" style="font:600 10px 'JetBrains Mono',monospace;fill:#76b900" text-anchor="middle">C9</text>
+  <text x="670" y="214" style="font:500 8px 'JetBrains Mono',monospace;fill:#5b6679" text-anchor="middle">RB</text>
+
+  <rect x="710" y="180" width="60" height="56" rx="5" fill="#f0fdf4" stroke="#76b900" stroke-width="1"/>
+  <text x="740" y="198" style="font:600 10px 'JetBrains Mono',monospace;fill:#76b900" text-anchor="middle">C10</text>
+  <text x="740" y="214" style="font:500 8px 'JetBrains Mono',monospace;fill:#5b6679" text-anchor="middle">RB</text>
+
+  <rect x="780" y="180" width="60" height="56" rx="5" fill="#f0fdf4" stroke="#76b900" stroke-width="1"/>
+  <text x="810" y="198" style="font:600 10px 'JetBrains Mono',monospace;fill:#76b900" text-anchor="middle">C11</text>
+  <text x="810" y="214" style="font:500 8px 'JetBrains Mono',monospace;fill:#5b6679" text-anchor="middle">RB</text>
+
+  <!-- ═══════════════ MIDDLE: Gantt Chart — Pipelined Row Activation ═══════════════ -->
+  <line x1="40" y1="256" x2="1040" y2="256" stroke="#e6e4da" stroke-width="1"/>
+  <text x="540" y="280" style="font:600 13px 'Fraunces',serif;fill:#0b1220" text-anchor="middle">Cross-Channel Row-Activation Pipelining (Gantt View)</text>
+
+  <!-- Time axis -->
+  <text x="160" y="304" style="font:500 9px 'JetBrains Mono',monospace;fill:#5b6679">time (cyc):</text>
+  <line x1="240" y1="300" x2="980" y2="300" stroke="#5b6679" stroke-width="1"/>
+  <!-- Ticks: 0, 50, 100, 150, 200, 250, 300, 350, 400 -->
+  <text x="240" y="314" style="font:500 8px 'JetBrains Mono',monospace;fill:#5b6679" text-anchor="middle">0</text>
+  <text x="322" y="314" style="font:500 8px 'JetBrains Mono',monospace;fill:#5b6679" text-anchor="middle">50</text>
+  <text x="404" y="314" style="font:500 8px 'JetBrains Mono',monospace;fill:#5b6679" text-anchor="middle">100</text>
+  <text x="486" y="314" style="font:500 8px 'JetBrains Mono',monospace;fill:#5b6679" text-anchor="middle">150</text>
+  <text x="568" y="314" style="font:500 8px 'JetBrains Mono',monospace;fill:#5b6679" text-anchor="middle">200</text>
+  <text x="650" y="314" style="font:500 8px 'JetBrains Mono',monospace;fill:#5b6679" text-anchor="middle">250</text>
+  <text x="732" y="314" style="font:500 8px 'JetBrains Mono',monospace;fill:#5b6679" text-anchor="middle">300</text>
+  <text x="814" y="314" style="font:500 8px 'JetBrains Mono',monospace;fill:#5b6679" text-anchor="middle">350</text>
+  <text x="896" y="314" style="font:500 8px 'JetBrains Mono',monospace;fill:#5b6679" text-anchor="middle">400</text>
+
+  <!-- Scale: 1 cyc = 1.64 px (from x=240 at 0 to x=896 at 400) -->
+  <!-- C0: ACT at 0, READ 362 cyc, PRECHARGE -->
+  <text x="100" y="340" style="font:600 10px 'JetBrains Mono',monospace;fill:#76b900">C0:</text>
+  <rect x="240" y="326" width="40" height="22" rx="3" fill="#fef08a" stroke="#ca8a04" stroke-width="0.6"/>
+  <text x="260" y="341" style="font:500 8px 'JetBrains Mono',monospace;fill:#0b1220" text-anchor="middle">ACT</text>
+  <rect x="280" y="326" width="594" height="22" rx="3" fill="#d9f99d" stroke="#76b900" stroke-width="0.6"/>
+  <text x="577" y="341" style="font:500 8px 'JetBrains Mono',monospace;fill:#0b1220" text-anchor="middle">READ — 362 cyc</text>
+  <rect x="874" y="326" width="56" height="22" rx="3" fill="#fecaca" stroke="#e11d48" stroke-width="0.6"/>
+  <text x="902" y="341" style="font:500 7px 'JetBrains Mono',monospace;fill:#e11d48" text-anchor="middle">PRECH</text>
+
+  <!-- C1: staggered +~30 cyc offset -->
+  <text x="100" y="370" style="font:600 10px 'JetBrains Mono',monospace;fill:#76b900">C1:</text>
+  <rect x="290" y="356" width="40" height="22" rx="3" fill="#fef08a" stroke="#ca8a04" stroke-width="0.6"/>
+  <text x="310" y="371" style="font:500 8px 'JetBrains Mono',monospace;fill:#0b1220" text-anchor="middle">ACT</text>
+  <rect x="330" y="356" width="594" height="22" rx="3" fill="#d9f99d" stroke="#76b900" stroke-width="0.6"/>
+  <text x="627" y="371" style="font:500 8px 'JetBrains Mono',monospace;fill:#0b1220" text-anchor="middle">READ — 362 cyc</text>
+  <rect x="924" y="356" width="56" height="22" rx="3" fill="#fecaca" stroke="#e11d48" stroke-width="0.6"/>
+  <text x="952" y="371" style="font:500 7px 'JetBrains Mono',monospace;fill:#e11d48" text-anchor="middle">PRECH</text>
+
+  <!-- C2: +~60 cyc -->
+  <text x="100" y="400" style="font:600 10px 'JetBrains Mono',monospace;fill:#76b900">C2:</text>
+  <rect x="340" y="386" width="40" height="22" rx="3" fill="#fef08a" stroke="#ca8a04" stroke-width="0.6"/>
+  <text x="360" y="401" style="font:500 8px 'JetBrains Mono',monospace;fill:#0b1220" text-anchor="middle">ACT</text>
+  <rect x="380" y="386" width="594" height="22" rx="3" fill="#d9f99d" stroke="#76b900" stroke-width="0.6"/>
+  <text x="677" y="401" style="font:500 8px 'JetBrains Mono',monospace;fill:#0b1220" text-anchor="middle">READ — 362 cyc</text>
+
+  <!-- C3: +~90 cyc -->
+  <text x="100" y="430" style="font:600 10px 'JetBrains Mono',monospace;fill:#76b900">C3:</text>
+  <rect x="390" y="416" width="40" height="22" rx="3" fill="#fef08a" stroke="#ca8a04" stroke-width="0.6"/>
+  <text x="410" y="431" style="font:500 8px 'JetBrains Mono',monospace;fill:#0b1220" text-anchor="middle">ACT</text>
+  <rect x="430" y="416" width="550" height="22" rx="3" fill="#d9f99d" stroke="#76b900" stroke-width="0.6"/>
+  <text x="705" y="431" style="font:500 8px 'JetBrains Mono',monospace;fill:#0b1220" text-anchor="middle">READ — 362 cyc</text>
+
+  <!-- Ellipsis -->
+  <text x="100" y="458" style="font:600 10px 'JetBrains Mono',monospace;fill:#5b6679">...</text>
+  <text x="540" y="458" style="font:italic 10px 'Fraunces',serif;fill:#5b6679" text-anchor="middle">(channels C4-C11 similarly staggered)</text>
+
+  <!-- Result annotations -->
+  <rect x="40" y="476" width="480" height="44" rx="6" fill="#f0fdf4" stroke="#76b900" stroke-width="1"/>
+  <text x="280" y="496" style="font:600 11px 'JetBrains Mono',monospace;fill:#0b1220" text-anchor="middle">Observed per-access latency = 362 cyc (page-hit)</text>
+  <text x="280" y="512" style="font:500 10px 'JetBrains Mono',monospace;fill:#5b6679" text-anchor="middle">All patterns: sequential / row-local / random</text>
+
+  <rect x="560" y="476" width="480" height="44" rx="6" fill="#fef2f2" stroke="#e11d48" stroke-width="1"/>
+  <text x="800" y="496" style="font:600 11px 'JetBrains Mono',monospace;fill:#e11d48" text-anchor="middle">Page-miss penalty: +10 cyc (at WS &gt; 2 GB)</text>
+  <text x="800" y="512" style="font:500 10px 'JetBrains Mono',monospace;fill:#5b6679" text-anchor="middle">= single-channel tRP exposure (2.8% of total)</text>
+
+  <!-- ═══════════════ BOTTOM: Three Mechanisms ═══════════════ -->
+  <line x1="40" y1="540" x2="1040" y2="540" stroke="#e6e4da" stroke-width="1"/>
+  <text x="540" y="566" style="font:600 13px 'Fraunces',serif;fill:#0b1220" text-anchor="middle">Three Reinforcing Mechanisms</text>
+
+  <!-- Mechanism 1 -->
+  <rect x="40" y="580" width="320" height="80" rx="8" fill="#fffbeb" stroke="#ca8a04" stroke-width="1"/>
+  <text x="200" y="602" style="font:600 11px 'JetBrains Mono',monospace;fill:#ca8a04" text-anchor="middle">1. Closed-Page Policy</text>
+  <text x="200" y="620" style="font:500 10px 'JetBrains Mono',monospace;fill:#0b1220" text-anchor="middle">Every access auto-precharges</text>
+  <text x="200" y="636" style="font:500 10px 'JetBrains Mono',monospace;fill:#0b1220" text-anchor="middle">tRP is part of ALL accesses</text>
+  <text x="200" y="652" style="font:italic 9px 'JetBrains Mono',monospace;fill:#5b6679" text-anchor="middle">No row-open advantage exists</text>
+
+  <!-- Mechanism 2 -->
+  <rect x="380" y="580" width="320" height="80" rx="8" fill="#eff6ff" stroke="#1e40af" stroke-width="1"/>
+  <text x="540" y="602" style="font:600 11px 'JetBrains Mono',monospace;fill:#1e40af" text-anchor="middle">2. 12-Ch x 32B Interleave</text>
+  <text x="540" y="620" style="font:500 10px 'JetBrains Mono',monospace;fill:#0b1220" text-anchor="middle">Consecutive 32B to diff channels</text>
+  <text x="540" y="636" style="font:500 10px 'JetBrains Mono',monospace;fill:#0b1220" text-anchor="middle">Pointer chase spreads uniformly</text>
+  <text x="540" y="652" style="font:italic 9px 'JetBrains Mono',monospace;fill:#5b6679" text-anchor="middle">No single-row hammering</text>
+
+  <!-- Mechanism 3 -->
+  <rect x="720" y="580" width="320" height="80" rx="8" fill="#f0fdf4" stroke="#76b900" stroke-width="1"/>
+  <text x="880" y="602" style="font:600 11px 'JetBrains Mono',monospace;fill:#76b900" text-anchor="middle">3. Cross-Channel Pipelining</text>
+  <text x="880" y="620" style="font:500 10px 'JetBrains Mono',monospace;fill:#0b1220" text-anchor="middle">While C0 in tRCD/tRP,</text>
+  <text x="880" y="636" style="font:500 10px 'JetBrains Mono',monospace;fill:#0b1220" text-anchor="middle">C1-C11 service other reqs</text>
+  <text x="880" y="652" style="font:italic 9px 'JetBrains Mono',monospace;fill:#5b6679" text-anchor="middle">MC overlaps row mgmt latency</text>
+
+  <!-- Bottom formula bar -->
+  <rect x="40" y="680" width="1000" height="28" rx="6" fill="#fcfbf6" stroke="#e6e4da" stroke-width="1"/>
+  <text x="540" y="699" style="font:600 11px 'JetBrains Mono',monospace;fill:#0b1220" text-anchor="middle">Net: L_DRAM = 362 cyc (constant) | Page-miss ceiling = 372 cyc (+10) | Refresh P95 = 880 cyc (5% of samples)</text>
+</svg>

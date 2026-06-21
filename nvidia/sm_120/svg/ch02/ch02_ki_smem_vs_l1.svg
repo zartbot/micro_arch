@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 110" role="img"
+     aria-label="KI-2.5: Smem 33.9 cyc vs L1 44 cyc — 10 cyc coherence overhead, explicit management always wins">
+  <defs><style><![CDATA[
+    .ttl{font:600 13px "Fraunces",serif;fill:#0b1220}.lbl{font:600 11px "JetBrains Mono",monospace;fill:#2a3548}.lbl-sm{font:500 10px "JetBrains Mono",monospace;fill:#5b6679}.num{font:700 15px "JetBrains Mono",monospace}.num-lg{font:700 22px "JetBrains Mono",monospace}.stage{font:600 10px "JetBrains Mono",monospace;fill:#fff}
+  ]]></style></defs>
+  <rect width="1080" height="110" fill="#ffffff"/>
+  <text x="36" y="22" class="ttl">KI-2.5: Smem 1.29× Faster Than L1 — Both Access Same SRAM; Delta = Tag + Coherence Overhead</text>
+  <g transform="translate(36,38)">
+    <rect width="260" height="55" rx="8" fill="#D1FAE5" stroke="#059669" stroke-width="1.2"/>
+    <text x="130" y="20" class="lbl" fill="#065F46" text-anchor="middle">Shared Memory</text>
+    <text x="130" y="44" class="num-lg" fill="#059669" text-anchor="middle">33.9 cyc</text>
+  </g>
+  <g transform="translate(316,50)">
+    <rect width="80" height="28" rx="4" fill="#D97706"/>
+    <text x="40" y="19" class="stage" text-anchor="middle">+10 cyc</text>
+  </g>
+  <g transform="translate(416,38)">
+    <rect width="260" height="55" rx="8" fill="#DBEAFE" stroke="#2563EB" stroke-width="1.2"/>
+    <text x="130" y="20" class="lbl" fill="#1D4ED8" text-anchor="middle">L1 Cache</text>
+    <text x="130" y="44" class="num-lg" fill="#2563EB" text-anchor="middle">44.0 cyc</text>
+  </g>
+  <g transform="translate(700,38)">
+    <rect width="344" height="55" rx="8" fill="#FFFBEB" stroke="#D97706" stroke-width="1"/>
+    <text x="15" y="18" class="lbl" fill="#92400E">10 cyc = coherence tax</text>
+    <text x="15" y="34" class="lbl-sm">Tag CAM ~4-5 + MOESI check ~3-4 + mux ~1-2</text>
+    <text x="15" y="48" class="lbl-sm">Same 100 KB SRAM; smem bypasses tag/coherence</text>
+  </g>
+</svg>

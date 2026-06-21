@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 720" role="img"
+     aria-label="Kernel Launch Pipeline — Host-Side vs GPU-Side Timing Decomposition">
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#5b6679"/>
+    </marker>
+    <marker id="arrow-green" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#76b900"/>
+    </marker>
+    <marker id="arrow-red" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#e11d48"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1080" height="720" fill="#ffffff"/>
+
+  <!-- Title -->
+  <text x="36" y="32" style="font:600 15px 'Fraunces',serif;fill:#0b1220">Kernel Launch Pipeline (SM_120)</text>
+  <text x="36" y="52" style="font:italic 11px 'Fraunces',serif;fill:#5b6679">Host-side to GPU-side timing decomposition — warm launch round-trip 5.0–6.4 µs</text>
+
+  <!-- Divider line -->
+  <line x1="540" y1="70" x2="540" y2="580" stroke="#5b6679" stroke-width="1.5" stroke-dasharray="4,3"/>
+  <text x="250" y="82" style="font:600 12px 'Fraunces',serif;fill:#6d28d9" text-anchor="middle">HOST (CPU)</text>
+  <text x="790" y="82" style="font:600 12px 'Fraunces',serif;fill:#1e40af" text-anchor="middle">GPU (Command Processor)</text>
+
+  <!-- ═══════════════ HOST SIDE ═══════════════ -->
+  <!-- cudaLaunchKernel box -->
+  <rect x="40" y="96" width="470" height="36" rx="6" fill="#f5f1ff" stroke="#6d28d9" stroke-width="1"/>
+  <text x="56" y="118" style="font:600 12px 'JetBrains Mono',monospace;fill:#6d28d9">cudaLaunchKernel()</text>
+  <text x="460" y="118" style="font:500 10px 'JetBrains Mono',monospace;fill:#5b6679" text-anchor="end">entry point</text>
+
+  <!-- Step 1: Arg validation -->
+  <rect x="80" y="148" width="380" height="32" rx="5" fill="#faf5ff" stroke="#8b5cf6" stroke-width="0.8"/>
+  <text x="96" y="168" style="font:500 11px 'JetBrains Mono',monospace;fill:#0b1220">arg validation</text>
+  <rect x="348" y="152" width="96" height="24" rx="4" fill="#6d28d9"/>
+  <text x="396" y="168" style="font:600 11px 'JetBrains Mono',monospace;fill:#fff" text-anchor="middle">0.2 µs</text>
+
+  <!-- Step 2: Command buffer insert -->
+  <rect x="80" y="192" width="380" height="32" rx="5" fill="#faf5ff" stroke="#8b5cf6" stroke-width="0.8"/>
+  <text x="96" y="212" style="font:500 11px 'JetBrains Mono',monospace;fill:#0b1220">command buffer insert</text>
+  <rect x="348" y="196" width="96" height="24" rx="4" fill="#6d28d9"/>
+  <text x="396" y="212" style="font:600 11px 'JetBrains Mono',monospace;fill:#fff" text-anchor="middle">0.3 µs</text>
+  <text x="462" y="212" style="font:italic 9px 'JetBrains Mono',monospace;fill:#ea580c">+0.8@4KB</text>
+
+  <!-- Step 3: Doorbell write -->
+  <rect x="80" y="236" width="380" height="32" rx="5" fill="#faf5ff" stroke="#8b5cf6" stroke-width="0.8"/>
+  <text x="96" y="256" style="font:500 11px 'JetBrains Mono',monospace;fill:#0b1220">PCIe doorbell write</text>
+  <rect x="348" y="240" width="96" height="24" rx="4" fill="#6d28d9"/>
+  <text x="396" y="256" style="font:600 11px 'JetBrains Mono',monospace;fill:#fff" text-anchor="middle">0.1 µs</text>
+
+  <!-- Crossing arrow from doorbell to GPU -->
+  <path d="M460,252 C520,252 520,252 556,252" stroke="#76b900" stroke-width="2" fill="none" marker-end="url(#arrow-green)"/>
+  <text x="510" y="244" style="font:italic 9px 'Fraunces',serif;fill:#76b900" text-anchor="middle">PCIe MMIO</text>
+
+  <!-- Host total time bracket -->
+  <line x1="60" y1="148" x2="60" y2="270" stroke="#6d28d9" stroke-width="1.5"/>
+  <line x1="56" y1="148" x2="64" y2="148" stroke="#6d28d9" stroke-width="1.5"/>
+  <line x1="56" y1="270" x2="64" y2="270" stroke="#6d28d9" stroke-width="1.5"/>
+  <text x="52" y="214" style="font:600 10px 'JetBrains Mono',monospace;fill:#6d28d9" text-anchor="end" transform="rotate(-90,52,214)">0.6 µs submit</text>
+
+  <!-- ═══════════════ GPU SIDE ═══════════════ -->
+  <!-- Command Processor box -->
+  <rect x="560" y="236" width="470" height="36" rx="6" fill="#eff6ff" stroke="#1e40af" stroke-width="1"/>
+  <text x="576" y="258" style="font:600 12px 'JetBrains Mono',monospace;fill:#1e40af">Command Processor</text>
+  <text x="980" y="258" style="font:500 10px 'JetBrains Mono',monospace;fill:#5b6679" text-anchor="end">hardware frontend</text>
+
+  <!-- GPU Step 1: Decode -->
+  <rect x="600" y="288" width="380" height="32" rx="5" fill="#f0f9ff" stroke="#3b82f6" stroke-width="0.8"/>
+  <text x="616" y="308" style="font:500 11px 'JetBrains Mono',monospace;fill:#0b1220">decode command</text>
+  <rect x="868" y="292" width="96" height="24" rx="4" fill="#1e40af"/>
+  <text x="916" y="308" style="font:600 11px 'JetBrains Mono',monospace;fill:#fff" text-anchor="middle">0.2 µs</text>
+
+  <!-- GPU Step 2: CTA allocation -->
+  <rect x="600" y="332" width="380" height="32" rx="5" fill="#f0f9ff" stroke="#3b82f6" stroke-width="0.8"/>
+  <text x="616" y="352" style="font:500 11px 'JetBrains Mono',monospace;fill:#0b1220">CTA allocation</text>
+  <rect x="868" y="336" width="96" height="24" rx="4" fill="#1e40af"/>
+  <text x="916" y="352" style="font:600 11px 'JetBrains Mono',monospace;fill:#fff" text-anchor="middle">0.3 µs</text>
+
+  <!-- GPU Step 3: Warp creation -->
+  <rect x="600" y="376" width="380" height="32" rx="5" fill="#f0f9ff" stroke="#3b82f6" stroke-width="0.8"/>
+  <text x="616" y="396" style="font:500 11px 'JetBrains Mono',monospace;fill:#0b1220">warp creation</text>
+  <rect x="868" y="380" width="96" height="24" rx="4" fill="#1e40af"/>
+  <text x="916" y="396" style="font:600 11px 'JetBrains Mono',monospace;fill:#fff" text-anchor="middle">0.5 µs</text>
+
+  <!-- GPU Step 4: First instruction issue -->
+  <rect x="600" y="420" width="380" height="32" rx="5" fill="#f0f9ff" stroke="#3b82f6" stroke-width="0.8"/>
+  <text x="616" y="440" style="font:500 11px 'JetBrains Mono',monospace;fill:#0b1220">first instruction issue</text>
+  <rect x="868" y="424" width="96" height="24" rx="4" fill="#1e40af"/>
+  <text x="916" y="440" style="font:600 11px 'JetBrains Mono',monospace;fill:#fff" text-anchor="middle">0.2 µs</text>
+
+  <!-- GPU total time bracket -->
+  <line x1="990" y1="288" x2="990" y2="454" stroke="#1e40af" stroke-width="1.5"/>
+  <line x1="986" y1="288" x2="994" y2="288" stroke="#1e40af" stroke-width="1.5"/>
+  <line x1="986" y1="454" x2="994" y2="454" stroke="#1e40af" stroke-width="1.5"/>
+  <text x="1010" y="376" style="font:600 11px 'JetBrains Mono',monospace;fill:#1e40af">~1.5 µs</text>
+
+  <!-- Sync wait (host-side waiting) -->
+  <rect x="80" y="310" width="380" height="48" rx="5" fill="#fef2f2" stroke="#e11d48" stroke-width="0.8" stroke-dasharray="4,2"/>
+  <text x="96" y="332" style="font:500 11px 'JetBrains Mono',monospace;fill:#0b1220">synchronous wait (blocked)</text>
+  <text x="96" y="350" style="font:italic 10px 'JetBrains Mono',monospace;fill:#e11d48">kernel execution + completion signal</text>
+  <rect x="348" y="318" width="96" height="24" rx="4" fill="#e11d48"/>
+  <text x="396" y="335" style="font:600 10px 'JetBrains Mono',monospace;fill:#fff" text-anchor="middle">3.5–5.0 µs</text>
+
+  <!-- Return arrow from GPU to host -->
+  <path d="M556,340 C530,340 530,340 460,340" stroke="#e11d48" stroke-width="1.5" fill="none" stroke-dasharray="3,2" marker-end="url(#arrow-red)"/>
+  <text x="510" y="334" style="font:italic 9px 'Fraunces',serif;fill:#e11d48" text-anchor="middle">completion</text>
+
+  <!-- Host round-trip total -->
+  <rect x="80" y="380" width="380" height="28" rx="5" fill="#f0fdf4" stroke="#76b900" stroke-width="1.2"/>
+  <text x="270" y="399" style="font:600 12px 'JetBrains Mono',monospace;fill:#0b1220" text-anchor="middle">Total Host Round-Trip: 5.0–6.4 µs</text>
+
+  <!-- ═══════════════ COLD START SECTION ═══════════════ -->
+  <line x1="40" y1="460" x2="1040" y2="460" stroke="#e6e4da" stroke-width="1"/>
+  <text x="538" y="468" style="font:600 13px 'Fraunces',serif;fill:#0b1220" text-anchor="middle">Cold-Start Additions</text>
+
+  <!-- First-ever cold launch -->
+  <rect x="80" y="484" width="920" height="40" rx="6" fill="#fef2f2" stroke="#e11d48" stroke-width="1"/>
+  <text x="96" y="508" style="font:500 11px 'JetBrains Mono',monospace;fill:#0b1220">First-ever kernel launch</text>
+  <text x="420" y="508" style="font:italic 10px 'JetBrains Mono',monospace;fill:#5b6679">PTX→SASS JIT verification + module load + GPU resource pool init</text>
+  <rect x="880" y="490" width="104" height="26" rx="4" fill="#e11d48"/>
+  <text x="932" y="508" style="font:600 12px 'JetBrains Mono',monospace;fill:#fff" text-anchor="middle">+103 µs</text>
+
+  <!-- Per-unique-fn -->
+  <rect x="80" y="536" width="920" height="40" rx="6" fill="#fffbeb" stroke="#ea580c" stroke-width="1"/>
+  <text x="96" y="560" style="font:500 11px 'JetBrains Mono',monospace;fill:#0b1220">Per-unique function (never-called)</text>
+  <text x="420" y="560" style="font:italic 10px 'JetBrains Mono',monospace;fill:#5b6679">locate binary + resolve symbols + setup execution context</text>
+  <rect x="880" y="542" width="104" height="26" rx="4" fill="#ea580c"/>
+  <text x="932" y="560" style="font:600 12px 'JetBrains Mono',monospace;fill:#fff" text-anchor="middle">+5–7 µs</text>
+
+  <!-- ═══════════════ BOTTOM SUMMARY ═══════════════ -->
+  <rect x="40" y="600" width="1000" height="100" rx="8" fill="#fcfbf6" stroke="#e6e4da" stroke-width="1"/>
+  <!-- 4 key metrics -->
+  <line x1="290" y1="610" x2="290" y2="690" stroke="#e6e4da" stroke-width="0.8"/>
+  <line x1="540" y1="610" x2="540" y2="690" stroke="#e6e4da" stroke-width="0.8"/>
+  <line x1="790" y1="610" x2="790" y2="690" stroke="#e6e4da" stroke-width="0.8"/>
+
+  <!-- Metric 1: GPU-side -->
+  <text x="165" y="630" style="font:600 11px 'Fraunces',serif;fill:#5b6679" text-anchor="middle">GPU-Side Dispatch</text>
+  <text x="165" y="656" style="font:600 20px 'JetBrains Mono',monospace;fill:#1e40af" text-anchor="middle">~1.5 µs</text>
+  <text x="165" y="676" style="font:500 10px 'JetBrains Mono',monospace;fill:#5b6679" text-anchor="middle">decode → first insn</text>
+
+  <!-- Metric 2: Host RT -->
+  <text x="415" y="630" style="font:600 11px 'Fraunces',serif;fill:#5b6679" text-anchor="middle">Host Round-Trip</text>
+  <text x="415" y="656" style="font:600 20px 'JetBrains Mono',monospace;fill:#6d28d9" text-anchor="middle">5.0–6.4 µs</text>
+  <text x="415" y="676" style="font:500 10px 'JetBrains Mono',monospace;fill:#5b6679" text-anchor="middle">submit + sync wait</text>
+
+  <!-- Metric 3: Cold first -->
+  <text x="665" y="630" style="font:600 11px 'Fraunces',serif;fill:#5b6679" text-anchor="middle">First-Ever Cold</text>
+  <text x="665" y="656" style="font:600 20px 'JetBrains Mono',monospace;fill:#e11d48" text-anchor="middle">108.7 µs</text>
+  <text x="665" y="676" style="font:500 10px 'JetBrains Mono',monospace;fill:#5b6679" text-anchor="middle">72.5× warm baseline</text>
+
+  <!-- Metric 4: Per-function cold -->
+  <text x="915" y="630" style="font:600 11px 'Fraunces',serif;fill:#5b6679" text-anchor="middle">Per-Function Cold</text>
+  <text x="915" y="656" style="font:600 20px 'JetBrains Mono',monospace;fill:#ea580c" text-anchor="middle">10–12 µs</text>
+  <text x="915" y="676" style="font:500 10px 'JetBrains Mono',monospace;fill:#5b6679" text-anchor="middle">6.8× warm baseline</text>
+</svg>

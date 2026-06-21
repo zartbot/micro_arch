@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 756" role="img" aria-label="8.5.1 Microarchitectural Analysis: The Roofline Defines Three Workload Classes">
+  <defs>
+    <marker id="ar" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto">
+      <path d="M0,0 L7,3.5 L0,7 Z" fill="#5b6679"/>
+    </marker>
+  </defs>
+  <rect width="1080" height="756" fill="#ffffff"/>
+  <text x="36" y="32" style="font:600 14px 'Fraunces',serif;fill:#0b1220">8.5.1 Microarchitectural Analysis: The Roofline Defines Three Workload Classes</text>
+  <text x="36" y="52" style="font:italic 11px 'Fraunces',serif;fill:#5b6679">Semantic visualization of measured microarchitectural behavior</text>
+
+    <g transform="translate(40,86)">
+      <rect x="0" y="0" width="1000" height="64" rx="10" fill="#F4FAE2" stroke="#5a8e00" stroke-width="0.8"/>
+      <text x="20" y="22" style="font:600 12px 'Fraunces',serif;fill:#5a8e00">SM_120 Workload Classification via Roofline</text>
+      <text x="20" y="44" style="font:500 10px 'JetBrains Mono',monospace;fill:#5b6679">Class 1: Compute-Bound (AI &gt; crossover) · Examples: Large GEMM (M,N,K ≥ 1024), MX-FP4 convolutions</text>
+    </g>    <line x1="540" y1="150" x2="540" y2="172" stroke="#5b6679" stroke-width="1.2" marker-end="url(#ar)"/>
+    <g transform="translate(40,176)">
+      <rect x="0" y="0" width="1000" height="64" rx="10" fill="#F4FAE2" stroke="#5a8e00" stroke-width="0.8"/>
+      <text x="20" y="22" style="font:600 12px 'Fraunces',serif;fill:#5a8e00">Characteristic: TC throughput (15.88 cyc/mma) is the bottleneck</text>
+      <text x="20" y="44" style="font:500 10px 'JetBrains Mono',monospace;fill:#5b6679">Evidence: CUTLASS MXFP4 at 1076.5T = 100.6% peak (S9/case_136) · Optimization: ILP ≥ 4, operand reuse (×4), tile size se</text>
+    </g>    <line x1="540" y1="240" x2="540" y2="262" stroke="#5b6679" stroke-width="1.2" marker-end="url(#ar)"/>
+    <g transform="translate(40,266)">
+      <rect x="0" y="0" width="1000" height="64" rx="10" fill="#F4FAE2" stroke="#5a8e00" stroke-width="0.8"/>
+      <text x="20" y="22" style="font:600 12px 'Fraunces',serif;fill:#5a8e00">Irrelevant: Memory bandwidth, prefetch, L2 caching</text>
+      <text x="20" y="44" style="font:500 10px 'JetBrains Mono',monospace;fill:#5b6679">Class 2: Memory-Bound (AI &lt; crossover, large data) · Examples: GEMV (M=1), decode inference, weight-bound layers</text>
+    </g>    <line x1="540" y1="330" x2="540" y2="352" stroke="#5b6679" stroke-width="1.2" marker-end="url(#ar)"/>
+    <g transform="translate(40,356)">
+      <rect x="0" y="0" width="1000" height="64" rx="10" fill="#F4FAE2" stroke="#5a8e00" stroke-width="0.8"/>
+      <text x="20" y="22" style="font:600 12px 'Fraunces',serif;fill:#5a8e00">Characteristic: DRAM BW (~1231 GB/s) is the bottleneck</text>
+      <text x="20" y="44" style="font:500 10px 'JetBrains Mono',monospace;fill:#5b6679">Evidence: GEMV FP16 at 1832 GB/s = 96% peak (S19/case_17) · Optimization: Weight quantization, L2 caching, batching</text>
+    </g>    <line x1="540" y1="420" x2="540" y2="442" stroke="#5b6679" stroke-width="1.2" marker-end="url(#ar)"/>
+    <g transform="translate(40,446)">
+      <rect x="0" y="0" width="1000" height="64" rx="10" fill="#F4FAE2" stroke="#5a8e00" stroke-width="0.8"/>
+      <text x="20" y="22" style="font:600 12px 'Fraunces',serif;fill:#5a8e00">Irrelevant: TC precision, pipeline depth, co-issue</text>
+      <text x="20" y="44" style="font:500 10px 'JetBrains Mono',monospace;fill:#5b6679">Class 3: Mixed / Thin-Dimension (moderate AI, structural inefficiency) · Examples: FlashAttention (K=128), MoE per-exper</text>
+    </g>    <line x1="540" y1="510" x2="540" y2="532" stroke="#5b6679" stroke-width="1.2" marker-end="url(#ar)"/>
+    <g transform="translate(40,536)">
+      <rect x="0" y="0" width="1000" height="64" rx="10" fill="#F4FAE2" stroke="#5a8e00" stroke-width="0.8"/>
+      <text x="20" y="22" style="font:600 12px 'Fraunces',serif;fill:#5a8e00">Characteristic: Neither TC nor DRAM fully utilized</text>
+      <text x="20" y="44" style="font:500 10px 'JetBrains Mono',monospace;fill:#5b6679">Evidence: Q×K^T at 107.5T = 46% efficiency (S19/case_62) · Root cause: Thin dimensions create insufficient K-loop iterat</text>
+    </g>    <line x1="540" y1="600" x2="540" y2="622" stroke="#5b6679" stroke-width="1.2" marker-end="url(#ar)"/>
+    <g transform="translate(40,626)">
+      <rect x="0" y="0" width="1000" height="64" rx="10" fill="#F4FAE2" stroke="#5a8e00" stroke-width="0.8"/>
+      <text x="20" y="22" style="font:600 12px 'Fraunces',serif;fill:#5a8e00">to fill TC pipeline + insufficient M×N tiles to fill all SMSPs</text>
+      <text x="20" y="44" style="font:500 10px 'JetBrains Mono',monospace;fill:#5b6679">Optimization: Kernel fusion, batching, tile shape tuning</text>
+    </g>
+</svg>

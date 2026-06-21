@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 520" role="img"
+     aria-label="L1 Cache vs Shared Memory — latency, bandwidth, capacity, and architecture comparison on SM_120">
+  <defs>
+    <linearGradient id="l1G" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#DBEAFE"/>
+      <stop offset="1" stop-color="#EFF6FF"/>
+    </linearGradient>
+    <linearGradient id="smG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#D1FAE5"/>
+      <stop offset="1" stop-color="#ECFDF5"/>
+    </linearGradient>
+    <linearGradient id="barL1" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#2563eb"/>
+      <stop offset="1" stop-color="#3b82f6"/>
+    </linearGradient>
+    <linearGradient id="barSm" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#059669"/>
+      <stop offset="1" stop-color="#10b981"/>
+    </linearGradient>
+    <style><![CDATA[
+      .ttl{font:600 14px "Fraunces",serif;fill:#0b1220}
+      .sub{font:italic 11px "Fraunces",serif;fill:#5b6679}
+      .sect{font:600 12px "Fraunces",serif;fill:#374151}
+      .lbl{font:600 11px "JetBrains Mono",monospace;fill:#2a3548}
+      .lbl-sm{font:500 10px "JetBrains Mono",monospace;fill:#5b6679}
+      .val{font:700 13px "JetBrains Mono",monospace}
+      .val-lg{font:700 20px "JetBrains Mono",monospace}
+      .unit{font:500 10px "JetBrains Mono",monospace;fill:#6b7280}
+      .badge{font:700 9px "JetBrains Mono",monospace;fill:#fff}
+      .feat{font:500 10.5px "IBM Plex Sans",sans-serif;fill:#374151}
+      .feat-val{font:600 10.5px "JetBrains Mono",monospace;fill:#1f2937}
+      .insight{font:600 10.5px "IBM Plex Sans",sans-serif;fill:#9f1239}
+      .ann{font:italic 10px "Fraunces",serif;fill:#5b6679}
+    ]]></style>
+  </defs>
+  <rect width="1080" height="520" fill="#ffffff"/>
+
+  <!-- Title -->
+  <text x="36" y="28" class="ttl">L1 Data Cache vs Shared Memory · SM_120 Performance Comparison</text>
+  <text x="36" y="46" class="sub">Both access the same 100 KB physical SRAM; smem bypasses tag/coherence (+10 cyc saved); L1 offers 3.86x higher single-warp BW</text>
+
+  <!-- Legend -->
+  <rect x="860" y="14" width="14" height="14" rx="3" fill="#2563eb"/>
+  <text x="880" y="25" class="lbl" fill="#2563eb">L1 Cache</text>
+  <rect x="960" y="14" width="14" height="14" rx="3" fill="#059669"/>
+  <text x="980" y="25" class="lbl" fill="#059669">Shared Mem</text>
+
+  <!-- ═══════════ SECTION 1: LATENCY ═══════════ -->
+  <text x="36" y="80" class="sect">LATENCY (lower is better)</text>
+  <line x1="36" y1="86" x2="520" y2="86" stroke="#e5e7eb" stroke-width="1"/>
+
+  <!-- L1 bar: 44 cyc -->
+  <text x="36" y="112" class="lbl">L1 hit</text>
+  <rect x="120" y="98" width="352" height="22" rx="4" fill="url(#barL1)"/>
+  <text x="480" y="114" class="val" fill="#2563eb">44 cyc</text>
+  <text x="536" y="114" class="lbl-sm">(pointer-chase, pattern-independent)</text>
+
+  <!-- Smem bar: 34 cyc -->
+  <text x="36" y="142" class="lbl">Smem</text>
+  <rect x="120" y="128" width="272" height="22" rx="4" fill="url(#barSm)"/>
+  <text x="400" y="144" class="val" fill="#059669">34 cyc</text>
+  <text x="448" y="144" class="lbl-sm">(SHL-inclusive canonical; 28 cyc pure pointer-chase)</text>
+
+  <!-- Delta annotation -->
+  <line x1="392" y1="120" x2="392" y2="134" stroke="#e11d48" stroke-width="1" stroke-dasharray="3,2"/>
+  <path d="M 394,120 L 394,134" stroke="none"/>
+  <rect x="890" y="104" width="120" height="28" rx="6" fill="#fef2f2" stroke="#e11d48" stroke-width="0.6"/>
+  <text x="900" y="122" class="insight">Δ = 10.1 cyc (23%)</text>
+  <text x="890" y="146" class="ann">Gap = tag CAM lookup + coherence check</text>
+
+  <!-- ═══════════ SECTION 2: BANDWIDTH ═══════════ -->
+  <text x="36" y="186" class="sect">BANDWIDTH · single-warp (higher is better)</text>
+  <line x1="36" y1="192" x2="520" y2="192" stroke="#e5e7eb" stroke-width="1"/>
+
+  <!-- L1 BW bar: 116.5 B/cyc → max scale -->
+  <text x="36" y="218" class="lbl">L1 peak</text>
+  <rect x="120" y="204" width="465" height="22" rx="4" fill="url(#barL1)"/>
+  <text x="592" y="220" class="val" fill="#2563eb">116.5 B/cyc</text>
+  <text x="700" y="220" class="lbl-sm">(b128 coalesced = 244 GB/s)</text>
+
+  <!-- Smem BW bar: 30.2 B/cyc → proportional -->
+  <text x="36" y="248" class="lbl">Smem</text>
+  <rect x="120" y="234" width="121" height="22" rx="4" fill="url(#barSm)"/>
+  <text x="248" y="250" class="val" fill="#059669">30.2 B/cyc</text>
+  <text x="346" y="250" class="lbl-sm">(b128 per warp)</text>
+
+  <!-- Ratio badge -->
+  <rect x="890" y="214" width="100" height="26" rx="6" fill="#1e40af"/>
+  <text x="900" y="232" class="badge">L1 = 3.86x BW</text>
+  <text x="890" y="256" class="ann">L1 benefits from 128B line prefetch</text>
+
+  <!-- ═══════════ SECTION 3: CAPACITY ═══════════ -->
+  <text x="36" y="296" class="sect">CAPACITY</text>
+  <line x1="36" y1="302" x2="520" y2="302" stroke="#e5e7eb" stroke-width="1"/>
+
+  <!-- L1 card -->
+  <rect x="36" y="312" width="250" height="90" rx="10" fill="url(#l1G)" stroke="#2563eb" stroke-width="0.8"/>
+  <text x="56" y="336" class="val-lg" fill="#2563eb">89 KB</text>
+  <text x="150" y="336" class="unit">effective</text>
+  <text x="56" y="358" class="feat">128B line · fully associative</text>
+  <text x="56" y="374" class="feat">~712 ways (= 89 KB / 128 B)</text>
+  <text x="56" y="390" class="feat-val">Zero conflict misses at any stride</text>
+
+  <!-- Smem card -->
+  <rect x="300" y="312" width="250" height="90" rx="10" fill="url(#smG)" stroke="#059669" stroke-width="0.8"/>
+  <text x="320" y="336" class="val-lg" fill="#059669">100 KB</text>
+  <text x="420" y="336" class="unit">total / SM</text>
+  <text x="320" y="358" class="feat">32 banks × 4B each</text>
+  <text x="320" y="374" class="feat">99 KB max opt-in (48 KB default)</text>
+  <text x="320" y="390" class="feat-val">32-way conflict: only 1.43x penalty</text>
+
+  <!-- Unified SRAM note -->
+  <rect x="564" y="312" width="250" height="90" rx="10" fill="#fefce8" stroke="#ca8a04" stroke-width="0.6"/>
+  <text x="584" y="332" class="lbl" fill="#92400e">Unified 100 KB SRAM</text>
+  <text x="584" y="352" class="feat">L1 + smem share the same physical</text>
+  <text x="584" y="368" class="feat">array with 1:1 byte carveout trade-off.</text>
+  <text x="584" y="384" class="feat">L1 disabled entirely at 64+ KB smem.</text>
+  <text x="584" y="396" class="lbl-sm">[S8/case_57, S24/case_4]</text>
+
+  <!-- ═══════════ SECTION 4: ARCHITECTURE FEATURES ═══════════ -->
+  <text x="36" y="430" class="sect">ARCHITECTURE HIGHLIGHTS</text>
+  <line x1="36" y1="436" x2="520" y2="436" stroke="#e5e7eb" stroke-width="1"/>
+
+  <!-- L1 features -->
+  <rect x="36" y="448" width="14" height="14" rx="3" fill="#2563eb"/>
+  <text x="56" y="460" class="feat">L1: fully-assoc tag CAM → zero conflict misses</text>
+
+  <rect x="36" y="468" width="14" height="14" rx="3" fill="#2563eb"/>
+  <text x="56" y="480" class="feat">L1: coherence protocol adds +10 cyc overhead vs smem</text>
+
+  <rect x="36" y="488" width="14" height="14" rx="3" fill="#2563eb"/>
+  <text x="56" y="500" class="feat">L1: peak 128 B/cyc @16 warps (SM-aggregate)</text>
+
+  <!-- Smem features -->
+  <rect x="540" y="448" width="14" height="14" rx="3" fill="#059669"/>
+  <text x="560" y="460" class="feat">Smem: pipelined bank-conflict resolution (not serialized)</text>
+
+  <rect x="540" y="468" width="14" height="14" rx="3" fill="#059669"/>
+  <text x="560" y="480" class="feat">Smem: XOR swizzle → 4.2x ldmatrix speedup</text>
+
+  <rect x="540" y="488" width="14" height="14" rx="3" fill="#059669"/>
+  <text x="560" y="500" class="feat">Smem: 64 B/cyc @8 warps (SM-aggregate, port-limited)</text>
+
+  <!-- Source -->
+  <text x="36" y="516" class="ann">[S8/case_1,4,10,19,21,28,52,53,54,56,63,74,119,142,168,193; S24/case_1,4,5,6; S26/case_7-9]</text>
+</svg>

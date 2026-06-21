@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 520" role="img"
+     aria-label="Agent ground truth — three-phase workflow: Profile → Diagnose → Optimize">
+  <defs>
+    <linearGradient id="phG1" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#E0E7FF"/>
+      <stop offset="1" stop-color="#EEF2FF"/>
+    </linearGradient>
+    <linearGradient id="phG2" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FEF3C7"/>
+      <stop offset="1" stop-color="#FFFBEB"/>
+    </linearGradient>
+    <linearGradient id="phG3" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#E9F3D2"/>
+      <stop offset="1" stop-color="#F4FAE2"/>
+    </linearGradient>
+    <linearGradient id="kbG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#EDE7FB"/>
+      <stop offset="1" stop-color="#F5F1FF"/>
+    </linearGradient>
+    <style><![CDATA[
+      .ttl{font:600 14px "Fraunces",serif;fill:#0b1220}
+      .sub{font:italic 11px "Fraunces",serif;fill:#5b6679}
+      .lbl{font:600 12px "JetBrains Mono",monospace;fill:#2a3548}
+      .lbl-sm{font:500 10px "JetBrains Mono",monospace;fill:#5b6679}
+      .ph{font:600 14px "Fraunces",serif;letter-spacing:-0.01em}
+      .kbCard{font:600 11px "JetBrains Mono",monospace;fill:#6d28d9}
+    ]]></style>
+    <marker id="arrA" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6 z" fill="#5b6679"/>
+    </marker>
+  </defs>
+  <rect width="1080" height="520" fill="#ffffff"/>
+  <text x="36" y="32" class="ttl">Agent Ground Truth · Three-Phase Workflow · Knowledge-Backed Operator Optimization</text>
+  <text x="36" y="52" class="sub">All numbers, thresholds, and decision rules sourced from the measured microbenchmark suite — no training-data priors</text>
+
+  <!-- Three phases -->
+  <g transform="translate(36,90)">
+    <!-- Phase 1: Profile -->
+    <g>
+      <rect x="0" y="0" width="316" height="160" rx="14" fill="url(#phG1)" stroke="#1e40af" stroke-width="0.8"/>
+      <rect x="0" y="0" width="316" height="3" rx="14" fill="#1e40af" opacity="0.7"/>
+      <text x="20" y="26" class="ph" fill="#1e40af">① Profile</text>
+      <text x="20" y="46" class="lbl-sm">Input · Kernel source + NCU report</text>
+      <text x="20" y="76" class="lbl">Extract:</text>
+      <text x="20" y="94" class="lbl-sm">• Instruction mix</text>
+      <text x="20" y="110" class="lbl-sm">• Memory access patterns</text>
+      <text x="20" y="126" class="lbl-sm">• Sync points / barriers</text>
+      <text x="20" y="142" class="lbl-sm">• Occupancy &amp; ILP</text>
+    </g>
+    <!-- arrow -->
+    <path d="M316 80 L364 80" stroke="#5b6679" stroke-width="2" fill="none" marker-end="url(#arrA)"/>
+
+    <!-- Phase 2: Diagnose -->
+    <g transform="translate(348,0)">
+      <rect x="0" y="0" width="316" height="160" rx="14" fill="url(#phG2)" stroke="#b45309" stroke-width="0.8"/>
+      <rect x="0" y="0" width="316" height="3" rx="14" fill="#b45309" opacity="0.7"/>
+      <text x="20" y="26" class="ph" fill="#b45309">② Diagnose</text>
+      <text x="20" y="46" class="lbl-sm">Input · Characterization vector</text>
+      <text x="20" y="76" class="lbl">Decision tree:</text>
+      <text x="20" y="94" class="lbl-sm">• Compute / memory / sync bound?</text>
+      <text x="20" y="110" class="lbl-sm">• Latency / throughput bottleneck?</text>
+      <text x="20" y="126" class="lbl-sm">• Predict vs actual perf gap</text>
+      <text x="20" y="142" class="lbl-sm">→ bottleneck classification</text>
+    </g>
+    <path d="M664 80 L712 80" stroke="#5b6679" stroke-width="2" fill="none" marker-end="url(#arrA)"/>
+
+    <!-- Phase 3: Optimize -->
+    <g transform="translate(696,0)">
+      <rect x="0" y="0" width="316" height="160" rx="14" fill="url(#phG3)" stroke="#5a8e00" stroke-width="0.8"/>
+      <rect x="0" y="0" width="316" height="3" rx="14" fill="#5a8e00" opacity="0.7"/>
+      <text x="20" y="26" class="ph" fill="#5a8e00">③ Optimize</text>
+      <text x="20" y="46" class="lbl-sm">Input · Bottleneck + constraints</text>
+      <text x="20" y="76" class="lbl">Generate:</text>
+      <text x="20" y="94" class="lbl-sm">• Strategy selection</text>
+      <text x="20" y="110" class="lbl-sm">• Code generation from templates</text>
+      <text x="20" y="126" class="lbl-sm">• Predict expected speedup</text>
+      <text x="20" y="142" class="lbl-sm">→ optimized kernel + validation</text>
+    </g>
+  </g>
+
+  <!-- Knowledge base -->
+  <g transform="translate(36,278)">
+    <rect x="0" y="0" width="1008" height="178" rx="14" fill="url(#kbG)" stroke="#6d28d9" stroke-width="0.8"/>
+    <text x="20" y="24" class="ph" fill="#6d28d9">Ground Truth Knowledge Base · 8 Queryable Tables</text>
+    <text x="20" y="40" class="lbl-sm" fill="#6d28d9">Agent must NOT fall back to training-data priors when a measured value exists</text>
+
+    <g transform="translate(20,56)">
+      <!-- 8 table cards 4x2 -->
+      <g><rect x="0"   y="0" width="232" height="50" rx="8" fill="#fff" stroke="#6d28d9" stroke-width="0.6"/><text x="14" y="20" class="kbCard">Table 1 · Instruction Latency</text><text x="14" y="38" class="lbl-sm">60+ entries, all functional units</text></g>
+      <g transform="translate(244,0)"><rect x="0" y="0" width="232" height="50" rx="8" fill="#fff" stroke="#6d28d9" stroke-width="0.6"/><text x="14" y="20" class="kbCard">Table 2 · Memory Hierarchy</text><text x="14" y="38" class="lbl-sm">L1, L2, DRAM, smem, DSMEM</text></g>
+      <g transform="translate(488,0)"><rect x="0" y="0" width="232" height="50" rx="8" fill="#fff" stroke="#6d28d9" stroke-width="0.6"/><text x="14" y="20" class="kbCard">Table 3 · Sync Cost Lookup</text><text x="14" y="38" class="lbl-sm">16 primitives</text></g>
+      <g transform="translate(732,0)"><rect x="0" y="0" width="232" height="50" rx="8" fill="#fff" stroke="#6d28d9" stroke-width="0.6"/><text x="14" y="20" class="kbCard">Table 4 · Co-Issue Matrix</text><text x="14" y="38" class="lbl-sm">14 pipe-pair overlap ratios</text></g>
+
+      <g transform="translate(0,60)"><rect x="0" y="0" width="232" height="50" rx="8" fill="#fff" stroke="#6d28d9" stroke-width="0.6"/><text x="14" y="20" class="kbCard">Table 5 · Roofline Params</text><text x="14" y="38" class="lbl-sm">Per-precision peak / AI*</text></g>
+      <g transform="translate(244,60)"><rect x="0" y="0" width="232" height="50" rx="8" fill="#fff" stroke="#6d28d9" stroke-width="0.6"/><text x="14" y="20" class="kbCard">Table 6 · Constraint DB</text><text x="14" y="38" class="lbl-sm">HW guardrails (no multicast etc.)</text></g>
+      <g transform="translate(488,60)"><rect x="0" y="0" width="232" height="50" rx="8" fill="#fff" stroke="#6d28d9" stroke-width="0.6"/><text x="14" y="20" class="kbCard">Table 7 · Pattern Templates</text><text x="14" y="38" class="lbl-sm">20+ code templates</text></g>
+      <g transform="translate(732,60)"><rect x="0" y="0" width="232" height="50" rx="8" fill="#fff" stroke="#6d28d9" stroke-width="0.6"/><text x="14" y="20" class="kbCard">Table 8 · Validation Criteria</text><text x="14" y="38" class="lbl-sm">Predict-vs-actual error bounds</text></g>
+    </g>
+  </g>
+
+  <!-- Validator feedback loop -->
+  <g transform="translate(36,478)">
+    <text x="0" y="14" class="lbl-sm">↻ Validator compares predicted-vs-actual; results feed back to refine the knowledge base on errors &gt; 20 % (compute) / 30 % (memory).</text>
+  </g>
+</svg>

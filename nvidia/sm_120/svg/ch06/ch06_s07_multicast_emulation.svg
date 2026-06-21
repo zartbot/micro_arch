@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 780" role="img" aria-label="6.1.5a TMA Multicast: Hardware (SM_100) vs Software Emulation (SM_120)">
+  <defs>
+    <marker id="ar" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto">
+      <path d="M0,0 L7,3.5 L0,7 Z" fill="#5b6679"/>
+    </marker>
+    <marker id="ar-green" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto">
+      <path d="M0,0 L7,3.5 L0,7 Z" fill="#16a34a"/>
+    </marker>
+    <marker id="ar-red" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto">
+      <path d="M0,0 L7,3.5 L0,7 Z" fill="#dc2626"/>
+    </marker>
+    <marker id="ar-blue" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto">
+      <path d="M0,0 L7,3.5 L0,7 Z" fill="#1e40af"/>
+    </marker>
+  </defs>
+  <rect width="1080" height="780" fill="#ffffff"/>
+
+  <!-- Title -->
+  <text x="36" y="30" style="font:600 14px 'Fraunces',serif;fill:#0b1220">6.1.5a TMA Multicast: Hardware Path (SM_100) vs Software Emulation (SM_120)</text>
+  <text x="36" y="48" style="font:italic 11px 'Fraunces',serif;fill:#5b6679">Contrasting data-flow architectures explaining the 3,300× multicast penalty on GB202</text>
+
+  <!-- ═══════════════ LEFT HALF: SM_100 Hardware Multicast ═══════════════ -->
+  <g transform="translate(20,66)">
+    <rect x="0" y="0" width="500" height="390" rx="10" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.2"/>
+    <text x="250" y="22" style="font:700 12px 'Fraunces',serif;fill:#166534" text-anchor="middle">SM_100 / SM_110 — Hardware Multicast (GB100/GB102)</text>
+    <text x="250" y="38" style="font:italic 9px 'JetBrains Mono',monospace;fill:#16a34a" text-anchor="middle">Single L2 read, hardware distributes to N destinations</text>
+
+    <!-- CTA 0 issues instruction -->
+    <rect x="160" y="54" width="180" height="36" rx="6" fill="#ffffff" stroke="#16a34a" stroke-width="1"/>
+    <text x="250" y="70" style="font:600 10px 'JetBrains Mono',monospace;fill:#166534" text-anchor="middle">CTA 0: UTMALDG.1D.MC</text>
+    <text x="250" y="84" style="font:500 8px 'JetBrains Mono',monospace;fill:#6b7280" text-anchor="middle">[desc], mask=0x3</text>
+
+    <!-- Arrow down to TMA -->
+    <line x1="250" y1="90" x2="250" y2="110" stroke="#16a34a" stroke-width="1.5" marker-end="url(#ar-green)"/>
+
+    <!-- TMA Engine -->
+    <rect x="170" y="112" width="160" height="30" rx="6" fill="#dcfce7" stroke="#16a34a" stroke-width="1"/>
+    <text x="250" y="132" style="font:600 10px 'JetBrains Mono',monospace;fill:#166534" text-anchor="middle">TMA Engine</text>
+
+    <!-- Arrow down to L2 -->
+    <line x1="250" y1="142" x2="250" y2="162" stroke="#16a34a" stroke-width="1.5" marker-end="url(#ar-green)"/>
+    <text x="315" y="156" style="font:500 8px 'JetBrains Mono',monospace;fill:#6b7280">1× L2 read</text>
+
+    <!-- L2 + LRC -->
+    <rect x="110" y="164" width="280" height="44" rx="6" fill="#bbf7d0" stroke="#16a34a" stroke-width="1.2"/>
+    <text x="250" y="182" style="font:700 10px 'JetBrains Mono',monospace;fill:#166534" text-anchor="middle">L2 Cache + LRC Multicast Table</text>
+    <text x="250" y="198" style="font:500 8px 'JetBrains Mono',monospace;fill:#374151" text-anchor="middle">Tracking table: per-SM write ptrs + completion counters</text>
+
+    <!-- Fan-out arrows from LRC to 3 CTAs -->
+    <line x1="180" y1="208" x2="80" y2="250" stroke="#16a34a" stroke-width="1.5" marker-end="url(#ar-green)"/>
+    <line x1="250" y1="208" x2="250" y2="250" stroke="#16a34a" stroke-width="1.5" marker-end="url(#ar-green)"/>
+    <line x1="320" y1="208" x2="420" y2="250" stroke="#16a34a" stroke-width="1.5" marker-end="url(#ar-green)"/>
+
+    <!-- 3 CTA smem boxes -->
+    <rect x="30" y="252" width="100" height="40" rx="5" fill="#ffffff" stroke="#86efac" stroke-width="0.8"/>
+    <text x="80" y="268" style="font:600 9px 'JetBrains Mono',monospace;fill:#166534" text-anchor="middle">CTA 0 smem</text>
+    <text x="80" y="282" style="font:500 7px 'JetBrains Mono',monospace;fill:#6b7280" text-anchor="middle">(DMA write)</text>
+
+    <rect x="200" y="252" width="100" height="40" rx="5" fill="#ffffff" stroke="#86efac" stroke-width="0.8"/>
+    <text x="250" y="268" style="font:600 9px 'JetBrains Mono',monospace;fill:#166534" text-anchor="middle">CTA 1 smem</text>
+    <text x="250" y="282" style="font:500 7px 'JetBrains Mono',monospace;fill:#6b7280" text-anchor="middle">(DMA write)</text>
+
+    <rect x="370" y="252" width="100" height="40" rx="5" fill="#ffffff" stroke="#86efac" stroke-width="0.8"/>
+    <text x="420" y="268" style="font:600 9px 'JetBrains Mono',monospace;fill:#166534" text-anchor="middle">CTA N smem</text>
+    <text x="420" y="282" style="font:500 7px 'JetBrains Mono',monospace;fill:#6b7280" text-anchor="middle">(DMA write)</text>
+
+    <!-- Cost summary box -->
+    <rect x="30" y="310" width="440" height="68" rx="6" fill="#ecfdf5" stroke="#16a34a" stroke-width="0.8"/>
+    <text x="50" y="328" style="font:700 10px 'JetBrains Mono',monospace;fill:#166534">Cost: 1 × TMA_latency</text>
+    <text x="50" y="346" style="font:500 9px 'JetBrains Mono',monospace;fill:#374151">• Single L2 cache line read (479 cyc for 1KB)</text>
+    <text x="50" y="362" style="font:500 9px 'JetBrains Mono',monospace;fill:#374151">• HW distributes to all targets simultaneously via GXBAR</text>
+    <text x="50" y="376" style="font:500 9px 'JetBrains Mono',monospace;fill:#16a34a">• BW savings: 1/K reduction (K = cluster size)</text>
+  </g>
+
+  <!-- ═══════════════ RIGHT HALF: SM_120 Software Emulation ═══════════════ -->
+  <g transform="translate(540,66)">
+    <rect x="0" y="0" width="520" height="390" rx="10" fill="#fef2f2" stroke="#dc2626" stroke-width="1.2"/>
+    <text x="260" y="22" style="font:700 12px 'Fraunces',serif;fill:#991b1b" text-anchor="middle">SM_120 — Software Emulation (GB202 Consumer Die)</text>
+    <text x="260" y="38" style="font:italic 9px 'JetBrains Mono',monospace;fill:#dc2626" text-anchor="middle">Firmware trap handler: iterates per-CTA unicast + DSMEM copy</text>
+
+    <!-- CTA 0 issues instruction -->
+    <rect x="170" y="54" width="180" height="36" rx="6" fill="#ffffff" stroke="#dc2626" stroke-width="1"/>
+    <text x="260" y="70" style="font:600 10px 'JetBrains Mono',monospace;fill:#991b1b" text-anchor="middle">CTA 0: CALL.ABS.NOINC</text>
+    <text x="260" y="84" style="font:500 8px 'JetBrains Mono',monospace;fill:#6b7280" text-anchor="middle">(trap to firmware routine)</text>
+
+    <!-- Arrow down to firmware -->
+    <line x1="260" y1="90" x2="260" y2="110" stroke="#dc2626" stroke-width="1.5" marker-end="url(#ar-red)"/>
+
+    <!-- Firmware loop box -->
+    <rect x="50" y="112" width="420" height="100" rx="6" fill="#fff1f2" stroke="#dc2626" stroke-width="1"/>
+    <text x="260" y="130" style="font:700 10px 'JetBrains Mono',monospace;fill:#991b1b" text-anchor="middle">Firmware Loop: for each target CTA in mask</text>
+    <line x1="70" y1="138" x2="450" y2="138" stroke="#fecaca" stroke-width="0.8"/>
+
+    <!-- Step 1: TMA unicast -->
+    <rect x="70" y="146" width="180" height="28" rx="4" fill="#ffffff" stroke="#fca5a5" stroke-width="0.8"/>
+    <text x="160" y="164" style="font:500 9px 'JetBrains Mono',monospace;fill:#374151" text-anchor="middle">① TMA unicast → local smem</text>
+
+    <!-- Step 2: DSMEM copy -->
+    <rect x="270" y="146" width="180" height="28" rx="4" fill="#ffffff" stroke="#fca5a5" stroke-width="0.8"/>
+    <text x="360" y="164" style="font:500 9px 'JetBrains Mono',monospace;fill:#374151" text-anchor="middle">② DSMEM copy → target smem</text>
+
+    <!-- Arrow between steps -->
+    <line x1="252" y1="160" x2="268" y2="160" stroke="#dc2626" stroke-width="1" marker-end="url(#ar-red)"/>
+
+    <!-- Loop annotation -->
+    <text x="260" y="200" style="font:500 8px 'JetBrains Mono',monospace;fill:#991b1b" text-anchor="middle">K iterations (K = popcount(mask)): each adds TMA_unicast + DSMEM_copy</text>
+
+    <!-- Results: multiple reads + DSMEM copies -->
+    <line x1="260" y1="212" x2="260" y2="230" stroke="#dc2626" stroke-width="1.5" marker-end="url(#ar-red)"/>
+
+    <!-- Multiple L2 reads -->
+    <rect x="70" y="232" width="180" height="34" rx="5" fill="#ffffff" stroke="#fca5a5" stroke-width="0.8"/>
+    <text x="160" y="248" style="font:600 9px 'JetBrains Mono',monospace;fill:#991b1b" text-anchor="middle">K × L2 Reads</text>
+    <text x="160" y="260" style="font:500 7px 'JetBrains Mono',monospace;fill:#6b7280" text-anchor="middle">(redundant traffic)</text>
+
+    <!-- Multiple DSMEM copies -->
+    <rect x="270" y="232" width="200" height="34" rx="5" fill="#ffffff" stroke="#fca5a5" stroke-width="0.8"/>
+    <text x="370" y="248" style="font:600 9px 'JetBrains Mono',monospace;fill:#991b1b" text-anchor="middle">K × DSMEM byte-copies</text>
+    <text x="370" y="260" style="font:500 7px 'JetBrains Mono',monospace;fill:#6b7280" text-anchor="middle">(~4,348 cyc/byte — dominates)</text>
+
+    <!-- Cost summary box -->
+    <rect x="30" y="280" width="460" height="100" rx="6" fill="#fef2f2" stroke="#dc2626" stroke-width="0.8"/>
+    <text x="50" y="298" style="font:700 10px 'JetBrains Mono',monospace;fill:#991b1b">Cost model (measured, linear regression):</text>
+    <text x="50" y="316" style="font:500 9px 'JetBrains Mono',monospace;fill:#374151">• Base overhead: ~97,000 cyc (firmware dispatch + setup)</text>
+    <text x="50" y="334" style="font:500 9px 'JetBrains Mono',monospace;fill:#374151">• Marginal cost: ~4,142 cyc/byte (DSMEM copy dominates 99.5%)</text>
+    <text x="50" y="352" style="font:500 9px 'JetBrains Mono',monospace;fill:#374151">• Total for 1KB tile: ~4,328,800 cyc (7,463× unicast penalty)</text>
+    <text x="50" y="370" style="font:700 9px 'JetBrains Mono',monospace;fill:#dc2626">• Self-only mask (0x1) still triggers emulation → HW cannot parse</text>
+  </g>
+
+  <!-- ═══════════════ BOTTOM: Comparison Summary ═══════════════ -->
+  <g transform="translate(20,474)">
+    <rect x="0" y="0" width="1040" height="300" rx="10" fill="#fafafa" stroke="#d1d5db" stroke-width="0.8"/>
+    <text x="20" y="24" style="font:600 13px 'Fraunces',serif;fill:#0b1220">Architectural Root Cause &amp; Evidence Summary</text>
+
+    <!-- Left: Die-level cause -->
+    <g transform="translate(20,40)">
+      <rect x="0" y="0" width="480" height="244" rx="6" fill="#EEF2FF" stroke="#1e40af" stroke-width="0.8"/>
+      <text x="10" y="18" style="font:700 10px 'JetBrains Mono',monospace;fill:#1e40af">Die-Level Root Cause</text>
+      <line x1="10" y1="24" x2="470" y2="24" stroke="#c7d2fe" stroke-width="0.6"/>
+      <text x="10" y="42" style="font:500 9px 'JetBrains Mono',monospace;fill:#374151">SM_100 (B200): LRC (L2 Residency Controller) contains</text>
+      <text x="10" y="58" style="font:500 9px 'JetBrains Mono',monospace;fill:#374151">multicast tracking table — per-SM write pointers, completion</text>
+      <text x="10" y="74" style="font:500 9px 'JetBrains Mono',monospace;fill:#374151">counters, buffer allocation state for in-flight multicasts.</text>
+      <text x="10" y="96" style="font:600 9px 'JetBrains Mono',monospace;fill:#dc2626">SM_120 (GB202): LRC multicast table ABSENT</text>
+      <text x="10" y="114" style="font:500 9px 'JetBrains Mono',monospace;fill:#374151">Hypothesis: die area repurposed for L2 capacity</text>
+      <text x="10" y="130" style="font:500 9px 'JetBrains Mono',monospace;fill:#374151">  GB202 L2 = 96 MB (50% larger than B200's 64 MB)</text>
+      <text x="10" y="146" style="font:500 9px 'JetBrains Mono',monospace;fill:#6b7280">  Consumer die trades cluster GEMM for L2 hit rate</text>
+      <text x="10" y="170" style="font:700 10px 'JetBrains Mono',monospace;fill:#1e40af">7 Independent Evidence Sources:</text>
+      <text x="10" y="188" style="font:500 8px 'JetBrains Mono',monospace;fill:#374151">① SASS: CALL.ABS.NOINC (SW trap), not UTMALDG</text>
+      <text x="10" y="202" style="font:500 8px 'JetBrains Mono',monospace;fill:#374151">② Self-only mask (0x1) still triggers emulation</text>
+      <text x="10" y="216" style="font:500 8px 'JetBrains Mono',monospace;fill:#374151">③ Constant penalty across cluster sizes (3300-3368×)</text>
+      <text x="10" y="230" style="font:500 8px 'JetBrains Mono',monospace;fill:#374151">④ CUTLASS: ClusterShape&lt;1,1,1&gt; static assertion</text>
+    </g>
+
+    <!-- Right: Impact table -->
+    <g transform="translate(520,40)">
+      <rect x="0" y="0" width="500" height="244" rx="6" fill="#FFF7ED" stroke="#c2410c" stroke-width="0.8"/>
+      <text x="10" y="18" style="font:700 10px 'JetBrains Mono',monospace;fill:#c2410c">GEMM Design Impact</text>
+      <line x1="10" y1="24" x2="490" y2="24" stroke="#fdba74" stroke-width="0.6"/>
+      <text x="10" y="44" style="font:600 9px 'JetBrains Mono',monospace;fill:#374151">SM_100 Cluster GEMM (with multicast):</text>
+      <text x="10" y="60" style="font:500 9px 'JetBrains Mono',monospace;fill:#374151">  1 L2 read of A-tile → shared across K CTAs</text>
+      <text x="10" y="76" style="font:500 9px 'JetBrains Mono',monospace;fill:#16a34a">  L2 BW for A-operand: 1/K reduction ✓</text>
+      <text x="10" y="98" style="font:600 9px 'JetBrains Mono',monospace;fill:#374151">SM_120 (no multicast):</text>
+      <text x="10" y="114" style="font:500 9px 'JetBrains Mono',monospace;fill:#374151">  Each CTA independently loads A-tile from L2/DRAM</text>
+      <text x="10" y="130" style="font:500 9px 'JetBrains Mono',monospace;fill:#dc2626">  L2 BW for A-operand: K× (cluster_size multiplier) ✗</text>
+      <text x="10" y="154" style="font:700 9px 'JetBrains Mono',monospace;fill:#c2410c">Recommended SM_120 strategy:</text>
+      <text x="10" y="172" style="font:500 9px 'JetBrains Mono',monospace;fill:#374151">• Cluster-2 for DSMEM-based KV sharing (FlashInfer MLA)</text>
+      <text x="10" y="188" style="font:500 9px 'JetBrains Mono',monospace;fill:#374151">• NOT for GEMM A-tile multicast</text>
+      <text x="10" y="204" style="font:500 9px 'JetBrains Mono',monospace;fill:#374151">• DSMEM workaround: unicast + st.async (+220 cyc/read)</text>
+      <text x="10" y="220" style="font:500 9px 'JetBrains Mono',monospace;fill:#374151">• Still cheaper than SW multicast (&gt;100K cyc)</text>
+      <text x="10" y="234" style="font:500 8px 'JetBrains Mono',monospace;fill:#6b7280">⑤ FlashInfer: "SM120 only ClusterShape 1x1x1"</text>
+    </g>
+  </g>
+</svg>

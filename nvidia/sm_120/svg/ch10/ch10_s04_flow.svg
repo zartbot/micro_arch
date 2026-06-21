@@ -1,0 +1,247 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 780" role="img"
+     aria-label="256 MB P2P Bandwidth Matrix — BAR Aperture Exhaustion Pattern">
+  <rect width="1080" height="780" fill="#ffffff"/>
+
+  <!-- Title -->
+  <text x="36" y="32" style="font:600 15px 'Fraunces',serif;fill:#0b1220">256 MB P2P Bandwidth Matrix — BAR Aperture Exhaustion Pattern</text>
+  <text x="36" y="52" style="font:italic 11px 'Fraunces',serif;fill:#5b6679">8-GPU full-mesh bandwidth (GB/s) showing catastrophic fallback when BAR1 aperture is exhausted</text>
+
+  <!-- Matrix layout constants: cell=72x52, origin at (140,80) -->
+  <!-- Column headers (Destination) -->
+  <text x="540" y="76" style="font:600 11px 'Fraunces',serif;fill:#5b6679" text-anchor="middle">Destination GPU</text>
+  <text x="180" y="96" style="font:600 11px 'JetBrains Mono',monospace;fill:#6d28d9" text-anchor="middle">GPU 0</text>
+  <text x="252" y="96" style="font:600 11px 'JetBrains Mono',monospace;fill:#6d28d9" text-anchor="middle">GPU 1</text>
+  <text x="324" y="96" style="font:600 11px 'JetBrains Mono',monospace;fill:#6d28d9" text-anchor="middle">GPU 2</text>
+  <text x="396" y="96" style="font:600 11px 'JetBrains Mono',monospace;fill:#6d28d9" text-anchor="middle">GPU 3</text>
+  <text x="486" y="96" style="font:600 11px 'JetBrains Mono',monospace;fill:#1e40af" text-anchor="middle">GPU 4</text>
+  <text x="558" y="96" style="font:600 11px 'JetBrains Mono',monospace;fill:#1e40af" text-anchor="middle">GPU 5</text>
+  <text x="630" y="96" style="font:600 11px 'JetBrains Mono',monospace;fill:#1e40af" text-anchor="middle">GPU 6</text>
+  <text x="702" y="96" style="font:600 11px 'JetBrains Mono',monospace;fill:#1e40af" text-anchor="middle">GPU 7</text>
+
+  <!-- NUMA labels -->
+  <rect x="144" y="100" width="288" height="16" rx="3" fill="#f5f1ff"/>
+  <text x="288" y="112" style="font:500 9px 'JetBrains Mono',monospace;fill:#6d28d9" text-anchor="middle">NUMA 0</text>
+  <rect x="450" y="100" width="288" height="16" rx="3" fill="#eff6ff"/>
+  <text x="594" y="112" style="font:500 9px 'JetBrains Mono',monospace;fill:#1e40af" text-anchor="middle">NUMA 1</text>
+
+  <!-- Row headers (Source) -->
+  <text x="70" y="340" style="font:600 11px 'Fraunces',serif;fill:#5b6679" text-anchor="middle" transform="rotate(-90,70,340)">Source GPU</text>
+  <text x="120" y="140" style="font:600 10px 'JetBrains Mono',monospace;fill:#6d28d9" text-anchor="end">GPU 0</text>
+  <text x="120" y="192" style="font:600 10px 'JetBrains Mono',monospace;fill:#6d28d9" text-anchor="end">GPU 1</text>
+  <text x="120" y="244" style="font:600 10px 'JetBrains Mono',monospace;fill:#6d28d9" text-anchor="end">GPU 2</text>
+  <text x="120" y="296" style="font:600 10px 'JetBrains Mono',monospace;fill:#6d28d9" text-anchor="end">GPU 3</text>
+  <text x="120" y="360" style="font:600 10px 'JetBrains Mono',monospace;fill:#1e40af" text-anchor="end">GPU 4</text>
+  <text x="120" y="412" style="font:600 10px 'JetBrains Mono',monospace;fill:#1e40af" text-anchor="end">GPU 5</text>
+  <text x="120" y="464" style="font:600 10px 'JetBrains Mono',monospace;fill:#1e40af" text-anchor="end">GPU 6</text>
+  <text x="120" y="516" style="font:600 10px 'JetBrains Mono',monospace;fill:#1e40af" text-anchor="end">GPU 7</text>
+
+  <!-- NUMA divider (vertical between col 3 and col 4) -->
+  <line x1="438" y1="118" x2="438" y2="540" stroke="#0b1220" stroke-width="2.5"/>
+  <!-- NUMA divider (horizontal between row 3 and row 4) -->
+  <line x1="134" y1="322" x2="740" y2="322" stroke="#0b1220" stroke-width="2.5"/>
+
+  <!-- ═══════ ROW 0: GPU0 → all ═══════ -->
+  <!-- GPU0→GPU0 (diagonal) -->
+  <rect x="144" y="122" width="72" height="52" fill="#f1f5f9"/>
+  <text x="180" y="152" style="font:600 11px 'JetBrains Mono',monospace;fill:#94a3b8" text-anchor="middle">--</text>
+  <!-- GPU0→GPU1 (intra, good) -->
+  <rect x="216" y="122" width="72" height="52" fill="#d9f99d"/>
+  <text x="252" y="152" style="font:600 11px 'JetBrains Mono',monospace;fill:#0b1220" text-anchor="middle">55.87</text>
+  <!-- GPU0→GPU2 -->
+  <rect x="288" y="122" width="72" height="52" fill="#d9f99d"/>
+  <text x="324" y="152" style="font:600 11px 'JetBrains Mono',monospace;fill:#0b1220" text-anchor="middle">55.92</text>
+  <!-- GPU0→GPU3 -->
+  <rect x="360" y="122" width="72" height="52" fill="#d9f99d"/>
+  <text x="396" y="152" style="font:600 11px 'JetBrains Mono',monospace;fill:#0b1220" text-anchor="middle">55.97</text>
+  <!-- GPU0→GPU4 (cross, ok) -->
+  <rect x="450" y="122" width="72" height="52" fill="#fef08a"/>
+  <text x="486" y="152" style="font:600 11px 'JetBrains Mono',monospace;fill:#0b1220" text-anchor="middle">41.47</text>
+  <!-- GPU0→GPU5 -->
+  <rect x="522" y="122" width="72" height="52" fill="#fef08a"/>
+  <text x="558" y="152" style="font:600 11px 'JetBrains Mono',monospace;fill:#0b1220" text-anchor="middle">41.16</text>
+  <!-- GPU0→GPU6 -->
+  <rect x="594" y="122" width="72" height="52" fill="#fef08a"/>
+  <text x="630" y="152" style="font:600 11px 'JetBrains Mono',monospace;fill:#0b1220" text-anchor="middle">39.53</text>
+  <!-- GPU0→GPU7 -->
+  <rect x="666" y="122" width="72" height="52" fill="#fef08a"/>
+  <text x="702" y="152" style="font:600 11px 'JetBrains Mono',monospace;fill:#0b1220" text-anchor="middle">41.94</text>
+
+  <!-- ═══════ ROW 1: GPU1 → all ═══════ -->
+  <rect x="144" y="174" width="72" height="52" fill="#d9f99d"/>
+  <text x="180" y="204" style="font:600 11px 'JetBrains Mono',monospace;fill:#0b1220" text-anchor="middle">55.09</text>
+  <rect x="216" y="174" width="72" height="52" fill="#f1f5f9"/>
+  <text x="252" y="204" style="font:600 11px 'JetBrains Mono',monospace;fill:#94a3b8" text-anchor="middle">--</text>
+  <rect x="288" y="174" width="72" height="52" fill="#d9f99d"/>
+  <text x="324" y="204" style="font:600 11px 'JetBrains Mono',monospace;fill:#0b1220" text-anchor="middle">55.71</text>
+  <rect x="360" y="174" width="72" height="52" fill="#d9f99d"/>
+  <text x="396" y="204" style="font:600 11px 'JetBrains Mono',monospace;fill:#0b1220" text-anchor="middle">55.99</text>
+  <rect x="450" y="174" width="72" height="52" fill="#fef08a"/>
+  <text x="486" y="204" style="font:600 11px 'JetBrains Mono',monospace;fill:#0b1220" text-anchor="middle">40.80</text>
+  <rect x="522" y="174" width="72" height="52" fill="#fef08a"/>
+  <text x="558" y="204" style="font:600 11px 'JetBrains Mono',monospace;fill:#0b1220" text-anchor="middle">40.86</text>
+  <rect x="594" y="174" width="72" height="52" fill="#fef08a"/>
+  <text x="630" y="204" style="font:600 11px 'JetBrains Mono',monospace;fill:#0b1220" text-anchor="middle">39.82</text>
+  <rect x="666" y="174" width="72" height="52" fill="#fef08a"/>
+  <text x="702" y="204" style="font:600 11px 'JetBrains Mono',monospace;fill:#0b1220" text-anchor="middle">40.99</text>
+
+  <!-- ═══════ ROW 2: GPU2 → all ═══════ -->
+  <rect x="144" y="226" width="72" height="52" fill="#d9f99d"/>
+  <text x="180" y="256" style="font:600 11px 'JetBrains Mono',monospace;fill:#0b1220" text-anchor="middle">55.16</text>
+  <rect x="216" y="226" width="72" height="52" fill="#d9f99d"/>
+  <text x="252" y="256" style="font:600 11px 'JetBrains Mono',monospace;fill:#0b1220" text-anchor="middle">55.66</text>
+  <rect x="288" y="226" width="72" height="52" fill="#f1f5f9"/>
+  <text x="324" y="256" style="font:600 11px 'JetBrains Mono',monospace;fill:#94a3b8" text-anchor="middle">--</text>
+  <rect x="360" y="226" width="72" height="52" fill="#d9f99d"/>
+  <text x="396" y="256" style="font:600 11px 'JetBrains Mono',monospace;fill:#0b1220" text-anchor="middle">55.78</text>
+  <rect x="450" y="226" width="72" height="52" fill="#fef08a"/>
+  <text x="486" y="256" style="font:600 11px 'JetBrains Mono',monospace;fill:#0b1220" text-anchor="middle">41.99</text>
+  <rect x="522" y="226" width="72" height="52" fill="#fef08a"/>
+  <text x="558" y="256" style="font:600 11px 'JetBrains Mono',monospace;fill:#0b1220" text-anchor="middle">39.75</text>
+  <rect x="594" y="226" width="72" height="52" fill="#fef08a"/>
+  <text x="630" y="256" style="font:600 11px 'JetBrains Mono',monospace;fill:#0b1220" text-anchor="middle">41.15</text>
+  <rect x="666" y="226" width="72" height="52" fill="#fef08a"/>
+  <text x="702" y="256" style="font:600 11px 'JetBrains Mono',monospace;fill:#0b1220" text-anchor="middle">41.61</text>
+
+  <!-- ═══════ ROW 3: GPU3 → all (PARTIALLY FAILED) ═══════ -->
+  <rect x="144" y="278" width="72" height="52" fill="#d9f99d"/>
+  <text x="180" y="308" style="font:600 11px 'JetBrains Mono',monospace;fill:#0b1220" text-anchor="middle">55.24</text>
+  <rect x="216" y="278" width="72" height="52" fill="#d9f99d"/>
+  <text x="252" y="308" style="font:600 11px 'JetBrains Mono',monospace;fill:#0b1220" text-anchor="middle">54.91</text>
+  <rect x="288" y="278" width="72" height="52" fill="#d9f99d"/>
+  <text x="324" y="308" style="font:600 11px 'JetBrains Mono',monospace;fill:#0b1220" text-anchor="middle">55.60</text>
+  <rect x="360" y="278" width="72" height="52" fill="#f1f5f9"/>
+  <text x="396" y="308" style="font:600 11px 'JetBrains Mono',monospace;fill:#94a3b8" text-anchor="middle">--</text>
+  <!-- GPU3→NUMA1: ALL FAILED (red) -->
+  <rect x="450" y="278" width="72" height="52" fill="#fecaca"/>
+  <text x="486" y="308" style="font:700 11px 'JetBrains Mono',monospace;fill:#e11d48" text-anchor="middle">7.17</text>
+  <rect x="522" y="278" width="72" height="52" fill="#fecaca"/>
+  <text x="558" y="308" style="font:700 11px 'JetBrains Mono',monospace;fill:#e11d48" text-anchor="middle">7.18</text>
+  <rect x="594" y="278" width="72" height="52" fill="#fecaca"/>
+  <text x="630" y="308" style="font:700 11px 'JetBrains Mono',monospace;fill:#e11d48" text-anchor="middle">7.18</text>
+  <rect x="666" y="278" width="72" height="52" fill="#fecaca"/>
+  <text x="702" y="308" style="font:700 11px 'JetBrains Mono',monospace;fill:#e11d48" text-anchor="middle">7.18</text>
+
+  <!-- ═══════ ROW 4: GPU4 (MOSTLY FAILED) ═══════ -->
+  <rect x="144" y="334" width="72" height="52" fill="#fecaca"/>
+  <text x="180" y="364" style="font:700 11px 'JetBrains Mono',monospace;fill:#e11d48" text-anchor="middle">7.18</text>
+  <rect x="216" y="334" width="72" height="52" fill="#fecaca"/>
+  <text x="252" y="364" style="font:700 11px 'JetBrains Mono',monospace;fill:#e11d48" text-anchor="middle">7.19</text>
+  <rect x="288" y="334" width="72" height="52" fill="#fecaca"/>
+  <text x="324" y="364" style="font:700 11px 'JetBrains Mono',monospace;fill:#e11d48" text-anchor="middle">7.18</text>
+  <rect x="360" y="334" width="72" height="52" fill="#fef08a"/>
+  <text x="396" y="364" style="font:600 11px 'JetBrains Mono',monospace;fill:#0b1220" text-anchor="middle">38.93</text>
+  <rect x="432" y="334" width="0" height="0"/>
+  <rect x="450" y="334" width="72" height="52" fill="#f1f5f9"/>
+  <text x="486" y="364" style="font:600 11px 'JetBrains Mono',monospace;fill:#94a3b8" text-anchor="middle">--</text>
+  <rect x="522" y="334" width="72" height="52" fill="#fecaca"/>
+  <text x="558" y="364" style="font:700 11px 'JetBrains Mono',monospace;fill:#e11d48" text-anchor="middle">7.19</text>
+  <rect x="594" y="334" width="72" height="52" fill="#fecaca"/>
+  <text x="630" y="364" style="font:700 11px 'JetBrains Mono',monospace;fill:#e11d48" text-anchor="middle">7.18</text>
+  <rect x="666" y="334" width="72" height="52" fill="#fecaca"/>
+  <text x="702" y="364" style="font:700 11px 'JetBrains Mono',monospace;fill:#e11d48" text-anchor="middle">7.18</text>
+
+  <!-- ═══════ ROW 5: GPU5 (MOSTLY FAILED) ═══════ -->
+  <rect x="144" y="386" width="72" height="52" fill="#fecaca"/>
+  <text x="180" y="416" style="font:700 11px 'JetBrains Mono',monospace;fill:#e11d48" text-anchor="middle">7.17</text>
+  <rect x="216" y="386" width="72" height="52" fill="#fecaca"/>
+  <text x="252" y="416" style="font:700 11px 'JetBrains Mono',monospace;fill:#e11d48" text-anchor="middle">7.18</text>
+  <rect x="288" y="386" width="72" height="52" fill="#fecaca"/>
+  <text x="324" y="416" style="font:700 11px 'JetBrains Mono',monospace;fill:#e11d48" text-anchor="middle">7.17</text>
+  <rect x="360" y="386" width="72" height="52" fill="#fecaca"/>
+  <text x="396" y="416" style="font:700 11px 'JetBrains Mono',monospace;fill:#e11d48" text-anchor="middle">7.17</text>
+  <rect x="450" y="386" width="72" height="52" fill="#d9f99d"/>
+  <text x="486" y="416" style="font:600 11px 'JetBrains Mono',monospace;fill:#0b1220" text-anchor="middle">55.91</text>
+  <rect x="522" y="386" width="72" height="52" fill="#f1f5f9"/>
+  <text x="558" y="416" style="font:600 11px 'JetBrains Mono',monospace;fill:#94a3b8" text-anchor="middle">--</text>
+  <rect x="594" y="386" width="72" height="52" fill="#fecaca"/>
+  <text x="630" y="416" style="font:700 11px 'JetBrains Mono',monospace;fill:#e11d48" text-anchor="middle">7.17</text>
+  <rect x="666" y="386" width="72" height="52" fill="#fecaca"/>
+  <text x="702" y="416" style="font:700 11px 'JetBrains Mono',monospace;fill:#e11d48" text-anchor="middle">7.19</text>
+
+  <!-- ═══════ ROW 6: GPU6 (ALL FAILED except self) ═══════ -->
+  <rect x="144" y="438" width="72" height="52" fill="#fecaca"/>
+  <text x="180" y="468" style="font:700 11px 'JetBrains Mono',monospace;fill:#e11d48" text-anchor="middle">7.18</text>
+  <rect x="216" y="438" width="72" height="52" fill="#fecaca"/>
+  <text x="252" y="468" style="font:700 11px 'JetBrains Mono',monospace;fill:#e11d48" text-anchor="middle">7.18</text>
+  <rect x="288" y="438" width="72" height="52" fill="#fecaca"/>
+  <text x="324" y="468" style="font:700 11px 'JetBrains Mono',monospace;fill:#e11d48" text-anchor="middle">7.18</text>
+  <rect x="360" y="438" width="72" height="52" fill="#fecaca"/>
+  <text x="396" y="468" style="font:700 11px 'JetBrains Mono',monospace;fill:#e11d48" text-anchor="middle">7.18</text>
+  <rect x="450" y="438" width="72" height="52" fill="#fecaca"/>
+  <text x="486" y="468" style="font:700 11px 'JetBrains Mono',monospace;fill:#e11d48" text-anchor="middle">7.18</text>
+  <rect x="522" y="438" width="72" height="52" fill="#fecaca"/>
+  <text x="558" y="468" style="font:700 11px 'JetBrains Mono',monospace;fill:#e11d48" text-anchor="middle">7.17</text>
+  <rect x="594" y="438" width="72" height="52" fill="#f1f5f9"/>
+  <text x="630" y="468" style="font:600 11px 'JetBrains Mono',monospace;fill:#94a3b8" text-anchor="middle">--</text>
+  <rect x="666" y="438" width="72" height="52" fill="#fecaca"/>
+  <text x="702" y="468" style="font:700 11px 'JetBrains Mono',monospace;fill:#e11d48" text-anchor="middle">7.18</text>
+
+  <!-- ═══════ ROW 7: GPU7 (ALL FAILED except self) ═══════ -->
+  <rect x="144" y="490" width="72" height="52" fill="#fecaca"/>
+  <text x="180" y="520" style="font:700 11px 'JetBrains Mono',monospace;fill:#e11d48" text-anchor="middle">7.18</text>
+  <rect x="216" y="490" width="72" height="52" fill="#fecaca"/>
+  <text x="252" y="520" style="font:700 11px 'JetBrains Mono',monospace;fill:#e11d48" text-anchor="middle">7.17</text>
+  <rect x="288" y="490" width="72" height="52" fill="#fecaca"/>
+  <text x="324" y="520" style="font:700 11px 'JetBrains Mono',monospace;fill:#e11d48" text-anchor="middle">7.18</text>
+  <rect x="360" y="490" width="72" height="52" fill="#fecaca"/>
+  <text x="396" y="520" style="font:700 11px 'JetBrains Mono',monospace;fill:#e11d48" text-anchor="middle">7.17</text>
+  <rect x="450" y="490" width="72" height="52" fill="#fecaca"/>
+  <text x="486" y="520" style="font:700 11px 'JetBrains Mono',monospace;fill:#e11d48" text-anchor="middle">7.18</text>
+  <rect x="522" y="490" width="72" height="52" fill="#fecaca"/>
+  <text x="558" y="520" style="font:700 11px 'JetBrains Mono',monospace;fill:#e11d48" text-anchor="middle">7.18</text>
+  <rect x="594" y="490" width="72" height="52" fill="#fecaca"/>
+  <text x="630" y="520" style="font:700 11px 'JetBrains Mono',monospace;fill:#e11d48" text-anchor="middle">7.14</text>
+  <rect x="666" y="490" width="72" height="52" fill="#f1f5f9"/>
+  <text x="702" y="520" style="font:600 11px 'JetBrains Mono',monospace;fill:#94a3b8" text-anchor="middle">--</text>
+
+  <!-- ═══════ LEGEND ═══════ -->
+  <rect x="780" y="122" width="260" height="200" rx="8" fill="#fcfbf6" stroke="#e6e4da" stroke-width="1"/>
+  <text x="910" y="146" style="font:600 12px 'Fraunces',serif;fill:#0b1220" text-anchor="middle">Legend (GB/s)</text>
+  <!-- Green -->
+  <rect x="800" y="158" width="28" height="18" rx="3" fill="#d9f99d"/>
+  <text x="840" y="172" style="font:500 10px 'JetBrains Mono',monospace;fill:#0b1220">54-56: Intra-NUMA (normal)</text>
+  <!-- Yellow -->
+  <rect x="800" y="184" width="28" height="18" rx="3" fill="#fef08a"/>
+  <text x="840" y="198" style="font:500 10px 'JetBrains Mono',monospace;fill:#0b1220">38-42: Cross-NUMA (normal)</text>
+  <!-- Red -->
+  <rect x="800" y="210" width="28" height="18" rx="3" fill="#fecaca"/>
+  <text x="840" y="224" style="font:500 10px 'JetBrains Mono',monospace;fill:#0b1220">7.1-7.2: BAR EXHAUSTED</text>
+  <!-- Gray -->
+  <rect x="800" y="236" width="28" height="18" rx="3" fill="#f1f5f9"/>
+  <text x="840" y="250" style="font:500 10px 'JetBrains Mono',monospace;fill:#0b1220">-- : Self (diagonal)</text>
+
+  <text x="910" y="278" style="font:italic 10px 'Fraunces',serif;fill:#e11d48" text-anchor="middle">7.18 GB/s = host-bounce fallback</text>
+  <text x="910" y="294" style="font:italic 10px 'Fraunces',serif;fill:#e11d48" text-anchor="middle">(87% bandwidth loss)</text>
+
+  <!-- Cascade annotation -->
+  <rect x="780" y="340" width="260" height="120" rx="8" fill="#fef2f2" stroke="#e11d48" stroke-width="1"/>
+  <text x="910" y="364" style="font:600 11px 'Fraunces',serif;fill:#e11d48" text-anchor="middle">Exhaustion Cascade</text>
+  <text x="800" y="386" style="font:500 10px 'JetBrains Mono',monospace;fill:#0b1220">GPU 0-2: All pairs OK</text>
+  <text x="800" y="404" style="font:500 10px 'JetBrains Mono',monospace;fill:#0b1220">GPU 3:   Cross-NUMA fails</text>
+  <text x="800" y="422" style="font:500 10px 'JetBrains Mono',monospace;fill:#0b1220">GPU 4:   Most pairs fail</text>
+  <text x="800" y="440" style="font:500 10px 'JetBrains Mono',monospace;fill:#0b1220">GPU 5-7: Nearly all fail</text>
+
+  <!-- ═══════ BOTTOM SUMMARY ═══════ -->
+  <rect x="40" y="560" width="1000" height="90" rx="8" fill="#fcfbf6" stroke="#e6e4da" stroke-width="1"/>
+  <line x1="380" y1="570" x2="380" y2="640" stroke="#e6e4da" stroke-width="0.8"/>
+  <line x1="700" y1="570" x2="700" y2="640" stroke="#e6e4da" stroke-width="0.8"/>
+
+  <!-- Metric 1 -->
+  <text x="210" y="586" style="font:600 11px 'Fraunces',serif;fill:#5b6679" text-anchor="middle">BAR1 Aperture Limit</text>
+  <text x="210" y="612" style="font:600 20px 'JetBrains Mono',monospace;fill:#e11d48" text-anchor="middle">256 MB</text>
+  <text x="210" y="632" style="font:500 10px 'JetBrains Mono',monospace;fill:#5b6679" text-anchor="middle">per-GPU BAR mapping budget</text>
+
+  <!-- Metric 2 -->
+  <text x="540" y="586" style="font:600 11px 'Fraunces',serif;fill:#5b6679" text-anchor="middle">Fallback Bandwidth</text>
+  <text x="540" y="612" style="font:600 20px 'JetBrains Mono',monospace;fill:#e11d48" text-anchor="middle">7.18 GB/s</text>
+  <text x="540" y="632" style="font:500 10px 'JetBrains Mono',monospace;fill:#5b6679" text-anchor="middle">host-memory bounce (87% loss)</text>
+
+  <!-- Metric 3 -->
+  <text x="860" y="586" style="font:600 11px 'Fraunces',serif;fill:#5b6679" text-anchor="middle">Affected Pairs</text>
+  <text x="860" y="612" style="font:600 20px 'JetBrains Mono',monospace;fill:#e11d48" text-anchor="middle">33 / 56</text>
+  <text x="860" y="632" style="font:500 10px 'JetBrains Mono',monospace;fill:#5b6679" text-anchor="middle">59% of full-mesh degraded</text>
+
+  <!-- Source -->
+  <text x="540" y="676" style="font:500 10px 'JetBrains Mono',monospace;fill:#5b6679" text-anchor="middle">Source: S15/case_5 | FIFO BAR allocation across GPU-pair enable order</text>
+</svg>

@@ -1,0 +1,199 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 460" font-family="'IBM Plex Sans','SF Pro Display',system-ui,sans-serif">
+<defs>
+  <style>
+    .panel { fill: #fff; stroke: #e6e4da; stroke-width: 1; rx: 12; }
+    .panel-label { font-family: 'JetBrains Mono','IBM Plex Mono',monospace; font-size: 9.5px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; fill: #8e97a5; }
+    .big-num { font-family: 'Fraunces',Georgia,serif; font-size: 48px; font-weight: 600; fill: #0b1220; }
+    .mid-num { font-family: 'Fraunces',Georgia,serif; font-size: 28px; font-weight: 600; fill: #0b1220; }
+    .small-num { font-family: 'Fraunces',Georgia,serif; font-size: 17px; font-weight: 600; fill: #0b1220; }
+    .unit { font-family: 'IBM Plex Sans',sans-serif; font-size: 13px; font-weight: 500; fill: #5b6679; }
+    .desc { font-family: 'IBM Plex Sans',sans-serif; font-size: 11px; fill: #8e97a5; }
+    .mono-sm { font-family: 'JetBrains Mono',monospace; font-size: 11px; fill: #5b6679; }
+    .mono-xs { font-family: 'JetBrains Mono',monospace; font-size: 9.5px; fill: #8e97a5; }
+    .hier-box { fill: #f6f4ed; stroke: #e6e4da; stroke-width: 1; rx: 6; }
+    .bar-bg { fill: #f0efe8; rx: 3; }
+    .bar-fill-green { fill: #76b900; rx: 3; }
+    .bar-fill-blue { fill: #1e40af; rx: 3; }
+    .accent { fill: #76b900; }
+    .accent-text { fill: #5a8e00; }
+  </style>
+  <linearGradient id="tdp-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+    <stop offset="0%" stop-color="#76b900"/>
+    <stop offset="70%" stop-color="#fbbf24"/>
+    <stop offset="100%" stop-color="#ef4444"/>
+  </linearGradient>
+</defs>
+
+<!-- Background -->
+<rect width="1100" height="460" fill="#fcfbf6" rx="16"/>
+
+<!-- ==================== Row 1 ==================== -->
+
+<!-- Panel 1: SM COUNT -->
+<rect class="panel" x="20" y="20" width="200" height="200"/>
+<text class="panel-label" x="40" y="46">SM COUNT</text>
+<!-- Ring gauge -->
+<circle cx="120" cy="125" r="52" fill="none" stroke="#f0efe8" stroke-width="10"/>
+<circle cx="120" cy="125" r="52" fill="none" stroke="#76b900" stroke-width="10" stroke-dasharray="295 327" stroke-dashoffset="-16" stroke-linecap="round" opacity="0.85"/>
+<text class="big-num" x="120" y="142" text-anchor="middle">110</text>
+<text class="mono-sm" x="120" y="195" text-anchor="middle">smid [0, 109]</text>
+
+<!-- Panel 2: HIERARCHY -->
+<rect class="panel" x="232" y="20" width="280" height="200"/>
+<text class="panel-label" x="252" y="46">HIERARCHY</text>
+<!-- Hierarchy boxes -->
+<rect class="hier-box" x="252" y="62" width="240" height="28"/>
+<text class="mono-sm" x="264" y="81">11 GPC</text>
+<text class="mono-sm" x="414" y="81" text-anchor="end">10 SM/GPC</text>
+<rect class="hier-box" x="252" y="98" width="240" height="28"/>
+<text class="mono-sm" x="264" y="117">55 TPC</text>
+<text class="mono-sm" x="414" y="117" text-anchor="end">2 SM/TPC</text>
+<rect class="hier-box" x="252" y="134" width="240" height="28"/>
+<text class="mono-sm" x="264" y="153">110 SM</text>
+<text class="mono-sm" x="414" y="153" text-anchor="end">4 sub-core/SM</text>
+<rect class="hier-box" x="252" y="170" width="240" height="28"/>
+<text class="mono-sm" x="264" y="189">1536 threads/SM</text>
+<text class="mono-sm" x="444" y="189" text-anchor="end">48 warps/SM</text>
+
+<!-- Panel 3: BOOST CLOCK -->
+<rect class="panel" x="524" y="20" width="260" height="200"/>
+<text class="panel-label" x="544" y="46">BOOST CLOCK · GHz</text>
+<!-- Linear gauge -->
+<rect x="544" y="68" width="220" height="6" rx="3" fill="#f0efe8"/>
+<rect x="544" y="68" width="196" height="6" rx="3" fill="#76b900" opacity="0.7"/>
+<!-- Tick marks -->
+<text class="mono-xs" x="544" y="88">0.6</text>
+<text class="mono-xs" x="756" y="88" text-anchor="end">2.58 (lock)</text>
+<!-- Big number -->
+<text class="mid-num" x="544" y="130" font-size="42">2.57</text>
+<text class="unit" x="654" y="130">GHz</text>
+<text class="desc" x="544" y="152">locked via nvidia-smi -lgc 2572</text>
+<!-- Base boost -->
+<text class="mono-sm" x="544" y="180">Base boost: 2377 MHz</text>
+<text class="mono-sm" x="544" y="198">Free boost mean: 2542 MHz</text>
+
+<!-- Panel 4: DRAM BANDWIDTH -->
+<rect class="panel" x="796" y="20" width="284" height="200"/>
+<text class="panel-label" x="816" y="46">DRAM BANDWIDTH · GB/s</text>
+<!-- Theoretical -->
+<text class="mono-sm" x="816" y="76">Theoretical · 1344</text>
+<rect class="bar-bg" x="816" y="84" width="244" height="10"/>
+<rect class="bar-fill-green" x="816" y="84" width="244" height="10"/>
+<!-- Measured -->
+<text class="mono-sm" x="816" y="120">Measured · 1231 (91.6%)</text>
+<rect class="bar-bg" x="816" y="128" width="244" height="10"/>
+<rect class="bar-fill-green" x="816" y="128" width="224" height="10" opacity="0.7"/>
+<!-- Peak -->
+<text class="mono-sm" x="816" y="164">Peak observed · 1292 (96.1%)</text>
+<rect class="bar-bg" x="816" y="172" width="244" height="10"/>
+<rect class="bar-fill-green" x="816" y="172" width="234" height="10" opacity="0.55"/>
+<!-- Note -->
+<text class="desc" x="816" y="205">384-bit bus · GDDR7 · 28 Gbps/pin</text>
+
+<!-- ==================== Row 2 ==================== -->
+
+<!-- Panel 5: MEMORY SYSTEM -->
+<rect class="panel" x="20" y="236" width="340" height="200"/>
+<text class="panel-label" x="40" y="262">MEMORY SYSTEM</text>
+<!-- Memory stats grid -->
+<text class="small-num" x="40" y="298">72</text>
+<text class="unit" x="68" y="298">GB</text>
+<text class="desc" x="40" y="314">GDDR7 capacity</text>
+
+<text class="small-num" x="150" y="298">384</text>
+<text class="unit" x="186" y="298">bit</text>
+<text class="desc" x="150" y="314">bus width</text>
+
+<text class="small-num" x="250" y="298">12</text>
+<text class="unit" x="274" y="298">MC</text>
+<text class="desc" x="250" y="314">controllers</text>
+
+<!-- L2 -->
+<text class="small-num" x="40" y="358">96</text>
+<text class="unit" x="68" y="358">MB</text>
+<text class="desc" x="40" y="374">L2 cache</text>
+
+<text class="small-num" x="150" y="358">12</text>
+<text class="unit" x="174" y="358">partitions</text>
+<text class="desc" x="150" y="374">8 MB each</text>
+
+<text class="small-num" x="250" y="358">28</text>
+<text class="unit" x="278" y="358">Gbps</text>
+<text class="desc" x="250" y="374">per pin</text>
+
+<!-- ECC badge -->
+<rect x="40" y="396" width="52" height="20" rx="10" fill="#e9f3d2"/>
+<text class="accent-text" x="66" y="410" text-anchor="middle" font-size="10" font-weight="600">ECC ON</text>
+
+<!-- Panel 6: ON-CHIP CAPACITY -->
+<rect class="panel" x="372" y="236" width="360" height="200"/>
+<text class="panel-label" x="392" y="262">ON-CHIP CAPACITY · per SM</text>
+<!-- Metrics row 1 -->
+<text class="mono-xs" x="392" y="286">Registers</text>
+<text class="mid-num" x="392" y="316">256</text>
+<text class="unit" x="452" y="316">KB</text>
+<text class="desc" x="392" y="332">65536 × 32-bit</text>
+
+<text class="mono-xs" x="530" y="286">Shared Mem</text>
+<text class="mid-num" x="530" y="316">100</text>
+<text class="unit" x="582" y="316">KB</text>
+<text class="desc" x="530" y="332">opt-in max</text>
+
+<text class="mono-xs" x="660" y="286">Warps</text>
+<text class="mid-num" x="660" y="316">48</text>
+<text class="desc" x="660" y="332">max/SM</text>
+
+<!-- Metrics row 2 -->
+<text class="mono-xs" x="392" y="366">Threads</text>
+<text class="mid-num" x="392" y="396">1536</text>
+<text class="desc" x="392" y="412">max/SM</text>
+
+<text class="mono-xs" x="530" y="366">Max Blocks</text>
+<text class="mid-num" x="530" y="396">24</text>
+<text class="desc" x="530" y="412">max CTAs/SM</text>
+
+<text class="mono-xs" x="660" y="366">Cluster</text>
+<text class="mid-num" x="660" y="396">8</text>
+<text class="unit" x="680" y="396">CTAs</text>
+<text class="desc" x="660" y="412">portable max</text>
+
+<!-- Panel 7: POWER & CONNECTIVITY -->
+<rect class="panel" x="744" y="236" width="336" height="200"/>
+<text class="panel-label" x="764" y="262">POWER · CONNECTIVITY</text>
+
+<!-- Row 1: TDP vs measured peak side-by-side -->
+<text class="mono-xs" x="764" y="282">RATED TDP</text>
+<text class="mid-num" x="764" y="312" font-size="28">350</text>
+<text class="unit" x="820" y="312">W</text>
+<text class="desc" x="764" y="328">specification</text>
+
+<text class="mono-xs" x="900" y="282" fill="#5a8e00">PEAK MEASURED</text>
+<text class="mid-num" x="900" y="312" font-size="28" fill="#5a8e00">232</text>
+<text class="unit" x="956" y="312" fill="#5a8e00">W</text>
+<text class="desc" x="900" y="328" fill="#5a8e00">66% TDP · S20/case_10</text>
+
+<!-- Comparison bar: 0 .. 350 W with 232 W marker -->
+<rect x="764" y="340" width="296" height="10" rx="5" fill="#f0efe8"/>
+<rect x="764" y="340" width="196" height="10" rx="5" fill="#76b900" opacity="0.85"/>
+<line x1="960" y1="336" x2="960" y2="354" stroke="#5a8e00" stroke-width="1.5"/>
+<text class="mono-xs" x="764" y="365">0 W</text>
+<text  font-size="10" x="960" y="365" text-anchor="middle" fill="#124ee6">232 W peak</text>
+<text class="mono-xs" x="1060" y="365" text-anchor="end">350 W TDP</text>
+
+<!-- Row 2: PCIe + NVLink + Compute capability badge -->
+<text class="mono-xs" x="764" y="386">PCIe</text>
+<text class="small-num" x="764" y="408" font-size="15">Gen 5</text>
+<text class="unit" x="822" y="408">×16</text>
+<text class="desc" x="764" y="424">56.8 GB/s H2D</text>
+
+<text class="mono-xs" x="890" y="386">NVLink</text>
+<text  x="890" y="408" fill="#dd0d10">None</text>
+<text class="desc" x="885" y="424" fill="#8e97a5">workstation SKU</text>
+
+<rect x="980" y="384" width="80" height="44" rx="8" fill="#f6f4ed" stroke="#e6e4da"/>
+<text class="mono-xs" x="1020" y="402" text-anchor="middle">COMPUTE CAP</text>
+<text class="small-num" x="1020" y="422" text-anchor="middle" font-size="11">sm_120</text>
+
+<!-- Footer caption -->
+<text x="550" y="452" text-anchor="middle" font-family="'IBM Plex Sans',sans-serif" font-size="11" fill="#8e97a5" font-style="italic">Figure 1.1 · NVIDIA RTX PRO 5000 72GB · GB202 · Chip Parameters Dashboard</text>
+</svg>

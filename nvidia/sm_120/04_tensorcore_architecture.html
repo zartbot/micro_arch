@@ -1,0 +1,3974 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TensorCore Architecture · SM_120 Microarch Reference</title>
+    <link rel="stylesheet" href="assets/css/style.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css"
+      integrity="sha384-nB0miv6/jRmo5UMMR1wu3Gz6NLsoTkbqJghGIsx//Rlm+ZU03BU6SQNC66uf4l5+"
+      crossorigin="anonymous"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/styles/atom-one-light.min.css"
+    />
+    <style>
+      /* protect non-color overrides over hljs theme */
+      pre code.hljs {
+        background: transparent !important;
+        padding: 0 !important;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="shell">
+      <aside class="toc">
+        <a class="toc-back" href="index.html">← Index</a>
+        <div class="toc-brand">
+          SM_120 <span class="accent">GB202</span> · <em>Microarch</em>
+        </div>
+        <span class="toc-tag">FINAL REPORT · 2026</span>
+        <h4>All Chapters</h4>
+        <a href="01_architecture_overview.html">01 · Architecture Overview</a>
+        <a href="02_memory_subsystem.html">02 · Memory Subsystem</a>
+        <a href="03_sm_microarchitecture.html">03 · SM Microarchitecture</a>
+        <a
+          href="04_tensorcore_architecture.html"
+          style="font-weight: 600; color: var(--ink)"
+          >04 · TensorCore Architecture</a
+        >
+        <a href="05_instruction_level_characterization.html"
+          >05 · Instruction-Level Characterization</a
+        >
+        <a href="06_on_chip_network_async.html"
+          >06 · On-Chip Network &amp; Async</a
+        >
+        <a href="07_warp_scheduler_control.html"
+          >07 · Warp Scheduler &amp; Control</a
+        >
+        <a href="08_workload_analysis.html">08 · Workload Analysis</a>
+        <a href="09_power_thermal_efficiency.html"
+          >09 · Power, Thermal &amp; Efficiency</a
+        >
+        <a href="10_system_level_multi_gpu.html"
+          >10 · System-Level &amp; Multi-GPU</a
+        >
+        <a href="11_optimization_guidance.html">11 · Optimization Guidance</a>
+        <a href="12_ptxas_compiler_behavior.html"
+          >12 · ptxas Compiler Behavior</a
+        >
+        <a href="13_unified_performance_model.html"
+          >13 · Unified Performance Model</a
+        >
+        <a href="14_sm100_to_sm120_porting_guide.html"
+          >14 · SM_100 → SM_120 Porting Guide</a
+        >
+        <a href="15_agent_ground_truth.html">15 · Agent Ground Truth</a>
+        <a href="16_open_questions.html">16 · Open Questions</a>
+        <a href="17_cross_reference_map.html">17 · Cross-Reference Map</a>
+        <a href="18_appendix_a_test_coverage.html"
+          >18 · Appendix A — Test Coverage</a
+        >
+        <a href="19_appendix_b_machine_readable.html"
+          >19 · Appendix B — Machine-Readable Parameters</a
+        >
+        <a href="20_appendix_c_methodology.html"
+          >20 · Appendix C — Measurement Methodology</a
+        >
+      </aside>
+      <main class="content">
+        <header class="hero">
+          <div class="hero-eyebrow">
+            <span class="pulse"></span>CHAPTER 04 · SM_120 · GB202 BLACKWELL
+          </div>
+          <h1 class="hero-title">TensorCore Architecture</h1>
+          <p class="lede">
+            This chapter presents a complete microarchitectural characterization
+            of the SM_120 (GB202, RTX PRO 5000 72GB) TensorCore subsystem,
+            covering all MMA instruction shapes, precision formats from FP64
+            through MX-FP4, structured sparsity, operand feeding paths, co-issue
+            capabilities, and chip-level sustained throughput. The SM_120
+            TensorCore operates exclusively through the classic `mma.sync`
+            warp-level interface — no wgmma, tcgen05, or Tensor Memory is
+            present. Despite the absence of wgmma/tcgen05/TM, the per-SM TC
+            pipeline achieves 29.3 TFLOPS/SM (FP16) via mma.sync, and sustains
+            1068.5 TFLOPS MX-FP4 at chip level with 99.0% efficiency. All
+            measurements are derived from 195 microbenchmark cases (Section 9),
+            supplemented by pipeline efficiency data (Section 18) and
+            CUTLASS/cuBLAS production sweeps (Section 19).
+          </p>
+        </header>
+
+        <figure class="diagram">
+          <object
+            data="svg/ch04/ch04_summary.svg"
+            type="image/svg+xml"
+            aria-label="Chapter 4 summary — TensorCore architecture, MMA shapes and pipeline depths"
+          ></object>
+          <figcaption>
+            <span class="fig-num">FIG 04.0</span>Chapter 4 summary — TensorCore
+            architecture, MMA shapes and pipeline depths
+          </figcaption>
+        </figure>
+        <h2 class="ch-title" id="4-1-mma-shape-and-latency-catalog">
+          4.1 MMA Shape and Latency Catalog
+        </h2>
+        <p>
+          SM_120 supports five SASS MMA instruction families: HMMA
+          (FP16/BF16/TF32), QMMA (FP8/FP6/FP4), QMMA.SF (MX block-scaled FP8),
+          OMMA.SF (MX block-scaled FP4/NV-FP4), IMMA (INT8), and DMMA (FP64).
+          All non-FP64 formats share a uniform 29-cycle latency and converge to
+          15.88 cyc/mma throughput at ILP&gt;=4.
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>SASS Opcode</th>
+                <th>PTX Source</th>
+                <th>Shape</th>
+                <th style="text-align: center">K</th>
+                <th style="text-align: center">FLOP/MMA</th>
+                <th style="text-align: center">Latency (cyc)</th>
+                <th style="text-align: center">Throughput (cyc/mma)</th>
+                <th>Source</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>HMMA.16816.F32</td>
+                <td>mma.sync f16/bf16</td>
+                <td>m16n8k16</td>
+                <td style="text-align: center">16</td>
+                <td style="text-align: center">4,096</td>
+                <td style="text-align: center">29</td>
+                <td style="text-align: center">15.88</td>
+                <td><span class="cite">[S9/case_1]</span></td>
+              </tr>
+              <tr>
+                <td>HMMA.1688.F32.TF32</td>
+                <td>mma.sync tf32</td>
+                <td>m16n8k8</td>
+                <td style="text-align: center">8</td>
+                <td style="text-align: center">2,048</td>
+                <td style="text-align: center">29</td>
+                <td style="text-align: center">15.88</td>
+                <td><span class="cite">[S9/case_100]</span></td>
+              </tr>
+              <tr>
+                <td>HMMA.16816.F16</td>
+                <td>mma.sync f16-&gt;f16</td>
+                <td>m16n8k16</td>
+                <td style="text-align: center">16</td>
+                <td style="text-align: center">4,096</td>
+                <td style="text-align: center">29</td>
+                <td style="text-align: center">7.21</td>
+                <td><span class="cite">[S9/case_156]</span></td>
+              </tr>
+              <tr>
+                <td>IMMA.16832.S8</td>
+                <td>mma.sync s8</td>
+                <td>m16n8k32</td>
+                <td style="text-align: center">32</td>
+                <td style="text-align: center">8,192</td>
+                <td style="text-align: center">27</td>
+                <td style="text-align: center">6.55</td>
+                <td><span class="cite">[S9/case_101]</span></td>
+              </tr>
+              <tr>
+                <td>DMMA.884.F64</td>
+                <td>mma.sync f64</td>
+                <td>m8n8k4</td>
+                <td style="text-align: center">4</td>
+                <td style="text-align: center">128</td>
+                <td style="text-align: center">575-579</td>
+                <td style="text-align: center">579</td>
+                <td><span class="cite">[S9/case_104]</span></td>
+              </tr>
+              <tr>
+                <td>QMMA.16832 (E4M3)</td>
+                <td>mma.sync e4m3</td>
+                <td>m16n8k32</td>
+                <td style="text-align: center">32</td>
+                <td style="text-align: center">8,192</td>
+                <td style="text-align: center">29</td>
+                <td style="text-align: center">15.88</td>
+                <td><span class="cite">[S9/case_35]</span></td>
+              </tr>
+              <tr>
+                <td>QMMA.16832 (E5M2)</td>
+                <td>mma.sync e5m2</td>
+                <td>m16n8k32</td>
+                <td style="text-align: center">32</td>
+                <td style="text-align: center">8,192</td>
+                <td style="text-align: center">29</td>
+                <td style="text-align: center">15.56</td>
+                <td><span class="cite">[S9/case_36]</span></td>
+              </tr>
+              <tr>
+                <td>QMMA.16832 (E2M3)</td>
+                <td>mma.sync e2m3 FP6</td>
+                <td>m16n8k32</td>
+                <td style="text-align: center">32</td>
+                <td style="text-align: center">8,192</td>
+                <td style="text-align: center">29</td>
+                <td style="text-align: center">15.88</td>
+                <td><span class="cite">[S9/case_41]</span></td>
+              </tr>
+              <tr>
+                <td>QMMA.16832 (E2M1)</td>
+                <td>mma.sync e2m1 FP4</td>
+                <td>m16n8k32</td>
+                <td style="text-align: center">32</td>
+                <td style="text-align: center">8,192</td>
+                <td style="text-align: center">29</td>
+                <td style="text-align: center">15.88</td>
+                <td><span class="cite">[S9/case_43]</span></td>
+              </tr>
+              <tr>
+                <td>QMMA.SF.16832</td>
+                <td>mma.sync MX FP8</td>
+                <td>m16n8k32</td>
+                <td style="text-align: center">32</td>
+                <td style="text-align: center">8,192</td>
+                <td style="text-align: center">29</td>
+                <td style="text-align: center">15.88</td>
+                <td><span class="cite">[S9/case_48]</span></td>
+              </tr>
+              <tr>
+                <td>OMMA.SF.16864 (ue8m0)</td>
+                <td>mma.sync MX FP4 2X</td>
+                <td>m16n8k64</td>
+                <td style="text-align: center">64</td>
+                <td style="text-align: center">16,384</td>
+                <td style="text-align: center">29</td>
+                <td style="text-align: center">15.59</td>
+                <td><span class="cite">[S9/case_55]</span></td>
+              </tr>
+              <tr>
+                <td>OMMA.SF.16864 (ue4m3)</td>
+                <td>mma.sync NV-FP4 4X</td>
+                <td>m16n8k64</td>
+                <td style="text-align: center">64</td>
+                <td style="text-align: center">16,384</td>
+                <td style="text-align: center">29</td>
+                <td style="text-align: center">15.59</td>
+                <td><span class="cite">[S9/case_57]</span></td>
+              </tr>
+              <tr>
+                <td>HMMA.SP.16832</td>
+                <td>mma.sp.sync sparse FP16</td>
+                <td>m16n8k32</td>
+                <td style="text-align: center">32</td>
+                <td style="text-align: center">8,192</td>
+                <td style="text-align: center">29</td>
+                <td style="text-align: center">15.88</td>
+                <td><span class="cite">[S9/case_80]</span></td>
+              </tr>
+              <tr>
+                <td>QMMA.SP.16864</td>
+                <td>mma.sp.sync sparse FP8</td>
+                <td>m16n8k64</td>
+                <td style="text-align: center">64</td>
+                <td style="text-align: center">16,384</td>
+                <td style="text-align: center">29</td>
+                <td style="text-align: center">8.37</td>
+                <td><span class="cite">[S9/case_94]</span></td>
+              </tr>
+              <tr>
+                <td>OMMA.SF.SP.168128</td>
+                <td>mma.sp.sync sparse NVFP4</td>
+                <td>m16n8k128</td>
+                <td style="text-align: center">128</td>
+                <td style="text-align: center">32,768</td>
+                <td style="text-align: center">29</td>
+                <td style="text-align: center">15.88</td>
+                <td><span class="cite">[S9/case_96]</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          <strong>Uniform pipeline</strong>: All non-FP64 MMA instructions
+          exhibit 29-cycle latency and approximately 15.88 cyc/mma throughput at
+          saturation. Pipeline depth = 1.81 (ILP=2 yields 1.71x, ILP=4
+          saturates). The K-dimension is independent of latency; increasing K
+          only scales FLOP/cyc linearly. IMMA (INT8) achieves 6.55 cyc/mma
+          throughput (pipeline depth 4.09), suggesting a separate, deeper
+          datapath within the same TC execution unit.
+        </p>
+        <h3
+          class="sub-title"
+          id="4-1-1-tc-pipeline-internal-architecture-the-dual-subpipe-model"
+        >
+          4.1.1 TC Pipeline Internal Architecture: The Dual-Subpipe Model
+        </h3>
+        <p>
+          The ILP scaling data (Case 9/08) provides the tightest constraints on
+          the TC's internal pipeline structure. The key evidence:
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th style="text-align: center">ILP</th>
+                <th style="text-align: center">HMMA cyc/mma</th>
+                <th style="text-align: center">HMMA speedup</th>
+                <th style="text-align: center">IMMA cyc/mma</th>
+                <th style="text-align: center">IMMA speedup</th>
+                <th>Source</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="text-align: center">1</td>
+                <td style="text-align: center">28.78</td>
+                <td style="text-align: center">1.00x</td>
+                <td style="text-align: center">26.80</td>
+                <td style="text-align: center">1.00x</td>
+                <td>
+                  <span class="cite">[S9/case_8]</span>,
+                  <span class="cite">[S9/case_101]</span>
+                </td>
+              </tr>
+              <tr>
+                <td style="text-align: center">2</td>
+                <td style="text-align: center">16.87</td>
+                <td style="text-align: center">1.71x</td>
+                <td style="text-align: center">--</td>
+                <td style="text-align: center">--</td>
+                <td><span class="cite">[S9/case_8]</span></td>
+              </tr>
+              <tr>
+                <td style="text-align: center">4</td>
+                <td style="text-align: center">15.88</td>
+                <td style="text-align: center">1.81x</td>
+                <td style="text-align: center">6.55</td>
+                <td style="text-align: center">4.09x</td>
+                <td>
+                  <span class="cite">[S9/case_8]</span>,
+                  <span class="cite">[S9/case_101]</span>
+                </td>
+              </tr>
+              <tr>
+                <td style="text-align: center">8</td>
+                <td style="text-align: center">15.88</td>
+                <td style="text-align: center">1.81x</td>
+                <td style="text-align: center">--</td>
+                <td style="text-align: center">--</td>
+                <td><span class="cite">[S9/case_8]</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          <strong>The HMMA subpipe: depth 1.81, 2-slot execution model</strong>
+        </p>
+        <p>
+          The fractional pipeline depth of 1.81 (= 28.78 / 15.88) rules out both
+          a simple single-stage unit (depth would be 1.0) and a deep systolic
+          pipeline (depth would be ≥4). The data constrains a precise model:
+        </p>
+        <figure class="diagram">
+          <object
+            data="svg/ch04/ch04_s411_dual_subpipe.svg"
+            type="image/svg+xml"
+            aria-label="4.1.1 HMMA Dual-Subpipe Pipeline Model — 2-slot execution timeline, ILP scaling, and RF-read bottleneck analysis"
+          ></object>
+          <figcaption>
+            <span class="fig-num">FIG 04.1.1</span>HMMA Dual-Subpipe Pipeline
+            Model — 2-slot execution with RF-read bottleneck. The pipeline depth
+            of 1.81 arises from exactly 2 execution slots partially overlapping
+            within the 29-cycle latency window, ultimately constrained by
+            register file read port bandwidth.
+          </figcaption>
+        </figure>
+
+        <p><strong>The 2-Slot Execution Model in Detail</strong></p>
+
+        <p>
+          The measured pipeline depth of 1.81 (= 28.78 cyc latency / 15.88 cyc
+          throughput) uniquely constrains the TC internal pipeline to a
+          <strong>2-slot overlapped execution model</strong>. This model is
+          neither a simple single-issue unit (which would show depth = 1.0 and
+          zero speedup from ILP) nor a deeply pipelined systolic chain (which
+          would show depth ≥ 4 and near-linear scaling to high ILP). Instead,
+          the data reveals a design where exactly two MMA operations can
+          co-exist in-flight simultaneously:
+        </p>
+
+        <ul>
+          <li>
+            <strong>Cycle 0</strong>: MMA_0 is dispatched into the systolic
+            array. The RF read ports begin delivering 10 source registers (4
+            A-fragments + 2 B-fragments + 4 C-accumulators) to the TC input
+            crossbar.
+          </li>
+          <li>
+            <strong>Cycle 13</strong> (≈ 0.81 × 29): MMA_1 is dispatched. This
+            13-cycle gap is the minimum interval between two MMA dispatches to
+            the same execution slot — determined by when the RF read ports
+            finish delivering MMA_0's operands and can begin MMA_1's operands.
+          </li>
+          <li>
+            <strong>Cycle 29</strong>: MMA_0 completes and writes back its 4
+            D-registers to the accumulator destination in the RF.
+          </li>
+          <li>
+            <strong>Cycle 42</strong>: MMA_1 completes. Total time for 2 MMAs =
+            42 cyc → theoretical throughput = 21 cyc/mma.
+          </li>
+        </ul>
+
+        <p>
+          <strong
+            >Why measured throughput is 16.87 (not 21) at ILP=2, and 15.88 at
+            ILP=4</strong
+          >
+        </p>
+
+        <p>
+          The theoretical 21 cyc/mma assumes zero scheduling overhead. In
+          practice, the warp scheduler introduces dispatch bubbles between
+          dependent-chain MMA instructions. At ILP=2, two independent
+          accumulator chains allow the scheduler to overlap MMA dispatches more
+          aggressively, compressing the effective gap to achieve 16.87 cyc/mma.
+          At ILP=4, two additional chains fill the remaining ~1 cyc scheduling
+          bubble per dispatch, reaching the 15.88 cyc/mma hardware floor. Beyond
+          ILP=4, no improvement is observed (ILP=8 = ILP=4 exactly) — this is
+          the definitive proof that only 2 execution slots exist. A hypothetical
+          3rd slot would show continued scaling at ILP=5-6.
+        </p>
+
+        <p>
+          <strong
+            >The RF-Read Bottleneck: Why 15.88 cyc is the Absolute Floor</strong
+          >
+        </p>
+
+        <p>
+          Each HMMA m16n8k16 instruction consumes 10 source registers (40 bytes
+          per thread, 1,280 bytes per warp). The RF read port architecture
+          (§3.3.2) provides 2 read ports per bank, yielding approximately 0.63
+          register reads per cycle for MMA operand delivery. The operand read
+          time computes to: 10 registers ÷ 0.63 reads/cyc ≈ 15.9 cycles —
+          matching the measured 15.88 cyc/mma throughput floor to within 0.1%.
+          This near-exact correspondence proves the TC pipeline is
+          <strong>RF-read-port limited</strong>, not systolic-array-execution
+          limited. The multiplier array has spare computational capacity; it is
+          starved of operands by the register file interconnect. This explains
+          the universal throughput floor across ALL floating-point MMA formats
+          (FP16/BF16/TF32/FP8/FP6/FP4/MX): since all formats read the same
+          number of source registers through the same RF ports, they hit the
+          same 15.88 cyc bottleneck regardless of the internal compute
+          complexity.
+        </p>
+        <p>
+          <strong>Why ILP=8 = ILP=4 (zero additional gain)</strong>: If the TC
+          had a 3rd or 4th execution slot, ILP=8 would show improvement over
+          ILP=4. The flat plateau at ILP≥4 proves exactly 2 effective execution
+          slots exist. The extra ILP=3 and ILP=4 chains serve only to fill the
+          scheduling bubble between the 2 active slots — once those bubbles are
+          filled, additional chains provide no benefit.
+        </p>
+        <p><strong>The IMMA subpipe: depth 4.09, separate datapath</strong></p>
+        <p>INT8 IMMA shows a fundamentally different pipeline structure:</p>
+        <ul>
+          <li>Latency: 26.80 cyc (2 cyc lower than HMMA's 28.78)</li>
+          <li>Throughput: 6.55 cyc/mma (2.42× faster than HMMA's 15.88)</li>
+          <li>Pipeline depth: 4.09 (= 26.80 / 6.55)</li>
+        </ul>
+        <figure class="diagram">
+          <object
+            data="svg/ch04/ch04_s00_flow.svg"
+            type="image/svg+xml"
+            aria-label="4.1.1 IMMA vs HMMA Subpipe Comparison — pipeline depth, execution slots, and architectural interpretation"
+          ></object>
+          <figcaption>
+            <span class="fig-num">FIG 04.1.2</span>IMMA vs HMMA Dual-Subpipe
+            Comparison — INT8 IMMA achieves 4.09 pipeline depth via 4-stage
+            narrow multipliers (8-bit × 8-bit), while all FP formats share a
+            shallow 1.81-depth pipeline constrained by 16-bit wide multipliers
+            and RF read port bandwidth.
+          </figcaption>
+        </figure>
+
+        <p>
+          <strong>Why IMMA is 2.42× faster: the silicon area trade-off</strong>
+        </p>
+
+        <p>
+          The IMMA subpipe's 4.09 pipeline depth (vs HMMA's 1.81) and 6.55
+          cyc/mma throughput (vs 15.88) stem from a fundamental difference in
+          multiplier unit design. INT8 multiplication (8-bit × 8-bit → 16-bit
+          product) is approximately
+          <strong>4× smaller in silicon area</strong> than FP16 multiplication
+          (which requires exponent alignment, mantissa multiplication with
+          implicit leading-one handling, normalization, and rounding logic).
+          This area advantage allows the hardware to pack
+          <strong>4 independent INT8 pipeline stages</strong> into the same
+          physical footprint that houses only 2 FP16 execution slots.
+        </p>
+
+        <p>
+          Each of the 4 IMMA stages processes one quarter of the m16n8k32
+          computation per cycle. With 4 stages operating concurrently, the
+          effective throughput becomes 26.80 / 4 ≈ 6.7 cyc/mma — closely
+          matching the measured 6.55 cyc/mma. The ~2 cyc lower latency (26.80 vs
+          28.78) additionally reflects the simpler critical path through integer
+          multiply-accumulate (no denormal handling, no exponent
+          compare-and-shift, no sticky-bit rounding).
+        </p>
+
+        <p>
+          <strong>Shared physical unit, distinct datapaths</strong>: Both HMMA
+          and IMMA reside within the same TC execution unit (confirmed by NCU
+          counters: <code>subpipe_hmma</code> and
+          <code>subpipe_imma</code> share the <code>pipe_tensor</code> parent
+          counter). They cannot execute simultaneously — issuing an HMMA blocks
+          the IMMA subpipe and vice versa. The TC hardware dynamically selects
+          which datapath to activate based on the MMA instruction's format
+          encoding. This shared-unit-dual-datapath model explains why all
+          non-FP64 MMA instructions (regardless of format) saturate at exactly 4
+          warps per SM: each SMSP has one TC unit that can run either subpipe,
+          but not both concurrently.
+        </p>
+
+        <p>
+          <strong>DMMA (FP64): routed to pipe_fp64, NOT pipe_tensor</strong>
+        </p>
+        <p>
+          DMMA (m8n8k4 FP64) has a unique routing: it uses
+          <code>pipe_fp64</code> with NCU counter <code>op_dmma</code>,
+          completely separate from the tensor pipe. Measured latency: 575-579
+          cyc, throughput: 579 cyc/mma (non-pipelined, depth 1.0). This confirms
+          that SM_120's dedicated FP64 unit handles double-precision MMA as a
+          special case — the tensor core array does not have FP64 multipliers.
+        </p>
+        <h3
+          class="sub-title"
+          id="4-1-2-k-dimension-independence-evidence-for-input-width-decoupled-design"
+        >
+          4.1.2 K-Dimension Independence: Evidence for Input-Width Decoupled
+          Design
+        </h3>
+        <p>
+          A critical architectural finding is that MMA latency is
+          <strong>completely independent of the K dimension</strong>:
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Shape</th>
+                <th style="text-align: center">K</th>
+                <th style="text-align: center">Elements/MMA</th>
+                <th style="text-align: center">Latency (cyc)</th>
+                <th style="text-align: center">Throughput (cyc/mma)</th>
+                <th>Source</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>m16n8k8 (TF32)</td>
+                <td style="text-align: center">8</td>
+                <td style="text-align: center">2,048</td>
+                <td style="text-align: center">29</td>
+                <td style="text-align: center">15.88</td>
+                <td><span class="cite">[S9/case_100]</span></td>
+              </tr>
+              <tr>
+                <td>m16n8k16 (FP16)</td>
+                <td style="text-align: center">16</td>
+                <td style="text-align: center">4,096</td>
+                <td style="text-align: center">29</td>
+                <td style="text-align: center">15.88</td>
+                <td><span class="cite">[S9/case_1]</span></td>
+              </tr>
+              <tr>
+                <td>m16n8k32 (FP8)</td>
+                <td style="text-align: center">32</td>
+                <td style="text-align: center">8,192</td>
+                <td style="text-align: center">29</td>
+                <td style="text-align: center">15.88</td>
+                <td><span class="cite">[S9/case_35]</span></td>
+              </tr>
+              <tr>
+                <td>m16n8k64 (MX FP4)</td>
+                <td style="text-align: center">64</td>
+                <td style="text-align: center">16,384</td>
+                <td style="text-align: center">29</td>
+                <td style="text-align: center">15.59</td>
+                <td><span class="cite">[S9/case_55]</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          Doubling K from 8→64 (8× more multiply-accumulate operations) produces
+          zero latency increase. This is only possible if the systolic array
+          processes ALL K elements in parallel within the same 29-cycle window,
+          NOT sequentially. The TC array width must be at least K=64 elements
+          wide for MX-FP4, with narrower formats simply underutilizing the
+          array's physical width.
+        </p>
+        <p>
+          This "wide array, narrow format" model explains the uniform
+          throughput: regardless of K, each MMA occupies the full systolic array
+          for 29 cycles, producing the same throughput. The K dimension only
+          affects how many operations are packed into each MMA — it is a
+          FLOP-density knob, not a pipeline-depth knob.
+        </p>
+        <hr />
+        <h2 class="ch-title" id="4-2-low-precision-and-block-scale-formats">
+          4.2 Low-Precision and Block-Scale Formats
+        </h2>
+        <p>
+          SM_120 introduces native sub-8-bit MMA via the QMMA (dense
+          FP8/FP6/FP4) and OMMA.SF (block-scaled MX-FP4/NV-FP4) instruction
+          families. All sub-byte formats share the same TC pipeline timing.
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Format</th>
+                <th>SASS Opcode</th>
+                <th style="text-align: center">Latency (cyc)</th>
+                <th style="text-align: center">cyc/mma</th>
+                <th style="text-align: center">FLOP/cyc</th>
+                <th style="text-align: center">Ratio vs FP16</th>
+                <th>Source</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>FP16 HMMA</td>
+                <td>HMMA.16816</td>
+                <td style="text-align: center">29</td>
+                <td style="text-align: center">15.88</td>
+                <td style="text-align: center">263.2</td>
+                <td style="text-align: center">1.00x</td>
+                <td><span class="cite">[S9/case_1]</span></td>
+              </tr>
+              <tr>
+                <td>BF16 HMMA</td>
+                <td>HMMA.16816.BF16</td>
+                <td style="text-align: center">29</td>
+                <td style="text-align: center">15.88</td>
+                <td style="text-align: center">263.2</td>
+                <td style="text-align: center">1.00x</td>
+                <td><span class="cite">[S9/case_99]</span></td>
+              </tr>
+              <tr>
+                <td>TF32 HMMA</td>
+                <td>HMMA.1688</td>
+                <td style="text-align: center">29</td>
+                <td style="text-align: center">15.88</td>
+                <td style="text-align: center">131.6</td>
+                <td style="text-align: center">0.50x</td>
+                <td><span class="cite">[S9/case_100]</span></td>
+              </tr>
+              <tr>
+                <td>FP8 E4M3</td>
+                <td>QMMA.16832</td>
+                <td style="text-align: center">29</td>
+                <td style="text-align: center">15.88</td>
+                <td style="text-align: center">526.4</td>
+                <td style="text-align: center">2.00x</td>
+                <td><span class="cite">[S9/case_35]</span></td>
+              </tr>
+              <tr>
+                <td>FP8 E5M2</td>
+                <td>QMMA.16832</td>
+                <td style="text-align: center">29</td>
+                <td style="text-align: center">15.56</td>
+                <td style="text-align: center">526.4</td>
+                <td style="text-align: center">2.00x</td>
+                <td><span class="cite">[S9/case_36]</span></td>
+              </tr>
+              <tr>
+                <td>FP6 E2M3</td>
+                <td>QMMA.16832</td>
+                <td style="text-align: center">29</td>
+                <td style="text-align: center">15.88</td>
+                <td style="text-align: center">526.4</td>
+                <td style="text-align: center">2.00x</td>
+                <td><span class="cite">[S9/case_41]</span></td>
+              </tr>
+              <tr>
+                <td>FP4 E2M1</td>
+                <td>QMMA.16832</td>
+                <td style="text-align: center">29</td>
+                <td style="text-align: center">15.88</td>
+                <td style="text-align: center">526.4</td>
+                <td style="text-align: center">2.00x</td>
+                <td><span class="cite">[S9/case_43]</span></td>
+              </tr>
+              <tr>
+                <td>MX FP8 (QMMA.SF)</td>
+                <td>QMMA.SF.16832</td>
+                <td style="text-align: center">29</td>
+                <td style="text-align: center">15.88</td>
+                <td style="text-align: center">526.4</td>
+                <td style="text-align: center">2.00x (+0% overhead)</td>
+                <td><span class="cite">[S9/case_48]</span></td>
+              </tr>
+              <tr>
+                <td>MX FP4 (OMMA.SF k=64)</td>
+                <td>OMMA.SF.16864</td>
+                <td style="text-align: center">29</td>
+                <td style="text-align: center">15.59</td>
+                <td style="text-align: center">1050.7</td>
+                <td style="text-align: center">4.00x</td>
+                <td><span class="cite">[S9/case_55]</span></td>
+              </tr>
+              <tr>
+                <td>NV-FP4 4X (ue4m3)</td>
+                <td>OMMA.SF.16864.UE4M3</td>
+                <td style="text-align: center">29</td>
+                <td style="text-align: center">15.59</td>
+                <td style="text-align: center">1050.7</td>
+                <td style="text-align: center">4.00x (+0%)</td>
+                <td><span class="cite">[S9/case_57]</span></td>
+              </tr>
+              <tr>
+                <td>INT8 IMMA</td>
+                <td>IMMA.16832</td>
+                <td style="text-align: center">27</td>
+                <td style="text-align: center">6.55</td>
+                <td style="text-align: center">2974 TOPS</td>
+                <td style="text-align: center">--</td>
+                <td><span class="cite">[S9/case_101]</span></td>
+              </tr>
+              <tr>
+                <td>INT4 (EMULATED)</td>
+                <td>IMMA.16832+ALU</td>
+                <td style="text-align: center">384</td>
+                <td style="text-align: center">384</td>
+                <td style="text-align: center">--</td>
+                <td style="text-align: center">24x slower</td>
+                <td><span class="cite">[S9/case_79]</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          <strong>Block-scale zero overhead</strong>: QMMA.SF and OMMA.SF
+          execute at identical throughput to their dense counterparts (15.88
+          cyc/mma). Scale register pressure is zero; byte alignment has zero
+          impact; scale granularity (16 vs 128 elements) produces identical
+          timing; and register-immediate vs global-loaded scale factors show
+          zero performance delta.
+        </p>
+        <p>
+          <strong>Cross-format mixing</strong>: Mixed-format operations (e4m3 x
+          e5m2, e5m2 x e4m3) incur 0 cycles of additional overhead (28.78
+          cyc/mma, identical to single-format).
+        </p>
+        <hr />
+        <h2 class="ch-title" id="4-3-structured-sparsity">
+          4.3 Structured Sparsity
+        </h2>
+        <p>
+          SM_120 supports 2:4 structured sparsity through dedicated
+          <code>.sp</code> MMA variants with the mandatory
+          <code>::ordered_metadata</code> qualifier.
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Sparse Format</th>
+                <th>Dense Equivalent</th>
+                <th style="text-align: center">Sparsity Gain</th>
+                <th style="text-align: center">Metadata Cost</th>
+                <th style="text-align: center">TOPS/warp</th>
+                <th>Source</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>SP FP16 (HMMA.SP)</td>
+                <td>Dense k16</td>
+                <td style="text-align: center">2.00x exact</td>
+                <td style="text-align: center">0 cyc</td>
+                <td style="text-align: center">1.226</td>
+                <td><span class="cite">[S9/case_80-81]</span></td>
+              </tr>
+              <tr>
+                <td>SP FP8 E4M3</td>
+                <td>Dense k32</td>
+                <td style="text-align: center">3.80x (depth 3.44)</td>
+                <td style="text-align: center">0 cyc</td>
+                <td style="text-align: center">4.655</td>
+                <td><span class="cite">[S9/case_94]</span></td>
+              </tr>
+              <tr>
+                <td>SP INT8</td>
+                <td>Dense k32</td>
+                <td style="text-align: center">2.00x</td>
+                <td style="text-align: center">0 cyc</td>
+                <td style="text-align: center">4.94</td>
+                <td><span class="cite">[S9/case_116]</span></td>
+              </tr>
+              <tr>
+                <td>SP MXFP4</td>
+                <td>Dense MX k64</td>
+                <td style="text-align: center">--</td>
+                <td style="text-align: center">0 cyc</td>
+                <td style="text-align: center">2.452</td>
+                <td><span class="cite">[S9/case_95]</span></td>
+              </tr>
+              <tr>
+                <td>SP NVFP4 (OMMA.SF.SP.168128)</td>
+                <td>Dense NV k64</td>
+                <td style="text-align: center">2.00x</td>
+                <td style="text-align: center">0 cyc</td>
+                <td style="text-align: center">4.904</td>
+                <td><span class="cite">[S9/case_96]</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          <strong>Critical requirement</strong>: The
+          <code>::ordered_metadata</code> qualifier is mandatory for
+          hardware-accelerated sparsity. Using plain <code>.sp</code> (without
+          ordered metadata) falls back to an emulated path that is 15.0x slower
+          (243.79 cyc/mma vs 16.25 cyc/mma).
+        </p>
+        <p>
+          <strong>Chip-level sparsity throughput</strong>: CUTLASS sparse FP8
+          achieves 682 TFLOPS peak (1.45x over dense cuBLAS). Sparse MXFP4
+          reaches 1318 TFLOPS (61.7% efficiency at K=256 minimum alignment).
+        </p>
+        <h3 class="sub-title" id="power-profile-per-precision-format">
+          Power Profile per Precision Format
+        </h3>
+        <p>
+          All TC formats draw approximately the same power (~57 W average), with
+          TOPS scaling linearly by precision width.
+        </p>
+        <aside class="callout callout-info">
+          <p>
+            <strong>Unit clarification</strong>: The "TFLOPS/W" column below
+            uses <strong>TC-pipe-only delta-W</strong> (subtracting context
+            idle, isolating the TC contribution) and counts FP4/FP6/FP8 at
+            <strong>bit-OPS granularity</strong> (each MX-FP4 MMA = 16,384
+            bit-OPs, not FLOPs). This metric isolates raw TC silicon efficiency
+            for cross-format comparison and is
+            <strong>not directly comparable</strong> to chip-level FLOP-based
+            TFLOPS/W (e.g. §9.6 reports NVFP4 OMMA.SF at
+            <strong>2.36 TFLOPS/W chip-level</strong> = 210 TFLOPS / 89 W
+            including idle, FLOP-based). See Ch9 §9.6 for chip-level efficiency
+            and AppB §B.14 (<code>best_chip_tflops_per_watt_value</code> vs
+            <code>best_tc_pipe_tops_per_watt_value</code>) for the two
+            coexisting baselines.
+          </p>
+        </aside>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Format</th>
+                <th style="text-align: center">OPs/MMA</th>
+                <th style="text-align: center">Power (W, TC-delta)</th>
+                <th style="text-align: center">Chip TOPS (110 SM, bit-OPS)</th>
+                <th style="text-align: center">TC-pipe TOPS/W</th>
+                <th style="text-align: center">Power/TOP</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>FP16</td>
+                <td style="text-align: center">4,096</td>
+                <td style="text-align: center">61.92</td>
+                <td style="text-align: center">3,234</td>
+                <td style="text-align: center">52.1</td>
+                <td style="text-align: center">0.019 W/TOPS</td>
+              </tr>
+              <tr>
+                <td>FP8 E4M3</td>
+                <td style="text-align: center">8,192</td>
+                <td style="text-align: center">57.32</td>
+                <td style="text-align: center">6,468</td>
+                <td style="text-align: center">112.5</td>
+                <td style="text-align: center">0.009 W/TOPS</td>
+              </tr>
+              <tr>
+                <td>FP6 E2M3</td>
+                <td style="text-align: center">8,192</td>
+                <td style="text-align: center">54.35</td>
+                <td style="text-align: center">6,468</td>
+                <td style="text-align: center">118.6</td>
+                <td style="text-align: center">0.008 W/TOPS</td>
+              </tr>
+              <tr>
+                <td>MX FP4</td>
+                <td style="text-align: center">16,384</td>
+                <td style="text-align: center">56.66</td>
+                <td style="text-align: center">12,936</td>
+                <td style="text-align: center">227.5</td>
+                <td style="text-align: center">0.004 W/TOPS</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          The TC pipeline consumes a fixed power budget regardless of data
+          format. Each precision halving approximately doubles energy efficiency
+          (TC-pipe TOPS/W), since more operations are packed into the same
+          silicon switching activity.
+        </p>
+        <hr />
+        <h2 class="ch-title" id="4-4-operand-feeding----no-tm-path">
+          4.4 Operand Feeding -- No-TM Path
+        </h2>
+        <p>
+          SM_120 has NO Tensor Memory. All TC operands are fed exclusively
+          through the path: DRAM -&gt; TMA -&gt; Shared Memory -&gt; ldmatrix
+          -&gt; Register File -&gt; MMA.
+        </p>
+        <figure class="diagram">
+          <object
+            data="svg/ch04/ch04_s01_flow.svg"
+            type="image/svg+xml"
+            aria-label="4.4 SM_120 TensorCore Operand Feeding Path — No Tensor Memory, showing DRAM→TMA→Smem→ldmatrix→RF→MMA pipeline with latency annotations and starvation analysis"
+          ></object>
+          <figcaption>
+            <span class="fig-num">FIG 04.4</span>SM_120 TensorCore Operand
+            Feeding Path (No-TM). All TC operands traverse the full DRAM → TMA
+            (cp.async.bulk) → Shared Memory (XOR-swizzled) → ldmatrix.x4 →
+            Register File → MMA pipeline. The 4.4× data starvation ratio (TMA BW
+            vs TC consumption rate) is the fundamental performance constraint;
+            production kernels overcome it via multi-stage software pipelining
+            and ×4 operand reuse.
+          </figcaption>
+        </figure>
+
+        <p>
+          <strong>The No-TM Operand Path: SM_120's Defining Constraint</strong>
+        </p>
+
+        <p>
+          Unlike SM_100/SM_110 which provide a 256 KB Tensor Memory buffer
+          allowing direct TC feeding via
+          <code>tcgen05</code>/<code>wgmma</code>, SM_120 has
+          <strong>no Tensor Memory</strong> and exclusively uses the
+          <code>mma.sync</code> warp-level interface. Every operand byte that
+          reaches the TensorCore must traverse the complete five-stage path:
+          HBM3e DRAM (72 GB, 1231 GB/s) → TMA descriptor-driven bulk copy
+          (<code>cp.async.bulk</code>, 479 cyc latency) → XOR-swizzled shared
+          memory tile buffer (99 KB/SM, zero bank conflicts with proper swizzle)
+          → <code>ldmatrix.x4</code> warp-collective load (49 cyc latency, 1.68
+          cyc throughput at ILP=8, <code>.trans</code> modifier is free) →
+          Register File (A: 4-8 regs, B: 2-4 regs, C/D: 4-8 regs per thread) →
+          MMA systolic array execution.
+        </p>
+
+        <p>
+          <strong>The 11.0 cyc/MMA overhead (27.5%)</strong> is the measured
+          cost of the smem→RF transfer step — this is precisely the latency
+          component that SM_100's Tensor Memory eliminates by providing a direct
+          on-chip buffer-to-TC path. On SM_120, this overhead is architecturally
+          unavoidable: even though <code>ldmatrix</code> latency is fully hidden
+          behind MMA execution (adding only +0.7 cyc at Tier 2), the RF read
+          port bandwidth required to deliver 1,280 bytes of operands per MMA
+          fundamentally limits throughput to 15.88 cyc/mma.
+        </p>
+
+        <p>
+          <strong>The data starvation ratio of 4.4×</strong> (TMA bandwidth of
+          6.5 B/cyc vs TC consumption rate of 28.9 B/cyc) means the memory
+          system can only supply data at 23% of the rate the TC can consume it.
+          To keep the TC saturated, the software pipeline must maintain a
+          prefetch lookahead of at least 118/15.94 ≈ 7.4 MMA operations. In
+          practice, production GEMM kernels achieve this through 2-3 stage
+          software pipelining (measured 1.92× speedup in Section 18) combined
+          with ×4 operand reuse (saving 12.6 cyc/MMA by sharing A or B fragments
+          across multiple accumulator computations). This combination enables
+          cuBLAS/CUTLASS to reach 94-100% of theoretical peak for sufficiently
+          large matrix shapes.
+        </p>
+
+        <h3 class="sub-title" id="feeding-path-characterization">
+          Feeding Path Characterization
+        </h3>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Feeding Path</th>
+                <th style="text-align: center">Latency</th>
+                <th style="text-align: center">Bottleneck?</th>
+                <th>Source</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>RF -&gt; TC input rate</td>
+                <td style="text-align: center">80.3 B/cyc</td>
+                <td style="text-align: center">
+                  No -- TC rate-limits at 15.94 cyc/mma
+                </td>
+                <td><span class="cite">[S9/case_27]</span></td>
+              </tr>
+              <tr>
+                <td>smem -&gt; ldmatrix -&gt; MMA</td>
+                <td style="text-align: center">
+                  29.1 cyc (+0.5 over MMA-only)
+                </td>
+                <td style="text-align: center">ldmatrix fully hidden</td>
+                <td><span class="cite">[S9/case_28]</span></td>
+              </tr>
+              <tr>
+                <td>global -&gt; smem -&gt; ldmatrix -&gt; MMA (LDG)</td>
+                <td style="text-align: center">126 cyc</td>
+                <td style="text-align: center">DRAM latency dominates</td>
+                <td><span class="cite">[S9/case_29]</span></td>
+              </tr>
+              <tr>
+                <td>global -&gt; smem -&gt; ldmatrix -&gt; MMA (cp.async)</td>
+                <td style="text-align: center">118 cyc</td>
+                <td style="text-align: center">cp.async saves 8 cyc (6.3%)</td>
+                <td><span class="cite">[S9/case_29]</span></td>
+              </tr>
+              <tr>
+                <td>smem bank conflict impact on TC</td>
+                <td style="text-align: center">0% (all configs identical)</td>
+                <td style="text-align: center">LSU independent of TC</td>
+                <td><span class="cite">[S9/case_30]</span></td>
+              </tr>
+              <tr>
+                <td>Double-buffered smem feeding</td>
+                <td style="text-align: center">20.1% latency hidden (1.16x)</td>
+                <td style="text-align: center">
+                  Low compute:load ratio limits
+                </td>
+                <td><span class="cite">[S9/case_31]</span></td>
+              </tr>
+              <tr>
+                <td>Warp-spec vs all-compute</td>
+                <td style="text-align: center">All-compute 2.5-3.1x better</td>
+                <td style="text-align: center">
+                  No TM -&gt; warp-spec adds overhead
+                </td>
+                <td><span class="cite">[S9/case_33]</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <aside class="callout callout-info">
+          <p>
+            <strong
+              >Workload-dependent reading of warp specialization on
+              SM_120</strong
+            >: The "2.5–3.1× worse" figure here applies to
+            <strong>all-compute / TC-bound</strong> kernels (Section 9 case_33).
+            For <strong>TMA-tile bound</strong> kernels with explicit
+            producer/consumer split,
+            <span class="cite">[S18/case_9]</span> measures a small
+            <strong>+5.8% benefit</strong> (1139 vs 1206 cyc/tile, see Ch11
+            §11.2 / KI-11.x), and Ch6 §6.5 measures <strong>+1.06×</strong> (518
+            cyc baseline) under software pipelining. None of the three numbers
+            contradict; the recommendation is: prefer all-compute by default,
+            only consider warp specialization when the kernel is genuinely
+            TMA-issue-rate bound (rarely true given SM_120's 4.4×
+            data-starvation ratio). | Operand reuse (x4) | 15.9 cyc/MMA (1.79x
+            baseline) | 12.6 cyc saved/MMA |
+            <span class="cite">[S9/case_34]</span> |
+          </p>
+        </aside>
+        <p>
+          <strong>Smem-to-RF overhead per MMA</strong>: 11.0 cycles (27.5% of
+          total pipeline time). This is precisely the cost that SM_100's Tensor
+          Memory eliminates by enabling direct TC feeding from a 256 KB on-chip
+          buffer. SM_120 pipeline efficiency through the smem path = 72.5%.
+        </p>
+
+        <figure class="diagram">
+          <object
+            data="svg/ch04/ch04_tc_arch_overview.svg"
+            type="image/svg+xml"
+            aria-label="SM_120 TensorCore Internal Architecture Overview — execution units, RF/SMEM connections, pipeline structure, and precision format routing within a single SMSP"
+          ></object>
+          <figcaption>
+            <span class="fig-num">FIG 04.4a</span>SM_120 TensorCore Internal
+            Architecture Overview. Each SMSP contains one TC execution unit with
+            two distinct subpipes (HMMA depth 1.81, IMMA depth 4.09), an operand
+            collector reading 10 source registers per MMA from the banked RF,
+            and a format decoder routing all FP variants through a unified
+            systolic array. The RF→TC path at 80.3 B/cyc is the throughput
+            bottleneck, not the array itself.
+          </figcaption>
+        </figure>
+
+        <p>
+          <strong
+            >TensorCore Execution Unit Architecture: One Unit per SMSP</strong
+          >
+        </p>
+
+        <p>
+          Each of SM_120's four SMSPs (Sub-SM Processing units) contains exactly
+          <strong>one TensorCore execution unit</strong> connected to
+          <code>pipe_tensor</code>. This unit is shared between the HMMA and
+          IMMA subpipes — they cannot execute simultaneously. The TC unit sits
+          on a dedicated execution port within the SMSP, separate from the FMA,
+          LSU, and SFU pipes, which enables the 93.6–100% co-issue overlap
+          observed in Cases 9–11 and 109–122. Four SMSPs × 1 TC unit each = 4
+          concurrent MMA operations per SM, confirmed by the linear throughput
+          scaling up to 4 warps and flat performance beyond (Case 69: 0.25
+          mma/cyc aggregate at saturation).
+        </p>
+
+        <p><strong>The Operand Collector and RF-Read Bottleneck</strong></p>
+
+        <p>
+          Before each MMA can be dispatched to the systolic array, the operand
+          collector must read 10 source registers from the banked RF: 4
+          A-fragment registers, 2 B-fragment registers, and 4 C-accumulator
+          registers (Case 27: 1,280 bytes per warp per MMA). The RF provides 2
+          read ports per bank (§3.3.2), yielding approximately 0.63 register
+          reads per cycle for MMA operand delivery. This produces the 15.88 cyc
+          minimum dispatch interval: 10 registers ÷ 0.63 reads/cyc ≈ 15.9 cyc.
+          The measured throughput floor (15.88 cyc/mma from Case 8 at ILP≥4)
+          matches this calculation to within 0.1%, proving the
+          <strong>TC is RF-read-port limited</strong>. The systolic array itself
+          has spare capacity — it completes computation in fewer cycles than
+          operand delivery takes.
+        </p>
+
+        <p><strong>Format Decoder: Zero-Cost Routing</strong></p>
+
+        <p>
+          The format decoder selects the appropriate datapath configuration
+          based on the SASS opcode encoding. All floating-point formats
+          (FP16/BF16/TF32/FP8/FP6/FP4 and all MX block-scale variants) route to
+          the same HMMA subpipe and share identical 29 cyc / 15.88 cyc timing —
+          the format selection merely configures how many K-elements are packed
+          per cycle into the fixed-width systolic array. Cross-format mixing
+          within the same family (e.g., e4m3 × e5m2) incurs 0 cycles of
+          switching cost. Cross-family switching (OMMA.SF ↔ QMMA.SF) adds only
+          +0.94 cyc (6%) for pipeline reconfiguration between the k=64 and k=32
+          decode modes (Case 62).
+        </p>
+
+        <p>
+          <strong>Systolic Array Width and K-Dimension Independence</strong>
+        </p>
+
+        <p>
+          The most architecturally significant finding is that MMA latency is
+          completely independent of the K dimension: TF32 (K=8), FP16 (K=16),
+          FP8 (K=32), and MX-FP4 (K=64) all produce identical 29-cycle latency.
+          This is only possible if the systolic array processes ALL K elements
+          in parallel within the same clock window. The physical array width
+          must be at least K=64 elements (for MX-FP4); narrower formats (FP16 at
+          K=16) simply underutilize the array's full width. Increasing K only
+          scales FLOP count per MMA — it is a FLOP-density knob, not a latency
+          knob. This "wide array, narrow format" design explains why all formats
+          share the same throughput despite vastly different compute densities
+          (4,096 FLOPs for FP16 vs 16,384 FLOPs for MX-FP4).
+        </p>
+
+        <p>
+          <strong
+            >The IMMA Subpipe: A Fundamentally Different
+            Microarchitecture</strong
+          >
+        </p>
+
+        <p>
+          INT8 IMMA uses a separate datapath within the same physical TC unit,
+          achieving 4.09 pipeline depth (vs 1.81 for HMMA) and 6.55 cyc/mma
+          throughput (2.42× faster). The 8-bit × 8-bit integer multiply units
+          are approximately 4× smaller in silicon area than FP16 multipliers (no
+          exponent handling, no mantissa alignment, no rounding logic), allowing
+          the hardware to pack 4 independent pipeline stages into the same
+          footprint. Each stage processes ¼ of the m16n8k32 computation per
+          cycle — confirmed by the measured throughput: 26.80 cyc / 4 ≈ 6.7
+          cyc/mma ≈ measured 6.55 cyc/mma (Case 101). The IMMA and HMMA subpipes
+          are mutually exclusive: issuing HMMA blocks IMMA and vice versa, both
+          sharing the single TC port per SMSP.
+        </p>
+
+        <h3
+          class="sub-title"
+          id="4-4-1-microarchitectural-analysis-of-the-operand-feeding-architecture"
+        >
+          4.4.1 Microarchitectural Analysis of the Operand Feeding Architecture
+        </h3>
+        <p>
+          The feeding path measurements establish a precise bandwidth hierarchy
+          from RF to TC:
+        </p>
+        <p>
+          <strong>RF→TC bandwidth is NOT the bottleneck</strong>: Case 27
+          measures 80.3 B/cyc input bandwidth from RF to TC. Each HMMA m16n8k16
+          consumes 4 A-regs + 2 B-regs + 4 C-regs = 10 registers × 4 B = 40 B
+          per thread, 1280 B per warp. At 15.94 cyc/MMA throughput, the required
+          RF→TC bandwidth is 1280/15.94 = 80.3 B/cyc — the measured value
+          exactly matches the consumption rate. This means the RF read port
+          bandwidth and the TC execution rate are perfectly balanced: neither
+          has surplus capacity.
+        </p>
+        <figure class="diagram">
+          <object
+            data="svg/ch04/ch04_s441_operand_bw.svg"
+            type="image/svg+xml"
+            aria-label="4.4.1 SM_120 TC Operand Bandwidth Analysis — per-MMA data volume breakdown (A/B/C/D), bandwidth derivation at 15.94 cyc/mma, and scaling from single warp to full SM"
+          ></object>
+          <figcaption>
+            <span class="fig-num">FIG 04.4.1</span>TC Operand Bandwidth
+            Analysis. Each HMMA m16n8k16 consumes 1,280 B of input (A+B+C) and
+            produces 512 B of output (D) per warp. At 15.94 cyc/mma throughput,
+            this yields 80.3 B/cyc input bandwidth — exactly matching
+            measurement. Four warps saturating 4 SMSPs aggregate to ~1,068 GB/s
+            RF↔TC per SM.
+          </figcaption>
+        </figure>
+
+        <p><strong>Bandwidth decomposition and the co-design proof</strong></p>
+
+        <p>
+          Each HMMA m16n8k16 instruction requires 10 source registers to be read
+          from the RF (4 A-fragments + 2 B-fragments + 4 C-accumulators) and
+          writes back 4 D-accumulator registers. Per thread this is 40 B input +
+          16 B output = 56 B total; per warp (32 threads) it becomes 1,280 B
+          input + 512 B output =
+          <strong>1,792 B total RF↔TC traffic per MMA operation</strong>. At the
+          measured throughput of 15.94 cyc/mma, the required sustained input
+          bandwidth is 1,280 / 15.94 = 80.3 B/cyc — and this is exactly the
+          value measured in Case 27. The output bandwidth demand is 512 / 15.94
+          = 32.1 B/cyc (writes to the accumulator destination), bringing total
+          bidirectional RF↔TC traffic to 112.4 B/cyc per warp.
+        </p>
+
+        <p>
+          <strong>Scaling to GB/s</strong>: At SM_120's locked clock of 2.377
+          GHz, a single warp sustaining 112.4 B/cyc translates to ~267 GB/s of
+          RF↔TC bandwidth. With all 4 SMSPs active (4 warps, one per SMSP), the
+          aggregate per-SM RF↔TC bandwidth reaches approximately
+          <strong>1,068 GB/s</strong> — comparable to 87% of the entire chip's
+          HBM3e DRAM bandwidth (1,231 GB/s) but served locally within a single
+          SM's register file. This enormous internal bandwidth is why the RF
+          read port design is the critical gating factor for TC throughput: the
+          register file must sustain over 1 TB/s of operand delivery across just
+          4 sub-cores, which is architecturally achieved through heavily banked
+          RF structures with 2 read ports per bank.
+        </p>
+
+        <p>
+          <strong>Why the exact match matters</strong>: The fact that calculated
+          bandwidth (80.3 B/cyc) and measured bandwidth (80.3 B/cyc) are
+          identical to within measurement noise proves that NVIDIA co-designed
+          the RF port count and TC execution rate to be
+          <strong>perfectly balanced</strong>. There is zero excess capacity in
+          either direction — the systolic array cannot execute faster because it
+          would starve for operands, and the RF cannot deliver faster because it
+          would have idle read ports. This is a classic example of balanced
+          pipeline design, where the slowest stage (RF reads) is exactly matched
+          to the fastest consumer (TC array), eliminating wasted silicon in
+          either unit.
+        </p>
+        <p>
+          <strong>ldmatrix is fully hidden behind MMA latency</strong>: Case 28
+          demonstrates that adding ldmatrix.x4 operations to a MMA chain adds
+          only 0.53-0.71 cyc of overhead — essentially zero. The MMA's 29-cycle
+          latency window provides ample time for the LSU to execute ldmatrix in
+          parallel. This is the fundamental reason why the smem→RF→TC path is
+          viable on SM_120: the ldmatrix load overlaps with MMA execution, not
+          adding to it.
+        </p>
+        <p>
+          <strong
+            >The full GEMM data path decomposes into three latency tiers</strong
+          >
+          (Case 29):
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Path</th>
+                <th style="text-align: center">Latency</th>
+                <th style="text-align: center">Stages</th>
+                <th>Bottleneck</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>MMA only (RF-resident operands)</td>
+                <td style="text-align: center">29 cyc</td>
+                <td style="text-align: center">TC pipeline</td>
+                <td>Accumulator chain</td>
+              </tr>
+              <tr>
+                <td>smem → ldmatrix → MMA</td>
+                <td style="text-align: center">29.3 cyc</td>
+                <td style="text-align: center">LSU + TC</td>
+                <td>MMA dominates (+0.7 cyc)</td>
+              </tr>
+              <tr>
+                <td>global → smem → ldmatrix → MMA (LDG)</td>
+                <td style="text-align: center">126 cyc</td>
+                <td style="text-align: center">DRAM + LSU + TC</td>
+                <td>Memory latency</td>
+              </tr>
+              <tr>
+                <td>global → smem → ldmatrix → MMA (cp.async)</td>
+                <td style="text-align: center">118 cyc</td>
+                <td style="text-align: center">DRAM + LSU + TC</td>
+                <td>Memory latency (-6.3%)</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <figure class="diagram">
+          <object
+            data="svg/ch04/ch04_s441_latency_tiers.svg"
+            type="image/svg+xml"
+            aria-label="GEMM Latency Tier Decomposition — proportional bars showing Tier 1 (29 cyc, RF-resident), Tier 2 (29.3 cyc, smem+ldmatrix hidden), and Tier 3 (118-126 cyc, DRAM-dominated), with 4.3× starvation gap and prefetch requirement"
+          ></object>
+          <figcaption>
+            <span class="fig-num">FIG 04.4.1b</span>GEMM Latency Tier
+            Decomposition. Horizontal bars are proportional to measured latency:
+            Tier 1 (RF-resident, 29 cyc) and Tier 2 (smem path, 29.3 cyc) are
+            nearly identical because ldmatrix is fully hidden, while Tier 3
+            (global memory, 118–126 cyc) is 4.0–4.3× larger — the data
+            starvation gap that software pipelining must bridge.
+          </figcaption>
+        </figure>
+
+        <p>
+          The critical observation: the jump from Tier 2 (29.3 cyc) to Tier 3
+          (118-126 cyc) is a <strong>4.0-4.3×</strong> increase. This is the
+          data starvation ratio. It means the GEMM software pipeline must
+          overlap at least 118/15.94 ≈ 7.4 MMA operations of data prefetch with
+          active computation to keep the TC saturated.
+        </p>
+        <h3
+          class="sub-title"
+          id="4-4-2-operand-reuse-the-key-to-pipeline-efficiency"
+        >
+          4.4.2 Operand Reuse: The Key to Pipeline Efficiency
+        </h3>
+        <p>
+          Case 34 quantifies the impact of operand reuse (sharing A or B
+          operands across multiple MMA operations):
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th style="text-align: center">Reuse Factor</th>
+                <th style="text-align: center">cyc/MMA</th>
+                <th style="text-align: center">Speedup</th>
+                <th>Mechanism</th>
+                <th>Source</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="text-align: center">×1 (no reuse)</td>
+                <td style="text-align: center">28.56</td>
+                <td style="text-align: center">1.00×</td>
+                <td>Single D→C chain, latency-bound</td>
+                <td><span class="cite">[S9/case_34]</span></td>
+              </tr>
+              <tr>
+                <td style="text-align: center">×2 A-reuse</td>
+                <td style="text-align: center">16.88</td>
+                <td style="text-align: center">1.69×</td>
+                <td>Same A, 2 different B columns</td>
+                <td><span class="cite">[S9/case_34]</span></td>
+              </tr>
+              <tr>
+                <td style="text-align: center">×2 B-reuse</td>
+                <td style="text-align: center">16.87</td>
+                <td style="text-align: center">1.69×</td>
+                <td>Same B, 2 different A rows</td>
+                <td><span class="cite">[S9/case_34]</span></td>
+              </tr>
+              <tr>
+                <td style="text-align: center">×4 A-reuse</td>
+                <td style="text-align: center">15.94</td>
+                <td style="text-align: center">1.79×</td>
+                <td>Same A, 4 different B columns</td>
+                <td><span class="cite">[S9/case_34]</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          <strong>A-reuse and B-reuse are perfectly symmetric</strong> (16.88 vs
+          16.87 cyc, &lt;0.1% difference). This proves the TC has no hardware
+          preference for row-stationary vs column-stationary dataflow — the
+          multiplier array treats A and B operands identically from a reuse
+          perspective.
+        </p>
+        <p>
+          <strong
+            >Operand reuse IS equivalent to ILP for TC pipeline
+            utilization</strong
+          >: ×2 reuse achieves 1.69× speedup — matching the 1.71× from ILP=2 in
+          Case 8. ×4 reuse achieves 1.79× — matching the 1.81× from ILP=4. This
+          is not a coincidence: reuse and ILP are the SAME mechanism from the TC
+          pipeline's perspective. Both provide independent MMA instructions that
+          can be pipelined through the 2-slot execution model. The difference is
+          resource cost: ILP=4 requires 4 separate accumulator register sets (64
+          regs), while ×4 reuse shares A/B operands, requiring only 4
+          accumulator sets but fewer A/B reads.
+        </p>
+        <h3
+          class="sub-title"
+          id="4-4-3-warp-specialization-is-counterproductive-on-sm_120"
+        >
+          4.4.3 Warp Specialization Is Counterproductive on SM_120
+        </h3>
+        <p>
+          Case 33 definitively establishes that warp specialization (dedicating
+          some warps to data loading and others to computation) reduces TC
+          throughput by 2.5-3.1× compared to all-compute:
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Configuration</th>
+                <th style="text-align: center">TC Throughput</th>
+                <th style="text-align: center">vs All-compute</th>
+                <th>Source</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>All-compute (4 warps)</td>
+                <td style="text-align: center">0.0384 mma/cyc</td>
+                <td style="text-align: center">1.00× (baseline)</td>
+                <td><span class="cite">[S9/case_33]</span></td>
+              </tr>
+              <tr>
+                <td>2 producer + 2 consumer</td>
+                <td style="text-align: center">0.0102 mma/cyc</td>
+                <td style="text-align: center"><strong>0.27×</strong></td>
+                <td><span class="cite">[S9/case_33]</span></td>
+              </tr>
+              <tr>
+                <td>1 producer + 3 consumer</td>
+                <td style="text-align: center">0.0122 mma/cyc</td>
+                <td style="text-align: center"><strong>0.32×</strong></td>
+                <td><span class="cite">[S9/case_33]</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          <strong>Root cause</strong>: On SM_120, TC and LSU co-issue with 100%
+          overlap (Case 10). This means every warp can load its own data AND
+          execute MMA simultaneously — dedicating a warp to "loading only"
+          wastes its TC execution capacity. The __syncthreads barrier between
+          producer and consumer phases further serializes the pipeline,
+          compounding the loss.
+        </p>
+        <p>
+          This is architecturally opposite to SM_100/SM_110 (Hopper/Thor), where
+          warp specialization is essential because the tcgen05/wgmma interface
+          requires a dedicated warp group for TMA management. SM_120's mma.sync
+          interface allows each warp to be both producer and consumer, making
+          the all-compute model optimal.
+        </p>
+        <hr />
+        <h2 class="ch-title" id="4-5-tc-co-issue-and-multi-warp-scaling">
+          4.5 TC Co-Issue and Multi-Warp Scaling
+        </h2>
+        <p>
+          The TensorCore pipeline operates on a dedicated execution port within
+          each SMSP, enabling extensive overlap with ALU, memory, and other
+          functional units.
+        </p>
+        <h3 class="sub-title" id="co-issue-characterization">
+          Co-Issue Characterization
+        </h3>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Co-issue Pair</th>
+                <th style="text-align: center">Overlap</th>
+                <th style="text-align: center">Extra cyc/op</th>
+                <th>Source</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>TC + FFMA (FP32 epilogue)</td>
+                <td style="text-align: center">93.6%</td>
+                <td style="text-align: center">0.25 cyc/FFMA</td>
+                <td><span class="cite">[S9/case_9]</span></td>
+              </tr>
+              <tr>
+                <td>TC + LDG/ldmatrix</td>
+                <td style="text-align: center">100%</td>
+                <td style="text-align: center">0 extra cyc @ 1:1 ratio</td>
+                <td><span class="cite">[S9/case_10]</span></td>
+              </tr>
+              <tr>
+                <td>TC + SFU (MUFU)</td>
+                <td style="text-align: center">86%</td>
+                <td style="text-align: center">6.53 cyc/MUFU</td>
+                <td><span class="cite">[S9/case_11]</span></td>
+              </tr>
+              <tr>
+                <td>TC + DSMEM (ld.shared::cluster)</td>
+                <td style="text-align: center">100%</td>
+                <td style="text-align: center">0 extra cyc</td>
+                <td><span class="cite">[S9/case_122]</span></td>
+              </tr>
+              <tr>
+                <td>TC + V-pipe (VIADD.16x2)</td>
+                <td style="text-align: center">100%</td>
+                <td style="text-align: center">0 extra cyc</td>
+                <td><span class="cite">[S9/case_109]</span></td>
+              </tr>
+              <tr>
+                <td>TC + U-datapath (UIADD3)</td>
+                <td style="text-align: center">~100%</td>
+                <td style="text-align: center">0-4.3% at 1-4x ratio</td>
+                <td><span class="cite">[S9/case_110]</span></td>
+              </tr>
+              <tr>
+                <td>QMMA.SF + FFMA</td>
+                <td style="text-align: center">50.7%</td>
+                <td style="text-align: center">
+                  Block-scale reduces FP32 co-issue
+                </td>
+                <td><span class="cite">[S9/case_66]</span></td>
+              </tr>
+              <tr>
+                <td>OMMA.SF + QMMA.SF</td>
+                <td style="text-align: center">94%</td>
+                <td style="text-align: center">
+                  +0.94 cyc switch (6%) -- shared port
+                </td>
+                <td><span class="cite">[S9/case_62]</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <figure class="diagram">
+          <object
+            data="svg/ch04/ch04_s45_coissue.svg"
+            type="image/svg+xml"
+            aria-label="TC Co-Issue Characterization — overlap percentage bars showing 100% for LSU/DSMEM/V-pipe, 93.6% for FFMA, 86% for SFU, 50.7% for block-scale FFMA, with independent port architecture diagram"
+          ></object>
+          <figcaption>
+            <span class="fig-num">FIG 04.5</span>TC Co-Issue Overlap
+            Characterization. The TensorCore operates on a dedicated execution
+            port within each SMSP, enabling 93.6–100% overlap with most other
+            functional units. The lone exception is QMMA.SF + FFMA (50.7%),
+            where block-scale operand reads consume bandwidth that would
+            otherwise be available for FP32 epilogue co-issue.
+          </figcaption>
+        </figure>
+
+        <h3
+          class="sub-title"
+          id="4-5-1-microarchitectural-analysis-of-co-issue-behavior"
+        >
+          4.5.1 Microarchitectural Analysis of Co-Issue Behavior
+        </h3>
+
+        <p>
+          The co-issue measurements reveal the precise microarchitectural
+          resource-sharing relationships between the TC pipe and all other
+          functional units within each SMSP. The key insight is that co-issue
+          efficiency is not binary (0% or 100%) — it is determined by
+          <strong>which specific hardware resources are shared</strong> between
+          the co-issuing instruction pair.
+        </p>
+
+        <p>
+          <strong
+            >TC + FFMA at 93.6%: RF Write-Port Contention as the Sole
+            Limiter</strong
+          >
+        </p>
+
+        <p>
+          Case 9 demonstrates near-perfect co-issue: 256 FFMA instructions add
+          only 65 cycles (+3.2%) to a 128-HMMA chain, yielding an effective FFMA
+          cost of 0.25 cyc/op (versus 3.98 cyc standalone — a 16× compression).
+          The mechanism is straightforward: during MMA's 29-cycle execution
+          window, the warp scheduler has ~14 idle issue slots (29 cyc minus ~15
+          cyc of operand reads = ~14 free slots) in which it can dispatch FFMA
+          instructions to the completely independent FMA pipe. Since TC and FMA
+          use different execution ports, different register read banks (MMA
+          reads 10 regs from the accumulator bank; FFMA reads 2 operands from
+          the general bank), and different functional units, there is near-zero
+          structural hazard.
+        </p>
+
+        <p>
+          The residual 6.4% overhead (not perfect 0%) has a specific root cause:
+          <strong>RF write-port contention</strong>. Both HMMA's D-register
+          writeback (4 × FP32 regs per MMA completion) and FFMA's result
+          writeback (1 × FP32 reg per FFMA completion) must use the same RF
+          write ports. When an HMMA completes its 29-cycle execution and
+          attempts D-register writeback in the same cycle that an FFMA
+          completes, one must stall for 1 cycle. With 128 HMMAs producing 128
+          writeback events and 256 FFMAs producing 256 writeback events across
+          the measured region, the probability of collision is ~6.4% — exactly
+          matching the observed overhead. This proves the write-port arbiter
+          uses a simple priority scheme (likely TC-favored) where FFMA yields to
+          HMMA on collision.
+        </p>
+
+        <p>
+          <strong
+            >TC + SFU (MUFU) at 86%: Shared Operand Crossbar Bandwidth</strong
+          >
+        </p>
+
+        <p>
+          The SFU co-issue achieves only 86% overlap (Case 11), with an
+          effective MUFU cost of 6.53 cyc when interleaved with MMA (versus 4
+          cyc standalone). The root cause is fundamentally different from the
+          FFMA case: both MMA and MUFU instructions require the
+          <strong>same operand delivery crossbar</strong> to read source
+          registers from the RF. MMA consumes 10 register reads per dispatch
+          (~16 cyc of RF read bandwidth), leaving only ~13 cyc of free crossbar
+          time per 29-cycle window. Each MUFU instruction requires 1 register
+          read from the same crossbar. At high MUFU density, the crossbar
+          becomes contended — MUFU reads must wait for MMA operand delivery to
+          yield a free slot. The 14% overhead corresponds to approximately 2
+          MUFU instructions per MMA cycle being blocked by crossbar contention,
+          consistent with a 2-read-port crossbar that MMA monopolizes for ~55%
+          of each dispatch window.
+        </p>
+
+        <p>
+          This is architecturally distinct from the FFMA case because FFMA
+          source operands can be read from a <em>different</em> RF bank
+          partition (the general-purpose bank) that does not conflict with the
+          MMA operand bank. The SFU, however, uses the same read path as MMA for
+          its single-operand input — hence the contention.
+        </p>
+
+        <p>
+          <strong
+            >QMMA.SF + FFMA at 50.7%: Scale Factor Reads Consume the Co-Issue
+            Window</strong
+          >
+        </p>
+
+        <p>
+          This is the most architecturally significant co-issue result.
+          Block-scale MMA variants (QMMA.SF, OMMA.SF) achieve only 50.7% FFMA
+          overlap — a dramatic drop from the 93.6% achieved by dense HMMA. The
+          root cause is that
+          <strong
+            >scale factor register delivery occupies the same issue slots that
+            would otherwise be available for FFMA dispatch</strong
+          >.
+        </p>
+
+        <p>
+          Each QMMA.SF instruction requires additional operand delivery beyond
+          the standard 10-register MMA operands: the block-scale factor must be
+          read from a scale register (or decoded from a packed format) and
+          broadcast to the TC reduction tree. This scale-factor delivery does
+          not consume TC execution time (the MMA itself still runs in 29 cyc),
+          but it does consume <strong>warp scheduler issue bandwidth</strong>.
+          The scheduler must issue micro-ops for scale delivery in the same
+          slots that it would use for FFMA co-issue. Specifically:
+        </p>
+        <ul>
+          <li>
+            Dense HMMA: 10 source-reg reads ≈ 16 cyc of scheduler activity →
+            leaves ~13 idle slots for FFMA
+          </li>
+          <li>
+            QMMA.SF: 10 source-reg reads + scale delivery ≈ 23 cyc of scheduler
+            activity → leaves only ~6 idle slots for FFMA
+          </li>
+        </ul>
+        <p>
+          The ratio 6/13 ≈ 46% closely matches the measured 50.7% (the
+          difference is within scheduling jitter). This proves that the MX
+          block-scale "zero overhead" claim applies only to
+          <em>TC throughput</em> (15.88 cyc/mma is unchanged) — the overhead is
+          displaced to <em>reduced co-issue capacity</em> with the FP32 epilogue
+          pipe. For kernels with heavy epilogue computation (e.g., online
+          softmax with per-row rescaling), this 43-percentage-point co-issue
+          reduction can become the practical bottleneck.
+        </p>
+
+        <p><strong>Why TC + LDG/ldmatrix achieves perfect 100%</strong></p>
+
+        <p>
+          The LSU (Load/Store Unit) operates on a completely independent
+          execution port with its own address generation unit, its own
+          memory-side queue, and crucially, its own
+          <strong>separate register write path</strong> for loaded data. When
+          ldmatrix completes, it writes results through the LSU writeback port —
+          which is physically distinct from both the TC writeback port and the
+          FMA writeback port. This means there is zero structural hazard at any
+          stage: no read-port contention (ldmatrix reads its address from the
+          address register bank, not the operand bank), no write-port contention
+          (LSU has a dedicated write port), and no execution-unit sharing. The
+          100% overlap is architecturally guaranteed regardless of
+          MMA-to-ldmatrix ratio.
+        </p>
+
+        <p>
+          <strong
+            >OMMA.SF + QMMA.SF at 94%: Pipeline Reconfiguration Cost</strong
+          >
+        </p>
+
+        <p>
+          The +0.94 cyc/MMA overhead when alternating between OMMA.SF (k=64,
+          FP4) and QMMA.SF (k=32, FP8) reveals a 1-cycle pipeline
+          reconfiguration latency in the TC format decoder. When the TC receives
+          consecutive same-format instructions, the decoder configuration is
+          stable (0 switching cost). When the format changes between FP4 (k=64
+          decode mode) and FP8 (k=32 decode mode), the decoder must update its
+          element-width configuration and K-stride registers — a process
+          requiring exactly 1 pipeline bubble. Within the same opcode family
+          (e.g., e4m3 ↔ e5m2, both k=32), the decoder configuration is identical
+          and switching costs 0 cycles. This confirms the format decoder has
+          <em>two</em> distinct modes (k=32 vs k=64), not per-format
+          configuration.
+        </p>
+
+        <h3 class="sub-title" id="multi-warp-tc-scaling">
+          Multi-Warp TC Scaling
+        </h3>
+        <p>
+          <strong>TC saturation</strong>: Aggregate throughput scales linearly
+          from 1 to 4 warps (0.0623 mma/cyc per warp), saturating at 4 warps
+          with 0.25 mma/cyc aggregate (4868 TOPS/SM for FP8). Performance is
+          flat beyond 4 warps. This confirms 4 sub-cores per SM, each with
+          exactly 1 TC execution slot.
+        </p>
+        <p>
+          <strong>Cold-start penalty</strong>: All TC opcodes
+          (HMMA/QMMA/QMMA.SF/OMMA.SF) incur a uniform approximately 375-380
+          cycle first-issue penalty. Warm single-MMA latency is 29 cycles.
+          Block-scale formats incur no additional cold-start cost beyond the
+          baseline TC warmup.
+        </p>
+        <h3
+          class="sub-title"
+          id="4-5-2-cold-start-architecture-tc-power-gating-evidence"
+        >
+          4.5.2 Cold-Start Architecture: TC Power Gating Evidence
+        </h3>
+        <p>
+          The ~375-cycle cold-start penalty reveals likely power-gating of the
+          TC unit when inactive:
+        </p>
+
+        <figure class="diagram">
+          <object
+            data="svg/ch04/ch04_s452_coldstart.svg"
+            type="image/svg+xml"
+            aria-label="4.5.2 TC Cold-Start Model — warm path (29 cyc) vs cold path (~375 cyc) timing comparison, power gating evidence, and kernel design implications"
+          ></object>
+          <figcaption>
+            <span class="fig-num">FIG 04.5.2</span>TC Cold-Start Model. The warm
+            path (TC recently active) executes in 29 cyc; the cold path (TC
+            power-gated off) incurs a ~350 cyc power-on penalty before execution
+            can begin, totaling ~375–380 cyc. Four independent lines of evidence
+            converge on power gating as the mechanism.
+          </figcaption>
+        </figure>
+
+        <p>
+          <strong
+            >Power Gating vs Clock Gating: Why the Evidence Points to Power
+            Gating</strong
+          >
+        </p>
+
+        <p>
+          The ~350-cycle cold-start overhead is far too large for simple clock
+          gating (which typically adds 1–5 cycles for clock tree
+          resynchronization) and far too small for a full power-domain shutdown
+          (which requires millisecond-scale voltage regulator wake-up). The
+          350-cycle window precisely matches the known latency for
+          <strong>fine-grained power gating</strong> of SRAM macros in advanced
+          process nodes (4–5 nm): local retention switches must stabilize the
+          voltage rail, sense amplifiers must re-bias, and the SRAM state
+          machine must complete its initialization sequence before accepting new
+          operations.
+        </p>
+
+        <p>
+          <strong>The format-independence proof</strong>: If the cold-start were
+          caused by datapath configuration (e.g., loading microcode for
+          different MMA shapes), different formats would show different
+          penalties. Instead, HMMA (FP16), QMMA (FP8), QMMA.SF (MX FP8), and
+          OMMA.SF (MX FP4) all produce identical ~375 cyc first-issue latency.
+          This proves the delay is at the infrastructure level — the entire TC
+          unit's power domain is being brought online, not just a specific
+          datapath. Furthermore, block-scale formats add 0 additional cold-start
+          cost, indicating the scale factor broadcast network either shares the
+          main TC power domain or is always-on (likely the latter, since scale
+          factors are also read by the FMA pipe for epilogue scaling).
+        </p>
+
+        <p>
+          <strong>Power consumption confirmation</strong>: Cases 86–92 measure
+          TC power at ~57W during sustained compute across all formats, dropping
+          to effectively 0W during idle. This ON/OFF power profile is the
+          definitive signature of power gating — clock gating would still draw
+          significant leakage current (typically 10–20% of dynamic power in
+          4nm). The fact that all formats draw the same ~57W confirms the TC
+          silicon switching activity is dominated by the systolic array datapath
+          itself, not by the format-specific decode logic.
+        </p>
+
+        <h3 class="sub-title" id="4-5-3-register-pressure-and-spill-threshold">
+          4.5.3 Register Pressure and Spill Threshold
+        </h3>
+
+        <aside class="callout callout-info">
+          <p>
+            <strong>Terminology: "Accumulator Chain"</strong> — In this context,
+            a <em>chain</em> refers to one independent MMA dependency sequence
+            that shares a single set of 4 FP32 accumulator registers (C/D).
+          </p>
+
+          <p>
+            <strong
+              >1 chain = 1 independent accumulator register group (4
+              regs)</strong
+            >
+          </p>
+
+          <pre><code>// Single chain: c0, c1, c2, c3 form one accumulator group.
+// Each MMA's output D is written back to C ("+f" constraint) → RAW dependency.
+asm volatile("mma.sync.aligned.m16n8k16.row.col.f32.f16.f16.f32 "
+    "{%0,%1,%2,%3}, {A0,A1,A2,A3}, {B0,B1}, {%0,%1,%2,%3};"
+    : "+f"(c0), "+f"(c1), "+f"(c2), "+f"(c3) : ...);</code></pre>
+
+          <p>
+            Because output D = input C (the <code>"+f"</code> constraint), the
+            <em>next</em> MMA in the same chain must wait for the
+            <em>current</em> one to complete → forming a
+            <strong>latency-bound dependency chain</strong> (28.78 cyc/mma at
+            ILP=1).
+          </p>
+
+          <p>
+            <strong
+              >Multiple chains = ILP (Instruction-Level Parallelism)</strong
+            >
+          </p>
+
+          <pre><code>// 4 chains: each has its own independent accumulator set (c0x, c1x, c2x, c3x)
+for (int i = 0; i < N; i++) {
+    mma(..., {c00,c01,c02,c03}, ...);  // chain 0
+    mma(..., {c10,c11,c12,c13}, ...);  // chain 1  ← NO dependency on chain 0!
+    mma(..., {c20,c21,c22,c23}, ...);  // chain 2
+    mma(..., {c30,c31,c32,c33}, ...);  // chain 3
+}</code></pre>
+
+          <p>
+            The 4 chains are <strong>data-independent</strong> (separate
+            register groups), so the TC pipeline can dispatch chain 1 while
+            chain 0 is still executing in the systolic array → pipeline overlap
+            → 15.88 cyc/mma (1.81× speedup over single-chain latency).
+          </p>
+
+          <p><strong>Chain count vs register consumption:</strong></p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Chains</th>
+                  <th>Accum Regs</th>
+                  <th>ptxas Total</th>
+                  <th>Meaning</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>4</td>
+                  <td>4×4 = 16</td>
+                  <td>32</td>
+                  <td>Minimum to saturate TC pipeline (ILP=4)</td>
+                </tr>
+                <tr>
+                  <td>60</td>
+                  <td>60×4 = 240</td>
+                  <td>252</td>
+                  <td>Maximum without spilling (last safe point)</td>
+                </tr>
+                <tr>
+                  <td>62</td>
+                  <td>62×4 = 248</td>
+                  <td>255</td>
+                  <td>Spill onset — STL/LDL instructions injected</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p>
+            <strong>Mapping to real GEMM kernels:</strong> Chain count = number
+            of <em>independent output tiles</em> accumulated in the inner
+            K-loop. For example, a 128×128 output tile decomposed into m16n8
+            fragments yields 8×16 = 128 fragments, but only 4–8 independent
+            chains (interleaved execution) are needed to saturate the TC
+            pipeline. Case 5 intentionally pushes chain count to the extreme (up
+            to 64) to locate the precise register spill boundary.
+          </p>
+        </aside>
+
+        <p>
+          The register pressure sweep (Case 5) establishes the precise spill
+          boundary for TC-heavy kernels:
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th style="text-align: center">Accum Chains</th>
+                <th style="text-align: center">Accum Regs</th>
+                <th style="text-align: center">ptxas Total</th>
+                <th style="text-align: center">Spill</th>
+                <th style="text-align: center">cyc/mma</th>
+                <th style="text-align: center">Penalty</th>
+                <th>Source</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="text-align: center">4</td>
+                <td style="text-align: center">16</td>
+                <td style="text-align: center">32</td>
+                <td style="text-align: center">0</td>
+                <td style="text-align: center">15.77</td>
+                <td style="text-align: center">0%</td>
+                <td><span class="cite">[S9/case_5]</span></td>
+              </tr>
+              <tr>
+                <td style="text-align: center">8</td>
+                <td style="text-align: center">32</td>
+                <td style="text-align: center">44</td>
+                <td style="text-align: center">0</td>
+                <td style="text-align: center">15.88</td>
+                <td style="text-align: center">0%</td>
+                <td><span class="cite">[S9/case_5]</span></td>
+              </tr>
+              <tr>
+                <td style="text-align: center">32</td>
+                <td style="text-align: center">128</td>
+                <td style="text-align: center">144</td>
+                <td style="text-align: center">0</td>
+                <td style="text-align: center">15.97</td>
+                <td style="text-align: center">0%</td>
+                <td><span class="cite">[S9/case_5]</span></td>
+              </tr>
+              <tr>
+                <td style="text-align: center">60</td>
+                <td style="text-align: center">240</td>
+                <td style="text-align: center">252</td>
+                <td style="text-align: center">0</td>
+                <td style="text-align: center"><strong>15.99</strong></td>
+                <td style="text-align: center">0% (max no-spill)</td>
+                <td><span class="cite">[S9/case_5]</span></td>
+              </tr>
+              <tr>
+                <td style="text-align: center">62</td>
+                <td style="text-align: center">248</td>
+                <td style="text-align: center">255</td>
+                <td style="text-align: center">4.1 KB</td>
+                <td style="text-align: center"><strong>17.87</strong></td>
+                <td style="text-align: center"><strong>+12%</strong></td>
+                <td><span class="cite">[S9/case_5]</span></td>
+              </tr>
+              <tr>
+                <td style="text-align: center">64</td>
+                <td style="text-align: center">256</td>
+                <td style="text-align: center">255</td>
+                <td style="text-align: center">9.1 KB</td>
+                <td style="text-align: center">18.93</td>
+                <td style="text-align: center">+18%</td>
+                <td><span class="cite">[S9/case_5]</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          <strong>Spill threshold: 60 chains (252 registers)</strong> — the
+          maximum configuration without register spilling. At 62 chains, ptxas
+          exceeds the 255-register ceiling and begins emitting STL/LDL
+          instructions for spill/fill traffic. The +12% throughput penalty at
+          spill onset is modest due to L1-cached spill traffic, but represents
+          wasted issue slots that could have been used for useful work.
+        </p>
+        <p>
+          <strong>Zero throughput variation from 4 to 60 chains</strong>: This
+          remarkable stability (15.77-15.99 cyc/mma across 15× variation in
+          register count) proves that register file SIZE alone does not affect
+          MMA execution speed. The TC throughput is determined purely by the
+          pipeline dispatch rate, not by RF access latency or contention.
+        </p>
+        <p>
+          <strong>GEMM register budget</strong>: A typical GEMM kernel with 4
+          accumulator chains uses 16 accum + ~16 control + ~32 operand = ~64
+          registers per thread. This leaves ~191 registers for address
+          computation, double-buffering state, and other kernel logic — ample
+          headroom on SM_120's 256-register budget.
+        </p>
+
+        <figure class="diagram">
+          <object
+            data="svg/ch04/ch04_s453_regpressure.svg"
+            type="image/svg+xml"
+            aria-label="4.5.3 TC Register Pressure — throughput vs chain count chart showing razor-sharp spill boundary at 60→62 chains, spill mechanism detail, and register budget anatomy"
+          ></object>
+          <figcaption>
+            <span class="fig-num">FIG 04.5.3</span>TC Register Pressure and
+            Spill Threshold. Throughput is rock-stable at 15.77–15.99 cyc/mma
+            from 4 to 60 chains (32–252 registers). At 62 chains, the
+            255-register ceiling triggers STL/LDL spill traffic with an instant
+            +12% penalty. Beyond the cliff, degradation is graceful (L1-cached
+            spills).
+          </figcaption>
+        </figure>
+
+        <p>
+          <strong
+            >The Razor-Sharp Spill Cliff: Microarchitectural Explanation</strong
+          >
+        </p>
+
+        <p>
+          The data reveals one of the sharpest performance cliffs in the SM_120
+          microarchitecture: throughput is
+          <strong>perfectly constant</strong> at 15.77–15.99 cyc/mma across a
+          15× variation in register usage (4 to 60 chains, 32 to 252 registers),
+          then <strong>instantly degrades by 12%</strong> at 62 chains when
+          ptxas exceeds the 255-register ceiling. This behavior has a precise
+          microarchitectural explanation: below the spill boundary, all
+          accumulator chains live in dedicated RF locations and the TC pipeline
+          processes them at the dispatch-rate-limited floor (15.88 cyc). The
+          moment ptxas is forced to spill, it emits paired STL (store to local)
+          and LDL (load from local) instructions between each MMA, consuming
+          issue slots that would otherwise be idle during the MMA's 29-cycle
+          execution window. The 1.88 cyc/mma penalty (15.99 → 17.87) corresponds
+          to approximately 2 extra instructions issued per MMA — consistent with
+          one STL + one LDL per chain rotation.
+        </p>
+
+        <p>
+          <strong>Why spill degradation is graceful beyond the cliff</strong>
+        </p>
+
+        <p>
+          Going from 62 chains (4.1 KB spill) to 64 chains (9.1 KB spill) adds
+          only +6% additional penalty (17.87 → 18.93 cyc/mma), despite more than
+          doubling spill volume. This confirms that spill traffic hits the
+          <strong>L1 data cache</strong> (per-SM, effectively zero-latency for
+          single-warp execution) rather than L2 or DRAM. The primary cost is not
+          memory latency but rather the consumption of instruction issue slots:
+          the warp scheduler must issue STL/LDL instructions that compete with
+          MMA for the single-issue dispatch port. Since MMA instructions have a
+          29-cycle execution window during which the scheduler can issue "free"
+          instructions (co-issue), the spill traffic partially hides within this
+          window — explaining why doubling spill volume doesn't double the
+          penalty.
+        </p>
+
+        <p><strong>SASS-level verification of the spill mechanism</strong></p>
+
+        <p>
+          SASS disassembly confirms the exact mechanism: at N≤60, each chain
+          uses a unique destination register group (e.g.,
+          <code>HMMA.16816.F32 R12, R4, R2.reuse, R12</code> for chain 0,
+          <code>...R16...R16</code> for chain 1, etc.). At N≥62, ptxas collapses
+          ALL chains to a single register group (<code>R8</code>) and inserts
+          <code>STL [addr_N], R8; ... ; LDL R8, [addr_M]</code> pairs between
+          MMA instructions to save/restore accumulator state. This
+          register-rotation pattern is the classic "spill-slot round-robin"
+          strategy: the compiler treats local memory as an extension of the
+          register file, using it to hold the overflow chains that cannot fit in
+          255 physical registers.
+        </p>
+
+        <hr />
+        <h2
+          class="ch-title"
+          id="4-6-chip-level-tc-peaks-and-cutlasscublas-sweeps"
+        >
+          4.6 Chip-Level TC Peaks and CUTLASS/cuBLAS Sweeps
+        </h2>
+        <h3 class="sub-title" id="per-sm-and-device-level-measured-peaks">
+          Per-SM and Device-Level Measured Peaks
+        </h3>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Format</th>
+                <th style="text-align: center">TFLOPS/SM</th>
+                <th style="text-align: center">Device TFLOPS (110 SM)</th>
+                <th style="text-align: center">Efficiency</th>
+                <th>Source</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>FP16 (HMMA)</td>
+                <td style="text-align: center">2.43</td>
+                <td style="text-align: center">268</td>
+                <td style="text-align: center">~100%</td>
+                <td><span class="cite">[S9/case_127]</span></td>
+              </tr>
+              <tr>
+                <td>FP8 (QMMA)</td>
+                <td style="text-align: center">4.87</td>
+                <td style="text-align: center">536</td>
+                <td style="text-align: center">~100%</td>
+                <td><span class="cite">[S9/case_127]</span></td>
+              </tr>
+              <tr>
+                <td>MX-FP4 (OMMA.SF)</td>
+                <td style="text-align: center">9.73</td>
+                <td style="text-align: center">1,070</td>
+                <td style="text-align: center">99.0% sustained</td>
+                <td><span class="cite">[S9/case_128]</span></td>
+              </tr>
+              <tr>
+                <td>INT8 (IMMA)</td>
+                <td style="text-align: center">4.87</td>
+                <td style="text-align: center">536</td>
+                <td style="text-align: center">~100%</td>
+                <td><span class="cite">[S9/case_127]</span></td>
+              </tr>
+              <tr>
+                <td>Sparse INT8</td>
+                <td style="text-align: center">~9.73</td>
+                <td style="text-align: center">~1,070</td>
+                <td style="text-align: center">estimated</td>
+                <td><span class="cite">[S9/case_129]</span></td>
+              </tr>
+              <tr>
+                <td>FP64 (DMMA)</td>
+                <td style="text-align: center">0.001</td>
+                <td style="text-align: center">~0.1</td>
+                <td style="text-align: center">N/A (pipe_fp64)</td>
+                <td><span class="cite">[S9/case_104]</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <aside class="callout callout-info">
+          <p>
+            <strong
+              >DMMA vs cuBLAS DGEMM throughput note (m-18 RESOLVED
+              2026-06-11)</strong
+            >: The 0.001 TFLOPS/SM figure above is the
+            <strong>per-SM bare DMMA m8n8k4</strong> rate — derived as
+            <code
+              >4 SMSP × (1/579 cyc) × 128 FLOP/MMA × 2.572 GHz ≈ 2.27 GFLOPS/SM
+              ≈ 0.002 TFLOPS/SM</code
+            >
+            (table rounds to 0.001). This is the
+            <strong>non-pipelined FP64 tensor-shape op</strong> routed to
+            <code>pipe_fp64</code>. It is <strong>not</strong> the practical
+            FP64 GEMM ceiling: cuBLAS DGEMM achieves
+            <strong>0.96 TFLOPS chip-level (≈0.0087 TFLOPS/SM)</strong>
+            <span class="cite">[S19/case_6]</span> using
+            <strong>DFMA scalar instructions</strong> with deep ILP pipelining
+            and the 4-EU/SM FP64 path resolved by C-07 (2026-06-11) — roughly 4×
+            higher than the bare DMMA route. For FP64 workloads, prefer
+            DFMA-based code (cuBLAS / DeepGeMM) over <code>mma.sync.f64</code>.
+          </p>
+        </aside>
+        <h3 class="sub-title" id="full-precision-chip-level-theoretical-peaks">
+          Full-Precision Chip-Level Theoretical Peaks
+        </h3>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Format</th>
+                <th style="text-align: center">Per-SM TOPS</th>
+                <th style="text-align: center">Chip TOPS (110 SM)</th>
+                <th style="text-align: center">Theoretical</th>
+                <th style="text-align: center">Efficiency</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>FP16</td>
+                <td style="text-align: center">29.4</td>
+                <td style="text-align: center">3,234</td>
+                <td style="text-align: center">3,234</td>
+                <td style="text-align: center">~100%</td>
+              </tr>
+              <tr>
+                <td>BF16</td>
+                <td style="text-align: center">29.4</td>
+                <td style="text-align: center">3,234</td>
+                <td style="text-align: center">3,234</td>
+                <td style="text-align: center">~100%</td>
+              </tr>
+              <tr>
+                <td>TF32</td>
+                <td style="text-align: center">14.7</td>
+                <td style="text-align: center">1,617</td>
+                <td style="text-align: center">1,617</td>
+                <td style="text-align: center">~100%</td>
+              </tr>
+              <tr>
+                <td>INT8</td>
+                <td style="text-align: center">58.8</td>
+                <td style="text-align: center">6,468</td>
+                <td style="text-align: center">6,468</td>
+                <td style="text-align: center">~100%</td>
+              </tr>
+              <tr>
+                <td>FP8 E4M3</td>
+                <td style="text-align: center">58.8</td>
+                <td style="text-align: center">6,468</td>
+                <td style="text-align: center">6,468</td>
+                <td style="text-align: center">~100%</td>
+              </tr>
+              <tr>
+                <td>FP6 E2M3</td>
+                <td style="text-align: center">58.8</td>
+                <td style="text-align: center">6,468</td>
+                <td style="text-align: center">6,468</td>
+                <td style="text-align: center">~100%</td>
+              </tr>
+              <tr>
+                <td>MX FP4 (k=64)</td>
+                <td style="text-align: center">117.6</td>
+                <td style="text-align: center">12,936</td>
+                <td style="text-align: center">12,936</td>
+                <td style="text-align: center">~100%</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <h3 class="sub-title" id="588-shape-cutlasscublas-production-sweep">
+          588-Shape CUTLASS/cuBLAS Production Sweep
+        </h3>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Library</th>
+                <th>Precision</th>
+                <th style="text-align: center">Peak TFLOPS</th>
+                <th>Peak Shape (MxNxK)</th>
+                <th style="text-align: center">Efficiency</th>
+                <th>Source</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>cuBLAS</td>
+                <td>BF16</td>
+                <td style="text-align: center">253.6</td>
+                <td>16384x4096x7168</td>
+                <td style="text-align: center">--</td>
+                <td><span class="cite">[S9/case_131]</span></td>
+              </tr>
+              <tr>
+                <td>cuBLAS</td>
+                <td>FP8 E4M3</td>
+                <td style="text-align: center">551.1</td>
+                <td>3072x16384x16384</td>
+                <td style="text-align: center">102%</td>
+                <td><span class="cite">[S9/case_132]</span></td>
+              </tr>
+              <tr>
+                <td>cuBLAS</td>
+                <td>MXFP4</td>
+                <td style="text-align: center">1041.9</td>
+                <td>--</td>
+                <td style="text-align: center">97.4%</td>
+                <td><span class="cite">[S9/case_133]</span></td>
+              </tr>
+              <tr>
+                <td>CUTLASS</td>
+                <td>BF16</td>
+                <td style="text-align: center">261.8</td>
+                <td>--</td>
+                <td style="text-align: center">97.9%</td>
+                <td><span class="cite">[S9/case_134]</span></td>
+              </tr>
+              <tr>
+                <td>CUTLASS</td>
+                <td>FP8 blockwise</td>
+                <td style="text-align: center">504.3</td>
+                <td>3072x16384x16384</td>
+                <td style="text-align: center">94.1%</td>
+                <td><span class="cite">[S9/case_135]</span></td>
+              </tr>
+              <tr>
+                <td>CUTLASS</td>
+                <td>MXFP4</td>
+                <td style="text-align: center">1076.5</td>
+                <td>3072x16384x16384</td>
+                <td style="text-align: center">
+                  100.6% / 90.8% (dual baseline; see V-02 footnote)
+                </td>
+                <td><span class="cite">[S9/case_136]</span></td>
+              </tr>
+              <tr>
+                <td>CUTLASS</td>
+                <td>NVFP4</td>
+                <td style="text-align: center">1011.6</td>
+                <td>3072x16384x16384</td>
+                <td style="text-align: center">94.5%</td>
+                <td><span class="cite">[S9/case_137]</span></td>
+              </tr>
+              <tr>
+                <td>CUTLASS Sparse</td>
+                <td>FP8</td>
+                <td style="text-align: center">682</td>
+                <td>--</td>
+                <td style="text-align: center">max 1.45x dense</td>
+                <td><span class="cite">[S9/case_139]</span></td>
+              </tr>
+              <tr>
+                <td>CUTLASS Sparse</td>
+                <td>MXFP4</td>
+                <td style="text-align: center">1318</td>
+                <td>--</td>
+                <td style="text-align: center">61.7%</td>
+                <td><span class="cite">[S9/case_140]</span></td>
+              </tr>
+              <tr>
+                <td>CUTLASS Grouped</td>
+                <td>FP8</td>
+                <td style="text-align: center">521.4</td>
+                <td>3072x2048x16384</td>
+                <td style="text-align: center">97.3%</td>
+                <td><span class="cite">[S9/case_143]</span></td>
+              </tr>
+              <tr>
+                <td>CUTLASS Grouped</td>
+                <td>MXFP4</td>
+                <td style="text-align: center">1036.4</td>
+                <td>3072x4096x16384</td>
+                <td style="text-align: center">96.9%</td>
+                <td><span class="cite">[S9/case_144]</span></td>
+              </tr>
+              <tr>
+                <td>CUTLASS Grouped</td>
+                <td>NVFP4</td>
+                <td style="text-align: center">866.0</td>
+                <td>M=3072</td>
+                <td style="text-align: center">81%</td>
+                <td><span class="cite">[S9/case_145]</span></td>
+              </tr>
+              <tr>
+                <td>Chip sustained</td>
+                <td>MXFP4 (hand-tuned)</td>
+                <td style="text-align: center">1068.5</td>
+                <td>110SM x 220blk</td>
+                <td style="text-align: center">99.0%</td>
+                <td><span class="cite">[S9/case_128]</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <figure class="diagram">
+          <object
+            data="svg/ch04/ch04_s46_chip_perf.svg"
+            type="image/svg+xml"
+            aria-label="4.6 Chip-Level TC Performance — grouped bar chart comparing theoretical peak vs cuBLAS vs CUTLASS TFLOPS across BF16/FP8/MXFP4/NVFP4/Sparse formats, with efficiency gap analysis"
+          ></object>
+          <figcaption>
+            <span class="fig-num">FIG 04.6</span>Chip-Level Performance:
+            Theoretical Peak vs Production Libraries. Dense formats
+            (BF16/FP8/MXFP4) achieve 94–102% efficiency, proving that the 4.4×
+            data starvation ratio is fully mitigated by software pipelining.
+            Sparse MXFP4 at 61.7% is the sole significant gap, limited by K=256
+            alignment and metadata overhead.
+          </figcaption>
+        </figure>
+
+        <p><strong>Derivation: Per-SM Peak → Chip-Level Theoretical</strong></p>
+
+        <p>
+          The theoretical chip TFLOPS is computed directly from microbenchmark
+          measurements: per-SM TFLOPS (measured at single-SM saturation with
+          ILP≥4) × 110 active SMs. For example, FP16 HMMA: 4 SMSP × (1/15.88
+          cyc/mma) × 4,096 FLOP/mma × 2.377 GHz = 2.43 TFLOPS/SM → 2.43 × 110 =
+          268 TFLOPS chip. This derivation uses the <em>measured</em> per-SM
+          throughput (which already accounts for the RF-read bottleneck), not a
+          theoretical formula — making it the tightest achievable upper bound.
+        </p>
+
+        <p><strong>Why cuBLAS FP8 exceeds 100% (551 vs 536 TFLOPS)</strong></p>
+
+        <p>
+          The >100% efficiency appears paradoxical but has a precise
+          explanation: the per-SM measurement was taken with SM clock locked at
+          2.377 GHz, while the cuBLAS full-chip sweep benefits from
+          <strong>opportunistic clock boost</strong> during the compute-bound
+          burst phase. When all 110 SMs are TC-saturated simultaneously, the
+          GPU's internal voltage regulator can briefly sustain a clock above the
+          locked baseline before thermal throttling engages. The effective clock
+          during the cuBLAS burst is approximately 2.377 × (551/536) = 2.44 GHz
+          — within the boost headroom. This does not represent a measurement
+          error but rather a real-world performance advantage of full-chip
+          saturation workloads that can exploit transient clock boost.
+        </p>
+
+        <p>
+          <strong
+            >CUTLASS FP8 Blockwise (94.1%) vs cuBLAS FP8 (102%): The
+            Quantization Epilogue Cost</strong
+          >
+        </p>
+
+        <p>
+          CUTLASS's blockwise FP8 kernel includes per-block quantization in the
+          epilogue (computing block max, scale factor derivation, and FP32→FP8
+          conversion), which consumes ~6% of the total kernel time. cuBLAS's FP8
+          kernel uses a more aggressive fusion strategy where the epilogue is
+          overlapped with the next tile's MMA computation via warp
+          specialization at the CTA level. The 8-percentage-point gap (102% vs
+          94.1%) thus represents the cost of CUTLASS's more general blockwise
+          scaling API versus cuBLAS's hand-tuned fusion. For applications that
+          can use per-tensor scaling, CUTLASS would match cuBLAS.
+        </p>
+
+        <p>
+          <strong
+            >Grouped GEMM NVFP4 (81%): Per-Group Scheduling Overhead</strong
+          >
+        </p>
+
+        <p>
+          The grouped GEMM kernel launches multiple small GEMMs simultaneously,
+          each potentially with different M/N/K. At NVFP4 precision, each
+          group's tile must align to k=64 boundaries, and the per-group overhead
+          (descriptor construction at 24.16 cyc/desc from Case 172, plus CTA
+          scheduling imbalance across variable-size groups) accumulates to ~19%
+          loss. The bottleneck is not TC compute but rather the
+          <strong>wavefront scheduling</strong>: when groups have different M
+          dimensions, some SMs finish early and idle while waiting for the
+          largest group. This is fundamentally a load-balancing problem, not a
+          hardware limitation.
+        </p>
+
+        <p><strong>Sparse MXFP4 (61.7%): The Alignment Tax</strong></p>
+
+        <p>
+          Structured sparsity's 2:4 pattern requires K dimensions aligned to 256
+          elements (the minimum metadata granularity for OMMA.SF.SP.168128). For
+          the CUTLASS sparse sweep shapes, this K=256 minimum forces padding and
+          reduces the effective compute density. Additionally, the sparse
+          metadata itself occupies shared memory bandwidth for loading the index
+          arrays. At small-to-medium shapes, metadata loading cannot be fully
+          overlapped with compute, creating bubbles. The 61.7% efficiency
+          represents the average across a shape sweep that includes both
+          favorable (large-K) and unfavorable (small-K, alignment-constrained)
+          configurations. For the specific shape 3072×16384×16384, sparse MXFP4
+          achieves approximately 80% — the 61.7% is dragged down by smaller
+          shapes.
+        </p>
+
+        <hr />
+        <h2 class="ch-title" id="4-7-ldmatrix-stmatrix-microarchitecture">
+          4.7 ldmatrix / stmatrix Microarchitecture
+        </h2>
+        <p>
+          SM_120 relies exclusively on <code>ldmatrix</code> and
+          <code>stmatrix</code> (SASS: <code>LDSM</code> / <code>STSM</code>)
+          for warp-collective matrix fragment transfers between shared memory
+          and the register file. These are the only instructions that produce
+          MMA-ready register layouts without explicit thread-level data
+          shuffling.
+        </p>
+        <h3 class="sub-title" id="4-7-1-ldmatrix-latency-and-width-scaling">
+          4.7.1 ldmatrix Latency and Width Scaling
+        </h3>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Variant</th>
+                <th>SASS Opcode</th>
+                <th style="text-align: center">Latency (cyc)</th>
+                <th style="text-align: center">Bytes/op</th>
+                <th style="text-align: center">B/cyc</th>
+                <th>Source</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>ldmatrix.x1.m8n8.b16</td>
+                <td>LDSM.16.M88</td>
+                <td style="text-align: center">27.12</td>
+                <td style="text-align: center">4</td>
+                <td style="text-align: center">0.15</td>
+                <td><span class="cite">[S9/case_146]</span></td>
+              </tr>
+              <tr>
+                <td>ldmatrix.x2.m8n8.b16</td>
+                <td>LDSM.16.M88.2</td>
+                <td style="text-align: center">30.00</td>
+                <td style="text-align: center">8</td>
+                <td style="text-align: center">0.27</td>
+                <td><span class="cite">[S9/case_146]</span></td>
+              </tr>
+              <tr>
+                <td>ldmatrix.x4.m8n8.b16</td>
+                <td>LDSM.16.M88.4</td>
+                <td style="text-align: center">32.94</td>
+                <td style="text-align: center">16</td>
+                <td style="text-align: center">0.49</td>
+                <td><span class="cite">[S9/case_146]</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          <strong>Sub-linear scaling</strong>: Each width doubling (x1→x2→x4)
+          adds only ~3 cyc of marginal latency, indicating the additional matrix
+          fragments are loaded through the same LSU port in a pipelined fashion.
+          The x4 variant achieves 3.56x higher bandwidth efficiency than x1
+          (1.33 vs 0.37 B/cyc per dependent load).
+        </p>
+        <p>
+          <strong>Cross-validation</strong>: Section 8.9 Case 103 independently
+          measures ldmatrix.x4 at 49.12 cyc latency (different anti-DCE
+          methodology using address arithmetic chain), consistent with the ~33
+          cyc pointer-chase measurement plus ~16 cyc of additional dependency
+          overhead from the address computation.
+        </p>
+        <h3 class="sub-title" id="4-7-2-ldmatrix-throughput">
+          4.7.2 ldmatrix Throughput
+        </h3>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th style="text-align: center">ILP</th>
+                <th style="text-align: center">cyc/ldmatrix.x4</th>
+                <th style="text-align: center">ops/cyc</th>
+                <th style="text-align: center">fragments/cyc</th>
+                <th style="text-align: center">B/cyc (warp)</th>
+                <th>Source</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="text-align: center">1</td>
+                <td style="text-align: center">5.29</td>
+                <td style="text-align: center">0.189</td>
+                <td style="text-align: center">0.756</td>
+                <td style="text-align: center">24.2</td>
+                <td><span class="cite">[S9/case_148]</span></td>
+              </tr>
+              <tr>
+                <td style="text-align: center">2</td>
+                <td style="text-align: center">2.85</td>
+                <td style="text-align: center">0.351</td>
+                <td style="text-align: center">1.404</td>
+                <td style="text-align: center">44.9</td>
+                <td><span class="cite">[S9/case_148]</span></td>
+              </tr>
+              <tr>
+                <td style="text-align: center">4</td>
+                <td style="text-align: center">2.08</td>
+                <td style="text-align: center">0.481</td>
+                <td style="text-align: center">1.926</td>
+                <td style="text-align: center">61.6</td>
+                <td><span class="cite">[S9/case_148]</span></td>
+              </tr>
+              <tr>
+                <td style="text-align: center">8</td>
+                <td style="text-align: center">1.68</td>
+                <td style="text-align: center">0.595</td>
+                <td style="text-align: center">2.382</td>
+                <td style="text-align: center">76.2</td>
+                <td><span class="cite">[S9/case_148]</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          <strong>Peak throughput</strong>: 1.68 cyc/ldmatrix.x4 at ILP=8,
+          yielding 76.2 B/cyc per warp. The smem port saturates between ILP=4
+          and ILP=8 (1.24x speedup from ILP=4 to ILP=8 vs theoretical 2x).
+          Pipeline depth ≈ 3.15 (5.29/1.68).
+        </p>
+        <h3 class="sub-title" id="4-7-3-ldmatrix--trans-modifier">
+          4.7.3 ldmatrix .trans Modifier
+        </h3>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Metric</th>
+                <th style="text-align: center">Non-trans</th>
+                <th style="text-align: center">Trans (.MT)</th>
+                <th style="text-align: center">Delta</th>
+                <th>Source</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Latency (dep chain)</td>
+                <td style="text-align: center">48.20 cyc</td>
+                <td style="text-align: center">48.20 cyc</td>
+                <td style="text-align: center">0.00</td>
+                <td><span class="cite">[S9/case_147]</span></td>
+              </tr>
+              <tr>
+                <td>Throughput</td>
+                <td style="text-align: center">0.02 cyc/op</td>
+                <td style="text-align: center">0.02 cyc/op</td>
+                <td style="text-align: center">0.00</td>
+                <td><span class="cite">[S9/case_147]</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          <strong>Zero cost</strong>: The <code>.trans</code> modifier (SASS:
+          <code>LDSM.16.MT88.4</code> vs <code>LDSM.16.M88.4</code>) adds
+          exactly 0 cycles — the transpose is implemented as a zero-cost
+          crossbar permutation in the shared memory interconnect, not as an
+          additional pipeline stage. All 10 trials produced bit-identical cycle
+          counts.
+        </p>
+        <p>
+          <strong>FlashInfer implication</strong>: The K^T access pattern for
+          attention uses <code>ldmatrix.trans</code> with zero performance
+          penalty.
+        </p>
+        <h3 class="sub-title" id="4-7-4-ldmatrix-partial-loading-x2-vs-x4">
+          4.7.4 ldmatrix Partial Loading (x2 vs x4)
+        </h3>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Variant</th>
+                <th style="text-align: center">Latency (dep chain)</th>
+                <th style="text-align: center">Delta</th>
+                <th>Source</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>ldmatrix.x4</td>
+                <td style="text-align: center">39.44 cyc</td>
+                <td style="text-align: center">—</td>
+                <td><span class="cite">[S9/case_153]</span></td>
+              </tr>
+              <tr>
+                <td>ldmatrix.x2</td>
+                <td style="text-align: center">35.45 cyc</td>
+                <td style="text-align: center">-3.99 cyc</td>
+                <td><span class="cite">[S9/case_153]</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          <strong>No savings from partial discard</strong>: Using ldmatrix.x4
+          and ignoring 2 of 4 output registers provides zero savings — the
+          hardware performs the full 4-fragment load atomically. For the
+          FlashInfer left-half pattern (only 2 fragments needed), native
+          <code>ldmatrix.x2</code> saves 3.99 cyc per load.
+        </p>
+        <h3 class="sub-title" id="4-7-5-ldmatrix--b8-availability">
+          4.7.5 ldmatrix .b8 Availability
+        </h3>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Feature</th>
+                <th>Status</th>
+                <th>Error</th>
+                <th>Source</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>ldmatrix .b8 (m8n8)</td>
+                <td>NOT AVAILABLE</td>
+                <td>"Incorrect instruction type"</td>
+                <td><span class="cite">[S9/case_175]</span></td>
+              </tr>
+              <tr>
+                <td>ldmatrix .m16n8 shape</td>
+                <td>NOT AVAILABLE</td>
+                <td>"Illegal matrix shape"</td>
+                <td><span class="cite">[S9/case_175]</span></td>
+              </tr>
+              <tr>
+                <td>ldmatrix .b16 (m8n8)</td>
+                <td>Available</td>
+                <td>LDSM.16.M88.{1,2,4}</td>
+                <td>baseline</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          SM_120 does NOT support <code>ldmatrix .b8</code> or new shapes
+          (<code>.m16n8</code>, <code>.m16n16</code>). FP8/INT8 MMA operands
+          must be loaded through the standard <code>.b16</code> path (which
+          packs 2x byte values per 16-bit slot). The <code>.b8</code> path with
+          dedicated byte-granularity layout requires SM_100+ (tcgen05 path).
+        </p>
+        <h3 class="sub-title" id="4-7-6-stmatrix-latency-and-throughput">
+          4.7.6 stmatrix Latency and Throughput
+        </h3>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Instruction</th>
+                <th>SASS Opcode</th>
+                <th style="text-align: center">Throughput (cyc/op)</th>
+                <th style="text-align: center">Dep Chain (cyc/iter)</th>
+                <th style="text-align: center">True Latency (est.)</th>
+                <th>Source</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>stmatrix.m8n8.x4.b16</td>
+                <td>STSM.16.M88.4</td>
+                <td style="text-align: center">15.99</td>
+                <td style="text-align: center">62.20</td>
+                <td style="text-align: center">~40</td>
+                <td><span class="cite">[S9/case_149]</span></td>
+              </tr>
+              <tr>
+                <td>stmatrix.m16n8.x1.trans.b8</td>
+                <td>STSM.8.MT168</td>
+                <td style="text-align: center">4.02</td>
+                <td style="text-align: center">32.98</td>
+                <td style="text-align: center">~23</td>
+                <td><span class="cite">[S9/case_151]</span></td>
+              </tr>
+              <tr>
+                <td>stmatrix.m16n8.x2.trans.b8</td>
+                <td>STSM.8.MT168.2</td>
+                <td style="text-align: center">6.04</td>
+                <td style="text-align: center">46.95</td>
+                <td style="text-align: center">~27</td>
+                <td><span class="cite">[S9/case_152]</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          <strong>stmatrix.x4.b16 issue rate = 15.99 cyc</strong>: Approximately
+          2x slower than ldmatrix.x4 throughput (1.68 cyc), confirming
+          store-path vs load-path asymmetry in the LSU pipeline. Pipeline depth
+          3.89.
+        </p>
+        <p>
+          <strong>stmatrix.b8 modifiers are free</strong>: The
+          <code>.b8</code> type and <code>.trans</code> modifier add zero
+          overhead — dep-chain latency is 32.98 cyc for both
+          <code>.b8.trans</code> and <code>.b16</code> variants (measured
+          identically). The SASS <code>STSM.8.MT168</code> encoding handles
+          byte-granularity transposed rearrangement via the same hardware path.
+        </p>
+        <h3 class="sub-title" id="4-7-7-stmatrix-vs-shfl_sync-fallback">
+          4.7.7 stmatrix vs shfl_sync Fallback
+        </h3>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Metric</th>
+                <th style="text-align: center">stmatrix.x4</th>
+                <th style="text-align: center">4x shfl_sync + st.shared</th>
+                <th style="text-align: center">Ratio</th>
+                <th>Source</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Throughput (independent)</td>
+                <td style="text-align: center">10.00 cyc/op</td>
+                <td style="text-align: center">10.13 cyc/op</td>
+                <td style="text-align: center">1.01x</td>
+                <td><span class="cite">[S9/case_150]</span></td>
+              </tr>
+              <tr>
+                <td>Latency (dep chain)</td>
+                <td style="text-align: center">52.02 cyc/op</td>
+                <td style="text-align: center">90.99 cyc/op</td>
+                <td style="text-align: center">1.75x</td>
+                <td><span class="cite">[S9/case_150]</span></td>
+              </tr>
+              <tr>
+                <td>Latency savings</td>
+                <td style="text-align: center">—</td>
+                <td style="text-align: center">—</td>
+                <td style="text-align: center">38.97 cyc</td>
+                <td><span class="cite">[S9/case_150]</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          <strong>Latency-sensitive paths</strong>: stmatrix is 1.75x faster
+          (saves 39 cyc per fragment store) in dependent code paths, because it
+          combines transpose + store into a single atomic hardware operation.
+          For a typical m16n16 output tile requiring 2 stmatrix calls, this
+          translates to ~78 cyc saved.
+        </p>
+        <p>
+          <strong>Throughput-bound paths</strong>: Both paths perform
+          identically (~10 cyc/op) when stores can be pipelined. The shared
+          memory store unit is the common bottleneck at saturation, regardless
+          of path.
+        </p>
+        <p>
+          <strong>FlashInfer dual-path justification</strong>: The library
+          maintains both stmatrix and shfl fallback paths. This measurement
+          confirms: use stmatrix when on the critical path (latency advantage),
+          but the fallback incurs no throughput penalty for pipelined epilogues.
+        </p>
+        <h3
+          class="sub-title"
+          id="4-7-8-summary-ldmatrixstmatrix-characteristics"
+        >
+          4.7.8 Summary: ldmatrix/stmatrix Characteristics
+        </h3>
+        <figure class="diagram">
+          <object
+            data="svg/ch04/ch04_s02_flow.svg"
+            type="image/svg+xml"
+            aria-label="4.7.8 ldmatrix/stmatrix Architecture — bidirectional smem↔RF data path with LDSM/STSM latency, throughput, and key zero-cost properties"
+          ></object>
+          <figcaption>
+            <span class="fig-num">FIG 04.7.8</span>ldmatrix/stmatrix
+            Bidirectional Architecture. LDSM.16.M88.4 (ldmatrix.x4) provides the
+            smem→RF path at 33 cyc latency / 1.68 cyc throughput with zero-cost
+            .trans crossbar permutation. STSM.16.M88.4 (stmatrix.x4) provides
+            the RF→smem path at ~40 cyc / 15.99 cyc, with 1.75× latency
+            advantage over the shfl_sync fallback.
+          </figcaption>
+        </figure>
+
+        <p>
+          <strong
+            >ldmatrix/stmatrix: The Only Path to MMA-Ready Register
+            Layouts</strong
+          >
+        </p>
+
+        <p>
+          On SM_120, <code>ldmatrix</code> and <code>stmatrix</code> are the
+          exclusive warp-collective instructions that transfer matrix fragments
+          between shared memory and the register file in the precise layout
+          required by MMA instructions. Without these instructions, producing
+          the correct per-thread register distribution for a m16n8 fragment
+          would require explicit <code>__shfl_sync</code> permutations across
+          the warp — adding 39 cycles of latency per fragment store (Case 150).
+          The key architectural advantage is that ldmatrix/stmatrix perform the
+          data rearrangement
+          <strong>within the shared memory crossbar hardware</strong> at zero
+          additional cost: the <code>.trans</code> modifier (for K^T access
+          patterns in attention kernels) is implemented as a wire permutation in
+          the crossbar, not as a pipeline stage.
+        </p>
+
+        <p>
+          <strong
+            >Asymmetric throughput: ldmatrix (1.68 cyc) vs stmatrix (15.99
+            cyc)</strong
+          >
+        </p>
+
+        <p>
+          The 9.5× throughput asymmetry between ldmatrix and stmatrix reflects
+          their different roles in the GEMM pipeline. ldmatrix is on the
+          critical data-feeding path (operands must arrive before MMA can
+          execute), so its LSU pipeline is optimized for maximum throughput with
+          deep pipelining (depth 3.15). stmatrix is only used in the epilogue
+          (writing D accumulators back to smem for inter-CTA communication or
+          global store), where throughput is less critical because the epilogue
+          is typically co-issued with the next tile's MMA computation. The 15.99
+          cyc stmatrix throughput matches the MMA throughput (15.88 cyc) —
+          meaning one stmatrix per MMA cycle can be sustained without any
+          additional pipeline stall.
+        </p>
+
+        <p>
+          <strong>Design guidance for FlashAttention/FlashInfer kernels</strong>
+        </p>
+
+        <p>
+          The zero-cost <code>.trans</code> modifier is specifically designed
+          for attention workloads where the K matrix must be transposed before
+          multiplication with Q. FlashInfer's implementation leverages
+          <code>ldmatrix.trans</code> for the K^T access pattern, achieving
+          identical performance to non-transposed loads. For the output write
+          path, <code>stmatrix</code> should be used on latency-critical paths
+          (e.g., writing partial softmax results that are immediately consumed
+          by the next MMA), while the
+          <code>shfl_sync + st.shared</code> fallback is acceptable for
+          throughput-bound pipelined epilogues where the store can be fully
+          overlapped with compute.
+        </p>
+
+        <hr />
+        <h2 class="ch-title" id="4-8-quantized-pipeline">
+          4.8 Quantized Pipeline
+        </h2>
+        <p>
+          The on-chip quantization/dequantization pipeline is critical for LLM
+          inference workloads. SM_120 provides hardware-accelerated format
+          conversion through the F2FP SASS instruction family.
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Operation</th>
+                <th style="text-align: center">Cost</th>
+                <th>Source</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>FP16 -&gt; FP8 cvt (F2FP)</td>
+                <td style="text-align: center">0.37 cyc/elem throughput</td>
+                <td><span class="cite">[S9/case_184]</span></td>
+              </tr>
+              <tr>
+                <td>FP32 -&gt; FP8 cvt</td>
+                <td style="text-align: center">4.36 cyc/elem</td>
+                <td><span class="cite">[S9/case_185]</span></td>
+              </tr>
+              <tr>
+                <td>FP16 -&gt; FP4 cvt</td>
+                <td style="text-align: center">4 cyc/cvt (native sm_120a)</td>
+                <td><span class="cite">[S9/case_186]</span></td>
+              </tr>
+              <tr>
+                <td>FP8 -&gt; FP16 dequant</td>
+                <td style="text-align: center">1.00 cyc/elem throughput</td>
+                <td><span class="cite">[S9/case_187]</span></td>
+              </tr>
+              <tr>
+                <td>MX block-scale encode</td>
+                <td style="text-align: center">203.75 cyc/block (32 elems)</td>
+                <td><span class="cite">[S9/case_188]</span></td>
+              </tr>
+              <tr>
+                <td>Quantize + MMA pipeline</td>
+                <td style="text-align: center">
+                  +0.1 cyc (0.3%) overhead; requant hidden by ILP
+                </td>
+                <td><span class="cite">[S9/case_190]</span></td>
+              </tr>
+              <tr>
+                <td>Per-tensor scaling</td>
+                <td style="text-align: center">+0.6% (free)</td>
+                <td><span class="cite">[S9/case_192]</span></td>
+              </tr>
+              <tr>
+                <td>Per-channel/4 scaling</td>
+                <td style="text-align: center">+8.1%</td>
+                <td><span class="cite">[S9/case_192]</span></td>
+              </tr>
+              <tr>
+                <td>Per-channel/1 scaling</td>
+                <td style="text-align: center">+32.1%</td>
+                <td><span class="cite">[S9/case_192]</span></td>
+              </tr>
+              <tr>
+                <td>FP4 sub-byte pointer arith</td>
+                <td style="text-align: center">
+                  +0.12 cyc/index (5% overhead)
+                </td>
+                <td><span class="cite">[S9/case_171]</span></td>
+              </tr>
+              <tr>
+                <td>f16/f32 accum ratio</td>
+                <td style="text-align: center">
+                  1.000 (no narrow-accum speedup)
+                </td>
+                <td><span class="cite">[S9/case_181-183]</span></td>
+              </tr>
+              <tr>
+                <td>UMMA descriptor construction</td>
+                <td style="text-align: center">24.16 cyc/desc (full)</td>
+                <td><span class="cite">[S9/case_172]</span></td>
+              </tr>
+              <tr>
+                <td>Scale factor TMA load</td>
+                <td style="text-align: center">
+                  560 cyc/tile (constant, L2-served)
+                </td>
+                <td><span class="cite">[S9/case_167]</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <h3
+          class="sub-title"
+          id="4-8-1-microarchitectural-analysis-of-the-quantization-pipeline"
+        >
+          4.8.1 Microarchitectural Analysis of the Quantization Pipeline
+        </h3>
+        <p>
+          The conversion cost hierarchy reveals two distinct hardware paths:
+        </p>
+        <p>
+          <strong>Fast path (F2FP hardware, &lt; 1 cyc/elem)</strong>: FP16→FP8
+          conversion at 0.37 cyc/elem throughput uses the dedicated F2FP SASS
+          instruction which executes on the <code>fmaheavy</code> pipe. This
+          instruction packs two FP8 values per cycle using a simple
+          exponent-range-check + mantissa-truncation circuit — no floating-point
+          multiplication is needed. The sub-cycle throughput suggests the F2FP
+          unit can accept a new conversion every cycle while the previous result
+          is still in the pipeline.
+        </p>
+        <p>
+          <strong>Slow path (software composition, &gt; 4 cyc/elem)</strong>:
+          FP32→FP8 at 4.36 cyc/elem and MX block-scale encode at 203.75
+          cyc/block require multi-instruction SASS sequences. The FP32→FP8 path
+          involves FMUL (scaling), F2FP (truncation), and PRMT (byte packing).
+          MX block-scale additionally requires per-block max reduction (HMNMX
+          across 32 elements), exponent extraction, and scale encoding.
+        </p>
+        <p>
+          <strong>The quantize-MMA overlap at +0.1 cyc (0.3%)</strong> is the
+          most practically important finding. In the W8A8 inference pipeline,
+          online FP16→FP8 requantization can be completely hidden behind TC
+          execution: the F2FP instruction issues in the FMA pipe while the TC
+          pipe is executing the previous MMA. This 0.3% overhead makes online
+          quantization architecturally free on SM_120, enabling per-token
+          dynamic scaling with zero throughput loss.
+        </p>
+        <p>
+          <strong>Scale granularity independence</strong>: Per-tensor (1
+          scale/tensor), per-block-128 (1 scale per 128 elements), and
+          per-block-16 (1 scale per 16 elements) all produce identical MMA
+          throughput. The scale factor broadcast hardware in the TC reduction
+          tree (see §4.2) handles arbitrary granularity at zero additional cost.
+          However, the epilogue scaling cost varies: per-tensor adds +0.6%,
+          per-channel-4 adds +8.1%, and per-channel-1 adds +32.1% — this
+          overhead is in the FFMA epilogue pipe, not the TC pipe.
+        </p>
+        <p>
+          <strong>Accumulator width has no throughput impact</strong>: FP16 vs
+          FP32 accumulation produces identical 15.88 cyc/mma (ratio 1.000, Cases
+          181-183). There is no "narrow accumulator fast path" on SM_120 — both
+          FP16 and FP32 accumulators use the same internal accumulation
+          hardware. This means choosing FP16 accumulation saves only register
+          pressure (4 vs 8 regs for m16n16 output), not throughput.
+        </p>
+        <hr />
+        <h2 class="ch-title" id="4-9-tensorcore-resource-cliff-analysis">
+          4.9 TensorCore Resource Cliff Analysis
+        </h2>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Resource</th>
+                <th>Parameter</th>
+                <th style="text-align: center">Cliff Point</th>
+                <th style="text-align: center">Before Cliff</th>
+                <th style="text-align: center">After Cliff</th>
+                <th style="text-align: center">Penalty</th>
+                <th>Source</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>TC pipeline</td>
+                <td>ILP</td>
+                <td style="text-align: center">ILP=1-&gt;2</td>
+                <td style="text-align: center">28.78 cyc</td>
+                <td style="text-align: center">16.87 cyc</td>
+                <td style="text-align: center">1.71x gain</td>
+                <td><span class="cite">[S9/case_8]</span></td>
+              </tr>
+              <tr>
+                <td>TC pipeline</td>
+                <td>ILP</td>
+                <td style="text-align: center">ILP=2-&gt;4</td>
+                <td style="text-align: center">16.87 cyc</td>
+                <td style="text-align: center">15.88 cyc</td>
+                <td style="text-align: center">1.81x total</td>
+                <td><span class="cite">[S9/case_8]</span></td>
+              </tr>
+              <tr>
+                <td>TC pipeline</td>
+                <td>ILP=4-&gt;8</td>
+                <td style="text-align: center">saturated</td>
+                <td style="text-align: center">15.88 cyc</td>
+                <td style="text-align: center">15.88 cyc</td>
+                <td style="text-align: center">0</td>
+                <td><span class="cite">[S9/case_8]</span></td>
+              </tr>
+              <tr>
+                <td>TC saturation</td>
+                <td>Warps/SM</td>
+                <td style="text-align: center">4 warps</td>
+                <td style="text-align: center">0.25 mma/cyc</td>
+                <td style="text-align: center">flat</td>
+                <td style="text-align: center">ceiling</td>
+                <td><span class="cite">[S9/case_69]</span></td>
+              </tr>
+              <tr>
+                <td>Register spill</td>
+                <td>Chain count</td>
+                <td style="text-align: center">62 chains (255 regs)</td>
+                <td style="text-align: center">15.99 cyc/mma</td>
+                <td style="text-align: center">17.87 cyc/mma</td>
+                <td style="text-align: center">+12%</td>
+                <td><span class="cite">[S9/case_5]</span></td>
+              </tr>
+              <tr>
+                <td>INT4 emulation</td>
+                <td>Format choice</td>
+                <td style="text-align: center">FP4 vs INT4</td>
+                <td style="text-align: center">15.88 cyc</td>
+                <td style="text-align: center">384.16 cyc</td>
+                <td style="text-align: center">24.2x</td>
+                <td><span class="cite">[S9/case_79]</span></td>
+              </tr>
+              <tr>
+                <td>Sparse metadata</td>
+                <td>Modifier</td>
+                <td style="text-align: center">::ordered_metadata</td>
+                <td style="text-align: center">16.25 cyc</td>
+                <td style="text-align: center">243.79 cyc (plain .sp)</td>
+                <td style="text-align: center">15.0x</td>
+                <td><span class="cite">[S19/case_13]</span></td>
+              </tr>
+              <tr>
+                <td>QMMA.SF co-issue</td>
+                <td>FFMA overlap</td>
+                <td style="text-align: center">dense QMMA</td>
+                <td style="text-align: center">71.7% hidden</td>
+                <td style="text-align: center">50.7% (block-scale)</td>
+                <td style="text-align: center">-21pp</td>
+                <td><span class="cite">[S9/case_66]</span></td>
+              </tr>
+              <tr>
+                <td>TC cold start</td>
+                <td>First issue</td>
+                <td style="text-align: center">warm -&gt; cold</td>
+                <td style="text-align: center">29 cyc</td>
+                <td style="text-align: center">~380 cyc</td>
+                <td style="text-align: center">+352 cyc</td>
+                <td><span class="cite">[S9/case_71]</span></td>
+              </tr>
+              <tr>
+                <td>f16/f32 accum</td>
+                <td>Width choice</td>
+                <td style="text-align: center">any</td>
+                <td style="text-align: center">1.000 ratio</td>
+                <td style="text-align: center">--</td>
+                <td style="text-align: center">no diff</td>
+                <td><span class="cite">[S9/case_181]</span></td>
+              </tr>
+              <tr>
+                <td>Scale granularity</td>
+                <td>16 vs 128</td>
+                <td style="text-align: center">--</td>
+                <td style="text-align: center">identical</td>
+                <td style="text-align: center">--</td>
+                <td style="text-align: center">0</td>
+                <td><span class="cite">[S9/case_170]</span></td>
+              </tr>
+              <tr>
+                <td>Cross-format mix</td>
+                <td>OMMA+QMMA</td>
+                <td style="text-align: center">--</td>
+                <td style="text-align: center">15.59 cyc</td>
+                <td style="text-align: center">16.53 cyc</td>
+                <td style="text-align: center">+6% switch</td>
+                <td><span class="cite">[S9/case_62]</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <figure class="diagram">
+          <object
+            data="svg/ch04/ch04_s49_resource_cliff.svg"
+            type="image/svg+xml"
+            aria-label="4.9 TensorCore Resource Cliff Analysis — three-tier categorization of performance cliffs from catastrophic (24×) through moderate (6-71%) to zero-cost transitions"
+          ></object>
+          <figcaption>
+            <span class="fig-num">FIG 04.9</span>TensorCore Resource Cliff Map
+            (Log Scale). Penalty magnitudes span 3 orders of magnitude: from +6%
+            (format switch) to 24.2× (INT4 emulation). The log-scale horizontal
+            bars make both extremes visible in the same chart. Green bars
+            represent gains (ILP improvement); orange/red bars represent
+            penalties.
+          </figcaption>
+        </figure>
+
+        <p>
+          <strong
+            >The Log-Scale Penalty Distribution: Three Orders of
+            Magnitude</strong
+          >
+        </p>
+
+        <p>
+          The resource cliff landscape spans from +6% to 24.2× — a factor of 400
+          between the mildest and most severe penalties. Plotting on a
+          logarithmic scale reveals the true structure: three catastrophic
+          cliffs (13–24×) tower over four moderate cliffs (6–71%), which in turn
+          dwarf the four zero-cost parameters. This distribution is not
+          continuous — it has distinct gaps between tiers, reflecting
+          fundamentally different underlying mechanisms.
+        </p>
+
+        <p>
+          <strong>Mechanism Taxonomy: Binary vs Gradient vs Zero-Cost</strong>
+        </p>
+
+        <p>
+          <strong>Binary cliffs</strong> (Tier 1: 13–24×) arise from hardware
+          absence or mandatory qualifiers. INT4's 24.2× penalty (384.16 vs 15.88
+          cyc/mma, Case 79) occurs because SM_120 physically has no INT4
+          multiplier array — ptxas decomposes <code>mma.sync.s4</code> into
+          multiple <code>IMMA.16832.S8.S8</code> instructions plus
+          nibble-extraction ALU ops. The sparse
+          <code>::ordered_metadata</code> cliff (15×, 243.79 vs 16.25 cyc)
+          exists because without this qualifier, the hardware sparsity decoder
+          cannot operate — ptxas falls back to a software emulation loop. Cold
+          start (13.1×, ~380 vs 29 cyc, Case 120) is the TC unit's physical SRAM
+          power-on sequence. All three are <strong>all-or-nothing</strong>:
+          correct usage costs 0; incorrect usage costs 13–24×.
+        </p>
+
+        <p>
+          <strong>Gradient cliffs</strong> (Tier 2: +6% to +71%) arise from
+          resource saturation curves. The ILP cliff is uniquely a
+          <strong>gain</strong> cliff: moving from ILP=1 (28.78 cyc,
+          latency-bound) to ILP=2 (16.87 cyc, +71% throughput) fills the TC
+          pipeline's 2-slot overlap window. The marginal value of ILP=3→4 is
+          only +6% (16.87→15.88 cyc), and ILP≥5 yields exactly 0 — proving the
+          2-slot limit. The register spill cliff (+12% at 62 chains, Case 5) is
+          sharp in onset but gentle in degradation: going from 4.1 KB to 9.1 KB
+          of spills adds only +6% more because L1 absorbs the traffic at
+          near-zero latency. The QMMA.SF co-issue cliff (-21 percentage points,
+          Case 66) reduces FFMA overlap from 93.6% to 50.7% because block-scale
+          reads consume warp scheduler issue slots that would otherwise be
+          available for FP32 epilogue dispatch.
+        </p>
+
+        <p>
+          <strong>Zero-cost parameters</strong> (Tier 3: 0 penalty) are the
+          kernel designer's free choices. The most surprising is accumulator
+          width: f16 vs f32 accumulation produces a ratio of exactly 1.000 (Case
+          181) — there is no "narrow-accumulator fast path" on SM_120. Scale
+          granularity (16 vs 128 elements per scale factor, Case 170) is
+          similarly free because the TC's dedicated scale broadcast hardware
+          handles arbitrary granularity without pipeline stalls. Block-scale
+          overhead is 0 (Case 48-57): QMMA.SF/OMMA.SF execute at identical
+          throughput to their dense counterparts.
+        </p>
+
+        <p><strong>Practical Design Priority Order</strong></p>
+
+        <p>
+          For SM_120 kernel developers, the cliff map dictates a clear
+          optimization sequence: (1) First, eliminate all Tier 1 cliffs at
+          design time — use FP4 E2M1 instead of INT4, always specify
+          <code>::ordered_metadata</code>, and pre-warm the TC with a dummy MMA
+          if the first real MMA is latency-critical. (2) Second, ensure ILP≥2 in
+          the GEMM inner loop (captures 94% of peak with minimal register cost
+          of +16 regs) and stay within the 252-register budget (60 accumulator
+          chains maximum). (3) Third, choose accumulator width, scale
+          granularity, and block-scale format purely based on numerical accuracy
+          requirements — they are performance-free. The only "hidden" cliff to
+          watch for is the QMMA.SF co-issue reduction: if your kernel has heavy
+          FP32 epilogue work (e.g., online softmax rescaling), dense QMMA will
+          co-issue 43 percentage points better than QMMA.SF.
+        </p>
+
+        <hr />
+        <h2 class="ch-title" id="4-10-key-insights">4.10 Key Insights</h2>
+        <h3
+          class="sub-title"
+          id="ki-4-1-all-qmmaomma-formats-share-identical-29-cyc-15-88-cyc-pipeline"
+        >
+          KI-4.1: All QMMA/OMMA Formats Share Identical 29 cyc / 15.88 cyc
+          Pipeline
+        </h3>
+        <ul>
+          <li>
+            <strong>Phenomenon</strong>: FP8/FP6/FP4/MX block-scaled/NV-FP4 all
+            yield identical latency and throughput. Cross-format mixing incurs
+            zero cost.
+          </li>
+          <li>
+            <strong>Mechanism</strong>: The TC pipeline processes all sub-byte
+            formats through the same multiplier array. Format differences are
+            resolved at operand decode, not in the execution pipeline.
+          </li>
+          <li>
+            <strong>Implication</strong>: Format selection is purely a
+            precision/accuracy decision with no throughput penalty. Libraries
+            can freely mix formats within a kernel.
+          </li>
+          <li><strong>Confidence</strong>: HIGH</li>
+        </ul>
+        <h3
+          class="sub-title"
+          id="ki-4-2-block-scale-mx-mma-is-zero-cost-hardware"
+        >
+          KI-4.2: Block-Scale (MX) MMA Is Zero-Cost Hardware
+        </h3>
+        <ul>
+          <li>
+            <strong>Phenomenon</strong>: QMMA.SF/OMMA.SF perform identically to
+            dense QMMA (+0.2% noise). Scale register pressure = 0, alignment
+            impact = 0, granularity impact = 0.
+          </li>
+          <li>
+            <strong>Mechanism</strong>: [SPECULATIVE] Scale factors are consumed
+            inline via dedicated broadcast hardware in the TC reduction tree.
+            The scale operand bypasses the standard RF read port, explaining
+            zero contention.
+          </li>
+          <li>
+            <strong>Patent reference</strong>: US12141082 (microscaling in
+            tensor core); US12499052 (block floating point).
+          </li>
+          <li>
+            <strong>Confidence</strong>: MEDIUM (mechanism speculative,
+            performance observation confirmed)
+          </li>
+        </ul>
+        <h3
+          class="sub-title"
+          id="ki-4-3-sparse-24-gives-exact-2-00x-with-zero-metadata-overhead"
+        >
+          KI-4.3: Sparse 2:4 Gives Exact 2.00x With Zero Metadata Overhead
+        </h3>
+        <ul>
+          <li>
+            <strong>Phenomenon</strong>: Sparse 1.226 TOPS vs dense 0.613 TOPS
+            at identical 15.88 cyc/mma. The
+            <code>::ordered_metadata</code> qualifier is mandatory; legacy
+            <code>.sp</code> falls back to emulated path at 15.0x slower.
+          </li>
+          <li>
+            <strong>Mechanism</strong>: Hardware sparsity decoder skips zero
+            multiplications in the systolic array. Metadata is consumed
+            in-pipeline without stalling the main execution path.
+          </li>
+          <li>
+            <strong>Implication</strong>: Sparse MMA is unconditionally
+            beneficial when 2:4 structure can be maintained. The
+            ordered_metadata requirement means host-side pruning must be
+            topology-aware.
+          </li>
+          <li><strong>Confidence</strong>: HIGH</li>
+        </ul>
+        <h3
+          class="sub-title"
+          id="ki-4-4-int4-emulated-at-24x----no-native-opcode"
+        >
+          KI-4.4: INT4 Emulated at 24x -- No Native Opcode
+        </h3>
+        <ul>
+          <li>
+            <strong>Phenomenon</strong>: INT4 (s4) decomposes to IMMA.16832.S8 +
+            ALU, costing 384.16 cyc/mma. FP4 E2M1 via QMMA works natively at
+            15.88 cyc/mma.
+          </li>
+          <li>
+            <strong>Mechanism</strong>: INT4 arithmetic is deprecated on
+            Blackwell. The compiler emulates s4 through INT8 MMA plus shift/mask
+            ALU operations. FP4 (E2M1) is the intended replacement.
+          </li>
+          <li>
+            <strong>Implication</strong>: Any INT4 quantization scheme must
+            migrate to FP4 E2M1 format on SM_120 to avoid a 24x performance
+            cliff.
+          </li>
+          <li><strong>Confidence</strong>: HIGH</li>
+        </ul>
+        <h3
+          class="sub-title"
+          id="ki-4-5-sm_120-per-sm-tc-throughput-29-3-tflopssm-fp16"
+        >
+          KI-4.5: SM_120 Per-SM TC Throughput: 29.3 TFLOPS/SM FP16
+        </h3>
+        <ul>
+          <li>
+            <strong>Phenomenon</strong>: SM_120 achieves 29.3 TFLOPS/SM FP16 via
+            <code>mma.sync.m16n8k16</code> at 15.88 cyc/mma. This is the
+            measured per-SM throughput ceiling for all mma.sync-based formats.
+            <span class="cite">[S9/case_1, S9/case_23]</span>
+          </li>
+          <li>
+            <strong>Mechanism</strong>: Each SM has 4 SMSPs, each with 1 TC
+            execution slot. Pipeline depth = 29/15.88 = 1.83. At ILP &gt;= 2,
+            one SMSP saturates at 0.063 mma/cyc; 4 SMSPs aggregate to 0.25
+            mma/cyc.
+          </li>
+          <li>
+            <strong>Implication</strong>: The 29.3 TFLOPS/SM is the hardware
+            ceiling for mma.sync. SM_120 does not support wgmma/tcgen05 which
+            could potentially increase this ceiling through warpgroup-level
+            async dispatch.
+          </li>
+          <li><strong>Confidence</strong>: HIGH</li>
+        </ul>
+        <h3 class="sub-title" id="ki-4-6-tc-saturates-at-4-warpssm-1-per-smsp">
+          KI-4.6: TC Saturates at 4 Warps/SM (1 per SMSP)
+        </h3>
+        <ul>
+          <li>
+            <strong>Phenomenon</strong>: Linear scaling 1-4 warps, flat beyond 4
+            warps. 0.25 mma/cyc aggregate at saturation.
+          </li>
+          <li>
+            <strong>Mechanism</strong>: Each SMSP has exactly 1 TC execution
+            slot. 4 SMSP x 1 slot = 4 concurrent MMA operations per SM.
+          </li>
+          <li>
+            <strong>Implication</strong>: For pure TC workloads, 4 warps per SM
+            achieves maximum throughput. Additional warps only help if they
+            perform useful non-TC work (memory prefetch, epilogue computation).
+          </li>
+          <li><strong>Confidence</strong>: HIGH</li>
+        </ul>
+        <h3
+          class="sub-title"
+          id="ki-4-7-tc-fp32-co-issue-93-6----epilogue-is-free"
+        >
+          KI-4.7: TC + FP32 Co-Issue 93.6% -- Epilogue Is Free
+        </h3>
+        <ul>
+          <li>
+            <strong>Phenomenon</strong>: 256 FFMA instructions add only 65
+            cycles (+3.2%) to 128 HMMA instructions. FFMA during MMA at 0.25
+            cyc/FFMA effective throughput.
+          </li>
+          <li>
+            <strong>Mechanism</strong>: TC and FMA are fully independent pipes
+            within each SMSP. The 29-cycle MMA window provides ample time for
+            ALU epilogue work (bias, activation, accumulation).
+          </li>
+          <li>
+            <strong>Implication</strong>: Post-MMA epilogue operations (bias
+            add, activation functions, accumulator reduction) are essentially
+            free when interleaved with TC operations. Kernel fusion of MMA +
+            epilogue should always be preferred over separate kernel launches.
+          </li>
+          <li><strong>Confidence</strong>: HIGH</li>
+        </ul>
+        <h3
+          class="sub-title"
+          id="ki-4-8-mma-based-rowsum-96x-faster-than-shfl-per-row-batched"
+        >
+          KI-4.8: MMA-Based Rowsum 96x Faster Than shfl Per-Row (Batched)
+        </h3>
+        <ul>
+          <li>
+            <strong>Phenomenon</strong>: MMA with B=all-ones: 7.25 cyc/mma (1.81
+            cyc/row for 16 rows). shfl_down reduction: 174 cyc/warp.
+          </li>
+          <li>
+            <strong>Mechanism</strong>: MMA amortizes TC pipeline cost across 16
+            x K elements; shfl requires log2(32) explicit stages with warp
+            synchronization at each step.
+          </li>
+          <li>
+            <strong>Implication</strong>: For attention kernels (online softmax
+            rescaling), MMA-based row reduction is the optimal strategy on
+            SM_120, provided the reduction dimension matches an available MMA
+            shape.
+          </li>
+          <li><strong>Confidence</strong>: HIGH</li>
+        </ul>
+        <h3
+          class="sub-title"
+          id="ki-4-9-the-tc-data-starvation-problem----4-4x-supplydemand-gap"
+        >
+          KI-4.9: The TC Data Starvation Problem -- 4.4x Supply/Demand Gap
+        </h3>
+        <ul>
+          <li>
+            <strong>Phenomenon</strong>: TMA bandwidth = 6.5 B/cyc vs TC
+            consumption rate = 28.9 B/cyc, yielding a 4.4x data starvation
+            ratio. SM_120 must route ALL operands through smem -&gt; ldmatrix
+            -&gt; RF -&gt; TC, adding 11.0 cyc/MMA (27.5% overhead).
+            <span class="cite">[S9/case_27-34, S18/case_4]</span>
+          </li>
+          <li>
+            <strong>Mechanism</strong>: Without Tensor Memory (absent on
+            SM_120), there is no bypass path from global memory to TC. Every
+            operand traverses: TMA -&gt; smem -&gt; ldmatrix -&gt; RF -&gt; MMA.
+            The ldmatrix step alone costs 49.1 cyc for x4 (feeding 8 registers),
+            which at 4 ldmatrix per MMA adds 11.0 cyc pipeline overhead.
+          </li>
+          <li>
+            <strong>Cross-reference</strong>: The 3-stage software pipeline
+            (1.92x speedup measured in Section 18) partially compensates by
+            overlapping TMA loads with TC compute. But the fundamental 4.4x
+            starvation means SM_120 cannot reach 100% TC utilization in
+            memory-bound GEMM. cuBLAS FP16 peaks at 73% of theoretical for this
+            reason.
+          </li>
+          <li>
+            <strong>Implication</strong>: For SM_120 kernel optimization,
+            maximizing data reuse (tile-K unrolling, accumulator reuse) is MORE
+            important than maximizing TC ILP. x4 operand reuse saves 12.6
+            cyc/MMA -- directly reducing data delivery overhead.
+          </li>
+          <li><strong>Confidence</strong>: HIGH</li>
+        </ul>
+        <h3
+          class="sub-title"
+          id="ki-4-10-tc-pipeline-depth-1-81-2-independent-mma-slots-not-a-deep-systolic-pipeline"
+        >
+          KI-4.10: TC Pipeline Depth 1.81 = 2 Independent MMA Slots, Not a Deep
+          Systolic Pipeline
+        </h3>
+        <ul>
+          <li>
+            <strong>Phenomenon</strong>: ILP=1-&gt;2 gives 1.71x speedup.
+            ILP=2-&gt;4 gives only 1.06x more (saturates at 1.81x total). ILP=8
+            = ILP=4 (zero additional gain). The non-integer depth of 1.81 is
+            architecturally significant.
+          </li>
+          <li>
+            <strong>Mechanism</strong>: [SPECULATIVE] The TC unit likely has 2
+            independent execution slots (or a 2-deep pipeline with partial
+            overlap), not a long systolic chain. The 0.81 fractional depth
+            suggests the 2nd slot can start before the 1st fully completes, but
+            scheduling overhead prevents perfect 2.0x. This matches the measured
+            15.88 cyc/mma = 29/1.81.
+          </li>
+          <li>
+            <strong>Cross-reference</strong>: IMMA (INT8) depth is 4.09 (27 cyc
+            / 6.55 cyc/mma) -- significantly deeper than HMMA's 1.81. This
+            supports the hypothesis that IMMA uses a different internal datapath
+            (narrower multiply units, more pipeline stages for the same array
+            size).
+          </li>
+          <li>
+            <strong>Patent reference</strong>: US10338919 describes MMA datapath
+            with operand collectors fed from banked RF; multi-pass vs
+            single-pass result generation matches the 2-slot model.
+          </li>
+          <li>
+            <strong>Verification</strong>: If the 2-slot model is correct, 3
+            independent MMA chains should show exactly 2.00x throughput (not
+            3.00x). Measured ILP=4 = 1.81x confirms no 3rd slot exists.
+          </li>
+          <li>
+            <strong>Confidence</strong>: MEDIUM (mechanism speculative, pipeline
+            depth measurements confirmed)
+          </li>
+        </ul>
+        <hr />
+        <h2 class="ch-title" id="4-11-summary">4.11 Summary</h2>
+        <h3 class="sub-title" id="unified-architectural-model">
+          Unified Architectural Model
+        </h3>
+        <p>
+          The SM_120 TensorCore subsystem is characterized by a
+          <strong>three-subpipe execution model</strong> with format-agnostic
+          throughput, constrained by a data delivery bottleneck:
+        </p>
+        <figure class="diagram">
+          <object
+            data="svg/ch04/ch04_s03_flow.svg"
+            type="image/svg+xml"
+            aria-label="4.11 SM_120 TensorCore Unified Architectural Model — complete per-SMSP pipeline from warp scheduler through RF to TC unit, with data delivery path and chip-level scaling"
+          ></object>
+          <figcaption>
+            <span class="fig-num">FIG 04.11</span>SM_120 TensorCore Unified
+            Architectural Model. Each SMSP contains a warp scheduler → banked RF
+            (256 regs, 80.3 B/cyc TC feed rate) → TC unit with dual subpipes
+            (HMMA depth 1.81, IMMA depth 4.09). The data delivery path traverses
+            DRAM → TMA → Smem → ldmatrix → RF → TC with a 7.4:1 starvation ratio
+            mitigated by software pipelining and operand reuse. 110 SMs × 4
+            SMSPs sustain 1,070 TFLOPS MXFP4 at 99.0% efficiency.
+          </figcaption>
+        </figure>
+
+        <p>
+          <strong
+            >Unified Model: The Three Constraints That Define SM_120 TC
+            Performance</strong
+          >
+        </p>
+
+        <p>
+          The complete architectural model resolves into three fundamental
+          constraints that interact to determine real-world GEMM throughput:
+        </p>
+
+        <p>
+          <strong
+            >Constraint 1 — RF Read Port Bandwidth (the throughput
+            ceiling)</strong
+          >: The TC systolic array can compute faster than operands can be
+          delivered. Each MMA requires 10 source registers (1,280 B/warp) read
+          through a 2-port-per-bank RF, yielding a minimum dispatch interval of
+          15.88 cyc. This is the absolute throughput floor regardless of format,
+          K-dimension, or pipeline depth. The 80.3 B/cyc measured input
+          bandwidth exactly matches theoretical (1280/15.94), confirming zero
+          excess RF capacity. All optimization beyond this point must reduce the
+          number of RF reads per useful FLOP (via operand reuse) or hide latency
+          (via ILP).
+        </p>
+
+        <p>
+          <strong
+            >Constraint 2 — Data Starvation Ratio (the pipeline depth
+            requirement)</strong
+          >: The full DRAM→TC path takes 118 cyc (cp.async), while the TC can
+          accept a new MMA every 15.88 cyc — a 7.4:1 ratio. This means the
+          software pipeline must maintain 7-8 MMA operations of prefetch
+          lookahead to prevent TC idle cycles. Production kernels achieve this
+          via 2-3 stage software pipelining (measured 1.92× speedup) plus ×4
+          operand reuse (saving 12.6 cyc/MMA by sharing A/B fragments across
+          accumulator tiles). The combination enables cuBLAS/CUTLASS to achieve
+          94-102% of theoretical peak at sufficiently large shapes.
+        </p>
+
+        <p>
+          <strong
+            >Constraint 3 — No Tensor Memory (the SM_120 vs SM_100 gap)</strong
+          >: SM_120 lacks the 256 KB Tensor Memory present on SM_100/SM_110,
+          which would allow direct TC feeding without RF mediation. Every
+          operand byte must traverse the full smem → ldmatrix → RF → TC path,
+          adding 11.0 cyc/MMA (27.5% overhead) that TM would eliminate. This
+          makes SM_120's warp-specialization counterproductive (all-compute is
+          2.5-3.1× better) since each warp can self-load via co-issued ldmatrix
+          during the MMA latency window. The architectural implication is clear:
+          SM_120 kernel optimization is primarily about maximizing data reuse
+          and RF-to-TC efficiency, not about separating data movement from
+          computation.
+        </p>
+
+        <h3 class="sub-title" id="defining-architectural-characteristics">
+          Defining Architectural Characteristics
+        </h3>
+        <ol>
+          <li>
+            <p>
+              <strong>Three distinct execution subpipes</strong>:
+              <code>subpipe_hmma</code> (all FP formats, depth 1.81, 15.88
+              cyc/mma), <code>subpipe_imma</code> (INT8, depth 4.09, 6.55
+              cyc/mma, 2.4× faster), and <code>pipe_fp64</code> (DMMA FP64, 579
+              cyc, non-pipelined). The IMMA advantage reflects cheaper INT8
+              multiply units enabling deeper pipelining.
+            </p>
+          </li>
+          <li>
+            <p>
+              <strong>Format-agnostic FP pipeline</strong>:
+              FP16/BF16/TF32/FP8/FP6/FP4 and all MX block-scale variants share
+              IDENTICAL timing (29 cyc / 15.88 cyc). Format selection is a pure
+              precision-vs-accuracy trade-off with no throughput implication.
+              The systolic array width accommodates K=64, processing narrower
+              formats by underutilizing the array.
+            </p>
+          </li>
+          <li>
+            <p>
+              <strong>RF-read-limited throughput</strong>: The 15.88 cyc/mma
+              throughput floor matches the RF→TC operand read bandwidth exactly
+              (80.3 B/cyc for 1280 B/MMA input). The systolic array itself is
+              faster; the pipeline bottleneck is in operand delivery, not
+              computation. This explains why all FP formats share the same
+              throughput despite different K values.
+            </p>
+          </li>
+          <li>
+            <p>
+              <strong>Zero-cost sparsity and block-scale</strong>: Both
+              structured sparsity and MX block-scale add 0 cyc to the pipeline.
+              Sparsity metadata is decoded in-line within the systolic array,
+              and scale factors are broadcast via a dedicated sideband. These
+              are hardware-native features, not software extensions.
+            </p>
+          </li>
+          <li>
+            <p>
+              <strong>Data starvation as the fundamental constraint</strong>:
+              The 7.4:1 pipeline-latency-to-throughput ratio (118 cyc full path
+              / 15.94 cyc/MMA) means SM_120 needs 7-8 MMA operations of prefetch
+              lookahead. Production kernels achieve this via 2-3 stage software
+              pipelining + ×4 operand reuse, reaching 94-100% of theoretical
+              peak for large GEMM shapes.
+            </p>
+          </li>
+          <li>
+            <p>
+              <strong>Warp specialization is counterproductive</strong>: Unlike
+              SM_100/SM_110 where dedicated loader warps are required for
+              tcgen05/wgmma, SM_120's mma.sync interface allows each warp to
+              self-load. All-compute mode achieves 2.5-3.1× higher TC throughput
+              than warp-specialized configurations.
+            </p>
+          </li>
+          <li>
+            <p>
+              <strong>Chip-level production readiness</strong>: CUTLASS MXFP4
+              achieves 1076.5 TFLOPS (100.6% of theoretical), cuBLAS FP8
+              achieves 551.1 TFLOPS (102%), and hand-tuned MX-FP4 sustains
+              1068.5 TFLOPS at 99.0% efficiency across 110 SMs. The SM_120
+              TensorCore is a mature, production-verified compute engine.
+            </p>
+          </li>
+        </ol>
+
+        <footer class="page-footer">
+          <div class="foot-grid">
+            <div>
+              <strong>SM_120 / GB202 Blackwell</strong> · Microarchitecture
+              Analysis &amp; Reference · 2026
+            </div>
+            <div>1542 microbenchmark cases · 26 sections · ~13,400 lines</div>
+            <div class="foot-accent">
+              RTX PRO 5000 72GB · CUDA 13.3 · Data source: test_results/SM_120/
+            </div>
+          </div>
+        </footer>
+      </main>
+      <aside class="toc-right">
+        <h4>Chapter Navigation</h4>
+        <a href="#4-1-mma-shape-and-latency-catalog"
+          >4.1 MMA Shape and Latency Catalog</a
+        >
+        <a
+          class="sub"
+          href="#4-1-1-tc-pipeline-internal-architecture-the-dual-subpipe-model"
+          >4.1.1 TC Pipeline Internal Architecture: The Dual-Subpipe Model</a
+        >
+        <a
+          class="sub"
+          href="#4-1-2-k-dimension-independence-evidence-for-input-width-decoupled-design"
+          >4.1.2 K-Dimension Independence: Evidence for Input-Width Decoupled
+          Design</a
+        >
+        <a href="#4-2-low-precision-and-block-scale-formats"
+          >4.2 Low-Precision and Block-Scale Formats</a
+        >
+        <a href="#4-3-structured-sparsity">4.3 Structured Sparsity</a>
+        <a class="sub" href="#power-profile-per-precision-format"
+          >Power Profile per Precision Format</a
+        >
+        <a href="#4-4-operand-feeding----no-tm-path"
+          >4.4 Operand Feeding -- No-TM Path</a
+        >
+        <a class="sub" href="#feeding-path-characterization"
+          >Feeding Path Characterization</a
+        >
+        <a
+          class="sub"
+          href="#4-4-1-microarchitectural-analysis-of-the-operand-feeding-architecture"
+          >4.4.1 Microarchitectural Analysis of the Operand Feeding
+          Architecture</a
+        >
+        <a
+          class="sub"
+          href="#4-4-2-operand-reuse-the-key-to-pipeline-efficiency"
+          >4.4.2 Operand Reuse: The Key to Pipeline Efficiency</a
+        >
+        <a
+          class="sub"
+          href="#4-4-3-warp-specialization-is-counterproductive-on-sm_120"
+          >4.4.3 Warp Specialization Is Counterproductive on SM_120</a
+        >
+        <a href="#4-5-tc-co-issue-and-multi-warp-scaling"
+          >4.5 TC Co-Issue and Multi-Warp Scaling</a
+        >
+        <a class="sub" href="#co-issue-characterization"
+          >Co-Issue Characterization</a
+        >
+        <a
+          class="sub"
+          href="#4-5-1-microarchitectural-analysis-of-co-issue-behavior"
+          >4.5.1 Microarchitectural Analysis of Co-Issue Behavior</a
+        >
+        <a class="sub" href="#multi-warp-tc-scaling">Multi-Warp TC Scaling</a>
+        <a
+          class="sub"
+          href="#4-5-2-cold-start-architecture-tc-power-gating-evidence"
+          >4.5.2 Cold-Start Architecture: TC Power Gating Evidence</a
+        >
+        <a class="sub" href="#4-5-3-register-pressure-and-spill-threshold"
+          >4.5.3 Register Pressure and Spill Threshold</a
+        >
+        <a href="#4-6-chip-level-tc-peaks-and-cutlasscublas-sweeps"
+          >4.6 Chip-Level TC Peaks and CUTLASS/cuBLAS Sweeps</a
+        >
+        <a class="sub" href="#per-sm-and-device-level-measured-peaks"
+          >Per-SM and Device-Level Measured Peaks</a
+        >
+        <a class="sub" href="#full-precision-chip-level-theoretical-peaks"
+          >Full-Precision Chip-Level Theoretical Peaks</a
+        >
+        <a class="sub" href="#588-shape-cutlasscublas-production-sweep"
+          >588-Shape CUTLASS/cuBLAS Production Sweep</a
+        >
+        <a href="#4-7-ldmatrix-stmatrix-microarchitecture"
+          >4.7 ldmatrix / stmatrix Microarchitecture</a
+        >
+        <a class="sub" href="#4-7-1-ldmatrix-latency-and-width-scaling"
+          >4.7.1 ldmatrix Latency and Width Scaling</a
+        >
+        <a class="sub" href="#4-7-2-ldmatrix-throughput"
+          >4.7.2 ldmatrix Throughput</a
+        >
+        <a class="sub" href="#4-7-3-ldmatrix--trans-modifier"
+          >4.7.3 ldmatrix .trans Modifier</a
+        >
+        <a class="sub" href="#4-7-4-ldmatrix-partial-loading-x2-vs-x4"
+          >4.7.4 ldmatrix Partial Loading (x2 vs x4)</a
+        >
+        <a class="sub" href="#4-7-5-ldmatrix--b8-availability"
+          >4.7.5 ldmatrix .b8 Availability</a
+        >
+        <a class="sub" href="#4-7-6-stmatrix-latency-and-throughput"
+          >4.7.6 stmatrix Latency and Throughput</a
+        >
+        <a class="sub" href="#4-7-7-stmatrix-vs-shfl_sync-fallback"
+          >4.7.7 stmatrix vs shfl_sync Fallback</a
+        >
+        <a class="sub" href="#4-7-8-summary-ldmatrixstmatrix-characteristics"
+          >4.7.8 Summary: ldmatrix/stmatrix Characteristics</a
+        >
+        <a href="#4-8-quantized-pipeline">4.8 Quantized Pipeline</a>
+        <a
+          class="sub"
+          href="#4-8-1-microarchitectural-analysis-of-the-quantization-pipeline"
+          >4.8.1 Microarchitectural Analysis of the Quantization Pipeline</a
+        >
+        <a href="#4-9-tensorcore-resource-cliff-analysis"
+          >4.9 TensorCore Resource Cliff Analysis</a
+        >
+        <a href="#4-10-key-insights">4.10 Key Insights</a>
+        <a
+          class="sub"
+          href="#ki-4-1-all-qmmaomma-formats-share-identical-29-cyc-15-88-cyc-pipeline"
+          >KI-4.1: All QMMA/OMMA Formats Share Identical 29 cyc / 15.88 cyc
+          Pipeline</a
+        >
+        <a class="sub" href="#ki-4-2-block-scale-mx-mma-is-zero-cost-hardware"
+          >KI-4.2: Block-Scale (MX) MMA Is Zero-Cost Hardware</a
+        >
+        <a
+          class="sub"
+          href="#ki-4-3-sparse-24-gives-exact-2-00x-with-zero-metadata-overhead"
+          >KI-4.3: Sparse 2:4 Gives Exact 2.00x With Zero Metadata Overhead</a
+        >
+        <a class="sub" href="#ki-4-4-int4-emulated-at-24x----no-native-opcode"
+          >KI-4.4: INT4 Emulated at 24x -- No Native Opcode</a
+        >
+        <a
+          class="sub"
+          href="#ki-4-5-sm_120-per-sm-tc-throughput-29-3-tflopssm-fp16"
+          >KI-4.5: SM_120 Per-SM TC Throughput: 29.3 TFLOPS/SM FP16</a
+        >
+        <a class="sub" href="#ki-4-6-tc-saturates-at-4-warpssm-1-per-smsp"
+          >KI-4.6: TC Saturates at 4 Warps/SM (1 per SMSP)</a
+        >
+        <a class="sub" href="#ki-4-7-tc-fp32-co-issue-93-6----epilogue-is-free"
+          >KI-4.7: TC + FP32 Co-Issue 93.6% -- Epilogue Is Free</a
+        >
+        <a
+          class="sub"
+          href="#ki-4-8-mma-based-rowsum-96x-faster-than-shfl-per-row-batched"
+          >KI-4.8: MMA-Based Rowsum 96x Faster Than shfl Per-Row (Batched)</a
+        >
+        <a
+          class="sub"
+          href="#ki-4-9-the-tc-data-starvation-problem----4-4x-supplydemand-gap"
+          >KI-4.9: The TC Data Starvation Problem -- 4.4x Supply/Demand Gap</a
+        >
+        <a
+          class="sub"
+          href="#ki-4-10-tc-pipeline-depth-1-81-2-independent-mma-slots-not-a-deep-systolic-pipeline"
+          >KI-4.10: TC Pipeline Depth 1.81 = 2 Independent MMA Slots, Not a Deep
+          Systolic Pipeline</a
+        >
+        <a href="#4-11-summary">4.11 Summary</a>
+        <a class="sub" href="#unified-architectural-model"
+          >Unified Architectural Model</a
+        >
+        <a class="sub" href="#defining-architectural-characteristics"
+          >Defining Architectural Characteristics</a
+        >
+      </aside>
+    </div>
+    <script
+      defer
+      src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"
+      integrity="sha384-7zkQWkzuo3B5mTepMUcHkMB5jZaolc2xDwL6VFqjFALcbeS9Ggm/Yr2r3Dy4lfFg"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      defer
+      src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+      integrity="sha384-43gviWU0YVjaDtb/GhzOouOXtZMP/7XUzwPTstBeZFe/+rCMvRwr4yROQP43s0Xk"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      defer
+      src="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/lib/highlight.min.js"
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (window.renderMathInElement) {
+          renderMathInElement(document.body, {
+            delimiters: [
+              { left: "$$", right: "$$", display: true },
+              { left: "$", right: "$", display: false },
+            ],
+            throwOnError: false,
+          });
+        }
+        if (window.hljs) {
+          document
+            .querySelectorAll("pre code[class^='language-']")
+            .forEach(function (el) {
+              try {
+                hljs.highlightElement(el);
+              } catch (e) {}
+            });
+        }
+      });
+    </script>
+    <script src="assets/js/toc.js" defer></script>
+  </body>
+</html>

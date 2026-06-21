@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 120" role="img"
+     aria-label="KI-2.8: DSMEM 6.5x local smem latency but 26x cheaper sync than L2 path">
+  <defs><style><![CDATA[
+    .ttl{font:600 13px "Fraunces",serif;fill:#0b1220}.lbl{font:600 11px "JetBrains Mono",monospace;fill:#2a3548}
+    .lbl-sm{font:500 10px "JetBrains Mono",monospace;fill:#5b6679}.num{font:700 15px "JetBrains Mono",monospace}
+    .num-lg{font:700 15px "JetBrains Mono",monospace}.stage{font:600 10px "JetBrains Mono",monospace;fill:#fff}
+  ]]></style></defs>
+  <rect width="1080" height="120" fill="#ffffff"/>
+  <text x="36" y="22" class="ttl">KI-2.8: DSMEM — Raw Read 6.5× Slower, But Sync Cost 26× Cheaper (wins for producer-consumer)</text>
+  <g transform="translate(36,36)">
+    <rect width="320" height="65" rx="8" fill="#FEF2F2" stroke="#DC2626" stroke-width="1"/>
+    <text x="15" y="18" class="lbl" fill="#DC2626">DSMEM raw read latency</text>
+    <text x="15" y="38" class="num-lg" fill="#DC2626">220 cyc (6.5× local 34 cyc)</text>
+    <text x="15" y="56" class="lbl-sm">Cross-CTA via SM2SM fabric</text>
+  </g>
+  <g transform="translate(380,36)">
+    <rect width="320" height="65" rx="8" fill="#F0FDF4" stroke="#059669" stroke-width="1"/>
+    <text x="15" y="18" class="lbl" fill="#065F46">DSMEM sync notification</text>
+    <text x="15" y="38" class="num-lg" fill="#059669">86 cyc (26× faster than L2's 2242)</text>
+    <text x="15" y="56" class="lbl-sm">CGA hardware barrier (no MEMBAR)</text>
+  </g>
+  <g transform="translate(724,36)">
+    <rect width="320" height="65" rx="8" fill="#FFFBEB" stroke="#D97706" stroke-width="1"/>
+    <text x="15" y="18" class="lbl" fill="#92400E">Decision rule</text>
+    <text x="15" y="38" class="lbl-sm">Need sync? → DSMEM wins (12–26× cheaper)</text>
+    <text x="15" y="56" class="lbl-sm">Pure read (no sync)? → L2 wins (4.5× faster)</text>
+  </g>
+</svg>

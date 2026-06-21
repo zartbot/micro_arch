@@ -1,0 +1,229 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 980" role="img"
+     aria-label="Chapter 10 Summary: System-Level &amp; Multi-GPU — Complete Architecture Overview">
+  <rect width="1080" height="980" fill="#fcfbf6"/>
+
+  <!-- ═══════════════ HEADER ═══════════════ -->
+  <rect x="0" y="0" width="1080" height="4" fill="#6d28d9"/>
+  <g transform="translate(36,28)">
+    <text x="0" y="6" style="font:600 11px 'JetBrains Mono',monospace;letter-spacing:0.16em;fill:#6d28d9">CHAPTER 10 · SM_120 / GB202 · RTX PRO 5000 72 GB</text>
+    <text x="0" y="37" style="font:500 24px 'Fraunces',serif;fill:#0b1220;letter-spacing:-0.02em">System-Level &amp; Multi-GPU — Architecture Overview</text>
+    <text x="0" y="58" style="font:italic 12px 'Fraunces',serif;fill:#5b6679">8-GPU PCIe Gen5 x16 · No NVLink · Dual-Socket NUMA · 110 SMs × 2497 MHz · 72 GB GDDR7</text>
+  </g>
+
+  <!-- ═══════════════ TOPOLOGY DIAGRAM (center) ═══════════════ -->
+  <rect x="36" y="90" width="1008" height="200" rx="10" fill="#ffffff" stroke="#e6e4da"/>
+  <text x="56" y="112" style="font:600 11px 'JetBrains Mono',monospace;letter-spacing:0.08em;fill:#6d28d9">SYSTEM TOPOLOGY</text>
+
+  <!-- NUMA 0 -->
+  <rect x="60" y="122" width="440" height="148" rx="8" fill="#f5f3ff" stroke="#8b5cf6" stroke-width="0.8" stroke-dasharray="4,3"/>
+  <text x="76" y="140" style="font:600 9px 'JetBrains Mono',monospace;fill:#6d28d9">NUMA NODE 0</text>
+  <!-- PCIe Switch 0 -->
+  <rect x="180" y="148" width="200" height="22" rx="4" fill="#ea580c" opacity="0.15" stroke="#ea580c" stroke-width="0.6"/>
+  <text x="230" y="163" style="font:500 9px 'JetBrains Mono',monospace;fill:#ea580c">PCIe Switch 0</text>
+  <!-- GPUs 0-3 -->
+  <rect x="80" y="182" width="90" height="36" rx="5" fill="#76b900" opacity="0.12" stroke="#76b900" stroke-width="0.7"/>
+  <text x="104" y="198" style="font:600 10px 'JetBrains Mono',monospace;fill:#0b1220">GPU 0</text>
+  <text x="104" y="212" style="font:500 8px 'JetBrains Mono',monospace;fill:#5b6679">72 GB</text>
+  <rect x="180" y="182" width="90" height="36" rx="5" fill="#76b900" opacity="0.12" stroke="#76b900" stroke-width="0.7"/>
+  <text x="204" y="198" style="font:600 10px 'JetBrains Mono',monospace;fill:#0b1220">GPU 1</text>
+  <text x="204" y="212" style="font:500 8px 'JetBrains Mono',monospace;fill:#5b6679">72 GB</text>
+  <rect x="280" y="182" width="90" height="36" rx="5" fill="#76b900" opacity="0.12" stroke="#76b900" stroke-width="0.7"/>
+  <text x="304" y="198" style="font:600 10px 'JetBrains Mono',monospace;fill:#0b1220">GPU 2</text>
+  <text x="304" y="212" style="font:500 8px 'JetBrains Mono',monospace;fill:#5b6679">72 GB</text>
+  <rect x="380" y="182" width="90" height="36" rx="5" fill="#76b900" opacity="0.12" stroke="#76b900" stroke-width="0.7"/>
+  <text x="404" y="198" style="font:600 10px 'JetBrains Mono',monospace;fill:#0b1220">GPU 3</text>
+  <text x="404" y="212" style="font:500 8px 'JetBrains Mono',monospace;fill:#5b6679">72 GB</text>
+  <!-- Links -->
+  <line x1="125" y1="170" x2="125" y2="182" stroke="#5b6679" stroke-width="0.8"/>
+  <line x1="125" y1="170" x2="185" y2="170" stroke="#5b6679" stroke-width="0.8"/>
+  <line x1="225" y1="170" x2="225" y2="182" stroke="#5b6679" stroke-width="0.8"/>
+  <line x1="325" y1="170" x2="325" y2="182" stroke="#5b6679" stroke-width="0.8"/>
+  <line x1="425" y1="170" x2="425" y2="182" stroke="#5b6679" stroke-width="0.8"/>
+   <line x1="425" y1="170" x2="185" y2="170" stroke="#5b6679" stroke-width="0.8"/>
+
+  <!-- Intra BW label -->
+  <text x="200" y="242" style="font:600 10px 'JetBrains Mono',monospace;fill:#76b900">55.8 GB/s intra</text>
+  <text x="200" y="256" style="font:500 8px 'JetBrains Mono',monospace;fill:#5b6679">per link, &lt;0.3% asymmetry</text>
+
+  <!-- QPI/UPI link -->
+  <line x1="500" y1="190" x2="580" y2="190" stroke="#e11d48" stroke-width="2" stroke-dasharray="6,3"/>
+  <text x="510" y="183" style="font:600 9px 'JetBrains Mono',monospace;fill:#e11d48">QPI/UPI</text>
+  <text x="510" y="205" style="font:500 8px 'JetBrains Mono',monospace;fill:#e11d48">41-45 GB/s</text>
+  <text x="510" y="217" style="font:500 8px 'JetBrains Mono',monospace;fill:#e11d48">-24% penalty</text>
+
+  <!-- NUMA 1 -->
+  <rect x="580" y="122" width="440" height="148" rx="8" fill="#eff6ff" stroke="#1e40af" stroke-width="0.8" stroke-dasharray="4,3"/>
+  <text x="596" y="140" style="font:600 9px 'JetBrains Mono',monospace;fill:#1e40af">NUMA NODE 1</text>
+  <!-- PCIe Switch 1 -->
+  <rect x="700" y="148" width="200" height="22" rx="4" fill="#ea580c" opacity="0.15" stroke="#ea580c" stroke-width="0.6"/>
+  <text x="750" y="163" style="font:500 9px 'JetBrains Mono',monospace;fill:#ea580c">PCIe Switch 1</text>
+  <!-- GPUs 4-7 -->
+  <rect x="600" y="182" width="90" height="36" rx="5" fill="#1e40af" opacity="0.1" stroke="#1e40af" stroke-width="0.7"/>
+  <text x="624" y="198" style="font:600 10px 'JetBrains Mono',monospace;fill:#0b1220">GPU 4</text>
+  <text x="624" y="212" style="font:500 8px 'JetBrains Mono',monospace;fill:#5b6679">72 GB</text>
+  <rect x="700" y="182" width="90" height="36" rx="5" fill="#1e40af" opacity="0.1" stroke="#1e40af" stroke-width="0.7"/>
+  <text x="724" y="198" style="font:600 10px 'JetBrains Mono',monospace;fill:#0b1220">GPU 5</text>
+  <text x="724" y="212" style="font:500 8px 'JetBrains Mono',monospace;fill:#5b6679">72 GB</text>
+  <rect x="800" y="182" width="90" height="36" rx="5" fill="#1e40af" opacity="0.1" stroke="#1e40af" stroke-width="0.7"/>
+  <text x="824" y="198" style="font:600 10px 'JetBrains Mono',monospace;fill:#0b1220">GPU 6</text>
+  <text x="824" y="212" style="font:500 8px 'JetBrains Mono',monospace;fill:#5b6679">72 GB</text>
+  <rect x="900" y="182" width="90" height="36" rx="5" fill="#1e40af" opacity="0.1" stroke="#1e40af" stroke-width="0.7"/>
+  <text x="924" y="198" style="font:600 10px 'JetBrains Mono',monospace;fill:#0b1220">GPU 7</text>
+  <text x="924" y="212" style="font:500 8px 'JetBrains Mono',monospace;fill:#5b6679">72 GB</text>
+  <line x1="645" y1="170" x2="645" y2="182" stroke="#5b6679" stroke-width="0.8"/>
+  <line x1="645" y1="170" x2="705" y2="170" stroke="#5b6679" stroke-width="0.8"/>
+  <line x1="745" y1="170" x2="745" y2="182" stroke="#5b6679" stroke-width="0.8"/>
+  <line x1="845" y1="170" x2="845" y2="182" stroke="#5b6679" stroke-width="0.8"/>
+  <line x1="945" y1="170" x2="945" y2="182" stroke="#5b6679" stroke-width="0.8"/>
+   <line x1="945" y1="170" x2="705" y2="170" stroke="#5b6679" stroke-width="0.8"/>
+
+  <text x="720" y="242" style="font:600 10px 'JetBrains Mono',monospace;fill:#1e40af">55.8 GB/s intra</text>
+  <text x="720" y="256" style="font:500 8px 'JetBrains Mono',monospace;fill:#5b6679">per link, &lt;0.3% asymmetry</text>
+
+  <!-- No NVLink badge -->
+  <rect x="920" y="120" width="100" height="20" rx="10" fill="#e11d48" opacity="0.9"/>
+  <text x="940" y="134" style="font:700 9px 'JetBrains Mono',monospace;fill:#ffffff">NO NVLINK</text>
+
+  <!-- ═══════════════ 4-COLUMN METRICS (KPI cards) ═══════════════ -->
+  <g transform="translate(36,304)">
+    <!-- Col 1: PCIe Transfer -->
+    <rect x="0" y="0" width="244" height="130" rx="8" fill="#ffffff" stroke="#e6e4da"/>
+    <rect x="0" y="0" width="244" height="3" rx="8" fill="#6d28d9"/>
+    <text x="14" y="22" style="font:600 9px 'JetBrains Mono',monospace;letter-spacing:0.08em;fill:#6d28d9">PCIe GEN5 TRANSFER</text>
+    <text x="14" y="50" style="font:600 22px 'Fraunces',serif;fill:#0b1220">56.9 GB/s</text>
+    <text x="14" y="66" style="font:500 9px 'JetBrains Mono',monospace;fill:#5b6679">H2D pinned, 88.9% theoretical</text>
+    <text x="14" y="84" style="font:500 9px 'JetBrains Mono',monospace;fill:#0b1220">Bidir: 101.3 GB/s (1.79x)</text>
+    <text x="14" y="100" style="font:500 9px 'JetBrains Mono',monospace;fill:#0b1220">Latency floor: 5.0 us D2H</text>
+    <text x="14" y="116" style="font:500 9px 'JetBrains Mono',monospace;fill:#ea580c">Pageable: 35-49 GB/s (degraded)</text>
+
+    <!-- Col 2: Kernel Launch -->
+    <rect x="258" y="0" width="244" height="130" rx="8" fill="#ffffff" stroke="#e6e4da"/>
+    <rect x="258" y="0" width="244" height="3" rx="8" fill="#76b900"/>
+    <text x="272" y="22" style="font:600 9px 'JetBrains Mono',monospace;letter-spacing:0.08em;fill:#76b900">KERNEL LAUNCH</text>
+    <text x="272" y="50" style="font:600 22px 'Fraunces',serif;fill:#0b1220">1.5 us</text>
+    <text x="272" y="66" style="font:500 9px 'JetBrains Mono',monospace;fill:#5b6679">GPU-side dispatch (warm)</text>
+    <text x="272" y="84" style="font:500 9px 'JetBrains Mono',monospace;fill:#0b1220">Host RT: 5.4 us warm</text>
+    <text x="272" y="100" style="font:500 9px 'JetBrains Mono',monospace;fill:#e11d48">Cold: 108.7 us (20x penalty)</text>
+    <text x="272" y="116" style="font:500 9px 'JetBrains Mono',monospace;fill:#0b1220">Cluster/Coop: +0 overhead</text>
+
+    <!-- Col 3: Inter-SM Sync -->
+    <rect x="516" y="0" width="244" height="130" rx="8" fill="#ffffff" stroke="#e6e4da"/>
+    <rect x="516" y="0" width="244" height="3" rx="8" fill="#ea580c"/>
+    <text x="530" y="22" style="font:600 9px 'JetBrains Mono',monospace;letter-spacing:0.08em;fill:#ea580c">INTER-SM SYNC</text>
+    <text x="530" y="50" style="font:600 22px 'Fraunces',serif;fill:#0b1220">86 cyc</text>
+    <text x="530" y="66" style="font:500 9px 'JetBrains Mono',monospace;fill:#5b6679">DSMEM barrier.cluster.relaxed</text>
+    <text x="530" y="84" style="font:500 9px 'JetBrains Mono',monospace;fill:#e11d48">L2 acq/rel: 2,242 cyc (26x!)</text>
+    <text x="530" y="100" style="font:500 9px 'JetBrains Mono',monospace;fill:#0b1220">MEMBAR.GPU: 549 cyc</text>
+    <text x="530" y="116" style="font:500 9px 'JetBrains Mono',monospace;fill:#0b1220">st.async+mbar: 242 cyc</text>
+
+    <!-- Col 4: GDDR7 Memory -->
+    <rect x="774" y="0" width="244" height="130" rx="8" fill="#ffffff" stroke="#e6e4da"/>
+    <rect x="774" y="0" width="244" height="3" rx="8" fill="#1e40af"/>
+    <text x="788" y="22" style="font:600 9px 'JetBrains Mono',monospace;letter-spacing:0.08em;fill:#1e40af">GDDR7 DRAM</text>
+    <text x="788" y="50" style="font:600 22px 'Fraunces',serif;fill:#0b1220">1,150 GB/s</text>
+    <text x="788" y="66" style="font:500 9px 'JetBrains Mono',monospace;fill:#5b6679">sustained BW (roofline ref)</text>
+    <text x="788" y="84" style="font:500 9px 'JetBrains Mono',monospace;fill:#0b1220">Latency: 362 cyc constant</text>
+    <text x="788" y="100" style="font:500 9px 'JetBrains Mono',monospace;fill:#0b1220">4-way bank @ 128B granularity</text>
+    <text x="788" y="116" style="font:500 9px 'JetBrains Mono',monospace;fill:#e11d48">3x stride: 6.3x penalty</text>
+  </g>
+
+  <!-- ═══════════════ SECOND ROW: Scheduling + P2P + Collectives ═══════════════ -->
+  <g transform="translate(36,450)">
+    <!-- CTA Scheduling -->
+    <rect x="0" y="0" width="330" height="120" rx="8" fill="#ffffff" stroke="#e6e4da"/>
+    <rect x="0" y="0" width="330" height="3" rx="8" fill="#76b900"/>
+    <text x="14" y="22" style="font:600 9px 'JetBrains Mono',monospace;letter-spacing:0.08em;fill:#76b900">CTA SCHEDULING &amp; TAIL EFFECT</text>
+    <text x="14" y="44" style="font:500 10px 'JetBrains Mono',monospace;fill:#0b1220">110 SMs, stride-20 GPC-aware RR</text>
+    <text x="14" y="60" style="font:500 10px 'JetBrains Mono',monospace;fill:#0b1220">SM_i = CTA_id % 110</text>
+    <text x="14" y="78" style="font:500 10px 'JetBrains Mono',monospace;fill:#0b1220">Cluster-2: zero-cost (TPC pairing)</text>
+    <text x="14" y="96" style="font:500 10px 'JetBrains Mono',monospace;fill:#ea580c">Tail: waste = (1-R/110)x100%</text>
+    <text x="14" y="112" style="font:500 9px 'JetBrains Mono',monospace;fill:#5b6679">Stream-K: 3.71x speedup at K=1024</text>
+
+    <!-- P2P & BAR -->
+    <rect x="344" y="0" width="330" height="120" rx="8" fill="#ffffff" stroke="#e6e4da"/>
+    <rect x="344" y="0" width="330" height="3" rx="8" fill="#e11d48"/>
+    <text x="358" y="22" style="font:600 9px 'JetBrains Mono',monospace;letter-spacing:0.08em;fill:#e11d48">P2P &amp; BAR APERTURE</text>
+    <text x="358" y="44" style="font:500 10px 'JetBrains Mono',monospace;fill:#0b1220">56/56 pairs functional (all PCIe)</text>
+    <text x="358" y="60" style="font:500 10px 'JetBrains Mono',monospace;fill:#0b1220">Intra-NUMA: 55.8 GB/s per pair</text>
+    <text x="358" y="78" style="font:500 10px 'JetBrains Mono',monospace;fill:#e11d48">BAR limit: 256 MB SILENT cliff!</text>
+    <text x="358" y="96" style="font:500 10px 'JetBrains Mono',monospace;fill:#e11d48">Exhausted: 7.18 GB/s (7.8x loss)</text>
+    <text x="358" y="112" style="font:500 9px 'JetBrains Mono',monospace;fill:#5b6679">Cross-PCIe CAS: 42 us (15,000x!)</text>
+
+    <!-- Collectives & Dependencies -->
+    <rect x="688" y="0" width="330" height="120" rx="8" fill="#ffffff" stroke="#e6e4da"/>
+    <rect x="688" y="0" width="330" height="3" rx="8" fill="#6d28d9"/>
+    <text x="702" y="22" style="font:600 9px 'JetBrains Mono',monospace;letter-spacing:0.08em;fill:#6d28d9">COLLECTIVES &amp; DEPENDENCIES</text>
+    <text x="702" y="44" style="font:500 10px 'JetBrains Mono',monospace;fill:#0b1220">NCCL AllReduce: 35.2 GB/s</text>
+    <text x="702" y="60" style="font:500 10px 'JetBrains Mono',monospace;fill:#e11d48">Custom AR (PCIe): 2.4 GB/s (14x!)</text>
+    <text x="702" y="78" style="font:500 10px 'JetBrains Mono',monospace;fill:#0b1220">griddepcontrol: 544 ns min gap</text>
+    <text x="702" y="96" style="font:500 10px 'JetBrains Mono',monospace;fill:#0b1220">cudaEvent: 1312 ns (+768 ns host)</text>
+    <text x="702" y="112" style="font:500 9px 'JetBrains Mono',monospace;fill:#5b6679">MoE P2P raw memcpy: 53 GB/s best</text>
+  </g>
+
+  <!-- ═══════════════ RESOURCE CLIFF MINI-CHART ═══════════════ -->
+  <rect x="36" y="586" width="1008" height="180" rx="10" fill="#ffffff" stroke="#e6e4da"/>
+  <text x="56" y="608" style="font:600 11px 'JetBrains Mono',monospace;letter-spacing:0.08em;fill:#e11d48">RESOURCE CLIFF SPECTRUM (12 CLIFFS, 1.3x TO 15,000x)</text>
+
+  <!-- Mini log-scale bars -->
+  <!-- Scale: x=100..990, log10 range 0..4.2, factor = (990-100)/4.2 = 212 -->
+  <line x1="100" y1="624" x2="100" y2="756" stroke="#e6e4da" stroke-width="0.4"/>
+  <line x1="312" y1="624" x2="312" y2="756" stroke="#e6e4da" stroke-width="0.4"/>
+  <line x1="524" y1="624" x2="524" y2="756" stroke="#e6e4da" stroke-width="0.4"/>
+  <line x1="736" y1="624" x2="736" y2="756" stroke="#e6e4da" stroke-width="0.4"/>
+  <line x1="948" y1="624" x2="948" y2="756" stroke="#e6e4da" stroke-width="0.4"/>
+  <text x="100" y="618" style="font:500 8px 'JetBrains Mono',monospace;fill:#5b6679" text-anchor="middle">1x</text>
+  <text x="312" y="618" style="font:500 8px 'JetBrains Mono',monospace;fill:#5b6679" text-anchor="middle">10x</text>
+  <text x="524" y="618" style="font:500 8px 'JetBrains Mono',monospace;fill:#5b6679" text-anchor="middle">100x</text>
+  <text x="736" y="618" style="font:500 8px 'JetBrains Mono',monospace;fill:#5b6679" text-anchor="middle">1000x</text>
+  <text x="948" y="618" style="font:500 8px 'JetBrains Mono',monospace;fill:#5b6679" text-anchor="middle">10000x</text>
+
+  <!-- Bars (top 6 most critical) h=18, gap=4 -->
+  <text x="96" y="637" style="font:500 8.5px 'JetBrains Mono',monospace;fill:#0b1220" text-anchor="end">PCIe CAS</text>
+  <rect x="100" y="626" width="886" height="16" rx="3" fill="#e11d48"/>
+  <text x="990" y="638" style="font:700 9px 'JetBrains Mono',monospace;fill:#e11d48">15,000x</text>
+
+  <text x="96" y="657" style="font:500 8.5px 'JetBrains Mono',monospace;fill:#0b1220" text-anchor="end">cudaFree</text>
+  <rect x="100" y="646" width="506" height="16" rx="3" fill="#e11d48"/>
+  <text x="610" y="658" style="font:700 9px 'JetBrains Mono',monospace;fill:#e11d48">244x</text>
+
+  <text x="96" y="677" style="font:500 8.5px 'JetBrains Mono',monospace;fill:#0b1220" text-anchor="end">L2 sync</text>
+  <rect x="100" y="666" width="300" height="16" rx="3" fill="#ea580c"/>
+  <text x="404" y="678" style="font:700 9px 'JetBrains Mono',monospace;fill:#ea580c">26x</text>
+
+  <text x="96" y="697" style="font:500 8.5px 'JetBrains Mono',monospace;fill:#0b1220" text-anchor="end">Cold launch</text>
+  <rect x="100" y="686" width="276" height="16" rx="3" fill="#ea580c"/>
+  <text x="380" y="698" style="font:700 9px 'JetBrains Mono',monospace;fill:#ea580c">20x</text>
+
+  <text x="96" y="717" style="font:500 8.5px 'JetBrains Mono',monospace;fill:#0b1220" text-anchor="end">BAR exh.</text>
+  <rect x="100" y="706" width="189" height="16" rx="3" fill="#ea580c"/>
+  <text x="294" y="718" style="font:700 9px 'JetBrains Mono',monospace;fill:#ea580c">7.8x SILENT</text>
+
+  <text x="96" y="737" style="font:500 8.5px 'JetBrains Mono',monospace;fill:#0b1220" text-anchor="end">Bank grp</text>
+  <rect x="100" y="726" width="170" height="16" rx="3" fill="#ea580c"/>
+  <text x="274" y="738" style="font:700 9px 'JetBrains Mono',monospace;fill:#ea580c">6.3x</text>
+
+  <text x="96" y="757" style="font:500 8.5px 'JetBrains Mono',monospace;fill:#0b1220" text-anchor="end">+6 more</text>
+  <rect x="100" y="746" width="60" height="16" rx="3" fill="#ca8a04"/>
+  <text x="165" y="758" style="font:500 8px 'JetBrains Mono',monospace;fill:#ca8a04">1.3x-4.9x</text>
+
+  <!-- ═══════════════ KEY INSIGHTS PANEL ═══════════════ -->
+  <rect x="36" y="782" width="1008" height="192" rx="10" fill="#f5f3ff" stroke="#8b5cf6" stroke-width="0.8"/>
+  <text x="56" y="804" style="font:600 11px 'JetBrains Mono',monospace;letter-spacing:0.08em;fill:#6d28d9">KEY INSIGHTS &amp; OPTIMIZATION GUIDANCE</text>
+
+  <!-- Two columns of insights -->
+  <circle cx="60" cy="824" r="3" fill="#6d28d9"/>
+  <text x="70" y="828" style="font:500 11px 'IBM Plex Sans',sans-serif;fill:#2a3548">PCIe Gen5 x16: 56.9 GB/s (88.9% theoretical), 11% irreducible protocol gap</text>
+  <circle cx="60" cy="846" r="3" fill="#6d28d9"/>
+  <text x="70" y="850" style="font:500 11px 'IBM Plex Sans',sans-serif;fill:#2a3548">BAR aperture 256 MB is a SILENT catastrophic cliff — must audit all P2P allocations</text>
+  <circle cx="60" cy="868" r="3" fill="#6d28d9"/>
+  <text x="70" y="872" style="font:500 11px 'IBM Plex Sans',sans-serif;fill:#2a3548">DSMEM 26x faster than L2 for sync because it bypasses MEMBAR.ALL.GPU entirely</text>
+  <circle cx="60" cy="890" r="3" fill="#6d28d9"/>
+  <text x="70" y="894" style="font:500 11px 'IBM Plex Sans',sans-serif;fill:#2a3548">griddepcontrol eliminates 768 ns host round-trip for inter-kernel dependencies</text>
+  <circle cx="60" cy="912" r="3" fill="#6d28d9"/>
+  <text x="70" y="916" style="font:500 11px 'IBM Plex Sans',sans-serif;fill:#2a3548">Tail effect formula: waste = (1-R/110)x100%, use grid=N*110 or Stream-K</text>
+  <circle cx="60" cy="934" r="3" fill="#6d28d9"/>
+  <text x="70" y="938" style="font:500 11px 'IBM Plex Sans',sans-serif;fill:#2a3548">PCIe-only topology: prefer pipeline/expert parallelism over AllReduce-heavy TP</text>
+  <circle cx="60" cy="956" r="3" fill="#6d28d9"/>
+  <text x="70" y="960" style="font:500 11px 'IBM Plex Sans',sans-serif;fill:#2a3548">GDDR7 latency constant at 362 cyc; use 1,150 GB/s sustained BW for roofline models</text>
+</svg>

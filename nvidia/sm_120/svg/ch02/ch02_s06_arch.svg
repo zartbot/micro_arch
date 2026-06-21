@@ -1,0 +1,197 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 720" role="img"
+     aria-label="SM_120 complete latency-bandwidth model — unified characterization of memory hierarchy, cross-SM paths, and coherence costs">
+  <defs>
+    <marker id="aD" markerWidth="7" markerHeight="6" refX="5" refY="3" orient="auto">
+      <polygon points="0,0 7,3 0,6" fill="#5b6679"/>
+    </marker>
+    <style><![CDATA[
+      .ttl{font:600 14px "Fraunces",serif;fill:#0b1220}
+      .sub{font:italic 11px "Fraunces",serif;fill:#5b6679}
+      .hdr{font:600 9px "JetBrains Mono",monospace;fill:#8e97a5;letter-spacing:0.1em;text-transform:uppercase}
+      .row-name{font:700 11px "JetBrains Mono",monospace}
+      .row-val{font:600 10.5px "JetBrains Mono",monospace;fill:#2a3548}
+      .row-sub{font:500 9.5px "JetBrains Mono",monospace;fill:#5b6679}
+      .badge{font:700 10px "JetBrains Mono",monospace;fill:#fff}
+      .wall{font:700 11px "JetBrains Mono",monospace;fill:#e11d48}
+      .wall-sub{font:italic 9.5px "Fraunces",serif;fill:#9f1239}
+      .sec-ttl{font:700 10.5px "JetBrains Mono",monospace;letter-spacing:0.06em}
+      .ann{font:italic 10px "Fraunces",serif;fill:#5b6679}
+    ]]></style>
+  </defs>
+  <rect width="1080" height="720" fill="#ffffff"/>
+  <text x="36" y="30" class="ttl">SM_120 Complete Latency-Bandwidth Model</text>
+  <text x="36" y="48" class="sub">Unified characterization: hierarchy levels, cross-SM paths, and coherence fence costs with measured bottleneck identification</text>
+
+  <!-- ═══════════ SECTION 1: MEMORY HIERARCHY ═══════════ -->
+  <text x="36" y="72" class="sec-ttl" fill="#0b1220">MEMORY HIERARCHY</text>
+
+  <!-- Column headers -->
+  <text x="36" y="90" class="hdr">Level</text>
+  <text x="220" y="90" class="hdr">Latency</text>
+  <text x="330" y="90" class="hdr">BW/warp</text>
+  <text x="460" y="90" class="hdr">BW/SM</text>
+  <text x="590" y="90" class="hdr">Capacity</text>
+  <text x="710" y="90" class="hdr">Bottleneck</text>
+  <text x="870" y="90" class="hdr">Latency bar (log)</text>
+
+  <!-- Row 1: Register File -->
+  <rect x="36" y="98" width="820" height="34" rx="4" fill="#f6f4ed" stroke="#e6e4da" stroke-width="0.5"/>
+  <text x="50" y="119" class="row-name" fill="#5b6679">Register File</text>
+  <rect x="220" y="106" width="52" height="18" rx="9" fill="#8e97a5"/>
+  <text x="246" y="119" class="badge" text-anchor="middle">0 cyc</text>
+  <text x="330" y="119" class="row-val">80.3 B/cyc</text>
+  <text x="460" y="119" class="row-sub">—</text>
+  <text x="590" y="119" class="row-val">256 KB/SM</text>
+  <text x="710" y="119" class="row-sub">—</text>
+  <!-- latency bar: 0 -->
+  <rect x="870" y="110" width="2" height="12" rx="1" fill="#8e97a5"/>
+
+  <!-- Row 2: Shared Memory -->
+  <rect x="36" y="136" width="820" height="34" rx="4" fill="#e9f3d2" stroke="#5a8e00" stroke-width="0.5"/>
+  <text x="50" y="157" class="row-name" fill="#3d6b00">Shared Memory</text>
+  <rect x="220" y="144" width="60" height="18" rx="9" fill="#5a8e00"/>
+  <text x="250" y="157" class="badge" text-anchor="middle">34 cyc</text>
+  <text x="330" y="157" class="row-val">30.2 B/cyc</text>
+  <text x="460" y="157" class="row-val">64 B/cyc</text>
+  <text x="590" y="157" class="row-val">99 KB/blk</text>
+  <text x="710" y="157" class="row-sub">Ports (4/SM)</text>
+  <!-- latency bar: log10(34)*40 = 61 -->
+  <rect x="870" y="148" width="62" height="12" rx="3" fill="#5a8e00"/>
+
+  <!-- Row 3: L1 Cache -->
+  <rect x="36" y="174" width="820" height="34" rx="4" fill="#e9f3d2" stroke="#5a8e00" stroke-width="0.5"/>
+  <text x="50" y="195" class="row-name" fill="#3d6b00">L1 Cache</text>
+  <rect x="220" y="182" width="60" height="18" rx="9" fill="#3d6b00"/>
+  <text x="250" y="195" class="badge" text-anchor="middle">44 cyc</text>
+  <text x="330" y="195" class="row-val">116 B/cyc</text>
+  <text x="460" y="195" class="row-val">128 B/cyc</text>
+  <text x="590" y="195" class="row-val">89 KB</text>
+  <text x="710" y="195" class="row-sub">Tag CAM</text>
+  <!-- latency bar: log10(44)*40 = 66 -->
+  <rect x="870" y="186" width="66" height="12" rx="3" fill="#3d6b00"/>
+
+  <!-- ═══ MEMORY WALL ═══ -->
+  <line x1="36" y1="216" x2="856" y2="216" stroke="#e11d48" stroke-width="2" stroke-dasharray="6 3"/>
+  <rect x="280" y="210" width="220" height="18" rx="9" fill="#e11d48"/>
+  <text x="390" y="223" class="badge" text-anchor="middle">MEMORY WALL: 8.0× LATENCY CLIFF</text>
+  <rect x="870" y="212" width="164" height="4" rx="2" fill="#e11d48" opacity="0.4"/>
+
+  <!-- Row 4: L2 Cache -->
+  <rect x="36" y="234" width="820" height="34" rx="4" fill="#ffedd5" stroke="#ea580c" stroke-width="0.5"/>
+  <text x="50" y="255" class="row-name" fill="#9a3412">L2 Cache</text>
+  <rect x="220" y="242" width="66" height="18" rx="9" fill="#ea580c"/>
+  <text x="253" y="255" class="badge" text-anchor="middle">354 cyc</text>
+  <text x="330" y="255" class="row-val">71 B/cyc</text>
+  <text x="460" y="255" class="row-val">13,768 GB/s</text>
+  <text x="590" y="255" class="row-val">96 MB</text>
+  <text x="710" y="255" class="row-sub">NoC traversal</text>
+  <!-- latency bar: log10(354)*40 = 102 -->
+  <rect x="870" y="246" width="102" height="12" rx="3" fill="#ea580c"/>
+
+  <!-- Row 5: GDDR7 DRAM -->
+  <rect x="36" y="272" width="820" height="34" rx="4" fill="#ffe4e6" stroke="#e11d48" stroke-width="0.5"/>
+  <text x="50" y="293" class="row-name" fill="#9f1239">GDDR7 DRAM</text>
+  <rect x="220" y="280" width="66" height="18" rx="9" fill="#e11d48"/>
+  <text x="253" y="293" class="badge" text-anchor="middle">362 cyc</text>
+  <text x="330" y="293" class="row-sub">—</text>
+  <text x="460" y="293" class="row-val">1231 GB/s</text>
+  <text x="590" y="293" class="row-val">72 GB</text>
+  <text x="710" y="293" class="row-sub">BW (4.17× gap)</text>
+  <!-- latency bar: log10(362)*40 = 103 -->
+  <rect x="870" y="284" width="103" height="12" rx="3" fill="#e11d48"/>
+
+  <!-- bar scale annotation -->
+  <text x="870" y="310" class="row-sub">← log₁₀ scale</text>
+
+  <!-- ═══════════ SECTION 2: CROSS-SM PATHS ═══════════ -->
+  <text x="36" y="344" class="sec-ttl" fill="#6d28d9">CROSS-SM PATHS</text>
+  <line x1="36" y1="350" x2="520" y2="350" stroke="#ede7fb" stroke-width="1"/>
+
+  <!-- DSMEM row -->
+  <rect x="36" y="358" width="480" height="46" rx="6" fill="#ede7fb" stroke="#6d28d9" stroke-width="0.6"/>
+  <text x="50" y="378" class="row-name" fill="#6d28d9">DSMEM</text>
+  <rect x="156" y="368" width="66" height="18" rx="9" fill="#6d28d9"/>
+  <text x="189" y="381" class="badge" text-anchor="middle">220 cyc</text>
+  <text x="234" y="378" class="row-val">0.15 B/cyc</text>
+  <text x="234" y="394" class="row-sub">8.2 GB/s · cluster × 99 KB</text>
+  <text x="380" y="378" class="row-sub">SM2SM fabric</text>
+
+  <!-- L2 inter-SM row -->
+  <rect x="36" y="410" width="480" height="46" rx="6" fill="#ffedd5" stroke="#ea580c" stroke-width="0.6"/>
+  <text x="50" y="430" class="row-name" fill="#9a3412">L2 (inter-SM)</text>
+  <rect x="156" y="420" width="66" height="18" rx="9" fill="#ea580c"/>
+  <text x="189" y="433" class="badge" text-anchor="middle">354 cyc</text>
+  <text x="234" y="430" class="row-val">13,768 GB/s agg</text>
+  <text x="234" y="446" class="row-sub">96 MB · GXBAR crossbar</text>
+  <text x="380" y="430" class="row-sub">GXBAR</text>
+
+  <!-- Winner callout -->
+  <rect x="36" y="462" width="480" height="28" rx="4" fill="#fcfbf6" stroke="#e6e4da"/>
+  <text x="50" y="480" class="ann">DSMEM wins for sync (86 cyc barrier, 26× faster); L2 wins for raw reads (4.5× faster, no fabric traversal)</text>
+
+  <!-- ═══════════ SECTION 3: COHERENCE COSTS ═══════════ -->
+  <text x="560" y="344" class="sec-ttl" fill="#0b1220">COHERENCE COSTS (fence/barrier)</text>
+  <line x1="560" y1="350" x2="1044" y2="350" stroke="#e6e4da" stroke-width="1"/>
+
+  <!-- CTA scope -->
+  <rect x="560" y="358" width="484" height="36" rx="6" fill="#e9f3d2" stroke="#5a8e00" stroke-width="0.6"/>
+  <text x="576" y="380" class="row-name" fill="#3d6b00">CTA scope</text>
+  <rect x="700" y="366" width="54" height="18" rx="9" fill="#5a8e00"/>
+  <text x="727" y="379" class="badge" text-anchor="middle">7 cyc</text>
+  <text x="770" y="380" class="row-sub">Store buffer drain to L1</text>
+  <!-- bar -->
+  <rect x="970" y="372" width="7" height="12" rx="2" fill="#5a8e00"/>
+
+  <!-- Cluster scope -->
+  <rect x="560" y="400" width="484" height="36" rx="6" fill="#fef3c7" stroke="#92400e" stroke-width="0.6"/>
+  <text x="576" y="422" class="row-name" fill="#92400e">Cluster relax</text>
+  <rect x="700" y="408" width="62" height="18" rx="9" fill="#d97706"/>
+  <text x="731" y="421" class="badge" text-anchor="middle">85 cyc</text>
+  <text x="770" y="422" class="row-sub">SM2SM barrier, O(1) scaling</text>
+  <!-- bar -->
+  <rect x="970" y="414" width="30" height="12" rx="2" fill="#d97706"/>
+
+  <!-- GPU scope -->
+  <rect x="560" y="442" width="484" height="36" rx="6" fill="#ffedd5" stroke="#ea580c" stroke-width="0.6"/>
+  <text x="576" y="464" class="row-name" fill="#9a3412">GPU scope</text>
+  <rect x="700" y="450" width="66" height="18" rx="9" fill="#ea580c"/>
+  <text x="733" y="463" class="badge" text-anchor="middle">285 cyc</text>
+  <text x="776" y="464" class="row-sub">L1→L2 drain + 12-partition ack</text>
+  <!-- bar -->
+  <rect x="970" y="456" width="55" height="12" rx="2" fill="#ea580c"/>
+
+  <!-- SYS scope -->
+  <rect x="560" y="484" width="484" height="36" rx="6" fill="#ffe4e6" stroke="#e11d48" stroke-width="0.6"/>
+  <text x="576" y="506" class="row-name" fill="#9f1239">SYS scope</text>
+  <rect x="700" y="492" width="66" height="18" rx="9" fill="#e11d48"/>
+  <text x="733" y="505" class="badge" text-anchor="middle">920 cyc</text>
+  <text x="776" y="506" class="row-sub">GPU drain + PCIe ordering</text>
+  <!-- bar -->
+  <rect x="970" y="498" width="74" height="12" rx="2" fill="#e11d48"/>
+
+  <!-- Coherence scale -->
+  <text x="970" y="524" class="row-sub">← log scale</text>
+
+  <!-- ═══════════ KEY INSIGHTS (bottom) ═══════════ -->
+  <rect x="36" y="540" width="1008" height="140" rx="10" fill="#fcfbf6" stroke="#e6e4da"/>
+  <text x="56" y="564" class="sec-ttl" fill="#0b1220">OPTIMIZATION PRIORITIES (from this model)</text>
+
+  <!-- Priority 1 -->
+  <rect x="56" y="576" width="14" height="14" rx="3" fill="#e11d48"/>
+  <text x="80" y="588" class="row-val">1. Avoid the 8.0× memory wall</text>
+  <text x="80" y="604" class="row-sub">Keep working set in L1 (89 KB) or smem (99 KB). Every L2 miss costs 310+ cycles above L1.</text>
+
+  <!-- Priority 2 -->
+  <rect x="56" y="614" width="14" height="14" rx="3" fill="#ea580c"/>
+  <text x="80" y="626" class="row-val">2. L2→DRAM is BW-limited, not latency-limited</text>
+  <text x="80" y="642" class="row-sub">Only +8 cyc difference (1.02×), but 4.17× BW gap (13,768 vs 1231 GB/s). Tile for L2 reuse, not for latency hiding.</text>
+
+  <!-- Priority 3 -->
+  <rect x="56" y="652" width="14" height="14" rx="3" fill="#6d28d9"/>
+  <text x="80" y="664" class="row-val">3. Use DSMEM for sync, L2 for data</text>
+  <text x="80" y="678" class="row-sub">DSMEM wins 26× for notification (86 vs 2242 cyc), L2 wins 4.5× for raw reads (49 vs 225 cyc). Choose by access pattern.</text>
+
+  <!-- Source -->
+  <text x="36" y="708" class="ann">Sources: S8/case_1-3,19-22,52-53,81,93,168 · S16/case_3-4 · S17/case_26-37 · S26/case_7-11</text>
+</svg>

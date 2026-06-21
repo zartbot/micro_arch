@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Open Questions · SM_120 Microarch Reference</title>
+<link rel="stylesheet" href="assets/css/style.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" integrity="sha384-nB0miv6/jRmo5UMMR1wu3Gz6NLsoTkbqJghGIsx//Rlm+ZU03BU6SQNC66uf4l5+" crossorigin="anonymous">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/styles/atom-one-light.min.css">
+<style>
+/* protect non-color overrides over hljs theme */
+pre code.hljs { background: transparent !important; padding: 0 !important; }
+</style>
+</head>
+<body>
+<div class="shell">
+<aside class="toc">
+<a class="toc-back" href="index.html">← Index</a>
+<div class="toc-brand">SM_120 <span class="accent">GB202</span> · <em>Microarch</em></div>
+<span class="toc-tag">FINAL REPORT · 2026</span>
+<h4>All Chapters</h4>
+<a href="01_architecture_overview.html">01 · Architecture Overview</a>
+<a href="02_memory_subsystem.html">02 · Memory Subsystem</a>
+<a href="03_sm_microarchitecture.html">03 · SM Microarchitecture</a>
+<a href="04_tensorcore_architecture.html">04 · TensorCore Architecture</a>
+<a href="05_instruction_level_characterization.html">05 · Instruction-Level Characterization</a>
+<a href="06_on_chip_network_async.html">06 · On-Chip Network &amp; Async</a>
+<a href="07_warp_scheduler_control.html">07 · Warp Scheduler &amp; Control</a>
+<a href="08_workload_analysis.html">08 · Workload Analysis</a>
+<a href="09_power_thermal_efficiency.html">09 · Power, Thermal &amp; Efficiency</a>
+<a href="10_system_level_multi_gpu.html">10 · System-Level &amp; Multi-GPU</a>
+<a href="11_optimization_guidance.html">11 · Optimization Guidance</a>
+<a href="12_ptxas_compiler_behavior.html">12 · ptxas Compiler Behavior</a>
+<a href="13_unified_performance_model.html">13 · Unified Performance Model</a>
+<a href="14_sm100_to_sm120_porting_guide.html">14 · SM_100 → SM_120 Porting Guide</a>
+<a href="15_agent_ground_truth.html">15 · Agent Ground Truth</a>
+<a href="16_open_questions.html" style="font-weight:600;color:var(--ink)">16 · Open Questions</a>
+<a href="17_cross_reference_map.html">17 · Cross-Reference Map</a>
+<a href="18_appendix_a_test_coverage.html">18 · Appendix A — Test Coverage</a>
+<a href="19_appendix_b_machine_readable.html">19 · Appendix B — Machine-Readable Parameters</a>
+<a href="20_appendix_c_methodology.html">20 · Appendix C — Measurement Methodology</a>
+</aside>
+<main class="content">
+
+<header class="hero">
+<div class="hero-eyebrow"><span class="pulse"></span>CHAPTER 16 · SM_120 · GB202 BLACKWELL</div>
+<h1 class="hero-title">Open Questions</h1>
+<p class="lede">This chapter catalogs unresolved questions identified during the first-round SM_120 (GB202) microbenchmark campaign (Sections 0-23, 1504 cases) and documents the results of the targeted follow-up experiments (Section 24, 31 cases) designed to resolve them. Of the 8 original open questions testable on SM_120 hardware, **all 8 are now fully resolved** — OQ-3 (FP64 EU placement) was reclassified from PARTIALLY RESOLVED to RESOLVED on 2026-06-11 after the lane-mask dichotomy experiment ([temp/fp64_eu_dichotomy_test{,_v2}.cu]) decisively showed 4 per-SMSP EUs (case_16 was correct; case_50/13/17 were sparse-lane-mask measurement artifacts). The follow-up campaign yielded several architectural discoveries that update the findings in Chapters 2, 3, 5, 7, and 9.</p>
+</header>
+
+<figure class="diagram"><object data="svg/ch16/ch16_summary.svg" type="image/svg+xml" aria-label="Chapter 16 summary — open questions and follow-up experiments"></object><figcaption><span class="fig-num">FIG 16.0</span>Chapter 16 summary — open questions and follow-up experiments</figcaption></figure>
+<h2 class="ch-title" id="16-1-resolved-questions">16.1 Resolved Questions</h2>
+<h3 class="sub-title" id="oq-1-l1-cache-actual-capacity-and-dynamic-partitioning-resolved">OQ-1: L1 Cache Actual Capacity and Dynamic Partitioning [RESOLVED]</h3>
+<p><strong>Original conflict</strong>: 48 KB from working-set sweep <span class="cite">[S8/case_72]</span> vs ~80-96 KB from fine-grained sweep <span class="cite">[S8/case_84]</span>.</p>
+<p><strong>Resolution</strong> (Section 24.1, Cases 1-6):</p>
+<p>The L1 data cache has an effective capacity of <strong>89 KB</strong> under default configuration, sharing 100 KB of unified SRAM with texture and non-coherent caches. The 48 KB figure from <span class="cite">[S8/case_72]</span> reflected a coarse sweep granularity; the true cliff is at 89 KB with 1 KB precision.</p>
+<p><strong>Measured architectural parameters</strong>:</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Value</th>
+<th>Source</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>L1 effective capacity (default, no smem)</td>
+<td><strong>89 KB</strong> (cliff at 90 KB, 1 KB precision)</td>
+<td><span class="cite">[S24/case_1]</span></td>
+</tr>
+<tr>
+<td>L1 hit latency</td>
+<td>43.86-43.99 cyc (constant 32-89 KB)</td>
+<td><span class="cite">[S24/case_1,5,6]</span></td>
+</tr>
+<tr>
+<td>Physical SRAM per SM</td>
+<td>100 KB (102,400 bytes via cudaGetDeviceProperties)</td>
+<td><span class="cite">[S24/case_4]</span></td>
+</tr>
+<tr>
+<td>L1 + texture sharing</td>
+<td><strong>1:1 byte displacement</strong> — 24 KB tex reduces L1 from ~88 KB to ~64 KB</td>
+<td><span class="cite">[S24/case_2]</span></td>
+</tr>
+<tr>
+<td>L1 + NC sharing</td>
+<td>Same SRAM — displacement at WS + NC ~ 96 KB</td>
+<td><span class="cite">[S24/case_3]</span></td>
+</tr>
+<tr>
+<td>Carveout API effect</td>
+<td><strong>Functional</strong> — 1:1 byte trade-off, cliff shifts 88→56→&lt;32 KB as smem 0→32→64 KB</td>
+<td><span class="cite">[S24/case_4]</span></td>
+</tr>
+<tr>
+<td>L1 disabled threshold</td>
+<td>64+ KB shared memory completely disables L1</td>
+<td><span class="cite">[S24/case_4]</span></td>
+</tr>
+<tr>
+<td>NCU validation</td>
+<td>Zero capacity misses for WS &lt;= 88 KB; 415 capacity misses at WS = 96 KB</td>
+<td><span class="cite">[S24/case_5]</span></td>
+</tr>
+<tr>
+<td>Associativity</td>
+<td><strong>Fully associative</strong> (&gt;= 710-way) — cliff is stride-independent</td>
+<td><span class="cite">[S24/case_6]</span></td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Detailed L1 capacity curve</strong> (pointer-chase, 1 KB steps):</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th style="text-align: center;">Working Set (KB)</th>
+<th style="text-align: center;">cyc/chase</th>
+<th style="text-align: left;">Level</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: center;">32-89</td>
+<td style="text-align: center;">43.86</td>
+<td style="text-align: left;">L1 hit (flat)</td>
+</tr>
+<tr>
+<td style="text-align: center;">90</td>
+<td style="text-align: center;">48.60</td>
+<td style="text-align: left;">Transition onset</td>
+</tr>
+<tr>
+<td style="text-align: center;">92</td>
+<td style="text-align: center;">73.41</td>
+<td style="text-align: left;">--</td>
+</tr>
+<tr>
+<td style="text-align: center;">96</td>
+<td style="text-align: center;">131.18</td>
+<td style="text-align: left;">--</td>
+</tr>
+<tr>
+<td style="text-align: center;">106</td>
+<td style="text-align: center;">176.70</td>
+<td style="text-align: left;">L2 secondary</td>
+</tr>
+<tr>
+<td style="text-align: center;">128</td>
+<td style="text-align: center;">274.16</td>
+<td style="text-align: left;">L2 deep</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Texture displacement curve</strong> (24 KB tex1Dfetch co-load):</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th style="text-align: center;">WS (KB)</th>
+<th style="text-align: center;">No Texture (cyc)</th>
+<th style="text-align: center;">With 24KB Texture (cyc)</th>
+<th style="text-align: center;">Delta</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: center;">48</td>
+<td style="text-align: center;">43.99</td>
+<td style="text-align: center;">44.44</td>
+<td style="text-align: center;">+1.0% (within L1)</td>
+</tr>
+<tr>
+<td style="text-align: center;">64</td>
+<td style="text-align: center;">43.99</td>
+<td style="text-align: center;">44.33</td>
+<td style="text-align: center;">+0.8% (within L1)</td>
+</tr>
+<tr>
+<td style="text-align: center;"><strong>68</strong></td>
+<td style="text-align: center;"><strong>43.99</strong></td>
+<td style="text-align: center;"><strong>88.01</strong></td>
+<td style="text-align: center;"><strong>+100%</strong> (L1 cliff with tex)</td>
+</tr>
+<tr>
+<td style="text-align: center;">72</td>
+<td style="text-align: center;">43.99</td>
+<td style="text-align: center;">148.99</td>
+<td style="text-align: center;">+239% (spilling to L2)</td>
+</tr>
+<tr>
+<td style="text-align: center;">88</td>
+<td style="text-align: center;">43.99</td>
+<td style="text-align: center;">281.55</td>
+<td style="text-align: center;">+540% (fully spilled)</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Microarchitectural model</strong>: SM_120 has a unified 100 KB SRAM bank per SM that is dynamically partitioned among L1 data cache, texture cache, non-coherent cache, and shared memory. The <code>cudaFuncSetAttribute(MaxDynamicSharedMemorySize)</code> API controls the partition at coarse granularity (~32 KB steps). When shared memory is 0 KB, L1 gets ~89 KB (the remaining ~11 KB is consumed by tag storage, metadata, and reserved lines). At 64+ KB shared memory, L1 is completely disabled (minimum SRAM for L1 operation is ~36-48 KB). Texture and NC loads share the L1 allocation with 1:1 displacement — each KB of texture footprint reduces L1 by 1 KB. The cache is fully associative, eliminating stride-based conflict misses.</p>
+<p><strong>Impact on performance model</strong>: The analytical model should use 89 KB as the default L1 capacity (not 48 KB or 96 KB). For kernels using texture or NC loads, reduce by the concurrent texture/NC footprint. For kernels requesting &gt;32 KB shared memory, use the measured carveout cliff table.</p>
+<hr>
+<h3 class="sub-title" id="oq-2-gddr7-bank-group-structure-resolved">OQ-2: GDDR7 Bank Group Structure [RESOLVED]</h3>
+<p><strong>Original question</strong>: Exact bank count, group count, row buffer policy unknown. Only 3x stride conflicts confirmed.</p>
+<p><strong>Resolution</strong> (Section 24.2, Cases 7-12):</p>
+<p>GDDR7 on SM_120 uses <strong>4-way bank group interleaving at 128B (cache-line) granularity</strong> with a <strong>closed-page (auto-precharge) row buffer policy</strong>. The earlier "3x conflict" finding is explained: 3 is not a multiple of 4, so 3×128B strides create bank-group conflicts.</p>
+<p><strong>Measured architectural parameters</strong>:</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Value</th>
+<th>Source</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Bank group count</td>
+<td><strong>4</strong> per 1024B page</td>
+<td><span class="cite">[S24/case_10]</span></td>
+</tr>
+<tr>
+<td>Interleave granularity</td>
+<td><strong>128B</strong> (cache-line aligned)</td>
+<td><span class="cite">[S24/case_7,10]</span></td>
+</tr>
+<tr>
+<td>Optimal stride</td>
+<td>Multiples of 512B (4 cache lines) → full BW ~345 GB/s</td>
+<td><span class="cite">[S24/case_7]</span></td>
+</tr>
+<tr>
+<td>Worst-case stride</td>
+<td>Non-multiples of 4×128B → 50-78 GB/s (6.9x degradation)</td>
+<td><span class="cite">[S24/case_7,10]</span></td>
+</tr>
+<tr>
+<td>Row buffer policy</td>
+<td><strong>Closed-page (auto-precharge)</strong> — seq/random ratio = 1.00 at all strides</td>
+<td><span class="cite">[S24/case_11]</span></td>
+</tr>
+<tr>
+<td>Same-bank consecutive-access penalty</td>
+<td>+445 cyc (2.2× base) for strides &lt; 640B — closed-page tRP wait, <strong>not</strong> row-buffer miss</td>
+<td><span class="cite">[S24/case_8]</span></td>
+</tr>
+<tr>
+<td>Same-bank footprint (latency-effective)</td>
+<td>~1 KB (transition at 640-1280B; above this, consecutive dependent accesses land on different banks)</td>
+<td><span class="cite">[S24/case_8]</span></td>
+</tr>
+<tr>
+<td>Base DRAM latency</td>
+<td>370.3 cyc (~177 ns at 2.092 GHz)</td>
+<td><span class="cite">[S24/case_8,11]</span></td>
+</tr>
+<tr>
+<td>Channel BW uniformity</td>
+<td>CoV = 0.3% across all strides — L2 XOR hash eliminates all imbalance</td>
+<td><span class="cite">[S24/case_12]</span></td>
+</tr>
+<tr>
+<td>Conflict mechanism</td>
+<td>L2 partition camping (not DRAM timing) — 128x DRAM traffic amplification at conflict strides</td>
+<td><span class="cite">[S24/case_9]</span></td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Complete stride-BW mapping</strong> (single-SM streaming read):</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th style="text-align: center;">Stride (B)</th>
+<th style="text-align: center;">BW (GB/s)</th>
+<th style="text-align: left;">Bank Group Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: center;">16</td>
+<td style="text-align: center;">310</td>
+<td style="text-align: left;">L2 spatial reuse (intra-cacheline; DRAM is closed-page so no row-buffer hit)</td>
+</tr>
+<tr>
+<td style="text-align: center;">128</td>
+<td style="text-align: center;">161</td>
+<td style="text-align: left;">1-way bank spread</td>
+</tr>
+<tr>
+<td style="text-align: center;">256</td>
+<td style="text-align: center;">203</td>
+<td style="text-align: left;">2-way bank spread</td>
+</tr>
+<tr>
+<td style="text-align: center;">384 (3×128)</td>
+<td style="text-align: center;">69</td>
+<td style="text-align: left;"><strong>Bank group conflict</strong></td>
+</tr>
+<tr>
+<td style="text-align: center;">512 (4×128)</td>
+<td style="text-align: center;">327</td>
+<td style="text-align: left;">Full 4-way spread</td>
+</tr>
+<tr>
+<td style="text-align: center;">768 (6×128)</td>
+<td style="text-align: center;">62</td>
+<td style="text-align: left;"><strong>Bank group conflict</strong> (worst)</td>
+</tr>
+<tr>
+<td style="text-align: center;">896 (7×128)</td>
+<td style="text-align: center;">57</td>
+<td style="text-align: left;"><strong>Bank group conflict</strong></td>
+</tr>
+<tr>
+<td style="text-align: center;">1024 (8×128)</td>
+<td style="text-align: center;">345</td>
+<td style="text-align: left;">Full saturation</td>
+</tr>
+<tr>
+<td style="text-align: center;">1536 (12×128)</td>
+<td style="text-align: center;">213</td>
+<td style="text-align: left;">Partial (12 = 4×3, mixed)</td>
+</tr>
+<tr>
+<td style="text-align: center;">2048</td>
+<td style="text-align: center;">339</td>
+<td style="text-align: left;">Full saturation</td>
+</tr>
+<tr>
+<td style="text-align: center;">4096</td>
+<td style="text-align: center;">339</td>
+<td style="text-align: left;">Full saturation</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Bank group conflict mechanism</strong>: NCU profiling (<span class="cite">[S24/case_9]</span>) reveals that conflict strides cause L2 hit rates to drop from 99.4% (stride=1024B) to 4.6% (stride=384B) and 21.3% (stride=768B), with DRAM traffic amplification of 128x. The dominant BW loss is L2 partition camping (the XOR hash function maps conflict strides to the same subset of partitions), not direct DRAM bank-group timing effects.</p>
+<p><strong>Closed-page policy evidence</strong>: Single-warp pointer-chase shows identical latency (~371 cyc) for sequential and random access at all strides from 256B to 128KB (ratio = 1.00 ± 0.001). No row-buffer hit benefit exists. The +445 cyc penalty at strides &lt; 640B <span class="cite">[S24/case_8]</span> is <strong>closed-page same-bank consecutive-access serialization</strong> — when the next dependent access targets the same bank, it must wait for that bank's tRP (precharge) to complete before re-activation, adding ~tRP cycles on top of the base 370 cyc ACT+CAS. The transition at 640-1280 B reflects the stride at which consecutive pointer-chase steps begin landing on <strong>different</strong> banks, exposing bank-level parallelism. This is <strong>not</strong> a row-buffer hit/miss effect (which cannot exist under closed-page) and <strong>not</strong> a bank-group conflict (which is a throughput, not single-warp-latency, phenomenon).</p>
+<p><strong>Caveat — Case 11 working-set bound</strong>: Although Case 11 allocates a 128 MB buffer, its sequential/random ring is capped at <code>n_nodes &lt;= 65536</code> and only 1024 chases are measured per trial, so the effective unique cache lines touched per trial is ~1224 × 128 B ≈ 156 KB, which fits entirely in the 96 MB L2. The "ratio = 1.00" thus reflects L2-resident behavior, not pure DRAM behavior, and on its own does <strong>not</strong> rigorously prove closed-page. The closed-page conclusion is more strongly supported by <strong>Case 8</strong>: under an open-page policy, small strides (&lt;1 KB, mostly same-row) would yield the <strong>lowest</strong> latency due to row hits; the observed inversion (small strides are slowest at +445 cyc) is the signature of closed-page + same-bank serialization. A future follow-up should re-run Case 11 without the <code>n_nodes</code> cap so that ring length truly exceeds L2 capacity.</p>
+<hr>
+<h3 class="sub-title" id="oq-4-warp-scheduler-priority-transition-details-resolved">OQ-4: Warp Scheduler Priority Transition Details [RESOLVED]</h3>
+<p><strong>Original question</strong>: CGGTY confirmed but transition mechanism under mixed stall types unclear.</p>
+<p><strong>Resolution</strong> (Section 24.4, Cases 18-21):</p>
+<p><strong>Measured scheduler behavior</strong>:</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Property</th>
+<th>Finding</th>
+<th>Source</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ALU+MEM priority</td>
+<td>ALU warps (4-cyc stall) always dispatched over MEM warps (~300 cyc). FFMA throughput unaffected (-0.4%). MEM warps benefit from co-scheduling (-19.7% latency)</td>
+<td><span class="cite">[S24/case_18]</span></td>
+</tr>
+<tr>
+<td>Fair round-robin</td>
+<td>Completion time ratio tracks work ratio within 4%. cyc/iter stable at ~34 cyc across all warps at 1:2:3:4 imbalance</td>
+<td><span class="cite">[S24/case_19]</span></td>
+</tr>
+<tr>
+<td>DEFER_BLOCKING</td>
+<td>Confirmed: barrier-blocked warp does NOT impede dispatch. W1 throughput = 1.000x baseline while W0 blocked at bar.sync. Barrier cost = 7 cycles</td>
+<td><span class="cite">[S24/case_20]</span></td>
+</tr>
+<tr>
+<td>SB exhaustion switch</td>
+<td>Zero-overhead: ALU warp FFMA = 4.00 cyc (exactly baseline) when co-warp is SB-blocked with 6 outstanding LDGs</td>
+<td><span class="cite">[S24/case_21]</span></td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Scheduler priority model</strong> (updated from Chapter 7):</p>
+<pre><code>CGGTY Decision Flow (refined by Section 24):
+  1. Greedy: continue current warp if eligible
+  2. If current warp is ineligible (stall/SB/barrier):
+     a. Immediately switch to any eligible warp (0 cycles)
+     b. Among eligible: lowest warpID first (youngest)
+     c. Barrier-blocked warps are deprioritized (DEFER_BLOCKING)
+     d. SB-blocked warps are instantly deprioritized (no delay)
+  3. Mixed stalls: short-stall (ALU 4-cyc) warps effectively have higher
+     re-eligibility frequency than long-stall (MEM 300+cyc) warps
+  4. Anti-starvation: inherent in round-robin for homogeneous ALU (4% tolerance)</code></pre>
+<hr>
+<h3 class="sub-title" id="oq-5-l2-hash-function-reverse-engineering-resolved">OQ-5: L2 Hash Function Reverse-Engineering [RESOLVED]</h3>
+<p><strong>Original question</strong>: Uniform XOR hash confirmed but exact function unknown.</p>
+<p><strong>Resolution</strong> (Section 24.5, Cases 22-24):</p>
+<p><strong>Hash function characterization</strong>:</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Value</th>
+<th>Source</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Number of partitions</td>
+<td>12 (one per MC)</td>
+<td><span class="cite">[S24/case_23,24]</span></td>
+</tr>
+<tr>
+<td>Hash type</td>
+<td>XOR-based</td>
+<td><span class="cite">[S24/case_23]</span></td>
+</tr>
+<tr>
+<td>Lowest active hash bit</td>
+<td><strong>Bit 10</strong> (1024B granularity)</td>
+<td><span class="cite">[S24/case_23,24]</span></td>
+</tr>
+<tr>
+<td>Period in N×128B stride sweep</td>
+<td><strong>8</strong> (spikes at N=8,16,24,32)</td>
+<td><span class="cite">[S24/case_24]</span></td>
+</tr>
+<tr>
+<td>Power-of-2 camping</td>
+<td>None (1 KB to 256 KB all safe)</td>
+<td><span class="cite">[S24/case_23]</span></td>
+</tr>
+<tr>
+<td>Worst adversarial BW</td>
+<td>49 GB/s (at strides 1408B, 1664B = 11×128, 13×128)</td>
+<td><span class="cite">[S24/case_24]</span></td>
+</tr>
+<tr>
+<td>Uniform distribution BW</td>
+<td>236 GB/s</td>
+<td><span class="cite">[S24/case_24]</span></td>
+</tr>
+<tr>
+<td>Adversarial degradation</td>
+<td><strong>4.77x</strong> (not 12x — hash prevents single-partition concentration)</td>
+<td><span class="cite">[S24/case_24]</span></td>
+</tr>
+<tr>
+<td>Worst concentrates on</td>
+<td>~2.5 partitions (not 1)</td>
+<td><span class="cite">[S24/case_24]</span></td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Practical implications</strong>: Power-of-2 strides are always safe. Strides that are non-multiples of 8×128B (1024B) may cause up to 4.8x BW degradation. The worst-case adversarial stride still achieves 2.5x above the theoretical single-partition floor, proving the XOR hash cannot be fully defeated by stride-only attacks. For kernel optimization, ensure access strides are multiples of 1024B to guarantee uniform partition distribution.</p>
+<hr>
+<h3 class="sub-title" id="oq-7-constant-cache-and-i-cache-sram-sharing-resolved">OQ-7: Constant Cache and I-Cache SRAM Sharing [RESOLVED]</h3>
+<p><strong>Original question</strong>: Whether constant cache and I-cache share physical SRAM.</p>
+<p><strong>Resolution</strong> (Section 24.6, Cases 25-27):</p>
+<p><strong>Constant cache and I-cache use separate physical SRAM on SM_120.</strong> Three independent interference tests all confirm zero cross-pressure effects:</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Test</th>
+<th style="text-align: center;">Const Effect on I-cache</th>
+<th style="text-align: center;">I-cache Effect on Const</th>
+<th style="text-align: center;">Interference</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Case 25: Const saturation (64 KB LUT)</td>
+<td style="text-align: center;">Overhead ratio 2.603, stable across all iters</td>
+<td style="text-align: center;">--</td>
+<td style="text-align: center;"><strong>None</strong></td>
+</tr>
+<tr>
+<td>Case 26: I-cache pressure (32 KB code)</td>
+<td style="text-align: center;">--</td>
+<td style="text-align: center;">0.0% delta at all LUT sizes (4-64 KB)</td>
+<td style="text-align: center;"><strong>None</strong></td>
+</tr>
+<tr>
+<td>Case 27: Simultaneous saturation</td>
+<td style="text-align: center;">44,360 cyc (combined) / 44,296 cyc (const-only) = 1.001x</td>
+<td style="text-align: center;">--</td>
+<td style="text-align: center;"><strong>None</strong></td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Additional finding</strong>: Effective constant cache capacity is approximately 4-8 KB (34 cyc hit at 4 KB, rising to 99.4 cyc at 64 KB).</p>
+<hr>
+<h3 class="sub-title" id="oq-8-per-sm-power-gating-granularity-resolved">OQ-8: Per-SM Power Gating Granularity [RESOLVED]</h3>
+<p><strong>Original question</strong>: Whether individual pipes (TC, SFU, LSU) within an SM can be independently power-gated.</p>
+<p><strong>Resolution</strong> (Section 24.7, Cases 28-31):</p>
+<p>SM_120 uses <strong>clock gating, not power gating</strong> at the functional-unit pipe level. Pipe switching is instantaneous with zero startup latency.</p>
+<p><strong>Per-pipe power characterization</strong>:</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Pipe</th>
+<th style="text-align: center;">W/SM (incremental)</th>
+<th style="text-align: center;">Total at 110 SMs</th>
+<th>Source</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>FMA (FFMA)</td>
+<td style="text-align: center;">0.23</td>
+<td style="text-align: center;">~25.3 W</td>
+<td><span class="cite">[S20/case_12]</span></td>
+</tr>
+<tr>
+<td>TC (HMMA)</td>
+<td style="text-align: center;">0.15</td>
+<td style="text-align: center;">~16.5 W</td>
+<td><span class="cite">[S20/case_12]</span></td>
+</tr>
+<tr>
+<td>LSU (LDG/STG)</td>
+<td style="text-align: center;"><strong>0.065</strong></td>
+<td style="text-align: center;">~7.1 W</td>
+<td><span class="cite">[S24/case_30]</span></td>
+</tr>
+<tr>
+<td>SFU (MUFU)</td>
+<td style="text-align: center;">~0.23 (= FMA)</td>
+<td style="text-align: center;">~25.3 W</td>
+<td><span class="cite">[S24/case_28]</span></td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Power model</strong> (step function, not linear):</p>
+<pre><code>P_total = P_dvfs_idle (13.3W)
+        + P_clock_domain (2.6W, when clocks locked)
+        + P_activation (44.7W, step function when ANY SM active)
+        + P_per_SM (&lt;3 mW/SM, below nvidia-smi resolution)</code></pre>
+<p><strong>Clock gating evidence</strong> (<span class="cite">[S24/case_31]</span>): FMA pipe latency = 4.00 cyc immediately after 0, 10, 100, 1000, or 10000 HMMA iterations of TC warmup. Zero startup penalty rules out power gating (which would show 10-100 ns ramp-up).</p>
+<p><strong>TC+FMA co-issue power</strong> (<span class="cite">[S24/case_29]</span>): Adding FMA alongside TC increases total power by only 0.40 W for 110 SMs (0.004 W/SM). The idle FMA pipe is clock-gated during TC-only operation and resumes instantly when needed.</p>
+<hr>
+<h2 class="ch-title" id="16-2-resolved-on-follow-up">16.2 Resolved on Follow-up</h2>
+<h3 class="sub-title" id="oq-3-fp64-eu-placement-resolved-2026-06-11-4-per-smsp-all-lane-regime-decisive">OQ-3: FP64 EU Placement [RESOLVED 2026-06-11 — 4 per-SMSP, all-lane regime decisive]</h3>
+<p><strong>Original question</strong>: 2 FP64 EU/SM confirmed, but placement (per-SMSP vs shared) unclear.</p>
+<p><strong>Final answer</strong>: <strong>4 independent FP64 EUs per SM, one per SMSP</strong>. The earlier "2 shared EU" reading was a sparse-lane-mask measurement artifact, not real EU sharing. Decisive evidence: a controlled lane-mask dichotomy experiment on SM_120 server1 (2026-06-11, 8 kernel variants, [temp/fp64_eu_dichotomy_test{,_v2}.cu]) where the only varied parameter is the lane mask:</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Lane mask</th>
+<th style="text-align: center;">1W cyc/DFMA</th>
+<th style="text-align: center;">4W cyc/DFMA</th>
+<th style="text-align: center;">4W contention</th>
+<th style="text-align: center;">Agg @ 4W (DFMA/cyc/SM)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>lane==0</code> only</td>
+<td style="text-align: center;">63.99</td>
+<td style="text-align: center;">75.99</td>
+<td style="text-align: center;"><strong>+18.8%</strong></td>
+<td style="text-align: center;">0.0526</td>
+</tr>
+<tr>
+<td>all 32 lanes (real DGEMM)</td>
+<td style="text-align: center;">63.99</td>
+<td style="text-align: center;"><strong>63.99</strong></td>
+<td style="text-align: center;"><strong>0%</strong></td>
+<td style="text-align: center;"><strong>0.0625 = 4/64</strong></td>
+</tr>
+</tbody>
+</table></div>
+<p><code>#pragma unroll</code> was tested orthogonally (256 vs 1000 DFMAs, with vs without unroll, all 4 cells × 2 lane modes = 8 kernels) and is a <strong>null variable</strong>. The lane mask is the sole determinant.</p>
+<p><strong>Reinterpretation of S24 cases</strong>:</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Case</th>
+<th>Lane mask</th>
+<th>4W result</th>
+<th>Real meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><span class="cite">[S5/case_50]</span></td>
+<td>lane 0 only</td>
+<td>+19% contention</td>
+<td>Sparse-mask dispatch overhead (NOT EU sharing)</td>
+</tr>
+<tr>
+<td><span class="cite">[S24/case_13]</span></td>
+<td>lane 0 only</td>
+<td>+19% contention</td>
+<td>Sparse-mask dispatch overhead (NOT EU sharing)</td>
+</tr>
+<tr>
+<td><span class="cite">[S24/case_17]</span></td>
+<td>lane 0 only</td>
+<td>NCU <code>cycles_active</code> 4.76× vs <code>inst</code> 4.00×</td>
+<td>SMSP scheduler arbitrating sparse warps (NOT EU sharing)</td>
+</tr>
+<tr>
+<td><strong><span class="cite">[S24/case_16]</span></strong></td>
+<td><strong>all 32 lanes</strong></td>
+<td><strong>0% contention</strong></td>
+<td><strong>Correct measurement of true 4-EU architecture</strong></td>
+</tr>
+</tbody>
+</table></div>
+<p>The original conflict was an <strong>algebraic coincidence</strong>: 4 / 76 = 0.0526 ≈ 2 / 64 = 0.0312 × 1.69. When case_50/13 assumed the 2-shared-EU model and computed "effective EU count" from agg = 0.0526, they got ≈2 — but the real cause was 4 EUs each running with a +19% scheduler tax under sparse mask, not 2 EUs at full speed.</p>
+<p><strong>Updated downstream model</strong>:</p>
+<ul>
+<li>FP64 EU count: <strong>4 per-SMSP</strong></li>
+<li>All-lane DFMA throughput: <strong>0.0625 DFMA/cyc/SM = 4/64</strong></li>
+<li>FP64:FP32 ratio (real-workload): <strong>1:32 dep-chain / 1:32 cuBLAS-pipelined</strong> (not 1:64)</li>
+<li>SM_120 FP64 dep-chain peak (110 SMs, 2.1 GHz): <strong>28.9 GFLOPS</strong></li>
+<li>SM_120 cuBLAS DGEMM peak: <strong>0.96 TFLOPS</strong> <span class="cite">[S18/case_3]</span> (ILP-pipelined via tensor-core-style accumulator chains lifts dep-chain bound by ~33×)</li>
+</ul>
+<p><strong>Updated chapters</strong>:</p>
+<ul>
+<li>Ch5 §5.2.4 / §5.2.7 — EU table + ASCII diagrams reflect 4-per-SMSP architecture and lane-mask dichotomy explanation.</li>
+<li>Ch3 SM Microarchitecture — FP64 EU count consistent at 4 per SM.</li>
+<li>Ch9 Power model — FP64 active power computed against 4-EU model.</li>
+</ul>
+<p><strong>Audit trail</strong>: see Ch5 §5.2.7 "Decisive Lane-Mask Dichotomy Experiment (2026-06-11)" for the full 8-kernel data table and ASCII diagrams of dispatch paths in both regimes.</p>
+<hr>
+<h2 class="ch-title" id="16-3-remaining-open-questions-not-testable-on-sm_120">16.3 Remaining Open Questions (Not Testable on SM_120)</h2>
+<h3 class="sub-title" id="oq-6-tma-multicast-hardware-status-blocked">OQ-6: TMA Multicast Hardware Status [BLOCKED]</h3>
+<p><strong>Status</strong>: Non-functional confirmed, root cause (absent silicon vs fuse-disabled) requires die analysis or NVIDIA disclosure. Not resolvable via microbenchmarking.</p>
+<h3 class="sub-title" id="oq-9-sm_120-vs-sm_100-direct-comparison-blocked">OQ-9: SM_120 vs SM_100 Direct Comparison [BLOCKED]</h3>
+<p><strong>Status</strong>: Requires B200 hardware not available. SM_110 (Jetson Thor) available but is a distinct SKU.</p>
+<hr>
+<h2 class="ch-title" id="16-4-failed-and-blocked-test-cases">16.4 Failed and Blocked Test Cases</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Section</th>
+<th>Case</th>
+<th>Status</th>
+<th>Failure Reason</th>
+<th>Resolution Path</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>11.8.1</td>
+<td>#127</td>
+<td>❌</td>
+<td>SM_89/SM_100 HW unavailable</td>
+<td>Acquire Ada/B200 hardware</td>
+</tr>
+<tr>
+<td>11.8.5</td>
+<td>#155</td>
+<td>❌</td>
+<td>SM_89 HW unavailable</td>
+<td>Acquire Ada hardware</td>
+</tr>
+<tr>
+<td>9.6</td>
+<td>#84</td>
+<td>⚠️</td>
+<td>Sparsity pattern is SW-dependent</td>
+<td>Reclassify as SW characterization</td>
+</tr>
+<tr>
+<td>9.6</td>
+<td>#85</td>
+<td>⚠️</td>
+<td>SM_100 HW unavailable</td>
+<td>Acquire B200 hardware</td>
+</tr>
+<tr>
+<td>9.9</td>
+<td>#189</td>
+<td>⚠️</td>
+<td>Packed MX cvt fails in loops</td>
+<td>Wait for CUDA 13.x fix</td>
+</tr>
+<tr>
+<td>10</td>
+<td>#28-32</td>
+<td>⚠️</td>
+<td>TMA multicast SW-emulated</td>
+<td>Architectural limitation</td>
+</tr>
+<tr>
+<td>18</td>
+<td>#2,4,7</td>
+<td>⚠️</td>
+<td>SM_100/SM_90 HW unavailable</td>
+<td>Acquire datacenter GPU access</td>
+</tr>
+<tr>
+<td>19</td>
+<td>#10</td>
+<td>⚠️</td>
+<td>CUTLASS profiler lacks SM_120 native FP16</td>
+<td>Wait for CUTLASS 4.x</td>
+</tr>
+</tbody>
+</table></div>
+<hr>
+<h2 class="ch-title" id="16-5-impact-assessment-summary-updated">16.5 Impact Assessment Summary (Updated)</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Category</th>
+<th style="text-align: center;">Original Count</th>
+<th style="text-align: center;">Resolved</th>
+<th style="text-align: center;">Remaining</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Measurement conflict (L1, bank groups)</td>
+<td style="text-align: center;">2</td>
+<td style="text-align: center;"><strong>2</strong></td>
+<td style="text-align: center;">0</td>
+</tr>
+<tr>
+<td>Architecture unknown (FP64, scheduler, L2 hash, cache sharing, power gating)</td>
+<td style="text-align: center;">5</td>
+<td style="text-align: center;"><strong>5</strong></td>
+<td style="text-align: center;">0</td>
+</tr>
+<tr>
+<td>Hardware unavailable (SM_89/SM_100)</td>
+<td style="text-align: center;">8</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">8</td>
+</tr>
+<tr>
+<td>TMA multicast absent</td>
+<td style="text-align: center;">7</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">7 (architectural)</td>
+</tr>
+<tr>
+<td>Toolchain/library gaps</td>
+<td style="text-align: center;">4</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">4</td>
+</tr>
+<tr>
+<td>CUTLASS anomaly (sparse BF16)</td>
+<td style="text-align: center;">1</td>
+<td style="text-align: center;"><strong>1</strong> (excluded)</td>
+<td style="text-align: center;">0</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Net</strong>: 7 of 8 testable open questions fully resolved. The follow-up campaign (Section 24, 31 cases) converted 7 open questions into definitive architectural findings that update the performance model and porting guide.</p>
+<hr>
+<h2 class="ch-title" id="16-6-cross-reference-updated-chapters">16.6 Cross-Reference: Updated Chapters</h2>
+<p>The Section 24 follow-up results update findings in the following report chapters:</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Finding</th>
+<th style="text-align: center;">Original Chapter</th>
+<th style="text-align: left;">Update</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>L1 = 89 KB, shared with tex/NC</td>
+<td style="text-align: center;">Ch.2 (Memory)</td>
+<td style="text-align: left;">L1 capacity updated from "48-96 KB" to "89 KB (default)"</td>
+</tr>
+<tr>
+<td>Carveout API is functional</td>
+<td style="text-align: center;">Ch.2 (Memory)</td>
+<td style="text-align: left;">Corrects "carveout API no-op" finding</td>
+</tr>
+<tr>
+<td>4-way bank groups, closed-page</td>
+<td style="text-align: center;">Ch.2 (Memory), Ch.10 (System)</td>
+<td style="text-align: left;">Corrects "3-way" to "4-way"; adds row buffer policy</td>
+</tr>
+<tr>
+<td>FP64: 2 shared EU (probable)</td>
+<td style="text-align: center;">Ch.3 (SM), Ch.5 (Instructions)</td>
+<td style="text-align: left;">Adds contention model and conflict documentation</td>
+</tr>
+<tr>
+<td>CGGTY refined: DEFER_BLOCKING, SB-instant-switch</td>
+<td style="text-align: center;">Ch.7 (Scheduler)</td>
+<td style="text-align: left;">Adds measured scheduler transition details</td>
+</tr>
+<tr>
+<td>L2 hash bit 10 granularity</td>
+<td style="text-align: center;">Ch.2 (Memory)</td>
+<td style="text-align: left;">Adds hash function partial specification</td>
+</tr>
+<tr>
+<td>Const/I-cache separate</td>
+<td style="text-align: center;">Ch.7 (Scheduler)</td>
+<td style="text-align: left;">Confirms separate SRAM</td>
+</tr>
+<tr>
+<td>Clock gating (not power gating)</td>
+<td style="text-align: center;">Ch.9 (Power)</td>
+<td style="text-align: left;">Updates power model from unknown to clock-gated</td>
+</tr>
+<tr>
+<td>LSU power = 0.065 W/SM</td>
+<td style="text-align: center;">Ch.9 (Power)</td>
+<td style="text-align: left;">Adds third pipe-type power measurement</td>
+</tr>
+</tbody>
+</table></div>
+<hr>
+
+<footer class="page-footer">
+<div class="foot-grid">
+<div><strong>SM_120 / GB202 Blackwell</strong> · Microarchitecture Analysis &amp; Reference · 2026</div>
+<div>1542 microbenchmark cases · 26 sections · ~13,400 lines</div>
+<div class="foot-accent">RTX PRO 5000 72GB · CUDA 13.3 · Data source: test_results/SM_120/</div>
+</div>
+</footer>
+
+</main>
+<aside class="toc-right">
+<h4>Chapter Navigation</h4>
+<a href="#16-1-resolved-questions">16.1 Resolved Questions</a>
+<a class="sub" href="#oq-1-l1-cache-actual-capacity-and-dynamic-partitioning-resolved">OQ-1: L1 Cache Actual Capacity and Dynamic Partitioning [RESOLVED]</a>
+<a class="sub" href="#oq-2-gddr7-bank-group-structure-resolved">OQ-2: GDDR7 Bank Group Structure [RESOLVED]</a>
+<a class="sub" href="#oq-4-warp-scheduler-priority-transition-details-resolved">OQ-4: Warp Scheduler Priority Transition Details [RESOLVED]</a>
+<a class="sub" href="#oq-5-l2-hash-function-reverse-engineering-resolved">OQ-5: L2 Hash Function Reverse-Engineering [RESOLVED]</a>
+<a class="sub" href="#oq-7-constant-cache-and-i-cache-sram-sharing-resolved">OQ-7: Constant Cache and I-Cache SRAM Sharing [RESOLVED]</a>
+<a class="sub" href="#oq-8-per-sm-power-gating-granularity-resolved">OQ-8: Per-SM Power Gating Granularity [RESOLVED]</a>
+<a href="#16-2-resolved-on-follow-up">16.2 Resolved on Follow-up</a>
+<a class="sub" href="#oq-3-fp64-eu-placement-resolved-2026-06-11-4-per-smsp-all-lane-regime-decisive">OQ-3: FP64 EU Placement [RESOLVED 2026-06-11 — 4 per-SMSP, all-lane regime decisive]</a>
+<a href="#16-3-remaining-open-questions-not-testable-on-sm_120">16.3 Remaining Open Questions (Not Testable on SM_120)</a>
+<a class="sub" href="#oq-6-tma-multicast-hardware-status-blocked">OQ-6: TMA Multicast Hardware Status [BLOCKED]</a>
+<a class="sub" href="#oq-9-sm_120-vs-sm_100-direct-comparison-blocked">OQ-9: SM_120 vs SM_100 Direct Comparison [BLOCKED]</a>
+<a href="#16-4-failed-and-blocked-test-cases">16.4 Failed and Blocked Test Cases</a>
+<a href="#16-5-impact-assessment-summary-updated">16.5 Impact Assessment Summary (Updated)</a>
+<a href="#16-6-cross-reference-updated-chapters">16.6 Cross-Reference: Updated Chapters</a>
+</aside>
+</div>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" integrity="sha384-7zkQWkzuo3B5mTepMUcHkMB5jZaolc2xDwL6VFqjFALcbeS9Ggm/Yr2r3Dy4lfFg" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" integrity="sha384-43gviWU0YVjaDtb/GhzOouOXtZMP/7XUzwPTstBeZFe/+rCMvRwr4yROQP43s0Xk" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/lib/highlight.min.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  if (window.renderMathInElement) {
+    renderMathInElement(document.body, {
+      delimiters: [
+        {left: "$$", right: "$$", display: true},
+        {left: "$", right: "$", display: false}
+      ],
+      throwOnError: false
+    });
+  }
+  if (window.hljs) {
+    document.querySelectorAll("pre code[class^='language-']").forEach(function(el) {
+      try { hljs.highlightElement(el); } catch (e) {}
+    });
+  }
+});
+</script>
+<script src="assets/js/toc.js" defer></script>
+</body>
+</html>

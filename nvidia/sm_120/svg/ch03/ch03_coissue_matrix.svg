@@ -1,0 +1,299 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 920" role="img"
+     aria-label="SM_120 Complete Pairwise Co-Issue Matrix: heatmap of pipe-pair overlap with measured overhead percentages">
+  <defs>
+    <style><![CDATA[
+      .ttl{font:600 15px "Fraunces",serif;fill:#0b1220}
+      .sub{font:italic 11.5px "Fraunces",serif;fill:#5b6679}
+      .sect{font:600 13px "Fraunces",serif}
+      .lbl{font:600 11.5px "JetBrains Mono",monospace}
+      .lbl-sm{font:500 10px "JetBrains Mono",monospace;fill:#5b6679}
+      .desc{font:500 9px "JetBrains Mono",monospace;fill:#5b6679}
+      .badge{font:600 9.5px "JetBrains Mono",monospace}
+      .cell-val{font:700 11px "JetBrains Mono",monospace}
+      .cell-lbl{font:600 9px "JetBrains Mono",monospace;fill:#334155}
+      .hdr{font:600 10.5px "JetBrains Mono",monospace;fill:#0b1220}
+      .note{font:500 9.5px "JetBrains Mono",monospace;fill:#8e97a5}
+      .big-num{font:700 18px "JetBrains Mono",monospace}
+      .zone-t{font:600 12px "Fraunces",serif}
+    ]]></style>
+  </defs>
+
+  <rect width="1080" height="920" fill="#ffffff"/>
+
+  <!-- Title -->
+  <text x="36" y="32" class="ttl">SM_120 Pairwise Co-Issue Matrix — Measured Pipe Overlap Heatmap</text>
+  <text x="36" y="52" class="sub">Green = full overlap (0% overhead); Yellow = partial contention; Red = significant penalty. 10 of 15 pairs achieve ≤2.2% overhead. [S22, S26]</text>
+
+  <!-- ═══════ HEATMAP MATRIX ═══════ -->
+  <g transform="translate(40, 76)">
+    <!-- Column headers -->
+    <text x="148" y="10" class="hdr" text-anchor="middle">FMA</text>
+    <text x="238" y="10" class="hdr" text-anchor="middle">ALU</text>
+    <text x="328" y="10" class="hdr" text-anchor="middle">XU/SFU</text>
+    <text x="418" y="10" class="hdr" text-anchor="middle">LSU</text>
+    <text x="508" y="10" class="hdr" text-anchor="middle">Tensor</text>
+    <text x="598" y="10" class="hdr" text-anchor="middle">FP64</text>
+    <text x="688" y="10" class="hdr" text-anchor="middle">TEX</text>
+    <text x="778" y="10" class="hdr" text-anchor="middle">TMA</text>
+
+    <!-- Row 1: FMA -->
+    <text x="90" y="42" class="hdr" text-anchor="end">FMA</text>
+    <rect x="104" y="20" width="84" height="36" rx="4" fill="#e5e7eb" stroke="#d1d5db"/>
+    <text x="146" y="42" class="cell-val" fill="#8e97a5" text-anchor="middle">—</text>
+    <!-- FMA+ALU: 8.3% -->
+    <rect x="194" y="20" width="84" height="36" rx="4" fill="#FEF3C7" stroke="#f59e0b"/>
+    <text x="236" y="36" class="cell-val" fill="#92400e" text-anchor="middle">8.3%</text>
+    <text x="236" y="50" class="cell-lbl" text-anchor="middle">shared slot</text>
+    <!-- FMA+XU: ~0% -->
+    <rect x="284" y="20" width="84" height="36" rx="4" fill="#DCFCE7" stroke="#16a34a"/>
+    <text x="326" y="36" class="cell-val" fill="#166534" text-anchor="middle">~0%</text>
+    <text x="326" y="50" class="cell-lbl" text-anchor="middle">full</text>
+    <!-- FMA+LSU: 0% -->
+    <rect x="374" y="20" width="84" height="36" rx="4" fill="#DCFCE7" stroke="#16a34a"/>
+    <text x="416" y="36" class="cell-val" fill="#166534" text-anchor="middle">0%</text>
+    <text x="416" y="50" class="cell-lbl" text-anchor="middle">full</text>
+    <!-- FMA+TC: 2.4% -->
+    <rect x="464" y="20" width="84" height="36" rx="4" fill="#DCFCE7" stroke="#16a34a"/>
+    <text x="506" y="36" class="cell-val" fill="#166534" text-anchor="middle">2.4%</text>
+    <text x="506" y="50" class="cell-lbl" text-anchor="middle">near-full</text>
+    <!-- FMA+FP64: 0.4% -->
+    <rect x="554" y="20" width="84" height="36" rx="4" fill="#DCFCE7" stroke="#16a34a"/>
+    <text x="596" y="36" class="cell-val" fill="#166534" text-anchor="middle">0.4%</text>
+    <text x="596" y="50" class="cell-lbl" text-anchor="middle">full</text>
+    <!-- FMA+TEX: 10% -->
+    <rect x="644" y="20" width="84" height="36" rx="4" fill="#FEF3C7" stroke="#f59e0b"/>
+    <text x="686" y="36" class="cell-val" fill="#92400e" text-anchor="middle">10%</text>
+    <text x="686" y="50" class="cell-lbl" text-anchor="middle">partial</text>
+    <!-- FMA+TMA: 0% -->
+    <rect x="734" y="20" width="84" height="36" rx="4" fill="#DCFCE7" stroke="#16a34a"/>
+    <text x="776" y="36" class="cell-val" fill="#166534" text-anchor="middle">0%</text>
+    <text x="776" y="50" class="cell-lbl" text-anchor="middle">full</text>
+
+    <!-- Row 2: ALU -->
+    <text x="90" y="86" class="hdr" text-anchor="end">ALU</text>
+    <rect x="194" y="64" width="84" height="36" rx="4" fill="#e5e7eb" stroke="#d1d5db"/>
+    <text x="236" y="86" class="cell-val" fill="#8e97a5" text-anchor="middle">—</text>
+    <!-- ALU+XU: 143% -->
+    <rect x="284" y="64" width="84" height="36" rx="4" fill="#FEE2E2" stroke="#dc2626"/>
+    <text x="326" y="80" class="cell-val" fill="#991b1b" text-anchor="middle">143%</text>
+    <text x="326" y="94" class="cell-lbl" text-anchor="middle">XU dom.</text>
+    <!-- ALU+LSU: ~0% -->
+    <rect x="374" y="64" width="84" height="36" rx="4" fill="#DCFCE7" stroke="#16a34a"/>
+    <text x="416" y="80" class="cell-val" fill="#166534" text-anchor="middle">~0%</text>
+    <text x="416" y="94" class="cell-lbl" text-anchor="middle">full</text>
+    <!-- ALU+TC: 2.2% -->
+    <rect x="464" y="64" width="84" height="36" rx="4" fill="#DCFCE7" stroke="#16a34a"/>
+    <text x="506" y="80" class="cell-val" fill="#166534" text-anchor="middle">2.2%</text>
+    <text x="506" y="94" class="cell-lbl" text-anchor="middle">near-full</text>
+    <!-- ALU+FP64: — -->
+    <rect x="554" y="64" width="84" height="36" rx="4" fill="#f8fafc" stroke="#e2e8f0"/>
+    <text x="596" y="86" class="cell-val" fill="#8e97a5" text-anchor="middle">—</text>
+    <!-- ALU+TEX: — -->
+    <rect x="644" y="64" width="84" height="36" rx="4" fill="#f8fafc" stroke="#e2e8f0"/>
+    <text x="686" y="86" class="cell-val" fill="#8e97a5" text-anchor="middle">—</text>
+    <!-- ALU+TMA: — -->
+    <rect x="734" y="64" width="84" height="36" rx="4" fill="#f8fafc" stroke="#e2e8f0"/>
+    <text x="776" y="86" class="cell-val" fill="#8e97a5" text-anchor="middle">—</text>
+
+    <!-- Row 3: XU/SFU -->
+    <text x="90" y="130" class="hdr" text-anchor="end">XU/SFU</text>
+    <rect x="284" y="108" width="84" height="36" rx="4" fill="#e5e7eb" stroke="#d1d5db"/>
+    <text x="326" y="130" class="cell-val" fill="#8e97a5" text-anchor="middle">—</text>
+    <!-- XU+LSU: 0% -->
+    <rect x="374" y="108" width="84" height="36" rx="4" fill="#DCFCE7" stroke="#16a34a"/>
+    <text x="416" y="124" class="cell-val" fill="#166534" text-anchor="middle">0%</text>
+    <text x="416" y="138" class="cell-lbl" text-anchor="middle">full</text>
+    <!-- XU+TC: 0% -->
+    <rect x="464" y="108" width="84" height="36" rx="4" fill="#DCFCE7" stroke="#16a34a"/>
+    <text x="506" y="124" class="cell-val" fill="#166534" text-anchor="middle">0%</text>
+    <text x="506" y="138" class="cell-lbl" text-anchor="middle">full</text>
+    <!-- XU+FP64: — -->
+    <rect x="554" y="108" width="84" height="36" rx="4" fill="#f8fafc" stroke="#e2e8f0"/>
+    <text x="596" y="130" class="cell-val" fill="#8e97a5" text-anchor="middle">—</text>
+    <!-- XU+TEX: — -->
+    <rect x="644" y="108" width="84" height="36" rx="4" fill="#f8fafc" stroke="#e2e8f0"/>
+    <text x="686" y="130" class="cell-val" fill="#8e97a5" text-anchor="middle">—</text>
+    <!-- XU+TMA: — -->
+    <rect x="734" y="108" width="84" height="36" rx="4" fill="#f8fafc" stroke="#e2e8f0"/>
+    <text x="776" y="130" class="cell-val" fill="#8e97a5" text-anchor="middle">—</text>
+
+    <!-- Row 4: LSU -->
+    <text x="90" y="174" class="hdr" text-anchor="end">LSU</text>
+    <rect x="374" y="152" width="84" height="36" rx="4" fill="#e5e7eb" stroke="#d1d5db"/>
+    <text x="416" y="174" class="cell-val" fill="#8e97a5" text-anchor="middle">—</text>
+    <!-- LSU+TC: 17.4% -->
+    <rect x="464" y="152" width="84" height="36" rx="4" fill="#FED7AA" stroke="#ea580c"/>
+    <text x="506" y="168" class="cell-val" fill="#9a3412" text-anchor="middle">17.4%</text>
+    <text x="506" y="182" class="cell-lbl" text-anchor="middle">LDS→FMA</text>
+    <!-- LSU+FP64: 0% -->
+    <rect x="554" y="152" width="84" height="36" rx="4" fill="#DCFCE7" stroke="#16a34a"/>
+    <text x="596" y="168" class="cell-val" fill="#166534" text-anchor="middle">0%</text>
+    <text x="596" y="182" class="cell-lbl" text-anchor="middle">full</text>
+    <!-- LSU+TEX: — -->
+    <rect x="644" y="152" width="84" height="36" rx="4" fill="#f8fafc" stroke="#e2e8f0"/>
+    <text x="686" y="174" class="cell-val" fill="#8e97a5" text-anchor="middle">—</text>
+    <!-- LSU+TMA: — -->
+    <rect x="734" y="152" width="84" height="36" rx="4" fill="#f8fafc" stroke="#e2e8f0"/>
+    <text x="776" y="174" class="cell-val" fill="#8e97a5" text-anchor="middle">—</text>
+
+    <!-- Row 5: Tensor -->
+    <text x="90" y="218" class="hdr" text-anchor="end">Tensor</text>
+    <rect x="464" y="196" width="84" height="36" rx="4" fill="#e5e7eb" stroke="#d1d5db"/>
+    <text x="506" y="218" class="cell-val" fill="#8e97a5" text-anchor="middle">—</text>
+    <!-- TC+FP64: — -->
+    <rect x="554" y="196" width="84" height="36" rx="4" fill="#f8fafc" stroke="#e2e8f0"/>
+    <text x="596" y="218" class="cell-val" fill="#8e97a5" text-anchor="middle">—</text>
+    <!-- TC+TEX: — -->
+    <rect x="644" y="196" width="84" height="36" rx="4" fill="#f8fafc" stroke="#e2e8f0"/>
+    <text x="686" y="218" class="cell-val" fill="#8e97a5" text-anchor="middle">—</text>
+    <!-- TC+TMA: — -->
+    <rect x="734" y="196" width="84" height="36" rx="4" fill="#f8fafc" stroke="#e2e8f0"/>
+    <text x="776" y="218" class="cell-val" fill="#8e97a5" text-anchor="middle">—</text>
+
+    <!-- Legend -->
+    <g transform="translate(840, 20)">
+      <rect x="0" y="0" width="16" height="12" rx="2" fill="#DCFCE7" stroke="#16a34a"/>
+      <text x="22" y="10" class="badge" fill="#166534">0–3% (full)</text>
+      <rect x="0" y="20" width="16" height="12" rx="2" fill="#FEF3C7" stroke="#f59e0b"/>
+      <text x="22" y="30" class="badge" fill="#92400e">3–20% (partial)</text>
+      <rect x="0" y="40" width="16" height="12" rx="2" fill="#FED7AA" stroke="#ea580c"/>
+      <text x="22" y="50" class="badge" fill="#9a3412">20–50% (contention)</text>
+      <rect x="0" y="60" width="16" height="12" rx="2" fill="#FEE2E2" stroke="#dc2626"/>
+      <text x="22" y="70" class="badge" fill="#991b1b">&gt;50% (dominated)</text>
+      <rect x="0" y="80" width="16" height="12" rx="2" fill="#f8fafc" stroke="#e2e8f0"/>
+      <text x="22" y="90" class="badge" fill="#8e97a5">not measured</text>
+    </g>
+  </g>
+
+  <!-- ═══════ MULTI-WAY MIX SECTION ═══════ -->
+  <g transform="translate(40, 380)">
+    <rect x="0" y="0" width="1000" height="170" rx="12" fill="#f8fafc" stroke="#334155" stroke-width="1"/>
+    <text x="16" y="24" class="sect" fill="#334155">Multi-Way Co-Issue — GEMM-Relevant Combinations</text>
+
+    <!-- 3-way cards -->
+    <g transform="translate(16, 44)">
+      <!-- 3-way: IMAD+IADD3+FFMA -->
+      <rect x="0" y="0" width="230" height="52" rx="6" fill="#DCFCE7" stroke="#16a34a" stroke-width="0.8"/>
+      <text x="8" y="16" class="badge" fill="#16a34a">3-WAY</text>
+      <text x="60" y="16" class="lbl" fill="#166534">IMAD+IADD3+FFMA</text>
+      <text x="8" y="32" class="desc">overlap: 99.9% (4098 vs 4094 cyc)</text>
+      <text x="8" y="46" class="note">all 3 hide in 4-cyc dep chain [S11/86]</text>
+
+      <!-- 3-way: SFU+FMA+LSU -->
+      <rect x="244" y="0" width="230" height="52" rx="6" fill="#DCFCE7" stroke="#16a34a" stroke-width="0.8"/>
+      <text x="252" y="16" class="badge" fill="#16a34a">3-WAY</text>
+      <text x="304" y="16" class="lbl" fill="#166534">SFU+FMA+LDG</text>
+      <text x="252" y="32" class="desc">overlap: 99.8% (Triple/Max=1.002)</text>
+      <text x="252" y="46" class="note">3 independent pipes [S11/88]</text>
+
+      <!-- 3-way: TC+fmaheavy+LDS -->
+      <rect x="488" y="0" width="250" height="52" rx="6" fill="#FEF3C7" stroke="#f59e0b" stroke-width="0.8"/>
+      <text x="496" y="16" class="badge" fill="#92400e">3-WAY</text>
+      <text x="548" y="16" class="lbl" fill="#92400e">TC+V-pipe+LSU</text>
+      <text x="496" y="32" class="desc">overlap: 72.5% (MIX/MAX=1.19)</text>
+      <text x="496" y="46" class="note">LDS consume contention [S11/87]</text>
+
+      <!-- 5-way: TC-dominated -->
+      <rect x="752" y="0" width="225" height="52" rx="6" fill="#DCFCE7" stroke="#16a34a" stroke-width="0.8"/>
+      <text x="760" y="16" class="badge" fill="#16a34a">5-WAY</text>
+      <text x="812" y="16" class="lbl" fill="#166534">FMA+ALU+XU+LSU+TC</text>
+      <text x="760" y="32" class="desc">overhead: 0% (TC dominates)</text>
+      <text x="760" y="46" class="note">all pipes free in MMA stalls [S22/54]</text>
+    </g>
+
+    <!-- TC sub-pipe co-issue -->
+    <g transform="translate(16, 108)">
+      <rect x="0" y="0" width="300" height="56" rx="6" fill="#EDE7FB" stroke="#6d28d9" stroke-width="0.8"/>
+      <text x="8" y="16" class="badge" fill="#6d28d9">TC SUB-PIPES</text>
+      <text x="100" y="16" class="lbl" fill="#6d28d9">HMMA + IMMA = 71% overlap</text>
+      <text x="8" y="32" class="desc">MIX/max=1.27; partially share TC resources [S26/31]</text>
+      <text x="8" y="44" class="note">FP16 + INT8 → 52% more work vs serialized</text>
+
+      <!-- FFMA+HFMA2 co-issue -->
+      <rect x="316" y="0" width="320" height="56" rx="6" fill="#DCFCE7" stroke="#16a34a" stroke-width="0.8"/>
+      <text x="324" y="16" class="badge" fill="#16a34a">FMA SUB-PIPES</text>
+      <text x="420" y="16" class="lbl" fill="#166534">FFMA + HFMA2 = 100% overlap</text>
+      <text x="324" y="32" class="desc">fmalite ≠ fmaheavy; perfect co-issue (MIX=4096=max) </text>
+      <text x="324" y="44" class="note">FP32 + FP16×2 run on different pipes</text>
+
+      <!-- SFU+SMEM co-issue -->
+      <rect x="650" y="0" width="325" height="56" rx="6" fill="#DCFCE7" stroke="#16a34a" stroke-width="0.8"/>
+      <text x="658" y="16" class="badge" fill="#16a34a">NCU-VERIFIED</text>
+      <text x="760" y="16" class="lbl" fill="#166534">SFU+SMEM = 89% overlap</text>
+      <text x="658" y="32" class="desc">NCU overlap=0.870, clock64=0.892 (Δ=2.5%) [S26/34]</text>
+      <text x="658" y="44" class="note">XU pipe + LSU pipe fully independent</text>
+    </g>
+  </g>
+
+  <!-- ═══════ BOTTOM: Key Insight + Engineering Rules ═══════ -->
+  <g transform="translate(40, 570)">
+    <rect x="0" y="0" width="500" height="325" rx="12" fill="#EDE7FB" stroke="#6d28d9" stroke-width="0.8"/>
+    <text x="16" y="24" class="sect" fill="#6d28d9">Engineering Rules for Co-Issue Optimization</text>
+
+    <g transform="translate(16, 44)">
+      <text x="0" y="0" class="lbl" fill="#166534">RULE 1: TC-Dominated Loops = Free Epilogue</text>
+      <text x="0" y="18" class="lbl-sm">When MMA &gt;80% of cycles, FMA/ALU/XU execute in stall</text>
+      <text x="0" y="32" class="lbl-sm">bubbles at 0% cost (29-cyc window fits ~7 MUFU or 27 FFMA)</text>
+
+      <text x="0" y="56" class="lbl" fill="#166534">RULE 2: Avoid LDS-Consume Near MMA</text>
+      <text x="0" y="74" class="lbl-sm">LDS results consumed via FADD compete with HMMA on</text>
+      <text x="0" y="88" class="lbl-sm">FMA pipe → 17.4% overhead. Batch LDS before MMA groups.</text>
+
+      <text x="0" y="112" class="lbl" fill="#166534">RULE 3: XU Latency Dominates Mix Cost</text>
+      <text x="0" y="130" class="lbl-sm">MUFU.RCP/SIN/TANH 18-44 cyc pipeline; interleave with</text>
+      <text x="0" y="144" class="lbl-sm">TC work to hide latency (XU+TC = 0% overhead)</text>
+
+      <text x="0" y="168" class="lbl" fill="#166534">RULE 4: Finest Interleaving = Optimal</text>
+      <text x="0" y="186" class="lbl-sm">No switching penalty on SM_120. Group size 1 (alternate</text>
+      <text x="0" y="200" class="lbl-sm">every instruction) performs = or better than batched groups.</text>
+
+      <text x="0" y="224" class="lbl" fill="#166534">RULE 5: FP32 + FP16 Are Truly Parallel</text>
+      <text x="0" y="242" class="lbl-sm">FFMA (fmalite) and HFMA2 (fmaheavy) use different pipes.</text>
+      <text x="0" y="256" class="lbl-sm">Mixed precision epilogues run at 2× effective throughput.</text>
+    </g>
+  </g>
+
+  <!-- ═══════ BOTTOM RIGHT: Throughput Formula ═══════ -->
+  <g transform="translate(560, 570)">
+    <rect x="0" y="0" width="480" height="325" rx="12" fill="#f8fafc" stroke="#334155" stroke-width="1"/>
+    <text x="16" y="24" class="sect" fill="#334155">Throughput Estimation Formula</text>
+    <text x="16" y="42" class="desc">For mixed instruction streams on SM_120:</text>
+
+    <!-- Formula box -->
+    <g transform="translate(16, 56)">
+      <rect x="0" y="0" width="448" height="44" rx="6" fill="#EFF6FF" stroke="#2563eb" stroke-width="0.8"/>
+      <text x="224" y="18" class="lbl" fill="#1d4ed8" text-anchor="middle">T_total = max(T_pipe_i) × (1 + Σ penalty_i)</text>
+      <text x="224" y="36" class="desc" text-anchor="middle">where penalty_i comes from the co-issue matrix above</text>
+    </g>
+
+    <!-- Examples -->
+    <g transform="translate(16, 116)">
+      <text x="0" y="0" class="lbl" fill="#334155">Example: GEMM mainloop (MMA + LDS + FFMA):</text>
+      <text x="0" y="20" class="lbl-sm">T_MMA = 29 cyc × N_mma (dominant)</text>
+      <text x="0" y="36" class="lbl-sm">T_LDS = hidden (0% with TC) + consume penalty (+17.4%)</text>
+      <text x="0" y="52" class="lbl-sm">T_FMA = free (2.4% overhead)</text>
+      <text x="0" y="68" class="lbl" fill="#1d4ed8">→ T_total ≈ T_MMA × 1.20 (effective overhead)</text>
+    </g>
+
+    <g transform="translate(16, 200)">
+      <text x="0" y="0" class="lbl" fill="#334155">Example: Pure compute (FFMA + IADD3 + MUFU):</text>
+      <text x="0" y="20" class="lbl-sm">T_MUFU = 44 cyc dep chain (dominant)</text>
+      <text x="0" y="36" class="lbl-sm">T_FFMA = hidden (0% with XU)</text>
+      <text x="0" y="52" class="lbl-sm">T_IADD3 = hidden (0% with XU)</text>
+      <text x="0" y="68" class="lbl" fill="#1d4ed8">→ T_total ≈ T_MUFU × 1.00 (fully overlapped)</text>
+    </g>
+
+    <!-- Cross-SMSP note -->
+    <g transform="translate(16, 284)">
+      <rect x="0" y="0" width="448" height="32" rx="4" fill="#DCFCE7" stroke="#16a34a" stroke-width="0.5"/>
+      <text x="8" y="15" class="badge" fill="#16a34a">Cross-SMSP:  </text>
+       <text x="8" y="25" class="badge" fill="#16a34a"> each SMSP has independent pipe backends → 0% inter-SMSP contention[S22/27-28]</text>
+    </g>
+     
+     
+  </g>
+
+  <!-- Source -->
+  <text x="36" y="910" class="note">[source: S22/case_19-56, S26/case_28-34, S11/case_86-88, S9/case_122]</text>
+</svg>

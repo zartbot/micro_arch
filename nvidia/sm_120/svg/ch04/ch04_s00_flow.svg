@@ -1,0 +1,252 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 780" role="img"
+     aria-label="4.1.1 IMMA vs HMMA Subpipe Comparison — pipeline depth, execution slots, and architectural interpretation">
+  <defs>
+    <style><![CDATA[
+      .eyebrow{font:600 11px "JetBrains Mono",monospace;letter-spacing:0.16em;text-transform:uppercase}
+      .title  {font:500 20px "Fraunces",serif;fill:#0b1220;letter-spacing:-0.02em}
+      .sub    {font:italic 12px "Fraunces",serif;fill:#5b6679}
+      .ttl    {font:600 12px "JetBrains Mono",monospace;letter-spacing:0.04em}
+      .lbl    {font:500 11px "JetBrains Mono",monospace;fill:#5b6679}
+      .lbl-sm {font:500 10px "JetBrains Mono",monospace;fill:#5b6679;letter-spacing:0.04em;text-transform:uppercase}
+      .val    {font:600 20px "Fraunces",serif;fill:#0b1220}
+      .val-sm {font:600 14px "Fraunces",serif;fill:#0b1220}
+      .note   {font:500 11px "IBM Plex Sans",sans-serif;fill:#2a3548}
+      .note-em{font:600 11px "IBM Plex Sans",sans-serif;fill:#e11d48}
+      .note-bl{font:600 11px "IBM Plex Sans",sans-serif;fill:#2563eb}
+      .cyc-lbl{font:600 10px "JetBrains Mono",monospace;fill:#0b1220}
+      .cyc-val{font:500 9px "JetBrains Mono",monospace;fill:#5b6679}
+      .hdr-row{font:600 10px "JetBrains Mono",monospace;fill:#5b6679;letter-spacing:0.06em;text-transform:uppercase}
+      .data-r {font:500 11px "JetBrains Mono",monospace;fill:#0b1220}
+      .data-em{font:600 11px "JetBrains Mono",monospace;fill:#e11d48}
+    ]]></style>
+    <marker id="ar" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto">
+      <path d="M0,0 L7,3.5 L0,7 Z" fill="#5b6679"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1080" height="780" fill="#fcfbf6"/>
+
+  <!-- Header -->
+  <g transform="translate(36,28)">
+    <rect x="0" y="0" width="3" height="48" fill="#e11d48"/>
+    <text x="16" y="16" class="eyebrow" fill="#e11d48"> DUAL-SUBPIPE ARCHITECTURE</text>
+    <text x="16" y="40" class="title">IMMA vs HMMA Subpipe Comparison: Two Distinct Execution Datapaths</text>
+  </g>
+
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <!-- SECTION 1: Side-by-side KPI Comparison -->
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <g transform="translate(36,96)">
+    <!-- HMMA Panel -->
+    <g transform="translate(0,0)">
+      <rect x="0" y="0" width="490" height="240" rx="10" fill="#ffffff" stroke="#e11d48" stroke-width="1.2"/>
+      <rect x="0" y="0" width="490" height="28" rx="10" fill="#FFF1F2"/>
+      <text x="16" y="18" class="ttl" fill="#e11d48">HMMA SUBPIPE (FP16 / BF16 / TF32 / FP8 / FP6 / FP4 / MX)</text>
+
+      <!-- KPI Grid -->
+      <g transform="translate(16,44)">
+        <text x="0" y="0" class="lbl-sm">Latency</text>
+        <text x="0" y="22" class="val">28.78 cyc</text>
+
+        <text x="160" y="0" class="lbl-sm">Throughput</text>
+        <text x="160" y="22" class="val">15.88 cyc/mma</text>
+
+        <text x="350" y="0" class="lbl-sm">Depth</text>
+        <text x="350" y="22" class="val">1.81</text>
+      </g>
+
+      <g transform="translate(16,90)">
+        <text x="0" y="0" class="lbl-sm">Execution Slots</text>
+        <text x="0" y="22" class="val-sm">2</text>
+
+        <text x="160" y="0" class="lbl-sm">ILP to saturate</text>
+        <text x="160" y="22" class="val-sm">4 (2 captures 94%)</text>
+
+        <text x="350" y="0" class="lbl-sm">NCU counter</text>
+        <text x="350" y="22" class="val-sm">subpipe_hmma</text>
+      </g>
+
+      <!-- Pipeline visualization -->
+      <g transform="translate(16,140)">
+        <text x="0" y="0" class="lbl-sm">Pipeline Structure</text>
+        <!-- 2-slot visualization -->
+        <rect x="0" y="12" width="210" height="24" rx="4" fill="#e11d48" opacity="0.12" stroke="#e11d48" stroke-width="0.8"/>
+        <text x="8" y="28" class="cyc-lbl" fill="#e11d48">Slot 0 — 29 cyc execution</text>
+        <rect x="0" y="42" width="210" height="24" rx="4" fill="#e11d48" opacity="0.08" stroke="#e11d48" stroke-width="0.8" stroke-dasharray="3,2"/>
+        <text x="8" y="58" class="cyc-lbl" fill="#e11d48">Slot 1 — overlapped (13 cyc gap)</text>
+        <!-- Annotation -->
+        <text x="220" y="28" class="note">Shallow pipeline (2 slots)</text>
+        <text x="220" y="46" class="note">RF-read-port limited</text>
+        <text x="220" y="64" class="note-em">Bottleneck: operand delivery, not compute</text>
+      </g>
+
+      <!-- Bar graph for depth -->
+      <g transform="translate(16,210)">
+        <rect x="0" y="0" width="166" height="14" rx="3" fill="#e11d48" opacity="0.25"/>
+        <text x="174" y="11" class="cyc-val">depth 1.81 (shallow)</text>
+      </g>
+    </g>
+
+    <!-- IMMA Panel -->
+    <g transform="translate(520,0)">
+      <rect x="0" y="0" width="490" height="240" rx="10" fill="#ffffff" stroke="#2563eb" stroke-width="1.2"/>
+      <rect x="0" y="0" width="490" height="28" rx="10" fill="#EFF6FF"/>
+      <text x="16" y="18" class="ttl" fill="#2563eb">IMMA SUBPIPE (INT8)</text>
+
+      <!-- KPI Grid -->
+      <g transform="translate(16,44)">
+        <text x="0" y="0" class="lbl-sm">Latency</text>
+        <text x="0" y="22" class="val">26.80 cyc</text>
+
+        <text x="160" y="0" class="lbl-sm">Throughput</text>
+        <text x="160" y="22" class="val">6.55 cyc/mma</text>
+
+        <text x="350" y="0" class="lbl-sm">Depth</text>
+        <text x="350" y="22" class="val">4.09</text>
+      </g>
+
+      <g transform="translate(16,90)">
+        <text x="0" y="0" class="lbl-sm">Execution Slots</text>
+        <text x="0" y="22" class="val-sm">~4</text>
+
+        <text x="160" y="0" class="lbl-sm">ILP to saturate</text>
+        <text x="160" y="22" class="val-sm">4+</text>
+
+        <text x="350" y="0" class="lbl-sm">NCU counter</text>
+        <text x="350" y="22" class="val-sm">subpipe_imma</text>
+      </g>
+
+      <!-- Pipeline visualization -->
+      <g transform="translate(16,140)">
+        <text x="0" y="0" class="lbl-sm">Pipeline Structure</text>
+        <!-- 4-slot visualization -->
+        <rect x="0" y="12" width="100" height="18" rx="3" fill="#2563eb" opacity="0.15" stroke="#2563eb" stroke-width="0.8"/>
+        <text x="6" y="25" class="cyc-val" fill="#2563eb">Stage 1</text>
+        <rect x="106" y="12" width="100" height="18" rx="3" fill="#2563eb" opacity="0.15" stroke="#2563eb" stroke-width="0.8"/>
+        <text x="112" y="25" class="cyc-val" fill="#2563eb">Stage 2</text>
+        <rect x="212" y="12" width="100" height="18" rx="3" fill="#2563eb" opacity="0.15" stroke="#2563eb" stroke-width="0.8"/>
+        <text x="218" y="25" class="cyc-val" fill="#2563eb">Stage 3</text>
+        <rect x="318" y="12" width="100" height="18" rx="3" fill="#2563eb" opacity="0.15" stroke="#2563eb" stroke-width="0.8"/>
+        <text x="324" y="25" class="cyc-val" fill="#2563eb">Stage 4</text>
+        <!-- Annotation -->
+        <text x="0" y="50" class="note">Deep pipeline (4 stages)</text>
+        <text x="0" y="68" class="note">Narrower 8-bit × 8-bit multiply units</text>
+        <text x="10" y="87" class="note-bl">2.42× faster than HMMA throughput</text>
+      </g>
+
+      <!-- Bar graph for depth -->
+      <g transform="translate(16,210)">
+        <rect x="0" y="4" width="375" height="18" rx="3" fill="#2563eb" opacity="0.25"/>
+        <text x="270" y="" class="cyc-val">depth 4.09 (deep, 4-way pipelined)</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <!-- SECTION 2: Comparison Table -->
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <g transform="translate(36,360)">
+    <text x="0" y="0" class="ttl" fill="#e11d48">QUANTITATIVE COMPARISON</text>
+
+    <g transform="translate(0,18)">
+      <rect x="0" y="0" width="1008" height="150" rx="8" fill="#ffffff" stroke="#e6e4da"/>
+
+      <!-- Table header -->
+      <rect x="0" y="0" width="1008" height="26" rx="8" fill="#f9f8f4"/>
+      <text x="20" y="17" class="hdr-row">Property</text>
+      <text x="320" y="17" class="hdr-row">HMMA (all FP formats)</text>
+      <text x="620" y="17" class="hdr-row">IMMA (INT8)</text>
+      <text x="870" y="17" class="hdr-row">Ratio (IMMA/HMMA)</text>
+
+      <!-- Row 1: Latency -->
+      <line x1="0" y1="26" x2="1008" y2="26" stroke="#f0efe8" stroke-width="0.8"/>
+      <text x="20" y="46" class="data-r">Latency</text>
+      <text x="320" y="46" class="data-r">28.78 cyc</text>
+      <text x="620" y="46" class="data-r">26.80 cyc</text>
+      <text x="870" y="46" class="data-r">0.93× (2 cyc lower)</text>
+
+      <!-- Row 2: Throughput -->
+      <line x1="0" y1="56" x2="1008" y2="56" stroke="#f0efe8" stroke-width="0.8"/>
+      <text x="20" y="76" class="data-r">Throughput</text>
+      <text x="320" y="76" class="data-r">15.88 cyc/mma</text>
+      <text x="620" y="76" class="data-em">6.55 cyc/mma</text>
+      <text x="870" y="76" class="data-em">2.42× faster</text>
+
+      <!-- Row 3: Pipeline Depth -->
+      <line x1="0" y1="86" x2="1008" y2="86" stroke="#f0efe8" stroke-width="0.8"/>
+      <text x="20" y="106" class="data-r">Pipeline Depth</text>
+      <text x="320" y="106" class="data-r">1.81 (2 slots)</text>
+      <text x="620" y="106" class="data-em">4.09 (~4 stages)</text>
+      <text x="870" y="106" class="data-em">2.26× deeper</text>
+
+      <!-- Row 4: TOPS/warp -->
+      <line x1="0" y1="116" x2="1008" y2="116" stroke="#f0efe8" stroke-width="0.8"/>
+      <text x="20" y="136" class="data-r">TOPS/warp (at saturation)</text>
+      <text x="320" y="136" class="data-r">format-dependent (0.26–1.05)</text>
+      <text x="620" y="136" class="data-r">2.974 TOPS</text>
+      <text x="870" y="136" class="data-r">—</text>
+    </g>
+  </g>
+
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <!-- SECTION 3: Architectural Interpretation -->
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <g transform="translate(36,550)">
+    <text x="0" y="0" class="ttl" fill="#e11d48">ARCHITECTURAL INTERPRETATION [SPECULATIVE · CONFIDENCE: MEDIUM]</text>
+
+    <g transform="translate(0,20)">
+      <rect x="0" y="0" width="1008" height="180" rx="10" fill="#FFE4E6" stroke="#ec4899" stroke-width="0.8"/>
+
+      <!-- Left: HMMA silicon model -->
+      <g transform="translate(20,20)">
+        <text x="0" y="0" class="ttl" fill="#e11d48">HMMA: Wide Multiplier, Shallow Pipeline</text>
+        <g transform="translate(0,16)">
+          <!-- 16-bit multiplier blocks (2 wide) -->
+          <rect x="0" y="0" width="180" height="40" rx="4" fill="#e11d48" opacity="0.12" stroke="#e11d48" stroke-width="0.8"/>
+          <text x="12" y="16" class="cyc-val" fill="#e11d48">16-bit × 16-bit</text>
+          <text x="12" y="30" class="cyc-val" fill="#e11d48">MULTIPLIER (wide)</text>
+          <rect x="190" y="0" width="180" height="40" rx="4" fill="#e11d48" opacity="0.08" stroke="#e11d48" stroke-width="0.8" stroke-dasharray="3,2"/>
+          <text x="202" y="16" class="cyc-val" fill="#e11d48">16-bit × 16-bit</text>
+          <text x="202" y="30" class="cyc-val" fill="#e11d48">MULTIPLIER (slot 2)</text>
+        </g>
+        <text x="0" y="76" class="note">• Exponent handling + mantissa alignment + rounding</text>
+        <text x="0" y="92" class="note">• Large per-multiplier area → only 2 slots fit</text>
+        <text x="0" y="108" class="note">• Pipeline depth limited to 1.81 by RF read ports</text>
+        <text x="0" y="128" class="note-em">Result: 15.88 cyc/mma throughput floor</text>
+      </g>
+
+      <!-- Right: IMMA silicon model -->
+      <g transform="translate(520,20)">
+        <text x="0" y="0" class="ttl" fill="#2563eb">IMMA: Narrow Multiplier, Deep Pipeline</text>
+        <g transform="translate(0,16)">
+          <!-- 8-bit multiplier blocks (4 deep) -->
+          <rect x="0" y="0" width="100" height="40" rx="4" fill="#2563eb" opacity="0.12" stroke="#2563eb" stroke-width="0.8"/>
+          <text x="8" y="16" class="cyc-val" fill="#2563eb">8×8 MUL</text>
+          <text x="8" y="30" class="cyc-val" fill="#2563eb">Stage 1</text>
+          <rect x="108" y="0" width="100" height="40" rx="4" fill="#2563eb" opacity="0.12" stroke="#2563eb" stroke-width="0.8"/>
+          <text x="116" y="16" class="cyc-val" fill="#2563eb">8×8 MUL</text>
+          <text x="116" y="30" class="cyc-val" fill="#2563eb">Stage 2</text>
+          <rect x="216" y="0" width="100" height="40" rx="4" fill="#2563eb" opacity="0.12" stroke="#2563eb" stroke-width="0.8"/>
+          <text x="224" y="16" class="cyc-val" fill="#2563eb">8×8 MUL</text>
+          <text x="224" y="30" class="cyc-val" fill="#2563eb">Stage 3</text>
+          <rect x="324" y="0" width="100" height="40" rx="4" fill="#2563eb" opacity="0.12" stroke="#2563eb" stroke-width="0.8"/>
+          <text x="332" y="16" class="cyc-val" fill="#2563eb">8×8 MUL</text>
+          <text x="332" y="30" class="cyc-val" fill="#2563eb">Stage 4</text>
+        </g>
+        <text x="0" y="76" class="note">• No exponent/mantissa/rounding logic needed</text>
+        <text x="0" y="92" class="note">• ~4× smaller per-multiplier → 4 stages fit in same area</text>
+        <text x="0" y="108" class="note">• Each stage processes ¼ of m16n8k32 per cycle</text>
+        <text x="0" y="128" class="note-bl">Result: 6.55 cyc/mma throughput (2.42× faster)</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- Footer -->
+  <g transform="translate(36,756)">
+    <line x1="0" y1="0" x2="1008" y2="0" stroke="#e6e4da" stroke-width="0.8"/>
+    <text x="0" y="16" class="cyc-val">Source: [S9/case_8] ILP scaling · [S9/case_101] IMMA measurement · NCU pipe utilization counters</text>
+    <text x="800" y="16" class="cyc-val">SM_120 / GB202 · 2026</text>
+  </g>
+</svg>

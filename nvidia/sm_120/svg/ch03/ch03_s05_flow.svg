@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 756" role="img" aria-label="3.4.1 Per-SMSP Pipe Hierarchy">
+  <defs>
+    <marker id="ar" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto">
+      <path d="M0,0 L7,3.5 L0,7 Z" fill="#5b6679"/>
+    </marker>
+  </defs>
+  <rect width="1080" height="756" fill="#ffffff"/>
+  <text x="36" y="32" style="font:600 14px 'Fraunces',serif;fill:#0b1220">3.4.1 Per-SMSP Pipe Hierarchy</text>
+  <text x="36" y="52" style="font:italic 11px 'Fraunces',serif;fill:#5b6679">Semantic visualization of measured microarchitectural behavior</text>
+
+    <g transform="translate(40,86)">
+      <rect x="0" y="0" width="1000" height="64" rx="10" fill="#F4FAE2" stroke="#5a8e00" stroke-width="0.8"/>
+      <text x="20" y="22" style="font:600 12px 'Fraunces',serif;fill:#5a8e00">SMSP (Sub-Core) -- single-issue, 1 instruction/cycle max</text>
+      <text x="20" y="44" style="font:500 10px 'JetBrains Mono',monospace;fill:#5b6679">+-- FMA Group (Unified FP32/INT32 arithmetic) · +-- pipe_fma ---- FFMA, FMUL                 [4 cyc, 1.0 ops/cyc]</text>
+    </g>    <line x1="540" y1="150" x2="540" y2="172" stroke="#5b6679" stroke-width="1.2" marker-end="url(#ar)"/>
+    <g transform="translate(40,176)">
+      <rect x="0" y="0" width="1000" height="64" rx="10" fill="#F4FAE2" stroke="#5a8e00" stroke-width="0.8"/>
+      <text x="20" y="22" style="font:600 12px 'Fraunces',serif;fill:#5a8e00">+-- pipe_fmalite -- FADD, HADD2, HFMA2, BF16  [4 cyc, 1.0 ops/cyc]</text>
+      <text x="20" y="44" style="font:500 10px 'JetBrains Mono',monospace;fill:#5b6679">+-- pipe_fmaheavy                              [5 cyc, ~0.7 ops/cyc] · +-- subpipe_fmaheavy -- FMNMX, FSEL, SEL, SHF, PR</text>
+    </g>    <line x1="540" y1="240" x2="540" y2="262" stroke="#5b6679" stroke-width="1.2" marker-end="url(#ar)"/>
+    <g transform="translate(40,266)">
+      <rect x="0" y="0" width="1000" height="64" rx="10" fill="#F4FAE2" stroke="#5a8e00" stroke-width="0.8"/>
+      <text x="20" y="22" style="font:600 12px 'Fraunces',serif;fill:#5a8e00">+-- subpipe_alulite -- (internal micro-op co-issue only)</text>
+      <text x="20" y="44" style="font:500 10px 'JetBrains Mono',monospace;fill:#5b6679">+-- ALU Group (Integer &amp; Logic) · +-- pipe_alu ---- IADD3, LOP3, ISETP, I2I      [2-4 cyc, 1.0 ops/cyc]</text>
+    </g>    <line x1="540" y1="330" x2="540" y2="352" stroke="#5b6679" stroke-width="1.2" marker-end="url(#ar)"/>
+    <g transform="translate(40,356)">
+      <rect x="0" y="0" width="1000" height="64" rx="10" fill="#F4FAE2" stroke="#5a8e00" stroke-width="0.8"/>
+      <text x="20" y="22" style="font:600 12px 'Fraunces',serif;fill:#5a8e00">+-- pipe_aluheavy -- IMAD.WIDE, BFE, BFI, POPC  [4+ cyc, ~0.25 ops/cyc]</text>
+      <text x="20" y="44" style="font:500 10px 'JetBrains Mono',monospace;fill:#5b6679">+-- XU (SFU) -- pipe_xu -- MUFU.{RCP,RSQ,SIN,COS,LG2,EX2,TANH,SQRT} · [18-44 cyc, depth=5]</text>
+    </g>    <line x1="540" y1="420" x2="540" y2="442" stroke="#5b6679" stroke-width="1.2" marker-end="url(#ar)"/>
+    <g transform="translate(40,446)">
+      <rect x="0" y="0" width="1000" height="64" rx="10" fill="#F4FAE2" stroke="#5a8e00" stroke-width="0.8"/>
+      <text x="20" y="22" style="font:600 12px 'Fraunces',serif;fill:#5a8e00">+-- LSU -- pipe_lsu                                  [varies]</text>
+      <text x="20" y="44" style="font:500 10px 'JetBrains Mono',monospace;fill:#5b6679">+-- lg_cmd_read -- LDG, LDSM                   [2.27 cyc issue] · +-- lg_cmd_write -- STG                         [5.85 </text>
+    </g>    <line x1="540" y1="510" x2="540" y2="532" stroke="#5b6679" stroke-width="1.2" marker-end="url(#ar)"/>
+    <g transform="translate(40,536)">
+      <rect x="0" y="0" width="1000" height="64" rx="10" fill="#F4FAE2" stroke="#5a8e00" stroke-width="0.8"/>
+      <text x="20" y="22" style="font:600 12px 'Fraunces',serif;fill:#5a8e00">+-- shared_cmd_read -- LDS                      [4.0 cyc issue]</text>
+      <text x="20" y="44" style="font:500 10px 'JetBrains Mono',monospace;fill:#5b6679">+-- shared_cmd_write -- STS, STSM               [4.0 cyc issue] · +-- lg_cmd_atom -- ATOM, RED, ATOMG, REDG       [varie</text>
+    </g>    <line x1="540" y1="600" x2="540" y2="622" stroke="#5b6679" stroke-width="1.2" marker-end="url(#ar)"/>
+    <g transform="translate(40,626)">
+      <rect x="0" y="0" width="1000" height="64" rx="10" fill="#F4FAE2" stroke="#5a8e00" stroke-width="0.8"/>
+      <text x="20" y="22" style="font:600 12px 'Fraunces',serif;fill:#5a8e00">+-- FP64 -- pipe_fp64                                [64 cyc, non-pipelined]</text>
+      <text x="20" y="44" style="font:500 10px 'JetBrains Mono',monospace;fill:#5b6679">+-- op_fp64 -- DFMA, DADD, DMUL, DMNMX, DSETP</text>
+    </g>
+</svg>

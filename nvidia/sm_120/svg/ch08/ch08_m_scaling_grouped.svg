@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 600" role="img"
+     aria-label="CUTLASS grouped GEMM kernels M-scaling efficiency">
+  <defs>
+    <linearGradient id="r1G" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFE4E6"/><stop offset="1" stop-color="#FFF1F2"/>
+    </linearGradient>
+    <linearGradient id="r2G" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FEF3C7"/><stop offset="1" stop-color="#FFFBEB"/>
+    </linearGradient>
+    <linearGradient id="r3G" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#E9F3D2"/><stop offset="1" stop-color="#F4FAE2"/>
+    </linearGradient>
+    <style><![CDATA[
+      .ttl{font:600 14px "Fraunces",serif;fill:#0b1220}
+      .sub{font:italic 11.5px "Fraunces",serif;fill:#5b6679}
+      .axL{font:500 10.5px "JetBrains Mono",monospace;fill:#5b6679}
+      .axTtl{font:600 10.5px "JetBrains Mono",monospace;fill:#5b6679;letter-spacing:0.06em}
+      .lbl{font:600 11.5px "Fraunces",serif;fill:#0b1220}
+      .lbl-sm{font:500 10px "JetBrains Mono",monospace;fill:#5b6679}
+      .pillR{font:600 10.5px "JetBrains Mono",monospace;letter-spacing:0.06em;text-transform:uppercase}
+      .legend{font:500 10.5px "JetBrains Mono",monospace;fill:#2a3548}
+      .legend-sub{font:500 9.5px "JetBrains Mono",monospace;fill:#5b6679}
+      .ann{font:italic 10.5px "Fraunces",serif;fill:#5b6679}
+      .star{font:600 10px "JetBrains Mono",monospace}
+    ]]></style>
+  </defs>
+  <rect width="1080" height="600" fill="#ffffff"/>
+  <text x="36" y="32" class="ttl">CUTLASS Grouped GEMM (8 groups) — M-Scaling Efficiency</text>
+  <text x="36" y="52" class="sub">Grouped FP8 / MXFP4 / NVFP4 across the 588-shape sweep — MoE-style dispatch</text>
+
+  <rect x="80.0" y="80" width="192.80971222277992" height="360" fill="url(#r1G)" opacity="0.55"/>
+  <rect x="272.8097122227799" y="80" width="321.34952037129995" height="360" fill="url(#r2G)" opacity="0.55"/>
+  <rect x="594.1592325940799" y="80" width="385.61942444555996" height="360" fill="url(#r3G)" opacity="0.55"/>
+  <text x="176.40485611138996" y="98" class="pillR" fill="#9f1239" text-anchor="middle">REGIME 1 · LAUNCH</text>
+  <text x="433.4844724084299" y="98" class="pillR" fill="#92400e" text-anchor="middle">REGIME 2 · OCCUPANCY</text>
+  <text x="786.9689448168599" y="98" class="pillR" fill="#5a8e00" text-anchor="middle">REGIME 3 · TC PEAK</text>
+
+  <line x1="80" y1="440" x2="980" y2="440" stroke="#5b6679" stroke-width="1.2"/>
+  <line x1="80" y1="80" x2="80" y2="440" stroke="#5b6679" stroke-width="1.2"/>
+  <line x1="80" y1="440" x2="980" y2="440" stroke="#e6e4da" stroke-dasharray="3 3"/>
+  <text x="72" y="444" class="axL" text-anchor="end">0%</text>
+  <line x1="80" y1="365" x2="980" y2="365" stroke="#e6e4da" stroke-dasharray="3 3"/>
+  <text x="72" y="369" class="axL" text-anchor="end">25%</text>
+  <line x1="80" y1="290" x2="980" y2="290" stroke="#e6e4da" stroke-dasharray="3 3"/>
+  <text x="72" y="294" class="axL" text-anchor="end">50%</text>
+  <line x1="80" y1="215" x2="980" y2="215" stroke="#e6e4da" stroke-dasharray="3 3"/>
+  <text x="72" y="219" class="axL" text-anchor="end">75%</text>
+  <line x1="80" y1="140" x2="980" y2="140" stroke="#e6e4da" stroke-dasharray="3 3"/>
+  <text x="72" y="144" class="axL" text-anchor="end">100%</text>
+  <line x1="80.0" y1="440" x2="80.0" y2="446" stroke="#5b6679"/>
+  <text x="80.0" y="460" class="axL" text-anchor="middle">1</text>
+  <line x1="272.8097122227799" y1="440" x2="272.8097122227799" y2="446" stroke="#5b6679"/>
+  <text x="272.8097122227799" y="460" class="axL" text-anchor="middle">8</text>
+  <line x1="401.34952037129995" y1="440" x2="401.34952037129995" y2="446" stroke="#5b6679"/>
+  <text x="401.34952037129995" y="460" class="axL" text-anchor="middle">32</text>
+  <line x1="465.6194244455599" y1="440" x2="465.6194244455599" y2="446" stroke="#5b6679"/>
+  <text x="465.6194244455599" y="460" class="axL" text-anchor="middle">64</text>
+  <line x1="529.8893285198199" y1="440" x2="529.8893285198199" y2="446" stroke="#5b6679"/>
+  <text x="529.8893285198199" y="460" class="axL" text-anchor="middle">128</text>
+  <line x1="594.1592325940799" y1="440" x2="594.1592325940799" y2="446" stroke="#5b6679"/>
+  <text x="594.1592325940799" y="460" class="axL" text-anchor="middle">256</text>
+  <line x1="722.6990407425999" y1="440" x2="722.6990407425999" y2="446" stroke="#5b6679"/>
+  <text x="722.6990407425999" y="460" class="axL" text-anchor="middle">1K</text>
+  <line x1="851.2388488911198" y1="440" x2="851.2388488911198" y2="446" stroke="#5b6679"/>
+  <text x="851.2388488911198" y="460" class="axL" text-anchor="middle">4K</text>
+  <line x1="979.7786570396398" y1="440" x2="979.7786570396398" y2="446" stroke="#5b6679"/>
+  <text x="979.7786570396398" y="460" class="axL" text-anchor="middle">16K</text>
+  <text x="530" y="478" class="axTtl" text-anchor="middle">M  (output rows, log scale)</text>
+  <text x="36" y="260" class="axTtl" text-anchor="middle" transform="rotate(-90,36,260)">% TC peak efficiency</text>
+  <path d="M 529.9 258.2 L 594.2 211.1 L 722.7 161.0 L 787.0 152.6 L 824.6 148.1 L 851.2 150.2 L 979.8 155.6" fill="none" stroke="#ea580c" stroke-width="2.2"/>
+  <circle cx="529.9" cy="258.2" r="4" fill="#ea580c" stroke="#fff" stroke-width="1.3"/>
+  <circle cx="594.2" cy="211.1" r="4" fill="#ea580c" stroke="#fff" stroke-width="1.3"/>
+  <circle cx="722.7" cy="161.0" r="4" fill="#ea580c" stroke="#fff" stroke-width="1.3"/>
+  <circle cx="787.0" cy="152.6" r="4" fill="#ea580c" stroke="#fff" stroke-width="1.3"/>
+  <circle cx="824.6" cy="148.1" r="4" fill="#ea580c" stroke="#fff" stroke-width="1.3"/>
+  <circle cx="851.2" cy="150.2" r="4" fill="#ea580c" stroke="#fff" stroke-width="1.3"/>
+  <circle cx="979.8" cy="155.6" r="4" fill="#ea580c" stroke="#fff" stroke-width="1.3"/>
+  <path d="M 80.0 439.1 L 272.8 433.1 L 401.3 413.3 L 465.6 379.4 L 529.9 315.2 L 594.2 196.1 L 722.7 166.1 L 787.0 155.6 L 824.6 149.3 L 851.2 154.7 L 979.8 163.1" fill="none" stroke="#5a8e00" stroke-width="2.2"/>
+  <circle cx="80.0" cy="439.1" r="4" fill="#5a8e00" stroke="#fff" stroke-width="1.3"/>
+  <circle cx="272.8" cy="433.1" r="4" fill="#5a8e00" stroke="#fff" stroke-width="1.3"/>
+  <circle cx="401.3" cy="413.3" r="4" fill="#5a8e00" stroke="#fff" stroke-width="1.3"/>
+  <circle cx="465.6" cy="379.4" r="4" fill="#5a8e00" stroke="#fff" stroke-width="1.3"/>
+  <circle cx="529.9" cy="315.2" r="4" fill="#5a8e00" stroke="#fff" stroke-width="1.3"/>
+  <circle cx="594.2" cy="196.1" r="4" fill="#5a8e00" stroke="#fff" stroke-width="1.3"/>
+  <circle cx="722.7" cy="166.1" r="4" fill="#5a8e00" stroke="#fff" stroke-width="1.3"/>
+  <circle cx="787.0" cy="155.6" r="4" fill="#5a8e00" stroke="#fff" stroke-width="1.3"/>
+  <circle cx="824.6" cy="149.3" r="4" fill="#5a8e00" stroke="#fff" stroke-width="1.3"/>
+  <circle cx="851.2" cy="154.7" r="4" fill="#5a8e00" stroke="#fff" stroke-width="1.3"/>
+  <circle cx="979.8" cy="163.1" r="4" fill="#5a8e00" stroke="#fff" stroke-width="1.3"/>
+  <path d="M 80.0 438.8 L 272.8 430.7 L 401.3 408.2 L 465.6 365.9 L 529.9 294.5 L 594.2 247.7 L 722.7 208.1 L 787.0 200.6 L 824.6 197.0" fill="none" stroke="#84cc16" stroke-width="2.2"/>
+  <circle cx="80.0" cy="438.8" r="4" fill="#84cc16" stroke="#fff" stroke-width="1.3"/>
+  <circle cx="272.8" cy="430.7" r="4" fill="#84cc16" stroke="#fff" stroke-width="1.3"/>
+  <circle cx="401.3" cy="408.2" r="4" fill="#84cc16" stroke="#fff" stroke-width="1.3"/>
+  <circle cx="465.6" cy="365.9" r="4" fill="#84cc16" stroke="#fff" stroke-width="1.3"/>
+  <circle cx="529.9" cy="294.5" r="4" fill="#84cc16" stroke="#fff" stroke-width="1.3"/>
+  <circle cx="594.2" cy="247.7" r="4" fill="#84cc16" stroke="#fff" stroke-width="1.3"/>
+  <circle cx="722.7" cy="208.1" r="4" fill="#84cc16" stroke="#fff" stroke-width="1.3"/>
+  <circle cx="787.0" cy="200.6" r="4" fill="#84cc16" stroke="#fff" stroke-width="1.3"/>
+  <circle cx="824.6" cy="197.0" r="4" fill="#84cc16" stroke="#fff" stroke-width="1.3"/>
+  <text x="824.5644286252477" y="135.29999999999995" class="star" fill="#5a8e00" text-anchor="middle">★ 1036.4 T @ 96.9% (MXFP4)</text>
+  <text x="824.5644286252477" y="170.10000000000002" class="star" fill="#9a3412" text-anchor="middle">★ 521.4 T @ 97.3% (FP8)</text>
+  <text x="824.5644286252477" y="219.0" class="star" fill="#65a30d" text-anchor="middle">★ 866.4 T @ 81.0% (NVFP4)</text>
+  <text x="521.8893285198199" y="250.2" class="lbl-sm" fill="#9a3412" text-anchor="end">FP8 floor M≥128</text>
+  <rect x="80" y="510" width="14" height="10" rx="2" fill="#ea580c"/>
+  <text x="102" y="519" class="legend">Grouped FP8 (coop 128×128)</text>
+  <text x="102" y="534" class="legend-sub">521.4 T peak · M=3072 · 336/588</text>
+  <rect x="390" y="510" width="14" height="10" rx="2" fill="#5a8e00"/>
+  <text x="412" y="519" class="legend">Grouped MXFP4 (warp-spec)</text>
+  <text x="412" y="534" class="legend-sub">1036.4 T peak · M=3072 · 588/588</text>
+  <rect x="700" y="510" width="14" height="10" rx="2" fill="#84cc16"/>
+  <text x="722" y="519" class="legend">Grouped NVFP4 (warp-spec)</text>
+  <text x="722" y="534" class="legend-sub">866.4 T peak · M=3072 · 30/42 repr.</text>
+
+  <text x="36" y="555" class="ann">Grouped FP8 has a hard M≥128 floor (252/588 shapes rejected); grouped MXFP4 warp-specialised schedule covers all 588 shapes.</text>
+  <text x="36" y="571" class="ann">Grouped MXFP4 is the recommended kernel for MoE dispatch where per-expert M varies widely (best low-M efficiency).</text>
+</svg>

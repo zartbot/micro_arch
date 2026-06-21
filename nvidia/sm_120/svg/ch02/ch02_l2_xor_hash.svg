@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 500" role="img"
+     aria-label="L2 Cache Set Indexing — Conventional modular vs SM_120 XOR-hashed addressing showing stride-conflict elimination">
+  <defs>
+    <linearGradient id="convG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FEE2E2"/><stop offset="1" stop-color="#FEF2F2"/>
+    </linearGradient>
+    <linearGradient id="xorG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#D1FAE5"/><stop offset="1" stop-color="#ECFDF5"/>
+    </linearGradient>
+    <linearGradient id="addrG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#DBEAFE"/><stop offset="1" stop-color="#EFF6FF"/>
+    </linearGradient>
+    <linearGradient id="hashG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#F3E8FF"/><stop offset="1" stop-color="#FAF5FF"/>
+    </linearGradient>
+    <marker id="arr" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#374151"/>
+    </marker>
+    <marker id="arrR" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#DC2626"/>
+    </marker>
+    <marker id="arrG" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#059669"/>
+    </marker>
+    <style><![CDATA[
+      .ttl{font:600 15px "Fraunces",serif;fill:#0b1220}
+      .sub{font:italic 11px "Fraunces",serif;fill:#5b6679}
+      .lbl{font:600 11px "JetBrains Mono",monospace;fill:#2a3548}
+      .lbl-sm{font:500 10px "JetBrains Mono",monospace;fill:#5b6679}
+      .code{font:600 11px "JetBrains Mono",monospace}
+      .num{font:700 13px "JetBrains Mono",monospace}
+      .stage{font:600 10px "JetBrains Mono",monospace;fill:#fff}
+      .sect{font:600 12px "Fraunces",serif;fill:#374151}
+      .insight{font:600 10.5px "IBM Plex Sans",sans-serif;fill:#9f1239}
+      .badge-txt{font:700 10px "JetBrains Mono",monospace;fill:#fff}
+    ]]></style>
+  </defs>
+  <rect width="1080" height="500" fill="#ffffff"/>
+
+  <!-- Title -->
+  <text x="36" y="28" class="ttl">L2 Set Indexing — Conventional Modular vs SM_120 XOR-Hashed [SPECULATIVE, confidence: M]</text>
+  <text x="36" y="46" class="sub">XOR folding decorrelates address bits from stride patterns → ANY power-of-2 stride produces uniform set distribution</text>
+
+  <!-- ═══════════ LEFT: CONVENTIONAL MODULAR ═══════════ -->
+  <g transform="translate(36,65)">
+    <rect width="490" height="195" rx="12" fill="url(#convG)" stroke="#DC2626" stroke-width="1.2"/>
+    <rect x="12" y="8" width="220" height="18" rx="4" fill="#DC2626"/>
+    <text x="122" y="21" class="stage" text-anchor="middle">CONVENTIONAL MODULAR INDEXING</text>
+    <text x="300" y="20" class="lbl-sm" fill="#DC2626">(Prior architectures)</text>
+
+    <!-- Address bits diagram -->
+    <g transform="translate(20,38)">
+      <rect width="450" height="30" rx="4" fill="url(#addrG)" stroke="#2563EB" stroke-width="0.8"/>
+      <text x="10" y="20" class="code" fill="#2563EB">physical_addr</text>
+      <!-- Bit fields -->
+      <line x1="280" y1="0" x2="280" y2="30" stroke="#2563EB" stroke-width="0.5" stroke-dasharray="2 2"/>
+      <line x1="350" y1="0" x2="350" y2="30" stroke="#2563EB" stroke-width="0.5" stroke-dasharray="2 2"/>
+      <text x="315" y="20" class="lbl-sm" text-anchor="middle">set bits</text>
+      <text x="400" y="20" class="lbl-sm" text-anchor="middle">offset [6:0]</text>
+      <text x="200" y="20" class="lbl-sm" text-anchor="middle">tag bits</text>
+    </g>
+
+    <!-- Formula -->
+    <text x="20" y="92" class="code" fill="#DC2626">set_index = (addr &gt;&gt; 7) % num_sets</text>
+
+    <!-- Arrow down to result -->
+    <line x1="225" y1="100" x2="225" y2="118" stroke="#DC2626" stroke-width="1.5" marker-end="url(#arrR)"/>
+
+    <!-- Problem illustration: stride conflict -->
+    <g transform="translate(20,122)">
+      <text x="0" y="14" class="lbl" fill="#DC2626">Problem: stride = N × line_size</text>
+      <text x="0" y="30" class="lbl-sm">→ Same set bits for every access</text>
+      <text x="0" y="44" class="lbl-sm">→ All pointers map to ONE set</text>
+      <text x="0" y="58" class="lbl-sm">→ N-way conflict → capacity overflow → misses</text>
+    </g>
+
+    <!-- Result badge -->
+    <g transform="translate(300,130)">
+      <rect width="170" height="50" rx="8" fill="#DC2626"/>
+      <text x="85" y="20" class="badge-txt" text-anchor="middle">STRIDE-DEPENDENT</text>
+      <text x="85" y="36" class="badge-txt" text-anchor="middle">CONFLICT MISSES</text>
+    </g>
+  </g>
+
+  <!-- ═══════════ RIGHT: SM_120 XOR HASHED ═══════════ -->
+  <g transform="translate(550,65)">
+    <rect width="494" height="195" rx="12" fill="url(#xorG)" stroke="#059669" stroke-width="1.2"/>
+    <rect x="12" y="8" width="190" height="18" rx="4" fill="#059669"/>
+    <text x="107" y="21" class="stage" text-anchor="middle">SM_120 XOR-HASHED INDEXING</text>
+    <text x="280" y="20" class="lbl-sm" fill="#059669">(Inferred from measurements)</text>
+
+    <!-- Address bits diagram -->
+    <g transform="translate(20,38)">
+      <rect width="454" height="30" rx="4" fill="url(#addrG)" stroke="#2563EB" stroke-width="0.8"/>
+      <text x="10" y="20" class="code" fill="#2563EB">raw_index = (addr &gt;&gt; 7)</text>
+      <text x="300" y="20" class="lbl-sm">bits [7..N], 128B aligned</text>
+    </g>
+
+    <!-- XOR operation box -->
+    <g transform="translate(20,78)">
+      <rect width="454" height="42" rx="6" fill="url(#hashG)" stroke="#7C3AED" stroke-width="1"/>
+      <text x="12" y="16" class="code" fill="#7C3AED">hash = raw XOR (raw &gt;&gt; K) XOR (raw &gt;&gt; 2K)</text>
+      <text x="12" y="34" class="code" fill="#7C3AED">set_index = hash % num_sets</text>
+    </g>
+
+    <!-- Arrow down to result -->
+    <line x1="247" y1="124" x2="247" y2="138" stroke="#059669" stroke-width="1.5" marker-end="url(#arrG)"/>
+
+    <!-- Benefit illustration -->
+    <g transform="translate(20,142)">
+      <text x="0" y="14" class="lbl" fill="#065F46">Result: XOR folding mixes high/low bits</text>
+      <text x="0" y="30" class="lbl-sm">→ Stride pattern bits get XOR'd with other bits</text>
+      <text x="0" y="44" class="lbl-sm">→ ANY power-of-2 stride → uniform set distribution</text>
+    </g>
+
+    <!-- Result badge -->
+    <g transform="translate(320,130)">
+      <rect width="150" height="50" rx="8" fill="#059669"/>
+      <text x="75" y="20" class="badge-txt" text-anchor="middle">ZERO STRIDE-</text>
+      <text x="75" y="36" class="badge-txt" text-anchor="middle">DEPENDENT CONFLICT</text>
+    </g>
+  </g>
+
+  <!-- ═══════════ BOTTOM: HOW XOR FOLDING WORKS ═══════════ -->
+  <text x="36" y="285" class="sect">HOW MULTI-LEVEL XOR FOLDING ELIMINATES STRIDE CONFLICTS</text>
+
+  <!-- Visual bit-mixing diagram -->
+  <g transform="translate(36,300)">
+    <!-- Raw index bits -->
+    <text x="0" y="14" class="lbl">raw_index bits:</text>
+    <g transform="translate(130,0)">
+      <rect x="0" y="0" width="30" height="20" fill="#DBEAFE" stroke="#2563EB" stroke-width="0.8"/>
+      <text x="15" y="14" class="lbl-sm" text-anchor="middle">b₁₅</text>
+      <rect x="32" y="0" width="30" height="20" fill="#DBEAFE" stroke="#2563EB" stroke-width="0.8"/>
+      <text x="47" y="14" class="lbl-sm" text-anchor="middle">b₁₄</text>
+      <rect x="64" y="0" width="30" height="20" fill="#DBEAFE" stroke="#2563EB" stroke-width="0.8"/>
+      <text x="79" y="14" class="lbl-sm" text-anchor="middle">b₁₃</text>
+      <text x="104" y="14" class="lbl-sm">...</text>
+      <rect x="118" y="0" width="30" height="20" fill="#FEF3C7" stroke="#D97706" stroke-width="0.8"/>
+      <text x="133" y="14" class="lbl-sm" text-anchor="middle">b₇</text>
+      <rect x="150" y="0" width="30" height="20" fill="#FEF3C7" stroke="#D97706" stroke-width="0.8"/>
+      <text x="165" y="14" class="lbl-sm" text-anchor="middle">b₆</text>
+      <rect x="182" y="0" width="30" height="20" fill="#FEF3C7" stroke="#D97706" stroke-width="0.8"/>
+      <text x="197" y="14" class="lbl-sm" text-anchor="middle">b₅</text>
+      <text x="222" y="14" class="lbl-sm">...</text>
+      <rect x="236" y="0" width="30" height="20" fill="#D1FAE5" stroke="#059669" stroke-width="0.8"/>
+      <text x="251" y="14" class="lbl-sm" text-anchor="middle">b₁</text>
+      <rect x="268" y="0" width="30" height="20" fill="#D1FAE5" stroke="#059669" stroke-width="0.8"/>
+      <text x="283" y="14" class="lbl-sm" text-anchor="middle">b₀</text>
+    </g>
+
+    <!-- XOR symbol -->
+    <g transform="translate(450,0)">
+      <circle cx="15" cy="10" r="14" fill="#7C3AED" opacity="0.15" stroke="#7C3AED" stroke-width="1.2"/>
+      <text x="15" y="15" class="num" fill="#7C3AED" text-anchor="middle">⊕</text>
+    </g>
+
+    <!-- Shifted version -->
+    <text x="490" y="14" class="lbl-sm">(raw &gt;&gt; K)  — shifts high bits into low positions</text>
+  </g>
+
+  <!-- Arrows showing mixing -->
+  <g transform="translate(36,338)">
+    <text x="0" y="14" class="lbl">After XOR:</text>
+    <g transform="translate(130,0)">
+      <!-- Mixed bits shown with purple (mixed color) -->
+      <rect x="0" y="0" width="298" height="22" rx="4" fill="#F3E8FF" stroke="#7C3AED" stroke-width="1"/>
+      <text x="149" y="15" class="code" fill="#7C3AED" text-anchor="middle">Each output bit = XOR of multiple input bits</text>
+    </g>
+    <text x="450" y="14" class="lbl-sm">→ No single stride can make all hash bits identical</text>
+  </g>
+
+  <!-- Concrete example -->
+  <g transform="translate(36,375)">
+    <rect width="1008" height="80" rx="8" fill="#F9FAFB" stroke="#E5E7EB" stroke-width="1"/>
+    <text x="20" y="20" class="sect">CONCRETE EXAMPLE: Why stride = 96 MB (= L2 size) doesn't cause conflicts</text>
+    <text x="20" y="40" class="lbl-sm">Conventional: addr₁ = 0x0000000, addr₂ = 0x6000000 → (addr &gt;&gt; 7) % sets → SAME set (bits 7..N identical mod sets)</text>
+    <text x="20" y="56" class="lbl-sm">SM_120 XOR:   addr₁ = 0x0000000, addr₂ = 0x6000000 → XOR folding mixes bit 25 (=1 in addr₂) into lower set-index bits</text>
+    <text x="20" y="72" class="lbl-sm">              → hash₁ ≠ hash₂ → different sets → NO conflict (measured: all L2 hits at 40 pointers × 96MB stride)</text>
+  </g>
+
+  <!-- Key insight box -->
+  <g transform="translate(36,468)">
+    <rect width="1008" height="24" rx="5" fill="#F0FDF4" stroke="#059669" stroke-width="0.8"/>
+    <text x="20" y="16" class="insight">EVIDENCE: Uniform ~370 cyc across 64B–2MB strides (Case 76,89); 40 ptrs at stride=96MB all hit L2 (Case 31) — impossible under modular indexing</text>
+  </g>
+</svg>

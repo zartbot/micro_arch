@@ -1,0 +1,184 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 820" role="img" aria-label="6.2.1a GB202 Die Topology and Cross-GPC Cluster Placement">
+  <defs>
+    <marker id="ar" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto">
+      <path d="M0,0 L7,3.5 L0,7 Z" fill="#5b6679"/>
+    </marker>
+  </defs>
+  <rect width="1080" height="820" fill="#ffffff"/>
+
+  <!-- Title -->
+  <text x="36" y="30" style="font:600 14px 'Fraunces',serif;fill:#0b1220">6.2.1a GB202 Die Topology &amp; Cross-GPC Cluster Placement (Inferred)</text>
+  <text x="36" y="48" style="font:italic 11px 'Fraunces',serif;fill:#5b6679">100% deterministic placement measured across 100 launches — flat DSMEM fabric, no GPC-level hierarchy</text>
+
+  <!-- ═══════════════ TOP: Die Topology Grid ═══════════════ -->
+  <g transform="translate(36,66)">
+    <rect x="0" y="0" width="1006" height="360" rx="10" fill="#fafafa" stroke="#d1d5db" stroke-width="0.8"/>
+    <text x="20" y="24" style="font:600 12px 'Fraunces',serif;fill:#0b1220">GB202 Die Topology: ~5.5 GPCs × 20 SMs = 110 Active SMs</text>
+    <text x="20" y="40" style="font:500 9px 'JetBrains Mono',monospace;fill:#6b7280">Each GPC: 10 TPCs × 2 SMs/TPC | SM IDs inferred from placement measurements [S16/case_21]</text>
+
+    <!-- GPC 0 -->
+    <g transform="translate(20,56)">
+      <rect x="0" y="0" width="186" height="130" rx="6" fill="#dbeafe" stroke="#1e40af" stroke-width="1"/>
+      <text x="93" y="16" style="font:700 10px 'JetBrains Mono',monospace;fill:#1e40af" text-anchor="middle">GPC 0 (SM 0–19)</text>
+      <!-- TPC pairs -->
+      <rect x="6" y="24" width="36" height="20" rx="3" fill="#3b82f6" stroke="none"/><text x="24" y="38" style="font:700 7px 'JetBrains Mono',monospace;fill:#fff" text-anchor="middle">0</text>
+      <rect x="44" y="24" width="36" height="20" rx="3" fill="#3b82f6" stroke="none"/><text x="62" y="38" style="font:700 7px 'JetBrains Mono',monospace;fill:#fff" text-anchor="middle">1</text>
+      <rect x="6" y="48" width="36" height="20" rx="3" fill="#93c5fd" stroke="none"/><text x="24" y="62" style="font:700 7px 'JetBrains Mono',monospace;fill:#1e40af" text-anchor="middle">2</text>
+      <rect x="44" y="48" width="36" height="20" rx="3" fill="#93c5fd" stroke="none"/><text x="62" y="62" style="font:700 7px 'JetBrains Mono',monospace;fill:#1e40af" text-anchor="middle">3</text>
+      <rect x="6" y="72" width="36" height="20" rx="3" fill="#bfdbfe" stroke="none"/><text x="24" y="86" style="font:700 7px 'JetBrains Mono',monospace;fill:#1e40af" text-anchor="middle">4</text>
+      <rect x="44" y="72" width="36" height="20" rx="3" fill="#bfdbfe" stroke="none"/><text x="62" y="86" style="font:700 7px 'JetBrains Mono',monospace;fill:#1e40af" text-anchor="middle">5</text>
+      <!-- More SMs implied -->
+      <text x="93" y="96" style="font:500 8px 'JetBrains Mono',monospace;fill:#6b7280" text-anchor="middle">... SM 6–19</text>
+      <text x="93" y="114" style="font:500 7px 'JetBrains Mono',monospace;fill:#6b7280" text-anchor="middle">10 TPCs × 2 SMs</text>
+      <!-- Cluster-2 highlight -->
+      <rect x="4" y="22" width="78" height="24" rx="4" fill="none" stroke="#dc2626" stroke-width="2" stroke-dasharray="4,2"/>
+      <text x="128" y="38" style="font:600 7px 'JetBrains Mono',monospace;fill:#dc2626">← Cluster-2</text>
+      <text x="128" y="50" style="font:500 7px 'JetBrains Mono',monospace;fill:#dc2626">(same TPC)</text>
+    </g>
+
+    <!-- GPC 1 -->
+    <g transform="translate(216,56)">
+      <rect x="0" y="0" width="186" height="130" rx="6" fill="#dcfce7" stroke="#16a34a" stroke-width="1"/>
+      <text x="93" y="16" style="font:700 10px 'JetBrains Mono',monospace;fill:#166534" text-anchor="middle">GPC 1 (SM 20–39)</text>
+      <rect x="6" y="24" width="36" height="20" rx="3" fill="#22c55e" stroke="none"/><text x="24" y="38" style="font:700 7px 'JetBrains Mono',monospace;fill:#fff" text-anchor="middle">20</text>
+      <rect x="44" y="24" width="36" height="20" rx="3" fill="#22c55e" stroke="none"/><text x="62" y="38" style="font:700 7px 'JetBrains Mono',monospace;fill:#fff" text-anchor="middle">21</text>
+      <rect x="6" y="48" width="36" height="20" rx="3" fill="#86efac" stroke="none"/><text x="24" y="62" style="font:700 7px 'JetBrains Mono',monospace;fill:#166534" text-anchor="middle">22</text>
+      <rect x="44" y="48" width="36" height="20" rx="3" fill="#86efac" stroke="none"/><text x="62" y="62" style="font:700 7px 'JetBrains Mono',monospace;fill:#166534" text-anchor="middle">23</text>
+      <text x="93" y="86" style="font:500 8px 'JetBrains Mono',monospace;fill:#6b7280" text-anchor="middle">... SM 24–39</text>
+      <text x="93" y="114" style="font:500 7px 'JetBrains Mono',monospace;fill:#6b7280" text-anchor="middle">10 TPCs × 2 SMs</text>
+    </g>
+
+    <!-- GPC 2 -->
+    <g transform="translate(412,56)">
+      <rect x="0" y="0" width="186" height="130" rx="6" fill="#fef3c7" stroke="#d97706" stroke-width="1"/>
+      <text x="93" y="16" style="font:700 10px 'JetBrains Mono',monospace;fill:#92400e" text-anchor="middle">GPC 2 (SM 40–59)</text>
+      <rect x="6" y="24" width="36" height="20" rx="3" fill="#f59e0b" stroke="none"/><text x="24" y="38" style="font:700 7px 'JetBrains Mono',monospace;fill:#fff" text-anchor="middle">40</text>
+      <rect x="44" y="24" width="36" height="20" rx="3" fill="#f59e0b" stroke="none"/><text x="62" y="38" style="font:700 7px 'JetBrains Mono',monospace;fill:#fff" text-anchor="middle">41</text>
+      <text x="93" y="62" style="font:500 8px 'JetBrains Mono',monospace;fill:#6b7280" text-anchor="middle">... SM 42–59</text>
+      <text x="93" y="114" style="font:500 7px 'JetBrains Mono',monospace;fill:#6b7280" text-anchor="middle">10 TPCs × 2 SMs</text>
+    </g>
+
+    <!-- GPC 3 -->
+    <g transform="translate(608,56)">
+      <rect x="0" y="0" width="186" height="130" rx="6" fill="#fce7f3" stroke="#be185d" stroke-width="1"/>
+      <text x="93" y="16" style="font:700 10px 'JetBrains Mono',monospace;fill:#9d174d" text-anchor="middle">GPC 3 (SM 60–79)</text>
+      <rect x="6" y="24" width="36" height="20" rx="3" fill="#ec4899" stroke="none"/><text x="24" y="38" style="font:700 7px 'JetBrains Mono',monospace;fill:#fff" text-anchor="middle">60</text>
+      <rect x="44" y="24" width="36" height="20" rx="3" fill="#ec4899" stroke="none"/><text x="62" y="38" style="font:700 7px 'JetBrains Mono',monospace;fill:#fff" text-anchor="middle">61</text>
+      <text x="93" y="62" style="font:500 8px 'JetBrains Mono',monospace;fill:#6b7280" text-anchor="middle">... SM 62–79</text>
+      <text x="93" y="114" style="font:500 7px 'JetBrains Mono',monospace;fill:#6b7280" text-anchor="middle">10 TPCs × 2 SMs</text>
+    </g>
+
+    <!-- GPC 4+5 (partial) -->
+    <g transform="translate(804,56)">
+      <rect x="0" y="0" width="186" height="130" rx="6" fill="#f3e8ff" stroke="#7c3aed" stroke-width="1"/>
+      <text x="93" y="16" style="font:700 10px 'JetBrains Mono',monospace;fill:#5b21b6" text-anchor="middle">GPC 4–5 (SM 80–109)</text>
+      <rect x="6" y="24" width="36" height="20" rx="3" fill="#8b5cf6" stroke="none"/><text x="24" y="38" style="font:700 7px 'JetBrains Mono',monospace;fill:#fff" text-anchor="middle">80</text>
+      <rect x="44" y="24" width="36" height="20" rx="3" fill="#8b5cf6" stroke="none"/><text x="62" y="38" style="font:700 7px 'JetBrains Mono',monospace;fill:#fff" text-anchor="middle">81</text>
+      <text x="93" y="62" style="font:500 8px 'JetBrains Mono',monospace;fill:#6b7280" text-anchor="middle">... SM 82–109</text>
+      <text x="93" y="96" style="font:500 7px 'JetBrains Mono',monospace;fill:#6b7280" text-anchor="middle">GPC 5 partial</text>
+      <text x="93" y="114" style="font:500 7px 'JetBrains Mono',monospace;fill:#6b7280" text-anchor="middle">(10 SMs only)</text>
+    </g>
+
+    <!-- Cluster placement patterns -->
+    <g transform="translate(20,200)">
+      <rect x="0" y="0" width="970" height="146" rx="6" fill="#ffffff" stroke="#e5e7eb" stroke-width="0.8"/>
+      <text x="16" y="20" style="font:700 11px 'Fraunces',serif;fill:#0b1220">Measured Cluster Placement Patterns (stride-20 = 1 GPC width)</text>
+
+      <!-- Cluster-2 -->
+      <g transform="translate(16,32)">
+        <rect x="0" y="0" width="300" height="32" rx="4" fill="#fef2f2" stroke="#dc2626" stroke-width="0.8"/>
+        <text x="8" y="14" style="font:700 9px 'JetBrains Mono',monospace;fill:#dc2626">Cluster-2:</text>
+        <text x="8" y="26" style="font:500 9px 'JetBrains Mono',monospace;fill:#374151">{SM 0, 1} → 1 TPC, same GPC</text>
+        <rect x="220" y="4" width="70" height="18" rx="3" fill="#fee2e2" stroke="#dc2626" stroke-width="0.6"/>
+        <text x="255" y="16" style="font:600 7px 'JetBrains Mono',monospace;fill:#dc2626" text-anchor="middle">intra-TPC</text>
+      </g>
+
+      <!-- Cluster-4 -->
+      <g transform="translate(16,70)">
+        <rect x="0" y="0" width="620" height="32" rx="4" fill="#eff6ff" stroke="#1e40af" stroke-width="0.8"/>
+        <text x="8" y="14" style="font:700 9px 'JetBrains Mono',monospace;fill:#1e40af">Cluster-4:</text>
+        <text x="8" y="26" style="font:500 9px 'JetBrains Mono',monospace;fill:#374151">{SM 0, 1, 20, 21} → 2 TPCs across 2 GPCs (stride-20)</text>
+        <!-- Color-coded SM boxes -->
+        <rect x="380" y="4" width="24" height="16" rx="2" fill="#3b82f6"/><text x="392" y="16" style="font:600 6px 'JetBrains Mono',monospace;fill:#fff" text-anchor="middle">0</text>
+        <rect x="406" y="4" width="24" height="16" rx="2" fill="#3b82f6"/><text x="418" y="16" style="font:600 6px 'JetBrains Mono',monospace;fill:#fff" text-anchor="middle">1</text>
+        <rect x="436" y="4" width="24" height="16" rx="2" fill="#22c55e"/><text x="448" y="16" style="font:600 6px 'JetBrains Mono',monospace;fill:#fff" text-anchor="middle">20</text>
+        <rect x="462" y="4" width="24" height="16" rx="2" fill="#22c55e"/><text x="474" y="16" style="font:600 6px 'JetBrains Mono',monospace;fill:#fff" text-anchor="middle">21</text>
+        <rect x="520" y="4" width="90" height="18" rx="3" fill="#eff6ff" stroke="#1e40af" stroke-width="0.6"/>
+        <text x="565" y="16" style="font:600 7px 'JetBrains Mono',monospace;fill:#1e40af" text-anchor="middle">cross-GPC ×2</text>
+      </g>
+
+      <!-- Cluster-8 -->
+      <g transform="translate(16,108)">
+        <rect x="0" y="0" width="940" height="32" rx="4" fill="#f0fdf4" stroke="#16a34a" stroke-width="0.8"/>
+        <text x="8" y="14" style="font:700 9px 'JetBrains Mono',monospace;fill:#16a34a">Cluster-8:</text>
+        <text x="8" y="26" style="font:500 9px 'JetBrains Mono',monospace;fill:#374151">{SM 0, 1, 20, 21, 40, 41, 60, 61} → 4 TPCs across 4 GPCs (stride-20)</text>
+        <!-- Color-coded SM boxes -->
+        <rect x="440" y="4" width="24" height="16" rx="2" fill="#3b82f6"/><text x="452" y="16" style="font:600 6px 'JetBrains Mono',monospace;fill:#fff" text-anchor="middle">0</text>
+        <rect x="466" y="4" width="24" height="16" rx="2" fill="#3b82f6"/><text x="478" y="16" style="font:600 6px 'JetBrains Mono',monospace;fill:#fff" text-anchor="middle">1</text>
+        <rect x="496" y="4" width="24" height="16" rx="2" fill="#22c55e"/><text x="508" y="16" style="font:600 6px 'JetBrains Mono',monospace;fill:#fff" text-anchor="middle">20</text>
+        <rect x="522" y="4" width="24" height="16" rx="2" fill="#22c55e"/><text x="534" y="16" style="font:600 6px 'JetBrains Mono',monospace;fill:#fff" text-anchor="middle">21</text>
+        <rect x="552" y="4" width="24" height="16" rx="2" fill="#f59e0b"/><text x="564" y="16" style="font:600 6px 'JetBrains Mono',monospace;fill:#fff" text-anchor="middle">40</text>
+        <rect x="578" y="4" width="24" height="16" rx="2" fill="#f59e0b"/><text x="590" y="16" style="font:600 6px 'JetBrains Mono',monospace;fill:#fff" text-anchor="middle">41</text>
+        <rect x="608" y="4" width="24" height="16" rx="2" fill="#ec4899"/><text x="620" y="16" style="font:600 6px 'JetBrains Mono',monospace;fill:#fff" text-anchor="middle">60</text>
+        <rect x="634" y="4" width="24" height="16" rx="2" fill="#ec4899"/><text x="646" y="16" style="font:600 6px 'JetBrains Mono',monospace;fill:#fff" text-anchor="middle">61</text>
+        <rect x="690" y="4" width="90" height="18" rx="3" fill="#f0fdf4" stroke="#16a34a" stroke-width="0.6"/>
+        <text x="735" y="16" style="font:600 7px 'JetBrains Mono',monospace;fill:#16a34a" text-anchor="middle">cross-GPC ×4</text>
+        <!-- Latency annotation -->
+        <text x="800" y="16" style="font:600 8px 'JetBrains Mono',monospace;fill:#5b6679">all: 220 cyc uniform</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- ═══════════════ BOTTOM: Key Insights ═══════════════ -->
+  <g transform="translate(36,444)">
+    <rect x="0" y="0" width="1006" height="360" rx="10" fill="#ffffff" stroke="#d1d5db" stroke-width="0.8"/>
+    <text x="20" y="24" style="font:600 13px 'Fraunces',serif;fill:#0b1220">Architectural Implications &amp; Evidence</text>
+
+    <!-- Left: Flat fabric evidence -->
+    <g transform="translate(20,40)">
+      <rect x="0" y="0" width="480" height="300" rx="6" fill="#EEF2FF" stroke="#1e40af" stroke-width="0.8"/>
+      <text x="10" y="18" style="font:700 10px 'JetBrains Mono',monospace;fill:#1e40af">Flat (Non-Hierarchical) SM2SM Fabric Evidence</text>
+      <line x1="10" y1="26" x2="470" y2="26" stroke="#c7d2fe" stroke-width="0.6"/>
+      <text x="10" y="44" style="font:600 9px 'JetBrains Mono',monospace;fill:#374151">Latency uniformity test:</text>
+      <text x="10" y="62" style="font:500 9px 'JetBrains Mono',monospace;fill:#374151">  SM {0,1} (same TPC):      220 cyc</text>
+      <text x="10" y="78" style="font:500 9px 'JetBrains Mono',monospace;fill:#374151">  SM {0,21} (cross-GPC ×1): 220 cyc</text>
+      <text x="10" y="94" style="font:500 9px 'JetBrains Mono',monospace;fill:#374151">  SM {0,41} (cross-GPC ×2): 220 cyc</text>
+      <text x="10" y="110" style="font:500 9px 'JetBrains Mono',monospace;fill:#374151">  SM {0,61} (cross-GPC ×4): 220 cyc</text>
+      <text x="10" y="126" style="font:700 9px 'JetBrains Mono',monospace;fill:#1e40af">  Variance: 0% → flat interconnect confirmed</text>
+      <line x1="10" y1="136" x2="470" y2="136" stroke="#c7d2fe" stroke-width="0.6"/>
+      <text x="10" y="156" style="font:600 9px 'JetBrains Mono',monospace;fill:#374151">If hierarchical (tree/ring):</text>
+      <text x="10" y="172" style="font:500 9px 'JetBrains Mono',monospace;fill:#6b7280">  cross-GPC hops would add latency per hop</text>
+      <text x="10" y="188" style="font:500 9px 'JetBrains Mono',monospace;fill:#6b7280">  SM {0,61} should cost 4× more than {0,1}</text>
+      <text x="10" y="204" style="font:500 9px 'JetBrains Mono',monospace;fill:#dc2626">  → NOT observed → hierarchy ruled out</text>
+      <line x1="10" y1="214" x2="470" y2="214" stroke="#c7d2fe" stroke-width="0.6"/>
+      <text x="10" y="234" style="font:600 9px 'JetBrains Mono',monospace;fill:#374151">Departure from SM_90 (Hopper):</text>
+      <text x="10" y="252" style="font:500 9px 'JetBrains Mono',monospace;fill:#374151">  SM_90: clusters GPC-confined (max 16 SMs/GPC)</text>
+      <text x="10" y="268" style="font:500 9px 'JetBrains Mono',monospace;fill:#1e40af">  SM_120: clusters chip-wide (span all 5+ GPCs)</text>
+      <text x="10" y="286" style="font:500 8px 'JetBrains Mono',monospace;fill:#6b7280">  Patent US20250173152A1: crossbar topology w/ integrated barrier</text>
+    </g>
+
+    <!-- Right: Multi-cluster contention handling -->
+    <g transform="translate(520,40)">
+      <rect x="0" y="0" width="466" height="300" rx="6" fill="#FFF7ED" stroke="#c2410c" stroke-width="0.8"/>
+      <text x="10" y="18" style="font:700 10px 'JetBrains Mono',monospace;fill:#c2410c">Multi-Cluster Contention Handling</text>
+      <line x1="10" y1="26" x2="456" y2="26" stroke="#fdba74" stroke-width="0.6"/>
+      <text x="10" y="46" style="font:600 9px 'JetBrains Mono',monospace;fill:#374151">Round-robin TPC assignment prevents fabric contention:</text>
+      <text x="10" y="66" style="font:500 9px 'JetBrains Mono',monospace;fill:#374151">  Cluster 0: {0, 1, 20, 21, 40, 41, 60, 61}</text>
+      <text x="10" y="82" style="font:500 9px 'JetBrains Mono',monospace;fill:#374151">  Cluster 1: {2, 3, 22, 23, 42, 43, 62, 63}</text>
+      <text x="10" y="98" style="font:500 9px 'JetBrains Mono',monospace;fill:#374151">  Cluster 2: {4, 5, 24, 25, 44, 45, 64, 65}</text>
+      <text x="10" y="114" style="font:500 9px 'JetBrains Mono',monospace;fill:#374151">  Cluster 3: {6, 7, 26, 27, 46, 47, 66, 67}</text>
+      <line x1="10" y1="126" x2="456" y2="126" stroke="#fdba74" stroke-width="0.6"/>
+      <text x="10" y="146" style="font:600 9px 'JetBrains Mono',monospace;fill:#c2410c">Design rationale for cross-GPC spreading:</text>
+      <text x="10" y="166" style="font:500 9px 'JetBrains Mono',monospace;fill:#374151">• Maximizes SM2SM fabric BW utilization</text>
+      <text x="10" y="182" style="font:500 9px 'JetBrains Mono',monospace;fill:#374151">  (each GPC pair ≤ 2 SMs per cluster → no hotspot)</text>
+      <text x="10" y="198" style="font:500 9px 'JetBrains Mono',monospace;fill:#374151">• Prevents L2 partition hotspots</text>
+      <text x="10" y="214" style="font:500 9px 'JetBrains Mono',monospace;fill:#374151">  (cluster spans all L2 slices via cross-GPC)</text>
+      <text x="10" y="230" style="font:500 9px 'JetBrains Mono',monospace;fill:#374151">• Cost: zero — DSMEM latency is uniform anyway</text>
+      <line x1="10" y1="242" x2="456" y2="242" stroke="#fdba74" stroke-width="0.6"/>
+      <text x="10" y="262" style="font:600 9px 'JetBrains Mono',monospace;fill:#c2410c">Key metrics:</text>
+      <text x="10" y="280" style="font:500 9px 'JetBrains Mono',monospace;fill:#374151">• Placement determinism: 100% (100 launches identical)</text>
+      <text x="10" y="296" style="font:500 9px 'JetBrains Mono',monospace;fill:#374151">• Max occupancy: 12 blks/SM, 1320 total, 165 clusters</text>
+    </g>
+  </g>
+</svg>

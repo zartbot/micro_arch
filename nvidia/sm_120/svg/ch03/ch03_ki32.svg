@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 320" role="img"
+     aria-label="KI-3.2: .reuse bits are functionally active on SM_120 — +85% ILP throughput for ALU, no-op for TC">
+  <defs>
+    <style><![CDATA[
+      .ttl{font:600 14px "Fraunces",serif;fill:#0b1220}
+      .sub{font:italic 11px "Fraunces",serif;fill:#5b6679}
+      .lbl{font:600 11px "JetBrains Mono",monospace}
+      .lbl-sm{font:500 10px "JetBrains Mono",monospace;fill:#5b6679}
+      .badge{font:600 9.5px "JetBrains Mono",monospace}
+      .note{font:500 9px "JetBrains Mono",monospace;fill:#8e97a5}
+      .safe{font:600 10px "JetBrains Mono",monospace;fill:#16a34a}
+      .warn{font:600 10px "JetBrains Mono",monospace;fill:#dc2626}
+    ]]></style>
+  </defs>
+  <rect width="1080" height="320" fill="#ffffff"/>
+  <text x="36" y="28" class="ttl">KI-3.2: .reuse Bits Are Functionally Active — RFC Operational on SM_120</text>
+  <text x="36" y="46" class="sub">ALU pipes: +85% throughput (1.85x). TC pipes: true no-op (0% effect). Cross-gen verified SM_89 and SM_120. [S11/case_155]</text>
+
+  <!-- Bar chart comparison -->
+  <g transform="translate(40, 66)">
+    <rect x="0" y="0" width="500" height="230" rx="10" fill="#f8fafc" stroke="#334155" stroke-width="0.8"/>
+    <text x="12" y="20" class="lbl" fill="#334155">ILP=8 FFMA Throughput (cyc/FFMA, lower = faster)</text>
+
+    <!-- SM_89 bars -->
+    <g transform="translate(20, 40)">
+      <text x="0" y="12" class="badge" fill="#64748b">SM_89</text>
+      <rect x="70" y="0" width="85" height="22" rx="3" fill="#16a34a" opacity="0.3" stroke="#16a34a" stroke-width="0.6"/>
+      <text x="112" y="15" class="badge" fill="#16a34a" text-anchor="middle">0.848</text>
+      <text x="162" y="15" class="note">.reuse ON</text>
+
+      <rect x="70" y="28" width="192" height="22" rx="3" fill="#dc2626" opacity="0.2" stroke="#dc2626" stroke-width="0.6"/>
+      <text x="166" y="43" class="badge" fill="#dc2626" text-anchor="middle">1.918</text>
+      <text x="268" y="43" class="note">.reuse OFF</text>
+      <text x="350" y="43" class="warn">+126% (2.26x)</text>
+    </g>
+
+    <!-- SM_120 bars -->
+    <g transform="translate(20, 100)">
+      <text x="0" y="12" class="badge" fill="#2563eb">SM_120</text>
+      <rect x="70" y="0" width="107" height="22" rx="3" fill="#16a34a" opacity="0.3" stroke="#16a34a" stroke-width="0.6"/>
+      <text x="123" y="15" class="badge" fill="#16a34a" text-anchor="middle">1.070</text>
+      <text x="184" y="15" class="note">.reuse ON</text>
+
+      <rect x="70" y="28" width="198" height="22" rx="3" fill="#dc2626" opacity="0.2" stroke="#dc2626" stroke-width="0.6"/>
+      <text x="169" y="43" class="badge" fill="#dc2626" text-anchor="middle">1.984</text>
+      <text x="274" y="43" class="note">.reuse OFF</text>
+      <text x="350" y="43" class="warn">+85% (1.85x)</text>
+    </g>
+
+    <!-- Dep chain (no effect) -->
+    <g transform="translate(20, 162)">
+      <text x="0" y="12" class="badge" fill="#64748b">Dep chain</text>
+      <rect x="70" y="0" width="40" height="22" rx="3" fill="#94a3b8" opacity="0.2" stroke="#94a3b8" stroke-width="0.5"/>
+      <text x="90" y="15" class="note" text-anchor="middle">~4.0</text>
+      <text x="118" y="15" class="note">ON = OFF (stall dominates, RFC irrelevant)</text>
+    </g>
+
+    <!-- Summary -->
+    <g transform="translate(20, 196)">
+      <rect x="0" y="0" width="460" height="20" rx="4" fill="#16a34a" opacity="0.06" stroke="#16a34a" stroke-width="0.4"/>
+      <text x="8" y="14" class="safe">RFC caching is critical for ILP-rich ALU throughput on SM_120</text>
+    </g>
+  </g>
+
+  <!-- Right: ALU vs TC -->
+  <g transform="translate(560, 66)">
+    <rect x="0" y="0" width="480" height="230" rx="10" fill="#f8fafc" stroke="#334155" stroke-width="0.8"/>
+    <text x="12" y="20" class="lbl" fill="#334155">Pipe-Specific .reuse Behavior</text>
+
+    <!-- ALU path -->
+    <g transform="translate(20, 40)">
+      <rect x="0" y="0" width="440" height="74" rx="6" fill="#DCFCE7" stroke="#16a34a" stroke-width="0.8"/>
+      <text x="12" y="18" class="badge" fill="#16a34a">ALU PIPES (FFMA, FADD, IMAD):</text>
+      <text x="12" y="36" class="safe">.reuse = ACTIVE (+85% throughput in ILP-rich code)</text>
+      <text x="12" y="52" class="lbl-sm">• RFC caches operands → 0-cycle hit on next read</text>
+      <text x="12" y="66" class="lbl-sm">• ptxas correctly sets bits in stall=1 regions</text>
+    </g>
+
+    <!-- TC path -->
+    <g transform="translate(20, 124)">
+      <rect x="0" y="0" width="440" height="74" rx="6" fill="#f1f5f9" stroke="#64748b" stroke-width="0.8"/>
+      <text x="12" y="18" class="badge" fill="#64748b">TC PIPES (HMMA, QMMA, OMMA.SF):</text>
+      <text x="12" y="36" class="lbl-sm">.reuse = TRUE NO-OP (0% delta when forced to 111)</text>
+      <text x="12" y="52" class="lbl-sm">• ptxas never sets bits (456 HMMA all have bits=000)</text>
+      <text x="12" y="66" class="lbl-sm">• TC uses independent operand fetch, bypasses RFC</text>
+    </g>
+
+    <g transform="translate(20, 208)">
+      <text x="0" y="14" class="note">For CuAssembler: preserve .reuse on ALU (clearing = -85%); ignore on TC (no effect).</text>
+    </g>
+  </g>
+</svg>

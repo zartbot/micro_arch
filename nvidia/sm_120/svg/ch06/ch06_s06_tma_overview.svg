@@ -1,0 +1,295 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 980" role="img" aria-label="6.1 TMA Functional Architecture Overview">
+  <defs>
+    <marker id="ar" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto">
+      <path d="M0,0 L7,3.5 L0,7 Z" fill="#5b6679"/>
+    </marker>
+    <marker id="ar-blue" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto">
+      <path d="M0,0 L7,3.5 L0,7 Z" fill="#1e40af"/>
+    </marker>
+    <marker id="ar-green" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto">
+      <path d="M0,0 L7,3.5 L0,7 Z" fill="#16a34a"/>
+    </marker>
+    <marker id="ar-red" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto">
+      <path d="M0,0 L7,3.5 L0,7 Z" fill="#dc2626"/>
+    </marker>
+    <linearGradient id="smGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#dbeafe"/>
+      <stop offset="100%" stop-color="#bfdbfe"/>
+    </linearGradient>
+    <linearGradient id="tmaGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#fef3c7"/>
+      <stop offset="100%" stop-color="#fde68a"/>
+    </linearGradient>
+    <linearGradient id="memGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#dcfce7"/>
+      <stop offset="100%" stop-color="#bbf7d0"/>
+    </linearGradient>
+  </defs>
+  <rect width="1080" height="980" fill="#ffffff"/>
+
+  <!-- Title -->
+  <text x="36" y="32" style="font:600 14px 'Fraunces',serif;fill:#0b1220">6.1 TMA Functional Architecture Overview</text>
+  <text x="36" y="52" style="font:italic 11px 'Fraunces',serif;fill:#5b6679">SM_120 GB202 — Tensor Memory Access engine: descriptor-based async multi-dimensional data movement</text>
+  <text x="36" y="68" style="font:italic 10px 'JetBrains Mono',monospace;fill:#6b7280">Patent basis: US 2023/0289292 A1 (Minkin et al., NVIDIA 2023)</text>
+
+  <!-- ═══════════════ TOP: SM + TMA + Memory System Block Diagram ═══════════════ -->
+
+  <!-- SM Block (left) -->
+  <g transform="translate(36,90)">
+    <rect x="0" y="0" width="240" height="280" rx="12" fill="url(#smGrad)" stroke="#1e40af" stroke-width="1.5"/>
+    <text x="120" y="24" style="font:700 13px 'Fraunces',serif;fill:#1e40af" text-anchor="middle">Streaming Multiprocessor (SM)</text>
+    <line x1="12" y1="34" x2="228" y2="34" stroke="#93c5fd" stroke-width="0.8"/>
+    <!-- Internal components -->
+    <rect x="12" y="44" width="216" height="36" rx="5" fill="#ffffff" stroke="#93c5fd" stroke-width="0.8"/>
+    <text x="120" y="60" style="font:600 10px 'JetBrains Mono',monospace;fill:#1e40af" text-anchor="middle">Warp Scheduler + Dispatch</text>
+    <text x="120" y="74" style="font:500 8px 'JetBrains Mono',monospace;fill:#6b7280" text-anchor="middle">Issues single UTMALDG instruction</text>
+
+    <rect x="12" y="88" width="104" height="36" rx="5" fill="#ffffff" stroke="#93c5fd" stroke-width="0.8"/>
+    <text x="64" y="104" style="font:600 9px 'JetBrains Mono',monospace;fill:#374151" text-anchor="middle">FP32/FP16 ALUs</text>
+    <text x="64" y="118" style="font:500 8px 'JetBrains Mono',monospace;fill:#6b7280" text-anchor="middle">Tensor Cores</text>
+
+    <rect x="124" y="88" width="104" height="36" rx="5" fill="#ffffff" stroke="#93c5fd" stroke-width="0.8"/>
+    <text x="176" y="104" style="font:600 9px 'JetBrains Mono',monospace;fill:#374151" text-anchor="middle">Register File</text>
+    <text x="176" y="118" style="font:500 8px 'JetBrains Mono',monospace;fill:#6b7280" text-anchor="middle">65536 × 32b</text>
+
+    <rect x="12" y="132" width="216" height="36" rx="5" fill="#ffffff" stroke="#93c5fd" stroke-width="0.8"/>
+    <text x="120" y="148" style="font:600 9px 'JetBrains Mono',monospace;fill:#374151" text-anchor="middle">LSU Pipe (ld/st/atomic)</text>
+    <text x="120" y="162" style="font:500 8px 'JetBrains Mono',monospace;fill:#6b7280" text-anchor="middle">L1 Cache (128 KB unified)</text>
+
+    <rect x="12" y="176" width="216" height="48" rx="5" fill="#eff6ff" stroke="#1e40af" stroke-width="1"/>
+    <text x="120" y="194" style="font:700 10px 'JetBrains Mono',monospace;fill:#1e40af" text-anchor="middle">Shared Memory (smem)</text>
+    <text x="120" y="210" style="font:500 9px 'JetBrains Mono',monospace;fill:#374151" text-anchor="middle">Up to 228 KB per SM</text>
+    <text x="120" y="220" style="font:500 8px 'JetBrains Mono',monospace;fill:#6b7280" text-anchor="middle">TMA writes data HERE</text>
+
+    <!-- mbarrier -->
+    <rect x="12" y="232" width="216" height="36" rx="5" fill="#fef3c7" stroke="#92400e" stroke-width="0.8"/>
+    <text x="120" y="248" style="font:600 9px 'JetBrains Mono',monospace;fill:#92400e" text-anchor="middle">mbarrier (completion tracking)</text>
+    <text x="120" y="262" style="font:500 8px 'JetBrains Mono',monospace;fill:#78350f" text-anchor="middle">Phase-based arrive/wait</text>
+  </g>
+
+  <!-- Arrow: SM → TMA (single instruction) -->
+  <g>
+    <line x1="280" y1="180" x2="350" y2="180" stroke="#1e40af" stroke-width="2" marker-end="url(#ar-blue)"/>
+    <text x="315" y="170" style="font:700 9px 'JetBrains Mono',monospace;fill:#1e40af" text-anchor="middle">1 instr</text>
+    <text x="315" y="195" style="font:500 8px 'JetBrains Mono',monospace;fill:#6b7280" text-anchor="middle">UTMALDG</text>
+    <text x="315" y="207" style="font:500 8px 'JetBrains Mono',monospace;fill:#6b7280" text-anchor="middle">coord + desc</text>
+  </g>
+
+  <!-- TMA Engine Block (center) -->
+  <g transform="translate(356,90)">
+    <rect x="0" y="0" width="340" height="280" rx="12" fill="url(#tmaGrad)" stroke="#92400e" stroke-width="1.5"/>
+    <text x="170" y="24" style="font:700 13px 'Fraunces',serif;fill:#92400e" text-anchor="middle">TMA Engine (TMAU)</text>
+    <text x="170" y="40" style="font:italic 9px 'JetBrains Mono',monospace;fill:#78350f" text-anchor="middle">Dedicated HW per SM — async, decoupled from warp scheduler</text>
+    <line x1="12" y1="48" x2="328" y2="48" stroke="#fcd34d" stroke-width="0.8"/>
+
+    <!-- Internal pipeline stages -->
+    <rect x="12" y="56" width="152" height="40" rx="5" fill="#ffffff" stroke="#d97706" stroke-width="0.8"/>
+    <text x="88" y="72" style="font:600 9px 'JetBrains Mono',monospace;fill:#92400e" text-anchor="middle">Request Queue</text>
+    <text x="88" y="86" style="font:500 8px 'JetBrains Mono',monospace;fill:#6b7280" text-anchor="middle">FIFO, ≥32 entries</text>
+
+    <rect x="176" y="56" width="152" height="40" rx="5" fill="#ffffff" stroke="#d97706" stroke-width="0.8"/>
+    <text x="252" y="72" style="font:600 9px 'JetBrains Mono',monospace;fill:#92400e" text-anchor="middle">Descriptor Cache</text>
+    <text x="252" y="86" style="font:500 8px 'JetBrains Mono',monospace;fill:#6b7280" text-anchor="middle">Prefetches next desc</text>
+
+    <line x1="170" y1="116" x2="170" y2="106" stroke="#92400e" stroke-width="1" marker-end="url(#ar-red)"/>
+
+    <rect x="12" y="104" width="316" height="44" rx="5" fill="#fffbeb" stroke="#d97706" stroke-width="1"/>
+    <text x="170" y="120" style="font:700 10px 'JetBrains Mono',monospace;fill:#92400e" text-anchor="middle">Setup + Request Generator</text>
+    <text x="170" y="134" style="font:500 8px 'JetBrains Mono',monospace;fill:#374151" text-anchor="middle">5D nested-loop traversal → address generation → OOB check</text>
+    <text x="170" y="146" style="font:500 8px 'JetBrains Mono',monospace;fill:#6b7280" text-anchor="middle">Generates multiple L2 requests from single SM instruction</text>
+
+    <line x1="170" y1="148" x2="170" y2="160" stroke="#92400e" stroke-width="1" marker-end="url(#ar-red)"/>
+
+    <rect x="12" y="158" width="152" height="36" rx="5" fill="#ffffff" stroke="#d97706" stroke-width="0.8"/>
+    <text x="88" y="174" style="font:600 9px 'JetBrains Mono',monospace;fill:#92400e" text-anchor="middle">GNIC Interface</text>
+    <text x="88" y="188" style="font:500 8px 'JetBrains Mono',monospace;fill:#6b7280" text-anchor="middle">→ L2/DRAM requests</text>
+
+    <rect x="176" y="158" width="152" height="36" rx="5" fill="#ffffff" stroke="#d97706" stroke-width="0.8"/>
+    <text x="252" y="174" style="font:600 9px 'JetBrains Mono',monospace;fill:#92400e" text-anchor="middle">Completion Tracker</text>
+    <text x="252" y="188" style="font:500 8px 'JetBrains Mono',monospace;fill:#6b7280" text-anchor="middle">mbarrier signal</text>
+
+    <!-- Key metrics box -->
+    <rect x="12" y="204" width="316" height="64" rx="5" fill="#ffffff" stroke="#e5e7eb" stroke-width="0.8"/>
+    <text x="20" y="220" style="font:600 9px 'JetBrains Mono',monospace;fill:#0b1220">Measured Parameters (SM_120):</text>
+    <text x="20" y="236" style="font:500 8px 'JetBrains Mono',monospace;fill:#374151">• Dispatch rate: 148 cyc/op  • 1D latency: 479 cyc (128B–1KB)</text>
+    <text x="20" y="250" style="font:500 8px 'JetBrains Mono',monospace;fill:#374151">• Queue depth: ≥32 entries   • DMA write: 16.1 B/cyc</text>
+    <text x="20" y="264" style="font:500 8px 'JetBrains Mono',monospace;fill:#374151">• Pipeline: 11× speedup @ d=32 • Dimensionality: 1D–5D + im2col</text>
+  </g>
+
+  <!-- Arrow: TMA → Memory System -->
+  <g>
+    <line x1="700" y1="210" x2="750" y2="210" stroke="#16a34a" stroke-width="2" marker-end="url(#ar-green)"/>
+    <text x="725" y="200" style="font:700 8px 'JetBrains Mono',monospace;fill:#16a34a" text-anchor="middle">N reqs</text>
+  </g>
+
+  <!-- Memory System Block (right) -->
+  <g transform="translate(756,90)">
+    <rect x="0" y="0" width="286" height="280" rx="12" fill="url(#memGrad)" stroke="#16a34a" stroke-width="1.5"/>
+    <text x="143" y="24" style="font:700 13px 'Fraunces',serif;fill:#166534" text-anchor="middle">Memory Subsystem</text>
+    <line x1="12" y1="34" x2="274" y2="34" stroke="#86efac" stroke-width="0.8"/>
+
+    <rect x="12" y="44" width="262" height="40" rx="5" fill="#ffffff" stroke="#86efac" stroke-width="0.8"/>
+    <text x="143" y="60" style="font:600 10px 'JetBrains Mono',monospace;fill:#166534" text-anchor="middle">L2 Cache (96 MB, 12 partitions)</text>
+    <text x="143" y="76" style="font:500 8px 'JetBrains Mono',monospace;fill:#6b7280" text-anchor="middle">354 cyc round-trip latency</text>
+
+    <rect x="12" y="92" width="262" height="40" rx="5" fill="#ffffff" stroke="#86efac" stroke-width="0.8"/>
+    <text x="143" y="108" style="font:600 10px 'JetBrains Mono',monospace;fill:#166534" text-anchor="middle">GDDR7 DRAM (72 GB)</text>
+    <text x="143" y="124" style="font:500 8px 'JetBrains Mono',monospace;fill:#6b7280" text-anchor="middle">1231 GB/s peak BW</text>
+
+    <!-- Data flow back -->
+    <rect x="12" y="144" width="262" height="50" rx="5" fill="#f0fdf4" stroke="#16a34a" stroke-width="1"/>
+    <text x="143" y="162" style="font:600 9px 'JetBrains Mono',monospace;fill:#166534" text-anchor="middle">Data Response Path</text>
+    <text x="143" y="178" style="font:500 8px 'JetBrains Mono',monospace;fill:#374151" text-anchor="middle">Data → SM's shared memory (DMA write)</text>
+    <text x="143" y="190" style="font:500 8px 'JetBrains Mono',monospace;fill:#374151" text-anchor="middle">+ mbarrier arrive signal on completion</text>
+
+    <!-- Multicast note -->
+    <rect x="12" y="204" width="262" height="64" rx="5" fill="#fef2f2" stroke="#dc2626" stroke-width="0.8"/>
+    <text x="143" y="220" style="font:600 9px 'JetBrains Mono',monospace;fill:#dc2626" text-anchor="middle">SM_120 Limitation</text>
+    <text x="20" y="236" style="font:500 8px 'JetBrains Mono',monospace;fill:#374151">Multicast HW absent (GB202 consumer die)</text>
+    <text x="20" y="250" style="font:500 8px 'JetBrains Mono',monospace;fill:#374151">→ All multicast SW-emulated (3300× penalty)</text>
+    <text x="20" y="264" style="font:500 8px 'JetBrains Mono',monospace;fill:#6b7280">Present on: GB100 (sm_100a), GB102 (sm_110a)</text>
+  </g>
+
+  <!-- Return arrow: Memory → SM smem (data write) -->
+  <path d="M 900,370 L 900,400 L 156,400 L 156,286" fill="none" stroke="#16a34a" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#ar-green)"/>
+  <text x="530" y="415" style="font:600 9px 'JetBrains Mono',monospace;fill:#16a34a" text-anchor="middle">DMA write to smem + mbarrier arrive (bypasses RF entirely)</text>
+
+  <!-- ═══════════════ MIDDLE: Descriptor-Based Addressing Model ═══════════════ -->
+  <g transform="translate(36,440)">
+    <rect x="0" y="0" width="1006" height="220" rx="10" fill="#fafafa" stroke="#d1d5db" stroke-width="0.8"/>
+    <text x="20" y="24" style="font:600 13px 'Fraunces',serif;fill:#0b1220">Descriptor-Based Multi-Dimensional Addressing</text>
+    <text x="20" y="42" style="font:italic 10px 'JetBrains Mono',monospace;fill:#6b7280">Three-layer parameter hierarchy (US 2023/0289292 A1, Fig 5A–5B)</text>
+
+    <!-- Layer 1: Tensor Descriptor (in global memory) -->
+    <g transform="translate(20,56)">
+      <rect x="0" y="0" width="300" height="148" rx="8" fill="#EEF2FF" stroke="#1e40af" stroke-width="1"/>
+      <text x="10" y="18" style="font:700 10px 'JetBrains Mono',monospace;fill:#1e40af">Layer 1: Tensor Descriptor</text>
+      <text x="10" y="32" style="font:italic 8px 'JetBrains Mono',monospace;fill:#6b7280">(Stored in global memory, set once per tensor)</text>
+      <line x1="10" y1="38" x2="290" y2="38" stroke="#c7d2fe" stroke-width="0.6"/>
+      <text x="10" y="54" style="font:500 9px 'JetBrains Mono',monospace;fill:#374151">• globalAddress (base pointer)</text>
+      <text x="10" y="68" style="font:500 9px 'JetBrains Mono',monospace;fill:#374151">• tensorSize[5] (dims in elements)</text>
+      <text x="10" y="82" style="font:500 9px 'JetBrains Mono',monospace;fill:#374151">• tensorStride[5] (bytes between rows)</text>
+      <text x="10" y="96" style="font:500 9px 'JetBrains Mono',monospace;fill:#374151">• elementSize (1/2/4/8/16 bytes)</text>
+      <text x="10" y="110" style="font:500 9px 'JetBrains Mono',monospace;fill:#374151">• boxSize[5] (tile dimensions)</text>
+      <text x="10" y="124" style="font:500 9px 'JetBrains Mono',monospace;fill:#374151">• traversalStride[5]</text>
+      <text x="10" y="138" style="font:500 9px 'JetBrains Mono',monospace;fill:#374151">• swizzleMode, OOB fill mode</text>
+    </g>
+
+    <!-- Layer 2: Access Descriptor (per-call config) -->
+    <g transform="translate(350,56)">
+      <rect x="0" y="0" width="300" height="148" rx="8" fill="#FEF3C7" stroke="#92400e" stroke-width="1"/>
+      <text x="10" y="18" style="font:700 10px 'JetBrains Mono',monospace;fill:#92400e">Layer 2: Per-Request Parameters</text>
+      <text x="10" y="32" style="font:italic 8px 'JetBrains Mono',monospace;fill:#6b7280">(Provided by SM with each UTMALDG instruction)</text>
+      <line x1="10" y1="38" x2="290" y2="38" stroke="#fcd34d" stroke-width="0.6"/>
+      <text x="10" y="54" style="font:500 9px 'JetBrains Mono',monospace;fill:#374151">• coord[5] (tile coordinates)</text>
+      <text x="10" y="68" style="font:500 9px 'JetBrains Mono',monospace;fill:#374151">• smem_addr (destination address)</text>
+      <text x="10" y="82" style="font:500 9px 'JetBrains Mono',monospace;fill:#374151">• mbarrier_addr (completion signal)</text>
+      <text x="10" y="96" style="font:500 9px 'JetBrains Mono',monospace;fill:#374151">• im2col offsets (if im2col mode)</text>
+      <text x="10" y="118" style="font:600 9px 'JetBrains Mono',monospace;fill:#92400e">SM cost: only coord + addrs</text>
+      <text x="10" y="134" style="font:500 8px 'JetBrains Mono',monospace;fill:#6b7280">No address computation by SM threads!</text>
+    </g>
+
+    <!-- Layer 3: Hardware execution -->
+    <g transform="translate(680,56)">
+      <rect x="0" y="0" width="300" height="148" rx="8" fill="#F0FDF4" stroke="#16a34a" stroke-width="1"/>
+      <text x="10" y="18" style="font:700 10px 'JetBrains Mono',monospace;fill:#166534">Layer 3: HW-Generated Addresses</text>
+      <text x="10" y="32" style="font:italic 8px 'JetBrains Mono',monospace;fill:#6b7280">(Computed by TMA engine hardware)</text>
+      <line x1="10" y1="38" x2="290" y2="38" stroke="#86efac" stroke-width="0.6"/>
+      <text x="10" y="54" style="font:500 9px 'JetBrains Mono',monospace;fill:#374151">• 5D nested-loop traversal</text>
+      <text x="10" y="68" style="font:500 9px 'JetBrains Mono',monospace;fill:#374151">• coord → globalAddr mapping</text>
+      <text x="10" y="82" style="font:500 9px 'JetBrains Mono',monospace;fill:#374151">• OOB detection + zero-fill</text>
+      <text x="10" y="96" style="font:500 9px 'JetBrains Mono',monospace;fill:#374151">• Swizzle pattern application</text>
+      <text x="10" y="110" style="font:500 9px 'JetBrains Mono',monospace;fill:#374151">• L2 request segmentation</text>
+      <text x="10" y="124" style="font:500 9px 'JetBrains Mono',monospace;fill:#374151">• smem write addr generation</text>
+      <text x="10" y="138" style="font:600 9px 'JetBrains Mono',monospace;fill:#16a34a">Offloads 100s of cyc from SM!</text>
+    </g>
+
+    <!-- Arrows between layers -->
+    <line x1="322" y1="130" x2="348" y2="130" stroke="#5b6679" stroke-width="1.2" marker-end="url(#ar)"/>
+    <line x1="652" y1="130" x2="678" y2="130" stroke="#5b6679" stroke-width="1.2" marker-end="url(#ar)"/>
+  </g>
+
+  <!-- ═══════════════ BOTTOM: Key Capabilities Summary ═══════════════ -->
+  <g transform="translate(36,680)">
+    <rect x="0" y="0" width="1006" height="280" rx="10" fill="#ffffff" stroke="#d1d5db" stroke-width="0.8"/>
+    <text x="20" y="24" style="font:600 13px 'Fraunces',serif;fill:#0b1220">TMA Key Capabilities (PTX ISA 9.3 / CUDA 13.3)</text>
+
+    <!-- Column 1: Data Movement Modes -->
+    <g transform="translate(20,40)">
+      <rect x="0" y="0" width="230" height="224" rx="6" fill="#EEF2FF" stroke="#1e40af" stroke-width="0.8"/>
+      <text x="10" y="18" style="font:700 10px 'JetBrains Mono',monospace;fill:#1e40af">Data Movement</text>
+      <line x1="10" y1="24" x2="220" y2="24" stroke="#c7d2fe" stroke-width="0.6"/>
+      <text x="10" y="42" style="font:500 9px 'JetBrains Mono',monospace;fill:#374151">cp.async.bulk.tensor</text>
+      <text x="10" y="56" style="font:500 8px 'JetBrains Mono',monospace;fill:#6b7280">  Global → Shared (load)</text>
+      <text x="10" y="74" style="font:500 9px 'JetBrains Mono',monospace;fill:#374151">cp.async.bulk.tensor (store)</text>
+      <text x="10" y="88" style="font:500 8px 'JetBrains Mono',monospace;fill:#6b7280">  Shared → Global (store)</text>
+      <text x="10" y="106" style="font:500 9px 'JetBrains Mono',monospace;fill:#374151">cp.reduce.async.bulk.tensor</text>
+      <text x="10" y="120" style="font:500 8px 'JetBrains Mono',monospace;fill:#6b7280">  Shared → Global (atomic red)</text>
+      <text x="10" y="138" style="font:500 9px 'JetBrains Mono',monospace;fill:#374151">cp.async.bulk (descriptor-less)</text>
+      <text x="10" y="152" style="font:500 8px 'JetBrains Mono',monospace;fill:#6b7280">  Linear bulk copy (no tensor)</text>
+      <text x="10" y="172" style="font:600 9px 'JetBrains Mono',monospace;fill:#1e40af">Access Modes:</text>
+      <text x="10" y="188" style="font:500 9px 'JetBrains Mono',monospace;fill:#374151">• Tiled (1D–5D rectangular)</text>
+      <text x="10" y="202" style="font:500 9px 'JetBrains Mono',monospace;fill:#374151">• im2col (conv filter pos)</text>
+      <text x="10" y="216" style="font:500 9px 'JetBrains Mono',monospace;fill:#374151">• Scatter/Gather (sm_100+)</text>
+    </g>
+
+    <!-- Column 2: Completion & Sync -->
+    <g transform="translate(270,40)">
+      <rect x="0" y="0" width="230" height="224" rx="6" fill="#FEF3C7" stroke="#92400e" stroke-width="0.8"/>
+      <text x="10" y="18" style="font:700 10px 'JetBrains Mono',monospace;fill:#92400e">Completion &amp; Sync</text>
+      <line x1="10" y1="24" x2="220" y2="24" stroke="#fcd34d" stroke-width="0.6"/>
+      <text x="10" y="42" style="font:500 9px 'JetBrains Mono',monospace;fill:#374151">mbarrier arrive-on-complete</text>
+      <text x="10" y="56" style="font:500 8px 'JetBrains Mono',monospace;fill:#6b7280">  HW signals barrier in smem</text>
+      <text x="10" y="74" style="font:500 9px 'JetBrains Mono',monospace;fill:#374151">Phase-based tracking</text>
+      <text x="10" y="88" style="font:500 8px 'JetBrains Mono',monospace;fill:#6b7280">  Multi-stage pipeline support</text>
+      <text x="10" y="106" style="font:500 9px 'JetBrains Mono',monospace;fill:#374151">fence.proxy.async</text>
+      <text x="10" y="120" style="font:500 8px 'JetBrains Mono',monospace;fill:#6b7280">  Ordering guarantee</text>
+      <text x="10" y="140" style="font:600 9px 'JetBrains Mono',monospace;fill:#92400e">Pipeline Integration:</text>
+      <text x="10" y="156" style="font:500 9px 'JetBrains Mono',monospace;fill:#374151">• 3-stage optimal on SM_120</text>
+      <text x="10" y="170" style="font:500 9px 'JetBrains Mono',monospace;fill:#374151">• 100% TC+TMA co-issue</text>
+      <text x="10" y="184" style="font:500 9px 'JetBrains Mono',monospace;fill:#374151">• Deep queue hides latency</text>
+      <text x="10" y="202" style="font:600 9px 'JetBrains Mono',monospace;fill:#92400e">Starvation ratio:</text>
+      <text x="10" y="218" style="font:500 9px 'JetBrains Mono',monospace;fill:#374151">TMA 6.5 B/cyc vs TC 28.9 B/cyc</text>
+    </g>
+
+    <!-- Column 3: Address Features -->
+    <g transform="translate(520,40)">
+      <rect x="0" y="0" width="230" height="224" rx="6" fill="#F0FDF4" stroke="#16a34a" stroke-width="0.8"/>
+      <text x="10" y="18" style="font:700 10px 'JetBrains Mono',monospace;fill:#166534">Address Features</text>
+      <line x1="10" y1="24" x2="220" y2="24" stroke="#86efac" stroke-width="0.6"/>
+      <text x="10" y="42" style="font:500 9px 'JetBrains Mono',monospace;fill:#374151">Multi-dim addressing (1D–5D)</text>
+      <text x="10" y="56" style="font:500 8px 'JetBrains Mono',monospace;fill:#6b7280">  Zero overhead vs 1D ≤ 1KB</text>
+      <text x="10" y="74" style="font:500 9px 'JetBrains Mono',monospace;fill:#374151">OOB zero-fill (+128 cyc)</text>
+      <text x="10" y="88" style="font:500 8px 'JetBrains Mono',monospace;fill:#6b7280">  Graceful boundary handling</text>
+      <text x="10" y="106" style="font:500 9px 'JetBrains Mono',monospace;fill:#374151">Swizzle modes (32/64/128B)</text>
+      <text x="10" y="120" style="font:500 8px 'JetBrains Mono',monospace;fill:#6b7280">  Eliminates smem bank conflicts</text>
+      <text x="10" y="138" style="font:500 9px 'JetBrains Mono',monospace;fill:#374151">tensormap.replace (39 cyc)</text>
+      <text x="10" y="152" style="font:500 8px 'JetBrains Mono',monospace;fill:#6b7280">  Dynamic descriptor update</text>
+      <text x="10" y="172" style="font:600 9px 'JetBrains Mono',monospace;fill:#16a34a">SM_120 Restrictions:</text>
+      <text x="10" y="188" style="font:500 9px 'JetBrains Mono',monospace;fill:#dc2626">✗ Sub-byte types (FP4 etc)</text>
+      <text x="10" y="202" style="font:500 9px 'JetBrains Mono',monospace;fill:#dc2626">✗ Gather4/Scatter4</text>
+      <text x="10" y="216" style="font:500 9px 'JetBrains Mono',monospace;fill:#dc2626">✗ Multicast (HW absent)</text>
+    </g>
+
+    <!-- Column 4: Performance Summary -->
+    <g transform="translate(770,40)">
+      <rect x="0" y="0" width="214" height="224" rx="6" fill="#FFF7ED" stroke="#c2410c" stroke-width="0.8"/>
+      <text x="10" y="18" style="font:700 10px 'JetBrains Mono',monospace;fill:#c2410c">Performance Profile</text>
+      <line x1="10" y1="24" x2="204" y2="24" stroke="#fdba74" stroke-width="0.6"/>
+      <text x="10" y="42" style="font:500 9px 'JetBrains Mono',monospace;fill:#374151">Load 1D:  479 cyc</text>
+      <text x="10" y="56" style="font:500 9px 'JetBrains Mono',monospace;fill:#374151">Load 2D:  567-2486 cyc</text>
+      <text x="10" y="70" style="font:500 9px 'JetBrains Mono',monospace;fill:#374151">Store 1D: 48 cyc (f&amp;f)</text>
+      <text x="10" y="84" style="font:500 9px 'JetBrains Mono',monospace;fill:#374151">Reduce:   55 cyc/op</text>
+      <text x="10" y="100" style="font:600 9px 'JetBrains Mono',monospace;fill:#c2410c">vs Legacy Methods:</text>
+      <text x="10" y="116" style="font:500 9px 'JetBrains Mono',monospace;fill:#374151">ld.global: 32 cyc (cached)</text>
+      <text x="10" y="130" style="font:500 9px 'JetBrains Mono',monospace;fill:#374151">cp.async.ca: 59 cyc</text>
+      <text x="10" y="144" style="font:500 9px 'JetBrains Mono',monospace;fill:#374151">cp.async.cg: 385 cyc</text>
+      <text x="10" y="162" style="font:600 9px 'JetBrains Mono',monospace;fill:#c2410c">TMA Value Prop:</text>
+      <text x="10" y="178" style="font:500 8px 'JetBrains Mono',monospace;fill:#374151">NOT raw latency (16.7× slower</text>
+      <text x="10" y="190" style="font:500 8px 'JetBrains Mono',monospace;fill:#374151">than cached ld.global)</text>
+      <text x="10" y="206" style="font:700 8px 'JetBrains Mono',monospace;fill:#c2410c">VALUE = descriptor addressing</text>
+      <text x="10" y="218" style="font:700 8px 'JetBrains Mono',monospace;fill:#c2410c">+ deep pipelining + zero RF</text>
+    </g>
+  </g>
+</svg>

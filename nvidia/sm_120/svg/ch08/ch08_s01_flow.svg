@@ -1,0 +1,269 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 900" role="img"
+     aria-label="§ 8.1.5 3-Stage Software Pipeline — TMA/MMA overlap, mbarrier sync, bandwidth model, depth comparison">
+  <defs>
+    <style><![CDATA[
+      .eyebrow { font: 600 11px "JetBrains Mono", monospace; letter-spacing: 0.16em; text-transform: uppercase }
+      .title   { font: 500 24px "Fraunces", serif; fill: #0b1220; letter-spacing: -0.02em }
+      .sub     { font: italic 12px "Fraunces", serif; fill: #5b6679 }
+      .panel-h { font: 600 13px "JetBrains Mono", monospace; letter-spacing: 0.06em; fill: #0b1220 }
+      .panel-sub { font: italic 11px "Fraunces", serif; fill: #5b6679 }
+      .lbl-sm  { font: 500 9px "JetBrains Mono", monospace; fill: #5b6679; letter-spacing: 0.05em; text-transform: uppercase }
+      .lbl     { font: 500 11px "IBM Plex Sans", sans-serif; fill: #2a3548 }
+      .lbl-mono{ font: 500 10px "JetBrains Mono", monospace; fill: #2a3548 }
+      .lbl-mono-em { font: 700 10px "JetBrains Mono", monospace; fill: #0b1220 }
+      .lbl-w   { font: 600 10px "IBM Plex Sans", sans-serif; fill: #ffffff }
+      .lbl-w-mono { font: 500 9px "JetBrains Mono", monospace; fill: #ffffff }
+      .big-num { font: 700 18px "Fraunces", serif }
+    ]]></style>
+  </defs>
+
+  <rect width="1280" height="900" fill="#fcfbf6"/>
+
+  <!-- ============ Header ============ -->
+  <g transform="translate(40,32)">
+    <text x="0" y="0" class="eyebrow" fill="#b45309">SECTION 8.1.5 · 3-STAGE SOFTWARE PIPELINE</text>
+    <text x="0" y="28" class="title">TMA + MMA 3-Stage Overlap Pipeline</text>
+    <text x="0" y="50" class="sub">3 smem buffers · 1.92x speedup · 4.4x data-starvation ratio · 34% sync overhead floor</text>
+    <text x="0" y="68" class="lbl-sm">Source: [S10/case_82] · [S23/case_27] · [S10/case_50] · [S26/case_10-12]</text>
+  </g>
+
+  <!-- ============ Panel A: Pipeline Gantt Chart ============ -->
+  <g transform="translate(40,108)">
+    <rect x="0" y="0" width="1200" height="290" rx="6" fill="#ffffff" stroke="#e2d8c8" stroke-width="0.8"/>
+    <text x="14" y="22" class="panel-h">A · 3-STAGE PIPELINE GANTT CHART — TMA LOAD / MMA COMPUTE / SYNC OVERLAP</text>
+    <text x="14" y="38" class="panel-sub">Time flows left to right; each row = one pipeline resource; overlap regions shaded</text>
+
+    <!-- Time axis -->
+    <line x1="90" y1="260" x2="1170" y2="260" stroke="#cbd5e1" stroke-width="1"/>
+    <text x="90" y="274" class="lbl-sm">0 cyc</text>
+    <text x="350" y="274" class="lbl-sm">479</text>
+    <text x="610" y="274" class="lbl-sm">958</text>
+    <text x="870" y="274" class="lbl-sm">1437</text>
+    <text x="1130" y="274" class="lbl-sm">1615</text>
+
+    <!-- Row labels -->
+    <text x="14" y="75" class="lbl-mono-em">TMA</text>
+    <text x="14" y="135" class="lbl-mono-em">MMA</text>
+    <text x="14" y="195" class="lbl-mono-em">Sync</text>
+
+    <!-- Stage 0: TMA Load buf[0] -->
+    <g transform="translate(90,55)">
+      <rect x="0" y="0" width="260" height="30" rx="3" fill="#2563eb" opacity="0.8"/>
+      <text x="130" y="19" class="lbl-w-mono" text-anchor="middle">TMA Load buf[0] (479 cyc)</text>
+    </g>
+
+    <!-- Stage 0: TMA Load buf[1] (overlaps with MMA buf[0]) -->
+    <g transform="translate(350,55)">
+      <rect x="0" y="0" width="260" height="30" rx="3" fill="#2563eb" opacity="0.6"/>
+      <text x="130" y="19" class="lbl-w-mono" text-anchor="middle">TMA Load buf[1] (479 cyc)</text>
+    </g>
+
+    <!-- Stage 1: TMA Load buf[2] -->
+    <g transform="translate(610,55)">
+      <rect x="0" y="0" width="260" height="30" rx="3" fill="#2563eb" opacity="0.4"/>
+      <text x="130" y="19" class="lbl-w-mono" text-anchor="middle">TMA Load buf[2] (479 cyc)</text>
+    </g>
+
+    <!-- MMA Compute buf[0] -->
+    <g transform="translate(350,115)">
+      <rect x="0" y="0" width="260" height="30" rx="3" fill="#16a34a" opacity="0.8"/>
+      <text x="130" y="19" class="lbl-w-mono" text-anchor="middle">MMA Compute buf[0]</text>
+    </g>
+
+    <!-- MMA Compute buf[1] -->
+    <g transform="translate(610,115)">
+      <rect x="0" y="0" width="260" height="30" rx="3" fill="#16a34a" opacity="0.8"/>
+      <text x="130" y="19" class="lbl-w-mono" text-anchor="middle">MMA Compute buf[1]</text>
+    </g>
+
+    <!-- MMA Compute buf[2] -->
+    <g transform="translate(870,115)">
+      <rect x="0" y="0" width="260" height="30" rx="3" fill="#16a34a" opacity="0.6"/>
+      <text x="130" y="19" class="lbl-w-mono" text-anchor="middle">MMA Compute buf[2]</text>
+    </g>
+
+    <!-- Sync barriers (distributed) -->
+    <g transform="translate(90,180)">
+      <rect x="0" y="0" width="40" height="24" rx="2" fill="#d97706" opacity="0.7"/>
+      <text x="20" y="15" class="lbl-w-mono" text-anchor="middle" font-size="8">arrive</text>
+    </g>
+    <g transform="translate(330,180)">
+      <rect x="0" y="0" width="40" height="24" rx="2" fill="#d97706" opacity="0.7"/>
+      <text x="20" y="15" class="lbl-w-mono" text-anchor="middle" font-size="8">wait</text>
+    </g>
+    <g transform="translate(590,180)">
+      <rect x="0" y="0" width="40" height="24" rx="2" fill="#d97706" opacity="0.7"/>
+      <text x="20" y="15" class="lbl-w-mono" text-anchor="middle" font-size="8">arrive</text>
+    </g>
+    <g transform="translate(850,180)">
+      <rect x="0" y="0" width="40" height="24" rx="2" fill="#d97706" opacity="0.7"/>
+      <text x="20" y="15" class="lbl-w-mono" text-anchor="middle" font-size="8">wait</text>
+    </g>
+    <g transform="translate(150,180)">
+      <rect x="0" y="0" width="160" height="24" rx="2" fill="#dc2626" opacity="0.5"/>
+      <text x="80" y="15" class="lbl-w-mono" text-anchor="middle" font-size="8">fence.proxy.async (163 cyc)</text>
+    </g>
+    <g transform="translate(650,180)">
+      <rect x="0" y="0" width="160" height="24" rx="2" fill="#dc2626" opacity="0.5"/>
+      <text x="80" y="15" class="lbl-w-mono" text-anchor="middle" font-size="8">fence.proxy.async (163 cyc)</text>
+    </g>
+
+    <!-- Overlap shading -->
+    <rect x="350" y="52" width="260" height="100" rx="0" fill="#16a34a" opacity="0.05"/>
+    <rect x="610" y="52" width="260" height="100" rx="0" fill="#16a34a" opacity="0.05"/>
+    <text x="480" y="108" class="lbl-sm" text-anchor="middle" fill="#15803d">51% OVERLAP</text>
+    <text x="740" y="108" class="lbl-sm" text-anchor="middle" fill="#15803d">51% OVERLAP</text>
+
+    <!-- Stage labels -->
+    <text x="220" y="246" class="lbl-mono-em" text-anchor="middle" fill="#2563eb">STAGE 0</text>
+    <text x="480" y="246" class="lbl-mono-em" text-anchor="middle" fill="#15803d">STAGE 1</text>
+    <text x="740" y="246" class="lbl-mono-em" text-anchor="middle" fill="#15803d">STAGE 2</text>
+  </g>
+
+  <!-- ============ Panel B: Bandwidth Model ============ -->
+  <g transform="translate(40,418)">
+    <rect x="0" y="0" width="580" height="220" rx="6" fill="#ffffff" stroke="#e2d8c8" stroke-width="0.8"/>
+    <text x="14" y="22" class="panel-h">B · BANDWIDTH MODEL — 4.4x DATA-STARVATION RATIO</text>
+    <text x="14" y="38" class="panel-sub">TMA supply rate vs TC consumption rate determines pipeline balance</text>
+
+    <!-- TMA supply bar -->
+    <g transform="translate(14,56)">
+      <text x="0" y="14" class="lbl-mono-em" fill="#2563eb">TMA Supply:</text>
+      <rect x="120" y="2" width="65" height="16" rx="2" fill="#2563eb" opacity="0.7"/>
+      <text x="192" y="14" class="lbl-mono-em" fill="#2563eb">6.5 B/cyc</text>
+    </g>
+
+    <!-- TC consumption bar -->
+    <g transform="translate(14,82)">
+      <text x="0" y="14" class="lbl-mono-em" fill="#16a34a">TC Consume:</text>
+      <rect x="120" y="2" width="290" height="16" rx="2" fill="#16a34a" opacity="0.7"/>
+      <text x="418" y="14" class="lbl-mono-em" fill="#16a34a">28.9 B/cyc</text>
+    </g>
+
+    <!-- Ratio callout -->
+    <g transform="translate(14,110)">
+      <rect x="0" y="0" width="250" height="40" rx="4" fill="#fee2e2" stroke="#dc2626" stroke-width="0.6"/>
+      <text x="125" y="16" class="lbl-mono-em" text-anchor="middle" fill="#dc2626">STARVATION RATIO:</text>
+      <text x="125" y="32" class="big-num" text-anchor="middle" fill="#dc2626" font-size="18">4.4x (TC starved by TMA)</text>
+    </g>
+
+    <!-- Implication -->
+    <g transform="translate(14,162)">
+      <text x="0" y="14" class="lbl-mono" fill="#5b6679">Pipeline is fundamentally load-latency-bound,</text>
+      <text x="0" y="30" class="lbl-mono" fill="#5b6679">NOT compute-bound in the innermost loop.</text>
+      <text x="0" y="50" class="lbl-mono" fill="#5b6679">DRAM latency hiding requires ~64 FMA ops</text>
+    </g>
+  </g>
+
+  <!-- ============ Panel C: Depth Comparison ============ -->
+  <g transform="translate(640,418)">
+    <rect x="0" y="0" width="600" height="220" rx="6" fill="#ffffff" stroke="#e2d8c8" stroke-width="0.8"/>
+    <text x="14" y="22" class="panel-h">C · PIPELINE DEPTH COMPARISON</text>
+    <text x="14" y="38" class="panel-sub">Speedup vs unpipelined; diminishing returns beyond 3 stages</text>
+
+    <!-- Depth comparison bars -->
+    <g transform="translate(14,56)">
+      <!-- 1-stage (baseline) -->
+      <text x="0" y="14" class="lbl-mono">1-stage:</text>
+      <rect x="80" y="2" width="100" height="16" rx="2" fill="#cbd5e1"/>
+      <text x="188" y="14" class="lbl-mono">1.00x (baseline)</text>
+
+      <!-- 2-stage -->
+      <text x="0" y="38" class="lbl-mono">2-stage:</text>
+      <rect x="80" y="26" width="189" height="16" rx="2" fill="#fef3c7" stroke="#d97706" stroke-width="0.5"/>
+      <text x="278" y="38" class="lbl-mono-em" fill="#b45309">1.89x</text>
+
+      <!-- 3-stage (optimal) -->
+      <text x="0" y="62" class="lbl-mono">3-stage:</text>
+      <rect x="80" y="50" width="192" height="16" rx="2" fill="#dcfce7" stroke="#16a34a" stroke-width="0.8"/>
+      <text x="280" y="62" class="lbl-mono-em" fill="#15803d">1.92x (OPTIMAL)</text>
+
+      <!-- 4-stage -->
+      <text x="0" y="86" class="lbl-mono">4-stage:</text>
+      <rect x="80" y="74" width="202" height="16" rx="2" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="0.5"/>
+      <text x="290" y="86" class="lbl-mono" fill="#5b6679">+5.5% (diminishing)</text>
+    </g>
+
+    <!-- Constraint box -->
+    <g transform="translate(14,130)">
+      <rect x="0" y="0" width="572" height="84" rx="4" fill="#f8fafc" stroke="#cbd5e1" stroke-width="0.6"/>
+      <text x="12" y="18" class="lbl-sm" fill="#5b6679">CONSTRAINTS ON DEPTH</text>
+      <text x="12" y="36" class="lbl-mono">Smem budget: 3 buffers x tile_size (max 99 KB total)</text>
+      <text x="12" y="52" class="lbl-mono">Tile size limit: 33 KB/buffer (smem = 228 KB shared)</text>
+      <text x="12" y="68" class="lbl-mono">4th stage adds only +5.5%: smem pressure outweighs benefit</text>
+      <text x="12" y="82" class="lbl-mono" fill="#5b6679">Path latency: LDG=126 cyc, cp.async=118 cyc (smem-RF-TC)</text>
+    </g>
+  </g>
+
+  <!-- ============ Panel D: Sync Overhead & Key Metrics ============ -->
+  <g transform="translate(40,658)">
+    <rect x="0" y="0" width="1200" height="228" rx="6" fill="#ffffff" stroke="#e2d8c8" stroke-width="0.8"/>
+    <text x="14" y="22" class="panel-h">D · SYNCHRONIZATION OVERHEAD &amp; KEY METRICS</text>
+
+    <!-- Sync fraction pie-like visualization -->
+    <g transform="translate(14,40)">
+      <rect x="0" y="0" width="350" height="175" rx="4" fill="#fffbeb" stroke="#d97706" stroke-width="0.6"/>
+      <text x="12" y="18" class="lbl-sm" fill="#b45309">SYNC OVERHEAD BREAKDOWN (1615 cyc/iter)</text>
+
+      <!-- Stacked bar -->
+      <rect x="12" y="30" width="230" height="24" rx="2" fill="#16a34a" opacity="0.7"/>
+      <text x="127" y="47" class="lbl-w-mono" text-anchor="middle">Compute: 1069 cyc (66%)</text>
+
+      <rect x="12" y="58" width="120" height="24" rx="2" fill="#dc2626" opacity="0.6"/>
+      <text x="72" y="75" class="lbl-w-mono" text-anchor="middle">Sync: 546 cyc (34%)</text>
+
+      <!-- Sync breakdown -->
+      <text x="12" y="100" class="lbl-mono">mbarrier.arrive.expect_tx:</text>
+      <text x="220" y="100" class="lbl-mono-em" fill="#b45309">34 cyc</text>
+      <text x="12" y="116" class="lbl-mono">mbarrier.try_wait:</text>
+      <text x="220" y="116" class="lbl-mono-em" fill="#b45309">5-15 cyc</text>
+      <text x="12" y="132" class="lbl-mono">fence.proxy.async (CTA):</text>
+      <text x="220" y="132" class="lbl-mono-em" fill="#dc2626">7 cyc</text>
+      <text x="12" y="148" class="lbl-mono">fence.proxy.async (GPU):</text>
+      <text x="220" y="148" class="lbl-mono-em" fill="#dc2626">163 cyc (dominates)</text>
+      <text x="12" y="164" class="lbl-mono-em" fill="#dc2626">34% = structural floor</text>
+    </g>
+
+    <!-- Key metrics table -->
+    <g transform="translate(380,40)">
+      <rect x="0" y="0" width="806" height="175" rx="4" fill="#f8fafc" stroke="#cbd5e1" stroke-width="0.6"/>
+      <text x="12" y="18" class="lbl-sm" fill="#5b6679">KEY PIPELINE METRICS</text>
+      <line x1="12" y1="24" x2="794" y2="24" stroke="#cbd5e1" stroke-width="0.5"/>
+
+      <text x="12" y="42" class="lbl-mono-em">TMA load latency:</text>
+      <text x="200" y="42" class="lbl-mono">479 cyc/tile</text>
+      <text x="400" y="42" class="lbl-mono-em">DRAM latency:</text>
+      <text x="560" y="42" class="lbl-mono">362 cyc (page-hit)</text>
+
+      <text x="12" y="62" class="lbl-mono-em">TMA bandwidth:</text>
+      <text x="200" y="62" class="lbl-mono">6.5 B/cyc</text>
+      <text x="400" y="62" class="lbl-mono-em">TC bandwidth:</text>
+      <text x="560" y="62" class="lbl-mono">28.9 B/cyc (4.4x)</text>
+
+      <text x="12" y="82" class="lbl-mono-em">Smem buffers:</text>
+      <text x="200" y="82" class="lbl-mono">3 x tile_size</text>
+      <text x="400" y="82" class="lbl-mono-em">Smem budget:</text>
+      <text x="560" y="82" class="lbl-mono">99 KB (tile max 33 KB)</text>
+
+      <text x="12" y="102" class="lbl-mono-em">LDG path:</text>
+      <text x="200" y="102" class="lbl-mono">126 cyc (smem-RF-TC)</text>
+      <text x="400" y="102" class="lbl-mono-em">cp.async path:</text>
+      <text x="560" y="102" class="lbl-mono">118 cyc (smem-RF-TC)</text>
+
+      <text x="12" y="122" class="lbl-mono-em">Speedup:</text>
+      <text x="200" y="122" class="lbl-mono-em" fill="#15803d">1.92x (3-stage optimal)</text>
+      <text x="400" y="122" class="lbl-mono-em">DRAM hiding:</text>
+      <text x="560" y="122" class="lbl-mono">~64 FMA ops needed</text>
+
+      <text x="12" y="142" class="lbl-mono-em">Sync overhead:</text>
+      <text x="200" y="142" class="lbl-mono-em" fill="#dc2626">34% (546/1615 cyc)</text>
+      <text x="400" y="142" class="lbl-mono-em">4th stage gain:</text>
+      <text x="560" y="142" class="lbl-mono" fill="#5b6679">+5.5% only (diminishing)</text>
+
+      <line x1="12" y1="152" x2="794" y2="152" stroke="#cbd5e1" stroke-width="0.5"/>
+      <text x="12" y="164" class="lbl-mono" fill="#5b6679">Pipeline is load-latency-bound (TMA starvation) not compute-bound in innermost loop</text>
+    </g>
+  </g>
+
+</svg>

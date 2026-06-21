@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 520" role="img"
+     aria-label="SM_120 memory subsystem topology: L1/SMEM → L2 → MC → GDDR7 with latency and bandwidth">
+  <defs>
+    <linearGradient id="smG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#E9F3D2"/><stop offset="1" stop-color="#F4FAE2"/>
+    </linearGradient>
+    <linearGradient id="l2G" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#E0E7FF"/><stop offset="1" stop-color="#EEF2FF"/>
+    </linearGradient>
+    <linearGradient id="mcG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#EDE7FB"/><stop offset="1" stop-color="#F5F1FF"/>
+    </linearGradient>
+    <linearGradient id="dramG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFEDD5"/><stop offset="1" stop-color="#FFF7ED"/>
+    </linearGradient>
+    <marker id="arr" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto">
+      <path d="M0,0 L7,3.5 L0,7 Z" fill="#8e97a5"/>
+    </marker>
+    <style><![CDATA[
+      .ttl{font:600 14px "Fraunces",serif;fill:#0b1220}
+      .sub{font:italic 11px "Fraunces",serif;fill:#5b6679}
+      .lbl{font:600 11px "JetBrains Mono",monospace;fill:#2a3548}
+      .lbl-sm{font:500 10px "JetBrains Mono",monospace;fill:#5b6679}
+      .num{font:600 20px "Fraunces",serif;fill:#0b1220}
+      .num-sm{font:600 14px "Fraunces",serif;fill:#0b1220}
+      .unit{font:500 11px "IBM Plex Sans",sans-serif;fill:#5b6679}
+      .wall{font:600 11px "JetBrains Mono",monospace;fill:#e11d48}
+      .lat{font:600 10.5px "JetBrains Mono",monospace;fill:#6d28d9}
+      .bw{font:500 10px "JetBrains Mono",monospace;fill:#047857}
+    ]]></style>
+  </defs>
+
+  <rect width="1080" height="520" fill="#ffffff"/>
+  <text x="36" y="32" class="ttl">SM_120 Memory Subsystem Topology</text>
+  <text x="36" y="52" class="sub">L1/SMEM (per SM) → L2 unified crossbar (12 partitions, XOR hash) → 12 memory controllers → GDDR7 72 GB</text>
+
+  <!-- ============ Layer 1: SM with L1 + SMEM ============ -->
+  <g transform="translate(180,74)">
+    <rect x="0" y="0" width="720" height="80" rx="12" fill="url(#smG)" stroke="#76b900" stroke-width="1"/>
+    <text x="20" y="22" class="lbl" fill="#5a8e00">SM (×110)</text>
+
+    <!-- L1 box -->
+    <rect x="20" y="30" width="320" height="46" rx="6" fill="#fff" stroke="#76b900" stroke-width="0.7"/>
+    <text x="34" y="56" class="lbl-sm" fill="#5a8e00">L1 Data Cache</text>
+    <text x="170" y="56" class="num-sm" fill="#5a8e00">89 KB</text>
+    <text x="170" y="70" class="lbl-sm" fill="#5a8e00">128B line · fully assoc</text>
+
+    <!-- SMEM box -->
+    <rect x="360" y="30" width="340" height="46" rx="6" fill="#fff" stroke="#76b900" stroke-width="0.7"/>
+    <text x="374" y="56" class="lbl-sm" fill="#5a8e00">Shared Memory</text>
+    <text x="504" y="56" class="num-sm" fill="#5a8e00">100 KB</text>
+    <text x="504" y="70" class="lbl-sm" fill="#5a8e00">32 banks · pipelined</text>
+  </g>
+
+  <!-- Latency annotations: SM internals -->
+  <g transform="translate(910,88)">
+    <text x="0" y="0" class="lat">44 cyc L1 hit</text>
+    <text x="0" y="16" class="lat">34 cyc SMEM</text>
+    <text x="0" y="36" class="bw">116.5 B/cyc/warp (L1)</text>
+  </g>
+
+  <!-- Arrow SM → L2 -->
+  <line x1="540" y1="154" x2="540" y2="188" stroke="#8e97a5" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- Memory wall callout -->
+  <g transform="translate(100,166)">
+    <rect x="0" y="0" width="130" height="24" rx="6" fill="#fff5f7" stroke="#e11d48" stroke-width="0.7"/>
+    <text x="10" y="16" class="wall">MEMORY WALL 8.0×</text>
+    <text x="140" y="16" class="lbl-sm" fill="#e11d48">L1→L2 latency cliff: 44 → 354 cyc</text>
+  </g>
+
+  <!-- ============ Layer 2: L2 Cache ============ -->
+  <g transform="translate(100,210)">
+    <rect x="0" y="0" width="880" height="80" rx="12" fill="url(#l2G)" stroke="#1e40af" stroke-width="1"/>
+    <text x="20" y="22" class="lbl" fill="#1e40af">L2 Cache · Unified Crossbar</text>
+    <text x="20" y="40" class="lbl-sm" fill="#1e40af">XOR-hash set indexing · ~16-way · 128B tag / 32B sector · pseudo-LRU</text>
+
+    <!-- 12 partition boxes -->
+    <g transform="translate(20,50)">
+      <rect x="0"   y="0" width="66" height="22" rx="4" fill="#fff" stroke="#1e40af" stroke-width="0.5"/>
+      <text x="33"  y="15" class="lbl-sm" fill="#1e40af" text-anchor="middle">8 MB</text>
+      <rect x="70"  y="0" width="66" height="22" rx="4" fill="#fff" stroke="#1e40af" stroke-width="0.5"/>
+      <text x="103" y="15" class="lbl-sm" fill="#1e40af" text-anchor="middle">8 MB</text>
+      <rect x="140" y="0" width="66" height="22" rx="4" fill="#fff" stroke="#1e40af" stroke-width="0.5"/>
+      <text x="173" y="15" class="lbl-sm" fill="#1e40af" text-anchor="middle">8 MB</text>
+      <rect x="210" y="0" width="66" height="22" rx="4" fill="#fff" stroke="#1e40af" stroke-width="0.5"/>
+      <text x="243" y="15" class="lbl-sm" fill="#1e40af" text-anchor="middle">8 MB</text>
+      <rect x="280" y="0" width="66" height="22" rx="4" fill="#fff" stroke="#1e40af" stroke-width="0.5"/>
+      <text x="313" y="15" class="lbl-sm" fill="#1e40af" text-anchor="middle">8 MB</text>
+      <rect x="350" y="0" width="66" height="22" rx="4" fill="#fff" stroke="#1e40af" stroke-width="0.5"/>
+      <text x="383" y="15" class="lbl-sm" fill="#1e40af" text-anchor="middle">8 MB</text>
+      <rect x="420" y="0" width="66" height="22" rx="4" fill="#fff" stroke="#1e40af" stroke-width="0.5"/>
+      <text x="453" y="15" class="lbl-sm" fill="#1e40af" text-anchor="middle">8 MB</text>
+      <rect x="490" y="0" width="66" height="22" rx="4" fill="#fff" stroke="#1e40af" stroke-width="0.5"/>
+      <text x="523" y="15" class="lbl-sm" fill="#1e40af" text-anchor="middle">8 MB</text>
+      <rect x="560" y="0" width="66" height="22" rx="4" fill="#fff" stroke="#1e40af" stroke-width="0.5"/>
+      <text x="593" y="15" class="lbl-sm" fill="#1e40af" text-anchor="middle">8 MB</text>
+      <rect x="630" y="0" width="66" height="22" rx="4" fill="#fff" stroke="#1e40af" stroke-width="0.5"/>
+      <text x="663" y="15" class="lbl-sm" fill="#1e40af" text-anchor="middle">8 MB</text>
+      <rect x="700" y="0" width="66" height="22" rx="4" fill="#fff" stroke="#1e40af" stroke-width="0.5"/>
+      <text x="733" y="15" class="lbl-sm" fill="#1e40af" text-anchor="middle">8 MB</text>
+      <rect x="770" y="0" width="66" height="22" rx="4" fill="#fff" stroke="#1e40af" stroke-width="0.5"/>
+      <text x="803" y="15" class="lbl-sm" fill="#1e40af" text-anchor="middle">8 MB</text>
+    </g>
+  </g>
+
+
+  <!-- Arrow L2 → MC -->
+  <line x1="540" y1="290" x2="540" y2="318" stroke="#8e97a5" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- L2→DRAM transition note -->
+  <g transform="translate(100,305)">
+    <text x="0" y="0" class="lbl-sm" fill="#047857">L2→DRAM: only 1.02× latency (transparent)</text>
+  </g>
+
+  <!-- ============ Layer 3: Memory Controllers ============ -->
+  <g transform="translate(100,320)">
+    <rect x="0" y="0" width="880" height="50" rx="10" fill="url(#mcG)" stroke="#6d28d9" stroke-width="0.8"/>
+    <text x="20" y="20" class="lbl" fill="#6d28d9">12 × Memory Controllers · 384-bit aggregate bus</text>
+    <text x="20" y="38" class="lbl-sm" fill="#6d28d9">XOR-hash address interleaving · no partition camping (CV ~2% across 18 strides)</text>
+    <text x="700" y="20" class="lbl" fill="#6d28d9">1344 GB/s theoretical</text>
+    <text x="700" y="38" class="lbl-sm" fill="#6d28d9">28 Gbps/pin · GDDR7</text>
+  </g>
+
+  <!-- Arrow MC → DRAM -->
+  <line x1="540" y1="370" x2="540" y2="398" stroke="#8e97a5" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- ============ Layer 4: GDDR7 DRAM ============ -->
+  <g transform="translate(100,400)">
+    <rect x="0" y="0" width="880" height="80" rx="12" fill="url(#dramG)" stroke="#ea580c" stroke-width="1"/>
+    <text x="20" y="22" class="lbl" fill="#9a3412">GDDR7 DRAM · 72 GB (12 × 6 GB modules)</text>
+    <text x="20" y="40" class="lbl-sm" fill="#9a3412">Closed-page row buffer · 4 bank groups × N banks per channel · 16 channels per MC</text>
+
+    <!-- Key metrics -->
+    <g transform="translate(20,50)">
+      <text x="0" y="14" class="num-sm" fill="#9a3412">362 ± 10 cyc</text>
+      <text x="110" y="14" class="lbl-sm" fill="#9a3412">base latency</text>
+      <text x="260" y="14" class="num-sm" fill="#9a3412">1231 GB/s</text>
+      <text x="360" y="14" class="lbl-sm" fill="#9a3412">measured (91.6%)</text>
+      <text x="530" y="14" class="num-sm" fill="#9a3412">R/W ≈ 1.05×</text>
+      <text x="640" y="14" class="lbl-sm" fill="#9a3412">near-symmetric</text>
+    </g>
+  </g>
+
+
+  <!-- Bottom summary bar -->
+  <g transform="translate(36,496)">
+    <text x="0" y="0" class="lbl-sm">Latency stack: 44 cyc (L1) → 354 cyc (L2, 8.0×) → 362 cyc (DRAM, 1.02×) · Same-bank penalty: +445 cyc at stride &lt; 640 B</text>
+  </g>
+</svg>

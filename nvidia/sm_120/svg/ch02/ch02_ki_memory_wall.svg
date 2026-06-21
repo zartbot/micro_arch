@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 160" role="img"
+     aria-label="KI-2.9: Memory wall is at L1→L2 (8.0x), not L2→DRAM (1.02x)">
+  <defs>
+    <style><![CDATA[
+      .ttl{font:600 13px "Fraunces",serif;fill:#0b1220}
+      .lbl{font:600 11px "JetBrains Mono",monospace;fill:#2a3548}
+      .lbl-sm{font:500 10px "JetBrains Mono",monospace;fill:#5b6679}
+      .num{font:700 15px "JetBrains Mono",monospace}
+      .num-lg{font:700 22px "JetBrains Mono",monospace}
+      .stage{font:600 10px "JetBrains Mono",monospace;fill:#fff}
+      .insight{font:600 10.5px "IBM Plex Sans",sans-serif;fill:#9f1239}
+    ]]></style>
+  </defs>
+  <rect width="1080" height="160" fill="#ffffff"/>
+  <text x="36" y="22" class="ttl">KI-2.9: The "Memory Wall" Location on SM_120 — L1→L2 is 8.0x; L2→DRAM is only 1.02x</text>
+
+  <!-- Latency ladder with cliff indicators -->
+  <g transform="translate(36,40)">
+    <!-- L1 box -->
+    <rect x="0" y="0" width="180" height="50" rx="8" fill="#D1FAE5" stroke="#059669" stroke-width="1.2"/>
+    <text x="90" y="20" class="lbl" fill="#065F46" text-anchor="middle">L1 Cache</text>
+    <text x="90" y="40" class="num-lg" fill="#059669" text-anchor="middle">44 cyc</text>
+
+    <!-- CLIFF arrow (8.0x) -->
+    <rect x="195" y="8" width="90" height="34" rx="4" fill="#DC2626"/>
+    <text x="240" y="22" class="stage" text-anchor="middle">MEMORY</text>
+    <text x="240" y="36" class="stage" text-anchor="middle">WALL 8.0×</text>
+
+    <!-- L2 box -->
+    <rect x="300" y="0" width="180" height="50" rx="8" fill="#DBEAFE" stroke="#2563EB" stroke-width="1.2"/>
+    <text x="390" y="20" class="lbl" fill="#1D4ED8" text-anchor="middle">L2 Cache</text>
+    <text x="390" y="40" class="num-lg" fill="#2563EB" text-anchor="middle">354 cyc</text>
+
+    <!-- Tiny arrow (1.02x) -->
+    <rect x="495" y="14" width="70" height="22" rx="4" fill="#059669"/>
+    <text x="530" y="29" class="stage" text-anchor="middle">1.02×</text>
+
+    <!-- DRAM box -->
+    <rect x="580" y="0" width="180" height="50" rx="8" fill="#FEF3C7" stroke="#D97706" stroke-width="1.2"/>
+    <text x="670" y="20" class="lbl" fill="#92400E" text-anchor="middle">GDDR7 DRAM</text>
+    <text x="670" y="40" class="num-lg" fill="#D97706" text-anchor="middle">362 cyc</text>
+
+    <!-- Annotation -->
+    <text x="810" y="20" class="lbl-sm">DRAM ≈ L2 for random</text>
+    <text x="810" y="36" class="lbl-sm">access (near-transparent)</text>
+  </g>
+
+  <!-- Bottom insight -->
+  <g transform="translate(36,105)">
+    <rect width="1008" height="40" rx="6" fill="#FEF2F2" stroke="#DC2626" stroke-width="0.8"/>
+    <text x="20" y="16" class="insight">IMPLICATION: Optimize for L1 residency (WS &lt; 89 KB) FIRST. DRAM bandwidth (not latency) is the secondary concern.</text>
+    <text x="20" y="32" class="lbl-sm">L2 serves as bandwidth amplifier (4.17× over DRAM) not latency reducer. The 96 MB L2 makes random DRAM look like "warm L2."</text>
+  </g>
+</svg>

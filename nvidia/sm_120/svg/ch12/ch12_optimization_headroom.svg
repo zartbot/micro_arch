@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 380" role="img"
+     aria-label="ptxas optimization headroom map on SM_120 — 4 residual gaps after all microarchitecture-aware decisions">
+  <defs>
+    <linearGradient id="hmmaG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FEF3C7"/><stop offset="1" stop-color="#FFFBEB"/>
+    </linearGradient>
+    <linearGradient id="vecG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#E0E7FF"/><stop offset="1" stop-color="#EEF2FF"/>
+    </linearGradient>
+    <linearGradient id="spillG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFE4E6"/><stop offset="1" stop-color="#FFF1F2"/>
+    </linearGradient>
+    <linearGradient id="helperG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#EDE7FB"/><stop offset="1" stop-color="#F5F1FF"/>
+    </linearGradient>
+    <style><![CDATA[
+      .ttl{font:600 14px "Fraunces",serif;fill:#0b1220}
+      .sub{font:italic 11px "Fraunces",serif;fill:#5b6679}
+      .lbl{font:600 11px "JetBrains Mono",monospace;fill:#2a3548}
+      .lbl-sm{font:500 10px "JetBrains Mono",monospace;fill:#5b6679}
+      .cardT{font:700 12px "Fraunces",serif}
+      .gain{font:700 22px "Fraunces",serif}
+      .gainSub{font:500 10px "JetBrains Mono",monospace}
+    ]]></style>
+  </defs>
+  <rect width="1080" height="380" fill="#fcfbf6"/>
+  <text x="36" y="32" class="ttl">Optimization Headroom Map · 4 Bottlenecks ptxas Cannot Auto-Resolve</text>
+  <text x="36" y="52" class="sub">What ptxas already does right: parity allocation, .reuse for ALU, REDG vs ATOMG, descriptor lowering · 4 residual gaps require developer intervention</text>
+
+  <!-- 4 cards -->
+  <g transform="translate(36,80)">
+    <!-- Card 1: HMMA stall 11→12 -->
+    <g>
+      <rect x="0" y="0" width="244" height="240" rx="8" fill="url(#hmmaG)" stroke="#b45309" stroke-width="1"/>
+      <text x="16" y="22" class="cardT" fill="#92400e">① HMMA Stall Calibration</text>
+      <text x="16" y="40" class="lbl-sm" fill="#92400e">fixed via CuAssembler patch</text>
+
+      <text x="122" y="86" text-anchor="middle" class="gain" fill="#b45309">+6.1%</text>
+      <text x="122" y="106" text-anchor="middle" class="gainSub" fill="#92400e">throughput</text>
+
+      <g transform="translate(16,128)">
+        <text x="0" y="0" class="lbl-sm" fill="#92400e">ptxas: stall=11 → 34.34 cyc</text>
+        <text x="0" y="16" class="lbl-sm" fill="#92400e">CuAsm: stall=12 → 32.23 cyc</text>
+        <text x="0" y="40" class="lbl" fill="#92400e">root cause:</text>
+        <text x="0" y="56" class="lbl-sm" fill="#92400e">1-cyc TC writeback</text>
+        <text x="0" y="70" class="lbl-sm" fill="#92400e">granularity unmodeled</text>
+        <text x="0" y="92" class="lbl-sm" fill="#5b6679">[S21/case_82]</text>
+      </g>
+    </g>
+
+    <!-- Card 2: No auto-vec -->
+    <g transform="translate(256,0)">
+      <rect width="244" height="240" rx="8" fill="url(#vecG)" stroke="#1e40af" stroke-width="1"/>
+      <text x="16" y="22" class="cardT" fill="#1e40af">② No Auto-Vectorization</text>
+      <text x="16" y="40" class="lbl-sm" fill="#1e40af">user must use float4/int4</text>
+
+      <text x="122" y="86" text-anchor="middle" class="gain" fill="#1e40af">+27-31%</text>
+      <text x="122" y="106" text-anchor="middle" class="gainSub" fill="#1e40af">L2-resident</text>
+
+      <g transform="translate(16,128)">
+        <text x="0" y="0" class="lbl-sm" fill="#1e40af">8× scalar LDG → 8 LDG.E</text>
+        <text x="0" y="16" class="lbl-sm" fill="#1e40af">manual float4 → 2× LDG.128</text>
+        <text x="0" y="40" class="lbl" fill="#1e40af">root cause:</text>
+        <text x="0" y="56" class="lbl-sm" fill="#1e40af">ptxas never merges</text>
+        <text x="0" y="70" class="lbl-sm" fill="#1e40af">contiguous scalar loads</text>
+        <text x="0" y="92" class="lbl-sm" fill="#5b6679">[S21/case_116-117]</text>
+      </g>
+    </g>
+
+    <!-- Card 3: Spill not vectorized -->
+    <g transform="translate(512,0)">
+      <rect width="244" height="240" rx="8" fill="url(#spillG)" stroke="#9f1239" stroke-width="1"/>
+      <text x="16" y="22" class="cardT" fill="#9f1239">③ Spill Not Vectorized</text>
+      <text x="16" y="40" class="lbl-sm" fill="#9f1239">avoid spill via tile tuning</text>
+
+      <text x="122" y="86" text-anchor="middle" class="gain" fill="#9f1239">4×</text>
+      <text x="122" y="106" text-anchor="middle" class="gainSub" fill="#9f1239">I-cache pressure</text>
+
+      <g transform="translate(16,128)">
+        <text x="0" y="0" class="lbl-sm" fill="#9f1239">forced spill: 233 STL scalar</text>
+        <text x="0" y="16" class="lbl-sm" fill="#9f1239">ideal: 58 STL.128 vector</text>
+        <text x="0" y="40" class="lbl" fill="#9f1239">root cause:</text>
+        <text x="0" y="56" class="lbl-sm" fill="#9f1239">ptxas spill emits only</text>
+        <text x="0" y="70" class="lbl-sm" fill="#9f1239">scalar STL/LDL.LU</text>
+        <text x="0" y="92" class="lbl-sm" fill="#5b6679">[S21/case_113-114]</text>
+      </g>
+    </g>
+
+    <!-- Card 4: Helper fn cost -->
+    <g transform="translate(768,0)">
+      <rect width="240" height="240" rx="8" fill="url(#helperG)" stroke="#6d28d9" stroke-width="1"/>
+      <text x="16" y="22" class="cardT" fill="#5b21b6">④ Helper-Function Overhead</text>
+      <text x="16" y="40" class="lbl-sm" fill="#5b21b6">replace with inline PTX</text>
+
+      <text x="120" y="86" text-anchor="middle" class="gain" fill="#5b21b6">2.16×</text>
+      <text x="120" y="106" text-anchor="middle" class="gainSub" fill="#5b21b6">slowdown</text>
+
+      <g transform="translate(16,128)">
+        <text x="0" y="0" class="lbl-sm" fill="#5b21b6">__cuda_sm20_rem_u16: 174 cyc</text>
+        <text x="0" y="16" class="lbl-sm" fill="#5b21b6">inline PTX equiv: 80 cyc</text>
+        <text x="0" y="40" class="lbl" fill="#5b21b6">root cause:</text>
+        <text x="0" y="56" class="lbl-sm" fill="#5b21b6">int div = 75 cyc = 19× FFMA</text>
+        <text x="0" y="70" class="lbl-sm" fill="#5b21b6">power-of-2 only 12 cyc</text>
+        <text x="0" y="92" class="lbl-sm" fill="#5b6679">[S21/case_94-95]</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- bottom summary -->
+  <g transform="translate(36,338)">
+    <text x="0" y="0" class="lbl" fill="#0b1220">Summary</text>
+    <text x="64" y="0" class="lbl-sm">ptxas is near-optimal in microarch awareness — only ① is a SASS-level patch (no source change); ②③④ require kernel-design intervention</text>
+  </g>
+</svg>

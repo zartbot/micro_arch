@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 700" role="img"
+     aria-label="SM_120 Complete Memory Latency Ladder — register file to GDDR7 with measured latency, capacity, and bandwidth at each level">
+  <defs>
+    <marker id="aD" markerWidth="7" markerHeight="6" refX="5" refY="3" orient="auto">
+      <polygon points="0,0 7,3 0,6" fill="#5b6679"/>
+    </marker>
+    <marker id="aR" markerWidth="7" markerHeight="6" refX="5" refY="3" orient="auto">
+      <polygon points="0,0 7,3 0,6" fill="#9f1239"/>
+    </marker>
+    <style><![CDATA[
+      .ttl{font:600 14px "Fraunces",serif;fill:#0b1220}
+      .sub{font:italic 11px "Fraunces",serif;fill:#5b6679}
+      .lvl-name{font:700 12px "JetBrains Mono",monospace}
+      .lvl-lat{font:700 11px "JetBrains Mono",monospace;fill:#fff}
+      .lvl-cap{font:600 10.5px "JetBrains Mono",monospace;fill:#2a3548}
+      .lvl-desc{font:500 9.5px "JetBrains Mono",monospace;fill:#5b6679}
+      .bw-val{font:600 10.5px "JetBrains Mono",monospace}
+      .bw-lbl{font:500 9px "JetBrains Mono",monospace;fill:#5b6679}
+      .delta{font:700 10px "JetBrains Mono",monospace;fill:#9f1239}
+      .delta-sub{font:italic 9px "Fraunces",serif;fill:#9f1239}
+      .wall{font:700 11px "JetBrains Mono",monospace;fill:#e11d48}
+      .ann{font:italic 10px "Fraunces",serif;fill:#5b6679}
+      .hdr{font:600 9.5px "JetBrains Mono",monospace;fill:#8e97a5;letter-spacing:0.1em;text-transform:uppercase}
+    ]]></style>
+  </defs>
+  <rect width="1080" height="700" fill="#ffffff"/>
+  <text x="36" y="30" class="ttl">SM_120 Complete Memory Latency Ladder</text>
+  <text x="36" y="48" class="sub">Measured pointer-chase latency, effective capacity, and peak bandwidth at each hierarchy level (2.1 GHz base clock)</text>
+
+  <!-- Column headers -->
+  <text x="36" y="72" class="hdr">Level</text>
+  <text x="360" y="72" class="hdr">Latency</text>
+  <text x="460" y="72" class="hdr">Capacity</text>
+  <text x="640" y="72" class="hdr">Scope</text>
+  <text x="850" y="72" class="hdr">Peak BW (1-warp)</text>
+  <text x="970" y="72" class="hdr">BW (SM-agg)</text>
+
+  <!-- ═══════════ Level 0: Register File ═══════════ -->
+  <rect x="36" y="82" width="1028" height="52" rx="8" fill="#f6f4ed" stroke="#e6e4da"/>
+  <text x="56" y="106" class="lvl-name" fill="#5b6679">Register File (RF)</text>
+  <rect x="360" y="94" width="60" height="22" rx="11" fill="#8e97a5"/>
+  <text x="390" y="109" class="lvl-lat" text-anchor="middle">0 cyc</text>
+  <text x="460" y="109" class="lvl-cap">256 KB/SM</text>
+  <text x="640" y="109" class="lvl-desc">per-thread private</text>
+  <text x="850" y="109" class="bw-val" fill="#5b6679">80.3 B/cyc</text>
+  <text x="970" y="109" class="bw-lbl">ILP-limited</text>
+  <text x="56" y="126" class="lvl-desc">4×32-bit banks, 0-cycle forwarding to ALU/TC</text>
+
+  <!-- Arrow RF → Smem -->
+  <line x1="160" y1="134" x2="160" y2="152" stroke="#5b6679" stroke-width="1.5" marker-end="url(#aD)"/>
+
+  <!-- ═══════════ Level 1: Shared Memory ═══════════ -->
+  <rect x="36" y="156" width="1028" height="52" rx="8" fill="#e9f3d2" stroke="#5a8e00" stroke-width="0.8"/>
+  <text x="56" y="180" class="lvl-name" fill="#3d6b00">Shared Memory (Smem)</text>
+  <rect x="360" y="168" width="72" height="22" rx="11" fill="#5a8e00"/>
+  <text x="396" y="183" class="lvl-lat" text-anchor="middle">34 cyc</text>
+  <text x="460" y="183" class="lvl-cap">99 KB/block</text>
+  <text x="640" y="183" class="lvl-desc">per-CTA, 32 banks × 4B</text>
+  <text x="850" y="183" class="bw-val" fill="#5a8e00">30.2 B/cyc</text>
+  <text x="970" y="183" class="bw-val" fill="#5a8e00">64 B/cyc @8W</text>
+  <text x="56" y="200" class="lvl-desc">Pipelined bank conflicts (1.43x worst), XOR swizzle for ldmatrix</text>
+
+  <!-- DSMEM branch (side) -->
+  <line x1="310" y1="182" x2="340" y2="182" stroke="#6d28d9" stroke-width="1.2"/>
+  <line x1="340" y1="182" x2="340" y2="218" stroke="#6d28d9" stroke-width="1.2" marker-end="url(#aD)"/>
+  <rect x="260" y="220" width="420" height="45" rx="6" fill="#ede7fb" stroke="#6d28d9" stroke-width="0.8"/>
+  <text x="280" y="238" class="lvl-name" fill="#6d28d9" font-size="10.5">DSMEM (ld.shared::cluster)</text>
+  <rect x="280" y="244" width="70" height="16" rx="8" fill="#6d28d9"/>
+  <text x="315" y="256" class="lvl-lat" text-anchor="middle" font-size="9">220 cyc</text>
+  <text x="360" y="256" class="lvl-desc">99 KB × cluster_size · 6.5x local smem · 0.15 B/cyc</text>
+
+  <!-- Arrow Smem → L1 -->
+  <line x1="160" y1="208" x2="160" y2="272" stroke="#5b6679" stroke-width="1.5" marker-end="url(#aD)"/>
+  <text x="172" y="244" class="delta">+10 cyc</text>
+  <text x="172" y="256" class="delta-sub">(1.29x)</text>
+
+  <!-- ═══════════ Level 2: L1 Data Cache ═══════════ -->
+  <rect x="36" y="276" width="1028" height="52" rx="8" fill="#e9f3d2" stroke="#5a8e00" stroke-width="0.8"/>
+  <text x="56" y="300" class="lvl-name" fill="#3d6b00">L1 Data Cache</text>
+  <rect x="360" y="288" width="72" height="22" rx="11" fill="#3d6b00"/>
+  <text x="396" y="303" class="lvl-lat" text-anchor="middle">44 cyc</text>
+  <text x="460" y="303" class="lvl-cap">89 KB/SM</text>
+  <text x="640" y="303" class="lvl-desc">unified tex/NC, full-assoc</text>
+  <text x="850" y="303" class="bw-val" fill="#3d6b00">116.5 B/cyc</text>
+  <text x="970" y="303" class="bw-val" fill="#3d6b00">128 B/cyc @16W</text>
+  <text x="56" y="320" class="lvl-desc">Shares 100 KB SRAM with smem (1:1 carveout); +10 cyc coherence overhead vs smem</text>
+
+  <!-- ═══════════ MEMORY WALL callout ═══════════ -->
+  <line x1="160" y1="328" x2="160" y2="394" stroke="#e11d48" stroke-width="2.5" stroke-dasharray="4 3" marker-end="url(#aR)"/>
+  <rect x="170" y="342" width="130" height="38" rx="6" fill="#ffe4e6" stroke="#e11d48" stroke-width="1.2"/>
+  <text x="235" y="358" class="wall" text-anchor="middle">8.0× CLIFF</text>
+  <text x="235" y="372" class="delta-sub" text-anchor="middle">THE MEMORY WALL</text>
+
+  <!-- Constant cache (smaller, side note) -->
+  <rect x="620" y="340" width="250" height="42" rx="5" fill="#f6f4ed" stroke="#e6e4da"/>
+  <text x="630" y="358" class="lvl-desc">Constant Cache: 35 cyc · 2-4 KB</text>
+  <text x="630" y="370" class="lvl-desc">broadcast-only, serializes on divergence</text>
+
+  <!-- ═══════════ Level 3: L2 Cache ═══════════ -->
+  <rect x="36" y="398" width="1028" height="52" rx="8" fill="#ffedd5" stroke="#ea580c" stroke-width="0.8"/>
+  <text x="56" y="422" class="lvl-name" fill="#9a3412">L2 Cache</text>
+  <rect x="360" y="410" width="76" height="22" rx="11" fill="#ea580c"/>
+  <text x="398" y="425" class="lvl-lat" text-anchor="middle">354 cyc</text>
+  <text x="460" y="425" class="lvl-cap">96 MB</text>
+  <text x="640" y="425" class="lvl-desc">12 partitions, XOR hash index</text>
+  <text x="850" y="425" class="bw-val" fill="#ea580c">71.2 B/cyc</text>
+  <text x="970" y="425" class="bw-val" fill="#ea580c">13,768 GB/s</text>
+  <text x="56" y="442" class="lvl-desc">GPU-scope coherence point; 4.17x BW amplification over DRAM; pseudo-LRU eviction</text>
+
+  <!-- Arrow L2 → DRAM -->
+  <line x1="160" y1="450" x2="160" y2="498" stroke="#5b6679" stroke-width="1.5" marker-end="url(#aD)"/>
+  <text x="172" y="470" class="delta">+8 cyc</text>
+  <text x="172" y="482" class="delta-sub">(1.02x only!)</text>
+
+  <!-- ═══════════ Level 4: GDDR7 DRAM ═══════════ -->
+  <rect x="36" y="502" width="1028" height="52" rx="8" fill="#ffe4e6" stroke="#e11d48" stroke-width="0.8"/>
+  <text x="56" y="526" class="lvl-name" fill="#9f1239">GDDR7 DRAM</text>
+  <rect x="360" y="514" width="76" height="22" rx="11" fill="#e11d48"/>
+  <text x="398" y="529" class="lvl-lat" text-anchor="middle">362 cyc</text>
+  <text x="460" y="529" class="lvl-cap">72 GB</text>
+  <text x="640" y="529" class="lvl-desc">384-bit, 12 channels, closed-page</text>
+  <text x="850" y="529" class="bw-val" fill="#e11d48">--</text>
+  <text x="970" y="529" class="bw-val" fill="#e11d48">1231 GB/s</text>
+  <text x="56" y="546" class="lvl-desc">1344 GB/s theoretical; bank-group interleave 128B; same-bank serialization +445 cyc at stride &lt; 640B</text>
+
+  <!-- ═══════════ KEY INSIGHT BANNER ═══════════ -->
+  <rect x="36" y="572" width="1028" height="64" rx="10" fill="#fcfbf6" stroke="#e6e4da"/>
+  <text x="56" y="594" class="wall">Key architectural insight: L1→L2 is the true memory wall (8.0x), NOT L2→DRAM (1.02x).</text>
+  <text x="56" y="612" class="ann">The L2→DRAM transition adds only 8 cycles (362 vs 354), but L1→L2 jumps 310 cycles (354 vs 44). Optimization priority:</text>
+  <text x="56" y="628" class="ann">maximize L1 hit rate (89 KB working set) and use smem staging to avoid the 8x cliff. L2→DRAM BW is the bottleneck, not latency.</text>
+
+  <!-- ═══════════ LATENCY BAR (visual scale at bottom) ═══════════ -->
+  <g transform="translate(36,648)">
+    <text x="0" y="12" class="hdr">latency scale (log)</text>
+    <rect x="130" y="4" width="6" height="14" rx="3" fill="#8e97a5"/>
+    <text x="142" y="14" class="bw-lbl">0</text>
+    <rect x="170" y="4" width="30" height="14" rx="3" fill="#5a8e00"/>
+    <text x="206" y="14" class="bw-lbl">34-44</text>
+    <rect x="250" y="4" width="80" height="14" rx="3" fill="#ea580c"/>
+    <text x="336" y="14" class="bw-lbl">354</text>
+    <rect x="370" y="4" width="84" height="14" rx="3" fill="#e11d48"/>
+    <text x="460" y="14" class="bw-lbl">362 cyc</text>
+    <text x="510" y="14" class="ann">← 8.0x gap between green and orange is the dominant performance cliff</text>
+  </g>
+
+  <!-- Source -->
+  <text x="36" y="688" class="ann">Sources: S8/case_52,1,5,2,3,19,21,22,53,81,93,168 · S16/case_3,4 · S26/case_11</text>
+</svg>

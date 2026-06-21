@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 420" role="img"
+     aria-label="KI-1.2: Block-Scale MX MMA Zero-Cost — tensor core inline scale-factor application via barrel-shift sideband">
+<defs>
+  <marker id="ar" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto">
+    <path d="M0,0 L7,3.5 L0,7 z" fill="#475569"/>
+  </marker>
+  <style><![CDATA[
+    .ttl{font:700 14px "Fraunces",serif;fill:#0b1220}
+    .sub{font:italic 11px "Fraunces",serif;fill:#5b6679}
+    .lbl{font:600 11px "JetBrains Mono",monospace;fill:#2a3548}
+    .lbl-sm{font:500 9.5px "JetBrains Mono",monospace;fill:#5b6679}
+    .lbl-xs{font:400 8.5px "JetBrains Mono",monospace;fill:#6b7280}
+    .perf{font:700 10px "JetBrains Mono",monospace;fill:#9f1239}
+    .badge{font:700 9px "JetBrains Mono",monospace;fill:#ffffff}
+    .section{font:600 12px "IBM Plex Sans",sans-serif}
+  ]]></style>
+</defs>
+<rect width="1100" height="420" fill="#ffffff"/>
+<text x="36" y="28" class="ttl">KI-1.2: Block-Scale (MX) MMA — Zero-Cost Hardware Scale-Factor Integration</text>
+<text x="36" y="46" class="sub">Source: S9/case_48-63 (dense QMMA), S9/case_91 (QMMA.SF) · Patent US12141082</text>
+
+<!-- === Tensor Core Pipeline Diagram === -->
+<g transform="translate(36,66)">
+  <rect x="0" y="0" width="700" height="330" rx="10" fill="#faf5ff" stroke="#7c3aed" stroke-width="1.2"/>
+  <text x="350" y="22" class="section" text-anchor="middle" fill="#6d28d9">Tensor Core Reduction Tree (per SMSP)</text>
+
+  <!-- Input operands -->
+  <rect x="20" y="40" width="140" height="50" rx="6" fill="#e0e7ff" stroke="#4338ca" stroke-width="0.8"/>
+  <text x="90" y="60" class="lbl" text-anchor="middle" fill="#3730a3">A Fragments</text>
+  <text x="90" y="76" class="lbl-xs" text-anchor="middle">FP8/FP6/FP4 data</text>
+
+  <rect x="180" y="40" width="140" height="50" rx="6" fill="#e0e7ff" stroke="#4338ca" stroke-width="0.8"/>
+  <text x="250" y="60" class="lbl" text-anchor="middle" fill="#3730a3">B Fragments</text>
+  <text x="250" y="76" class="lbl-xs" text-anchor="middle">FP8/FP6/FP4 data</text>
+
+  <!-- Scale factor sideband (the key insight) -->
+  <rect x="400" y="40" width="270" height="50" rx="6" fill="#fef3c7" stroke="#b45309" stroke-width="1.2"/>
+  <text x="535" y="58" class="lbl" text-anchor="middle" fill="#92400e">Scale Factors (ue8m0)</text>
+  <text x="535" y="76" class="lbl-sm" text-anchor="middle">scaleA + scaleB · sideband path</text>
+
+  <!-- Dot product stage -->
+  <path d="M90 90 L180 130" stroke="#475569" stroke-width="1.2" fill="none" marker-end="url(#ar)"/>
+  <path d="M250 90 L180 130" stroke="#475569" stroke-width="1.2" fill="none" marker-end="url(#ar)"/>
+  <rect x="120" y="130" width="200" height="40" rx="6" fill="#ffffff" stroke="#7c3aed" stroke-width="1"/>
+  <text x="220" y="148" class="lbl" text-anchor="middle" fill="#6d28d9">Dot Product Units</text>
+  <text x="220" y="162" class="lbl-xs" text-anchor="middle">element-wise multiply</text>
+
+  <!-- Reduction tree -->
+  <path d="M220 170 L220 190" stroke="#475569" stroke-width="1.2" fill="none" marker-end="url(#ar)"/>
+  <rect x="100" y="194" width="240" height="40" rx="6" fill="#ffffff" stroke="#7c3aed" stroke-width="1"/>
+  <text x="220" y="212" class="lbl" text-anchor="middle" fill="#6d28d9">Reduction Tree (FP32 accum)</text>
+  <text x="220" y="226" class="lbl-xs" text-anchor="middle">partial products → summation</text>
+
+  <!-- Scale application (inline, zero cost) -->
+  <path d="M535 90 L400 214" stroke="#b45309" stroke-width="2" stroke-dasharray="6 3" fill="none" marker-end="url(#ar)"/>
+  <text x="480" y="160" class="perf" transform="rotate(-40, 480, 150)">barrel-shift</text>
+
+  <!-- Merge point -->
+  <rect x="100" y="250" width="440" height="40" rx="6" fill="#f5f3ff" stroke="#7c3aed" stroke-width="1.2"/>
+  <text x="320" y="268" class="lbl" text-anchor="middle" fill="#6d28d9">Accumulator + Inline Scale (shift during carry-propagation)</text>
+  <text x="320" y="282" class="lbl-sm" text-anchor="middle">Zero additional pipeline stages — shift ∥ carry</text>
+
+  <!-- Output -->
+  <path d="M320 290 L320 310" stroke="#475569" stroke-width="1.2" fill="none" marker-end="url(#ar)"/>
+  <rect x="240" y="312" width="160" height="30" rx="5" fill="#dcfce7" stroke="#16a34a" stroke-width="0.8"/>
+  <text x="320" y="332" class="lbl" text-anchor="middle" fill="#15803d">FP32 Result</text>
+</g>
+
+<!-- === Latency Comparison === -->
+<g transform="translate(770,66)">
+  <rect x="0" y="0" width="290" height="330" rx="10" fill="#f8fafc" stroke="#334155" stroke-width="1"/>
+  <text x="145" y="22" class="section" text-anchor="middle" fill="#1e3a5f">Measured Latency</text>
+
+  <!-- Dense QMMA bar -->
+  <text x="20" y="56" class="lbl-sm">Dense QMMA:</text>
+  <rect x="20" y="62" width="230" height="24" rx="4" fill="#e0e7ff" stroke="#4338ca" stroke-width="0.6"/>
+  <rect x="20" y="62" width="230" height="24" rx="4" fill="#818cf8" opacity="0.3"/>
+  <text x="135" y="78" class="perf" text-anchor="middle">15.88 cyc/mma</text>
+
+  <!-- QMMA.SF bar (same length!) -->
+  <text x="20" y="108" class="lbl-sm">QMMA.SF (MX block-scale):</text>
+  <rect x="20" y="114" width="226" height="24" rx="4" fill="#fef3c7" stroke="#b45309" stroke-width="0.6"/>
+  <rect x="20" y="114" width="226" height="24" rx="4" fill="#fbbf24" opacity="0.3"/>
+  <text x="133" y="130" class="perf" text-anchor="middle">15.59 cyc/mma</text>
+
+  <!-- OMMA.SF bar -->
+  <text x="20" y="160" class="lbl-sm">OMMA.SF (FP4 MX):</text>
+  <rect x="20" y="166" width="226" height="24" rx="4" fill="#dcfce7" stroke="#16a34a" stroke-width="0.6"/>
+  <rect x="20" y="166" width="226" height="24" rx="4" fill="#4ade80" opacity="0.3"/>
+  <text x="133" y="182" class="perf" text-anchor="middle">15.59 cyc/mma</text>
+
+  <!-- Delta annotation -->
+  <rect x="20" y="210" width="250" height="100" rx="6" fill="#f0fdf4" stroke="#bbf7d0"/>
+  <text x="35" y="230" class="lbl" fill="#15803d">Delta: 0.29 cyc (1.8%)</text>
+  <text x="35" y="250" class="lbl-sm">Within measurement noise</text>
+  <text x="35" y="270" class="lbl-sm">Latency: identical 29 cyc</text>
+  <text x="35" y="290" class="lbl-sm">Scale reg pressure: zero extra</text>
+  <text x="35" y="306" class="perf">CONCLUSION: ZERO COST</text>
+</g>
+</svg>

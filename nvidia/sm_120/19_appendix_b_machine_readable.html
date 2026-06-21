@@ -1,0 +1,1006 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>
+      Appendix B — Machine-Readable Parameters · SM_120 Microarch Reference
+    </title>
+    <link rel="stylesheet" href="assets/css/style.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css"
+      integrity="sha384-nB0miv6/jRmo5UMMR1wu3Gz6NLsoTkbqJghGIsx//Rlm+ZU03BU6SQNC66uf4l5+"
+      crossorigin="anonymous"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/styles/atom-one-light.min.css"
+    />
+    <style>
+      /* protect non-color overrides over hljs theme */
+      pre code.hljs {
+        background: transparent !important;
+        padding: 0 !important;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="shell">
+      <aside class="toc">
+        <a class="toc-back" href="index.html">← Index</a>
+        <div class="toc-brand">
+          SM_120 <span class="accent">GB202</span> · <em>Microarch</em>
+        </div>
+        <span class="toc-tag">FINAL REPORT · 2026</span>
+        <h4>All Chapters</h4>
+        <a href="01_architecture_overview.html">01 · Architecture Overview</a>
+        <a href="02_memory_subsystem.html">02 · Memory Subsystem</a>
+        <a href="03_sm_microarchitecture.html">03 · SM Microarchitecture</a>
+        <a href="04_tensorcore_architecture.html"
+          >04 · TensorCore Architecture</a
+        >
+        <a href="05_instruction_level_characterization.html"
+          >05 · Instruction-Level Characterization</a
+        >
+        <a href="06_on_chip_network_async.html"
+          >06 · On-Chip Network &amp; Async</a
+        >
+        <a href="07_warp_scheduler_control.html"
+          >07 · Warp Scheduler &amp; Control</a
+        >
+        <a href="08_workload_analysis.html">08 · Workload Analysis</a>
+        <a href="09_power_thermal_efficiency.html"
+          >09 · Power, Thermal &amp; Efficiency</a
+        >
+        <a href="10_system_level_multi_gpu.html"
+          >10 · System-Level &amp; Multi-GPU</a
+        >
+        <a href="11_optimization_guidance.html">11 · Optimization Guidance</a>
+        <a href="12_ptxas_compiler_behavior.html"
+          >12 · ptxas Compiler Behavior</a
+        >
+        <a href="13_unified_performance_model.html"
+          >13 · Unified Performance Model</a
+        >
+        <a href="14_sm100_to_sm120_porting_guide.html"
+          >14 · SM_100 → SM_120 Porting Guide</a
+        >
+        <a href="15_agent_ground_truth.html">15 · Agent Ground Truth</a>
+        <a href="16_open_questions.html">16 · Open Questions</a>
+        <a href="17_cross_reference_map.html">17 · Cross-Reference Map</a>
+        <a href="18_appendix_a_test_coverage.html"
+          >18 · Appendix A — Test Coverage</a
+        >
+        <a
+          href="19_appendix_b_machine_readable.html"
+          style="font-weight: 600; color: var(--ink)"
+          >19 · Appendix B — Machine-Readable Parameters</a
+        >
+        <a href="20_appendix_c_methodology.html"
+          >20 · Appendix C — Measurement Methodology</a
+        >
+      </aside>
+      <main class="content">
+        <header class="hero">
+          <div class="hero-eyebrow">
+            <span class="pulse"></span>APPENDIX 19 · SM_120 · GB202 BLACKWELL
+          </div>
+          <h1 class="hero-title">Appendix B — Machine-Readable Parameters</h1>
+          <p class="lede">
+            This appendix presents all empirically measured SM_120
+            microarchitectural parameters in a machine-parseable format suitable
+            for consumption by cycle-level simulators, analytical performance
+            models, compiler heuristics, and automated kernel optimization
+            agents. Parameters are organized by subsystem and include source
+            citations for traceability.
+          </p>
+        </header>
+
+        <h2 class="ch-title" id="b-1-metadata">B.1 Metadata</h2>
+        <pre><code class="language-json">{
+  &quot;metadata&quot;: {
+    &quot;device&quot;: &quot;RTX PRO 5000 72GB&quot;,
+    &quot;architecture&quot;: &quot;SM_120&quot;,
+    &quot;die&quot;: &quot;GB202&quot;,
+    &quot;family&quot;: &quot;Blackwell&quot;,
+    &quot;measurement_date&quot;: &quot;2026-06&quot;,
+    &quot;total_test_cases&quot;: 1542,
+    &quot;pass_rate&quot;: 0.985,
+    &quot;measurement_tool&quot;: &quot;inline PTX %clock64 with overhead subtraction&quot;,
+    &quot;clock_mode&quot;: &quot;fixed via nvidia-smi -lgc&quot;
+  }
+}</code></pre>
+        <hr />
+        <h2 class="ch-title" id="b-2-topology-parameters">
+          B.2 Topology Parameters
+        </h2>
+        <pre><code class="language-json">{
+  &quot;topology&quot;: {
+    &quot;sm_count&quot;: 110,
+    &quot;subcores_per_sm&quot;: 4,
+    &quot;gpcs&quot;: 11,
+    &quot;sms_per_gpc&quot;: 10,
+    &quot;tpcs_per_gpc&quot;: 5,
+    &quot;sms_per_tpc&quot;: 2,
+    &quot;warps_per_sm&quot;: 48,
+    &quot;warps_per_subcore&quot;: 12,
+    &quot;threads_per_warp&quot;: 32,
+    &quot;max_threads_per_sm&quot;: 1536,
+    &quot;max_blocks_per_sm&quot;: 24,
+    &quot;max_threads_per_block&quot;: 1024,
+    &quot;cta_distribution&quot;: &quot;round_robin_stride_20&quot;,
+    &quot;sources&quot;: {
+      &quot;sm_count&quot;: &quot;<span class="cite">[S0/case_1, S2/case_2.3#1]</span>&quot;,
+      &quot;subcores_per_sm&quot;: &quot;<span class="cite">[S1/case_2]</span>&quot;,
+      &quot;gpcs&quot;: &quot;<span class="cite">[S3/case_5]</span>&quot;,
+      &quot;sms_per_gpc&quot;: &quot;<span class="cite">[S3/case_5]</span>&quot;,
+      &quot;warps_per_sm&quot;: &quot;<span class="cite">[S3/case_2]</span>&quot;,
+      &quot;cta_distribution&quot;: &quot;<span class="cite">[S21/case_66]</span>&quot;
+    }
+  }
+}</code></pre>
+        <hr />
+        <h2 class="ch-title" id="b-3-clock-parameters">B.3 Clock Parameters</h2>
+        <pre><code class="language-json">{
+  &quot;clock&quot;: {
+    &quot;boost_mhz&quot;: 2572,
+    &quot;base_mhz&quot;: 2377,
+    &quot;memory_effective_mhz&quot;: 14000,
+    &quot;memory_data_rate_gbps_per_pin&quot;: 28,
+    &quot;sustained_mhz&quot;: 2377,
+    &quot;clock_drift_range_percent_60s&quot;: 0.0135,
+    &quot;clock_drift_cv_percent&quot;: 0.003072,
+    &quot;clock_drift_metric&quot;: &quot;(max_freq - min_freq) / mean_freq * 100, 60s sustained FMA, locked at 2542 MHz, 120 samples&quot;,
+    &quot;sources&quot;: {
+      &quot;boost_mhz&quot;: &quot;<span class="cite">[S20/case_3]</span>&quot;,
+      &quot;sustained_mhz&quot;: &quot;<span class="cite">[S3/case_8]</span>&quot;,
+      &quot;clock_drift&quot;: &quot;<span class="cite">[S3/case_8]</span>&quot;
+    }
+  }
+}</code></pre>
+        <hr />
+        <h2 class="ch-title" id="b-4-register-file-parameters">
+          B.4 Register File Parameters
+        </h2>
+        <pre><code class="language-json">{
+  &quot;registers&quot;: {
+    &quot;per_sm_32bit&quot;: 65536,
+    &quot;per_sm_bytes&quot;: 262144,
+    &quot;banks&quot;: 2,
+    &quot;bank_indexing&quot;: &quot;R_mod_2_parity&quot;,
+    &quot;bank_conflict_penalty_cyc&quot;: 0,
+    &quot;conflict_resolution&quot;: &quot;operand_collector_masks&quot;,
+    &quot;rfc_entries_per_warp&quot;: 24,
+    &quot;min_regs_per_thread&quot;: 24,
+    &quot;max_regs_per_thread&quot;: 255,
+    &quot;occupancy_formula&quot;: &quot;min(48, 4 * floor(16384 / (ceil(regs_per_thread/8) * 8 * 32)))&quot;,
+    &quot;occupancy_formula_basis&quot;: &quot;4-way SMSP partition: each SMSP holds 16384 regs (= 65536/4); ceil-to-8 enforces ptxas&#x27;s 8-reg allocation granularity; per-partition warp count is then aggregated by *4. Naive `floor(65536 / (regs*32))` over-counts at boundaries (e.g. 80 regs/thread: naive=25 warps, partitioned=24 warps). Source: Ch1 §1.2.3, S3/case_3.&quot;,
+    &quot;occupancy_formula_legacy_naive&quot;: &quot;min(48, floor(65536 / (regs_per_thread * 32))) -- DEPRECATED: misses SMSP partitioning at boundary register counts; preserved here only for back-compat with simulators that already use it&quot;,
+    &quot;sources&quot;: {
+      &quot;per_sm_32bit&quot;: &quot;<span class="cite">[S2/case_2.2#12]</span>&quot;,
+      &quot;banks&quot;: &quot;<span class="cite">[S12/case_1]</span>&quot;,
+      &quot;rfc_entries&quot;: &quot;<span class="cite">[S12/case_6]</span>&quot;,
+      &quot;min_regs&quot;: &quot;<span class="cite">[S21/case_111]</span>&quot;
+    }
+  }
+}</code></pre>
+        <hr />
+        <h2 class="ch-title" id="b-5-shared-memory-parameters">
+          B.5 Shared Memory Parameters
+        </h2>
+        <pre><code class="language-json">{
+  &quot;shared_memory&quot;: {
+    &quot;capacity_per_sm_kb&quot;: 100,
+    &quot;usable_per_block_kb&quot;: 99,
+    &quot;banks&quot;: 32,
+    &quot;bank_width_bytes&quot;: 4,
+    &quot;latency_cyc&quot;: 34,
+    &quot;latency_cyc_canonical&quot;: 33.9,
+    &quot;latency_cyc_canonical_basis&quot;: &quot;S8/case_28 pointer-chase with SHL address-calculation overhead (the practical inline-instruction latency); rounds to 34 cyc per Ch20 §C.8.1.1.&quot;,
+    &quot;latency_cyc_lower_bound&quot;: 27.79,
+    &quot;latency_cyc_lower_bound_basis&quot;: &quot;S8/case_52 pure pointer-chase, no SHL (M-28 RESOLVED 2026-06-11; supersedes earlier mis-attribution that conflated 33.89 cyc with case_52)&quot;,
+    &quot;bandwidth_per_warp_b128_bytes_per_cyc&quot;: 30.2,
+    &quot;broadcast_supported&quot;: true,
+    &quot;multicast_supported&quot;: true,
+    &quot;sources&quot;: {
+      &quot;capacity&quot;: &quot;<span class="cite">[S8/case_56]</span>&quot;,
+      &quot;usable&quot;: &quot;<span class="cite">[S1/case_3]</span>&quot;,
+      &quot;banks&quot;: &quot;<span class="cite">[S8/case_55]</span>&quot;,
+      &quot;latency&quot;: &quot;<span class="cite">[S8/case_28]</span>&quot;,
+      &quot;latency_lower_bound&quot;: &quot;<span class="cite">[S8/case_52, S8/case_4]</span>&quot;,
+      &quot;bandwidth&quot;: &quot;<span class="cite">[S8/case_53]</span>&quot;
+    }
+  }
+}</code></pre>
+        <hr />
+        <h2 class="ch-title" id="b-6-l1-cache-parameters">
+          B.6 L1 Cache Parameters
+        </h2>
+        <pre><code class="language-json">{
+  &quot;l1_cache&quot;: {
+    &quot;capacity_kb&quot;: 89,
+    &quot;capacity_note&quot;: &quot;89 KB resolved by OQ-1/S24/case_1 (was 48-96 KB range)&quot;,
+    &quot;line_size_bytes&quot;: 128,
+    &quot;sector_size_bytes&quot;: 32,
+    &quot;sectors_per_line&quot;: 4,
+    &quot;associativity&quot;: &quot;fully_associative&quot;,
+    &quot;associativity_ways&quot;: 768,
+    &quot;latency_cyc&quot;: 44,
+    &quot;hit_bandwidth_bytes_per_cyc_per_warp&quot;: 128,
+    &quot;sources&quot;: {
+      &quot;capacity_kb&quot;: &quot;[S24/case_1, OQ-1 RESOLVED 2026-06-11; supersedes early 48 KB / 96 KB drafts]&quot;,
+      &quot;capacity_legacy_48_superseded&quot;: &quot;<span class="cite">[S8/case_72]</span> (superseded by S24/case_1; do not consume as authoritative)&quot;,
+      &quot;capacity_legacy_96_superseded&quot;: &quot;<span class="cite">[S8/case_84]</span> (superseded by S24/case_1; do not consume as authoritative)&quot;,
+      &quot;line_size&quot;: &quot;<span class="cite">[S8/case_73]</span>&quot;,
+      &quot;associativity&quot;: &quot;<span class="cite">[S8/case_74]</span>&quot;,
+      &quot;latency&quot;: &quot;<span class="cite">[S26/case_7-9]</span>&quot;
+    }
+  }
+}</code></pre>
+        <hr />
+        <h2 class="ch-title" id="b-7-l2-cache-parameters">
+          B.7 L2 Cache Parameters
+        </h2>
+        <pre><code class="language-json">{
+  &quot;l2_cache&quot;: {
+    &quot;capacity_mb&quot;: 96,
+    &quot;partitions&quot;: 12,
+    &quot;bytes_per_partition_mb&quot;: 8,
+    &quot;indexing&quot;: &quot;xor_hash&quot;,
+    &quot;partition_camping&quot;: false,
+    &quot;latency_cyc&quot;: 354,
+    &quot;bandwidth_cliff_mb&quot;: 96,
+    &quot;bandwidth_drop_beyond_cliff&quot;: 4.17,
+    &quot;sources&quot;: {
+      &quot;capacity&quot;: &quot;<span class="cite">[S8/case_75]</span>&quot;,
+      &quot;partitions&quot;: &quot;<span class="cite">[S3/case_7]</span>&quot;,
+      &quot;indexing&quot;: &quot;<span class="cite">[S8/case_76]</span>&quot;,
+      &quot;latency&quot;: &quot;<span class="cite">[S8/case_2]</span>&quot;,
+      &quot;cliff&quot;: &quot;<span class="cite">[S21/case_*]</span>&quot;
+    }
+  }
+}</code></pre>
+        <hr />
+        <h2 class="ch-title" id="b-7a-tlb-parameters">B.7a TLB Parameters</h2>
+        <pre><code class="language-json">{
+  &quot;tlb&quot;: {
+    &quot;l1_entries_4kb&quot;: 712,
+    &quot;l1_entries_2mb&quot;: &quot;&gt;=64&quot;,
+    &quot;miss_penalty_cyc&quot;: 327,
+    &quot;hierarchy_levels&quot;: 1,
+    &quot;source&quot;: &quot;<span class="cite">[S26/case_15,17,18]</span>&quot;
+  }
+}</code></pre>
+        <hr />
+        <h2 class="ch-title" id="b-8-dram-parameters">B.8 DRAM Parameters</h2>
+        <pre><code class="language-json">{
+  &quot;dram&quot;: {
+    &quot;type&quot;: &quot;GDDR7&quot;,
+    &quot;capacity_gb&quot;: 72,
+    &quot;bus_width_bits&quot;: 384,
+    &quot;controllers&quot;: 12,
+    &quot;bits_per_controller&quot;: 32,
+    &quot;data_rate_gbps_per_pin&quot;: 28,
+    &quot;theoretical_bw_gbps_spec&quot;: 1344,
+    &quot;theoretical_bw_gbps_spec_note&quot;: &quot;Spec-rated: 384 bits / 8 * 28 Gbps = 1344 GB/s (chip silicon spec at full pin-clock)&quot;,
+    &quot;theoretical_bw_gbps_operational&quot;: 1283,
+    &quot;theoretical_bw_gbps_operational_note&quot;: &quot;This RTX PRO 5000 72GB SKU clamps memory clock to 13365 MHz under sustained load (vs 14001 MHz rated): 384 bits * 13365 MHz * 2 (DDR) / 8 = 1283 GB/s; the ~4.5% gap is clock-binning, NOT ECC overhead&quot;,
+    &quot;theoretical_bw_gbps&quot;: 1344,
+    &quot;read_bw_measured_gbps&quot;: 1231,
+    &quot;write_bw_measured_gbps&quot;: 1171,
+    &quot;read_efficiency_percent&quot;: 91.6,
+    &quot;peak_measured_gbps&quot;: 1292,
+    &quot;peak_efficiency_percent&quot;: 96.1,
+    &quot;latency_cyc&quot;: 362,
+    &quot;latency_cyc_range&quot;: &quot;362 +/- 10 (page-hit 362, page-miss 372 random@&gt;=2GB)&quot;,
+    &quot;sources&quot;: {
+      &quot;read_bw&quot;: &quot;<span class="cite">[S8/case_81]</span>&quot;,
+      &quot;write_bw&quot;: &quot;<span class="cite">[S8/case_91]</span>&quot;,
+      &quot;latency&quot;: &quot;<span class="cite">[S8/case_3, S26/case_10-12]</span>&quot;,
+      &quot;peak&quot;: &quot;<span class="cite">[S21/case_*]</span>&quot;
+    }
+  }
+}</code></pre>
+        <hr />
+        <h2 class="ch-title" id="b-9-instruction-latency-and-throughput-table">
+          B.9 Instruction Latency and Throughput Table
+        </h2>
+        <p>
+          All values are in cycles. Throughput is cycles per operation per warp
+          (lower = faster).
+        </p>
+        <pre><code class="language-json">{
+  &quot;instructions&quot;: {
+    &quot;integer&quot;: {
+      &quot;IADD3&quot;: {
+        &quot;latency&quot;: 2,
+        &quot;throughput&quot;: 1.0,
+        &quot;pipe&quot;: &quot;fmalite&quot;,
+        &quot;source&quot;: &quot;<span class="cite">[S4/case_1]</span>&quot;
+      },
+      &quot;IMAD&quot;: {
+        &quot;latency&quot;: 4,
+        &quot;throughput&quot;: 2.0,
+        &quot;pipe&quot;: &quot;fmaheavy&quot;,
+        &quot;source&quot;: &quot;<span class="cite">[S4/case_3]</span>&quot;
+      },
+      &quot;IMAD_WIDE&quot;: {
+        &quot;latency&quot;: 4,
+        &quot;throughput&quot;: 2.0,
+        &quot;pipe&quot;: &quot;fmaheavy&quot;,
+        &quot;source&quot;: &quot;<span class="cite">[S4/case_5]</span>&quot;
+      },
+      &quot;LEA&quot;: {
+        &quot;latency&quot;: 2,
+        &quot;throughput&quot;: 1.0,
+        &quot;pipe&quot;: &quot;fmalite&quot;,
+        &quot;source&quot;: &quot;<span class="cite">[S4/case_7]</span>&quot;
+      },
+      &quot;IDP4A&quot;: {
+        &quot;latency&quot;: 4,
+        &quot;throughput&quot;: 2.0,
+        &quot;pipe&quot;: &quot;fmaheavy&quot;,
+        &quot;source&quot;: &quot;<span class="cite">[S4/case_11]</span>&quot;
+      },
+      &quot;IMNMX&quot;: {
+        &quot;latency&quot;: 2,
+        &quot;throughput&quot;: 1.0,
+        &quot;pipe&quot;: &quot;fmalite&quot;,
+        &quot;source&quot;: &quot;<span class="cite">[S4/case_15]</span>&quot;
+      },
+      &quot;ISETP&quot;: {
+        &quot;latency&quot;: 4,
+        &quot;throughput&quot;: 1.0,
+        &quot;pipe&quot;: &quot;fmalite&quot;,
+        &quot;source&quot;: &quot;<span class="cite">[S4/case_20]</span>&quot;
+      }
+    },
+    &quot;floating_point&quot;: {
+      &quot;FADD&quot;: {
+        &quot;latency&quot;: 4,
+        &quot;throughput&quot;: 1.08,
+        &quot;pipe&quot;: &quot;fmalite&quot;,
+        &quot;source&quot;: &quot;<span class="cite">[S5/case_21]</span>&quot;
+      },
+      &quot;FMUL&quot;: {
+        &quot;latency&quot;: 4,
+        &quot;throughput&quot;: 1.08,
+        &quot;pipe&quot;: &quot;fmalite&quot;,
+        &quot;source&quot;: &quot;<span class="cite">[S5/case_22]</span>&quot;
+      },
+      &quot;FFMA&quot;: {
+        &quot;latency&quot;: 4,
+        &quot;throughput&quot;: 1.08,
+        &quot;pipe&quot;: &quot;fmalite&quot;,
+        &quot;source&quot;: &quot;<span class="cite">[S5/case_23]</span>&quot;
+      },
+      &quot;HFMA2&quot;: {
+        &quot;latency&quot;: 4,
+        &quot;throughput&quot;: 2.02,
+        &quot;pipe&quot;: &quot;fmalite&quot;,
+        &quot;source&quot;: &quot;<span class="cite">[S5/case_39]</span>&quot;
+      },
+      &quot;HADD2&quot;: {
+        &quot;latency&quot;: 4,
+        &quot;throughput&quot;: 2.02,
+        &quot;pipe&quot;: &quot;fmalite&quot;,
+        &quot;source&quot;: &quot;<span class="cite">[S5/case_37]</span>&quot;
+      },
+      &quot;DFMA&quot;: {
+        &quot;latency&quot;: 64,
+        &quot;throughput_cyc_per_op_dep_chain&quot;: 64.0,
+        &quot;throughput_cyc_per_op_sm_saturated&quot;: 16.0,
+        &quot;throughput_dfma_per_cyc_per_sm_saturated&quot;: 0.0625,
+        &quot;eu_per_sm&quot;: 4,
+        &quot;eu_placement&quot;: &quot;one per SMSP&quot;,
+        &quot;throughput_note&quot;: &quot;Per-warp dependent-chain: 64 cyc/DFMA (single EU non-pipelined). At &gt;=4 independent warps, 4 EUs each serve one warp: agg 0.0625 DFMA/cyc/SM = 4/64, equivalent to 16 cyc/DFMA chip-level. cuBLAS DGEMM achieves 0.96 TFLOPS via ILP pipelining and multi-warp saturation (33x over single-warp dep-chain 0.029 TFLOPS).&quot;,
+        &quot;pipe&quot;: &quot;fp64&quot;,
+        &quot;source&quot;: &quot;[S5/case_48, S24/case_16, Ch5 §5.2.7 RESOLVED 2026-06-11]&quot;
+      },
+      &quot;DADD&quot;: {
+        &quot;latency&quot;: 64,
+        &quot;throughput&quot;: 64.0,
+        &quot;pipe&quot;: &quot;fp64&quot;,
+        &quot;source&quot;: &quot;<span class="cite">[S5/case_46]</span>&quot;
+      },
+      &quot;DMUL&quot;: {
+        &quot;latency&quot;: 64,
+        &quot;throughput&quot;: 64.0,
+        &quot;pipe&quot;: &quot;fp64&quot;,
+        &quot;source&quot;: &quot;<span class="cite">[S5/case_47]</span>&quot;
+      }
+    },
+    &quot;special_function&quot;: {
+      &quot;MUFU_RCP&quot;: {
+        &quot;latency&quot;: 44,
+        &quot;throughput&quot;: 8.43,
+        &quot;pipe&quot;: &quot;xu&quot;,
+        &quot;source&quot;: &quot;<span class="cite">[S5/case_1]</span>&quot;
+      },
+      &quot;MUFU_RSQ&quot;: {
+        &quot;latency&quot;: 44,
+        &quot;throughput&quot;: 8.43,
+        &quot;pipe&quot;: &quot;xu&quot;,
+        &quot;source&quot;: &quot;<span class="cite">[S5/case_2]</span>&quot;
+      },
+      &quot;MUFU_EX2&quot;: {
+        &quot;latency&quot;: 18,
+        &quot;throughput&quot;: 4.0,
+        &quot;pipe&quot;: &quot;xu&quot;,
+        &quot;source&quot;: &quot;<span class="cite">[S5/case_83]</span>&quot;
+      },
+      &quot;MUFU_LG2&quot;: {
+        &quot;latency&quot;: 18,
+        &quot;latency_basis&quot;: &quot;bare MUFU.LG2 SASS (CuAssembler-patched, dependent-chain measurement)&quot;,
+        &quot;latency_ptx_lg2_approx_f32&quot;: 40,
+        &quot;latency_ptx_basis&quot;: &quot;PTX-level lg2.approx.f32 with refinement wrapper (~6 insns range reduction)&quot;,
+        &quot;throughput&quot;: 4.0,
+        &quot;pipe&quot;: &quot;xu&quot;,
+        &quot;source&quot;: &quot;[S5/case_84 bare; S5/case_01 PTX]&quot;
+      },
+      &quot;MUFU_SIN&quot;: {
+        &quot;latency&quot;: 18,
+        &quot;throughput&quot;: 8.0,
+        &quot;pipe&quot;: &quot;xu&quot;,
+        &quot;source&quot;: &quot;<span class="cite">[S26/case_43]</span>&quot;
+      },
+      &quot;MUFU_COS&quot;: {
+        &quot;latency&quot;: 22,
+        &quot;throughput&quot;: 8.43,
+        &quot;pipe&quot;: &quot;xu&quot;,
+        &quot;source&quot;: &quot;<span class="cite">[S5/case_01]</span>&quot;
+      }
+    },
+    &quot;memory&quot;: {
+      &quot;LDG_32&quot;: {
+        &quot;latency&quot;: 44,
+        &quot;issue_rate&quot;: 2.27,
+        &quot;pipe&quot;: &quot;lsu&quot;,
+        &quot;source&quot;: &quot;<span class="cite">[S26/case_7-9]</span>&quot;
+      },
+      &quot;LDG_128&quot;: {
+        &quot;latency&quot;: 44,
+        &quot;issue_rate&quot;: 2.27,
+        &quot;pipe&quot;: &quot;lsu&quot;,
+        &quot;source&quot;: &quot;<span class="cite">[S26/case_7-9]</span>&quot;
+      },
+      &quot;STG_32&quot;: {
+        &quot;latency&quot;: null,
+        &quot;issue_rate&quot;: 5.85,
+        &quot;pipe&quot;: &quot;lsu&quot;,
+        &quot;source&quot;: &quot;<span class="cite">[S8/case_31, S26/case_45]</span>&quot;
+      },
+      &quot;LDS_32&quot;: {
+        &quot;latency&quot;: 34,
+        &quot;issue_rate&quot;: 4.0,
+        &quot;pipe&quot;: &quot;lsu&quot;,
+        &quot;source&quot;: &quot;<span class="cite">[S8/case_16]</span>&quot;
+      },
+      &quot;LDS_128&quot;: {
+        &quot;latency&quot;: 34,
+        &quot;issue_rate&quot;: 4.0,
+        &quot;pipe&quot;: &quot;lsu&quot;,
+        &quot;source&quot;: &quot;<span class="cite">[S8/case_17]</span>&quot;
+      },
+      &quot;STS_32&quot;: {
+        &quot;latency&quot;: null,
+        &quot;issue_rate&quot;: 4.0,
+        &quot;pipe&quot;: &quot;lsu&quot;,
+        &quot;source&quot;: &quot;<span class="cite">[S8/case_18]</span>&quot;
+      },
+      &quot;ATOMS_ADD&quot;: {
+        &quot;latency&quot;: 45,
+        &quot;issue_rate&quot;: 16.0,
+        &quot;pipe&quot;: &quot;lsu&quot;,
+        &quot;source&quot;: &quot;<span class="cite">[S8/case_60]</span>&quot;
+      }
+    },
+    &quot;tensor_core&quot;: {
+      &quot;HMMA_16816&quot;: {
+        &quot;latency&quot;: 29,
+        &quot;throughput&quot;: 15.88,
+        &quot;pipe&quot;: &quot;tc&quot;,
+        &quot;source&quot;: &quot;<span class="cite">[S9/case_1]</span>&quot;
+      },
+      &quot;HMMA_16816_BF16&quot;: {
+        &quot;latency&quot;: 29,
+        &quot;throughput&quot;: 15.88,
+        &quot;pipe&quot;: &quot;tc&quot;,
+        &quot;source&quot;: &quot;<span class="cite">[S9/case_15]</span>&quot;
+      },
+      &quot;HMMA_1688_TF32&quot;: {
+        &quot;latency&quot;: 29,
+        &quot;throughput&quot;: 15.88,
+        &quot;pipe&quot;: &quot;tc&quot;,
+        &quot;source&quot;: &quot;<span class="cite">[S9/case_25]</span>&quot;
+      },
+      &quot;QMMA_16832_FP8&quot;: {
+        &quot;latency&quot;: 29,
+        &quot;throughput&quot;: 15.88,
+        &quot;pipe&quot;: &quot;tc&quot;,
+        &quot;source&quot;: &quot;<span class="cite">[S9/case_35]</span>&quot;
+      },
+      &quot;QMMA_16832_FP6&quot;: {
+        &quot;latency&quot;: 29,
+        &quot;throughput&quot;: 15.88,
+        &quot;pipe&quot;: &quot;tc&quot;,
+        &quot;source&quot;: &quot;<span class="cite">[S9/case_45]</span>&quot;
+      },
+      &quot;QMMA_16832_FP4&quot;: {
+        &quot;latency&quot;: 29,
+        &quot;throughput&quot;: 15.88,
+        &quot;pipe&quot;: &quot;tc&quot;,
+        &quot;source&quot;: &quot;<span class="cite">[S9/case_55]</span>&quot;
+      },
+      &quot;QMMA_SF_16832&quot;: {
+        &quot;latency&quot;: 29,
+        &quot;throughput&quot;: 15.59,
+        &quot;pipe&quot;: &quot;tc&quot;,
+        &quot;source&quot;: &quot;<span class="cite">[S9/case_91]</span>&quot;
+      },
+      &quot;OMMA_SF_16864&quot;: {
+        &quot;latency&quot;: 29,
+        &quot;throughput&quot;: 15.59,
+        &quot;pipe&quot;: &quot;tc&quot;,
+        &quot;source&quot;: &quot;<span class="cite">[S9/case_55]</span>&quot;
+      },
+      &quot;IMMA_16832_S8&quot;: {
+        &quot;latency&quot;: 27,
+        &quot;throughput&quot;: 6.55,
+        &quot;pipe&quot;: &quot;tc&quot;,
+        &quot;source&quot;: &quot;<span class="cite">[S9/case_101]</span>&quot;
+      },
+      &quot;DMMA_8&quot;: {
+        &quot;latency&quot;: 64,
+        &quot;throughput_cyc_per_op_dep_chain&quot;: 64.0,
+        &quot;throughput_cyc_per_op_sm_saturated&quot;: 16.0,
+        &quot;throughput_note&quot;: &quot;Same 4-EU-per-SM model as DFMA; per-warp dep-chain 64 cyc, multi-warp saturated 16 cyc/op chip-level&quot;,
+        &quot;pipe&quot;: &quot;fp64&quot;,
+        &quot;source&quot;: &quot;<span class="cite">[S5/case_50]</span>&quot;
+      }
+    },
+    &quot;warp_shuffle&quot;: {
+      &quot;SHFL_SYNC&quot;: {
+        &quot;latency&quot;: 29,
+        &quot;issue_rate&quot;: 4.6,
+        &quot;pipe&quot;: &quot;dedicated&quot;,
+        &quot;source&quot;: &quot;<span class="cite">[S6/case_20]</span>&quot;
+      }
+    },
+    &quot;control&quot;: {
+      &quot;BAR_SYNC_1w&quot;: {
+        &quot;latency&quot;: 13,
+        &quot;pipe&quot;: &quot;barrier&quot;,
+        &quot;formula&quot;: &quot;11+2*W&quot;,
+        &quot;source&quot;: &quot;<span class="cite">[S26/case_1]</span>&quot;
+      },
+      &quot;BAR_SYNC_32w&quot;: {
+        &quot;latency&quot;: 75,
+        &quot;pipe&quot;: &quot;barrier&quot;,
+        &quot;formula&quot;: &quot;11+2*W&quot;,
+        &quot;source&quot;: &quot;<span class="cite">[S26/case_1]</span>&quot;
+      },
+      &quot;WARPSYNC&quot;: { &quot;latency&quot;: 1, &quot;pipe&quot;: &quot;barrier&quot;, &quot;source&quot;: &quot;<span class="cite">[S7/case_2]</span>&quot; },
+      &quot;REDUX_SYNC&quot;: {
+        &quot;latency&quot;: 45,
+        &quot;pipe&quot;: &quot;barrier&quot;,
+        &quot;source&quot;: &quot;<span class="cite">[S7/case_8]</span>&quot;
+      }
+    }
+  }
+}</code></pre>
+        <hr />
+        <h2 class="ch-title" id="b-10-synchronization-parameters">
+          B.10 Synchronization Parameters
+        </h2>
+        <pre><code class="language-json">{
+  &quot;synchronization&quot;: {
+    &quot;bar_sync_formula&quot;: &quot;11+2*W&quot;,
+    &quot;bar_sync_1w_cyc&quot;: 13,
+    &quot;bar_sync_32w_cyc&quot;: 75,
+    &quot;bar_warp_sync_cyc&quot;: 1,
+    &quot;barrier_cluster_full_cyc&quot;: 371,
+    &quot;barrier_cluster_relaxed_cyc&quot;: 85,
+    &quot;redux_sync_cyc&quot;: 45,
+    &quot;fence_acqrel_cta_cyc&quot;: 7,
+    &quot;fence_acqrel_gpu_cyc&quot;: 285,
+    &quot;fence_acqrel_sys_cyc&quot;: 920,
+    &quot;mbarrier_arrive_cyc&quot;: 31,
+    &quot;mbarrier_trywait_ready_cyc&quot;: 5,
+    &quot;named_barrier_vs_mbarrier_ratio&quot;: 0.071,
+    &quot;sources&quot;: {
+      &quot;bar_sync&quot;: &quot;<span class="cite">[S26/case_1]</span>&quot;,
+      &quot;cluster_full&quot;: &quot;<span class="cite">[S16/case_5]</span>&quot;,
+      &quot;cluster_relaxed&quot;: &quot;<span class="cite">[S7/case_53]</span>&quot;,
+      &quot;fence_cta&quot;: &quot;<span class="cite">[S8/case_64]</span>&quot;,
+      &quot;fence_gpu&quot;: &quot;<span class="cite">[S8/case_65]</span>&quot;,
+      &quot;fence_sys&quot;: &quot;<span class="cite">[S8/case_66]</span>&quot;,
+      &quot;mbarrier&quot;: &quot;<span class="cite">[S7/case_48-49]</span>&quot;
+    }
+  }
+}</code></pre>
+        <hr />
+        <h2 class="ch-title" id="b-11-tma-engine-parameters">
+          B.11 TMA Engine Parameters
+        </h2>
+        <pre><code class="language-json">{
+  &quot;tma&quot;: {
+    &quot;load_1d_cyc&quot;: 480,
+    &quot;load_2d_32x32_cyc&quot;: 567,
+    &quot;load_3d_cyc&quot;: 620,
+    &quot;store_1d_cyc&quot;: 50,
+    &quot;store_vs_manual_speedup&quot;: 5.0,
+    &quot;multicast_status&quot;: &quot;NON_FUNCTIONAL&quot;,
+    &quot;multicast_emulation_overhead_x&quot;: &quot;2000-8000&quot;,
+    &quot;reduction_supported&quot;: true,
+    &quot;in_flight_queue_depth&quot;: 32,
+    &quot;optimal_pipeline_stages&quot;: 3,
+    &quot;pipeline_speedup_at_3_stages&quot;: 1.92,
+    &quot;sources&quot;: {
+      &quot;load_1d&quot;: &quot;<span class="cite">[S10/case_1]</span>&quot;,
+      &quot;load_2d&quot;: &quot;<span class="cite">[S10/case_2]</span>&quot;,
+      &quot;store_1d&quot;: &quot;<span class="cite">[S10/case_9]</span>&quot;,
+      &quot;multicast&quot;: &quot;<span class="cite">[S10/case_28]</span>&quot;,
+      &quot;queue_depth&quot;: &quot;<span class="cite">[S10/case_78]</span>&quot;,
+      &quot;pipeline&quot;: &quot;<span class="cite">[S10/case_*]</span>&quot;
+    }
+  }
+}</code></pre>
+        <hr />
+        <h2 class="ch-title" id="b-12-cluster-parameters">
+          B.12 Cluster Parameters
+        </h2>
+        <pre><code class="language-json">{
+  &quot;cluster&quot;: {
+    &quot;max_portable_ctas&quot;: 8,
+    &quot;max_non_portable_ctas&quot;: 12,
+    &quot;dsmem_latency_cyc&quot;: 220,
+    &quot;dsmem_bandwidth_per_cta_gbps&quot;: 8.2,
+    &quot;dsmem_vs_sync_speedup&quot;: 26,
+    &quot;dsmem_vs_raw_read_slowdown&quot;: 4.5,
+    &quot;cross_gpc_supported&quot;: true,
+    &quot;sources&quot;: {
+      &quot;max_portable&quot;: &quot;<span class="cite">[S16/case_1]</span>&quot;,
+      &quot;max_non_portable&quot;: &quot;<span class="cite">[S16/case_7]</span>&quot;,
+      &quot;dsmem_latency&quot;: &quot;<span class="cite">[S16/case_3]</span>&quot;,
+      &quot;dsmem_bw&quot;: &quot;<span class="cite">[S16/case_4]</span>&quot;
+    }
+  }
+}</code></pre>
+        <hr />
+        <h2 class="ch-title" id="b-13-pcie-and-system-parameters">
+          B.13 PCIe and System Parameters
+        </h2>
+        <pre><code class="language-json">{
+  &quot;pcie&quot;: {
+    &quot;generation&quot;: &quot;Gen5&quot;,
+    &quot;lanes&quot;: 16,
+    &quot;h2d_gbps&quot;: 56.89,
+    &quot;d2h_gbps&quot;: 56.54,
+    &quot;bidirectional_gbps&quot;: 101.5,
+    &quot;latency_floor_us&quot;: 5.0,
+    &quot;nvlink&quot;: false,
+    &quot;sources&quot;: {
+      &quot;h2d&quot;: &quot;<span class="cite">[S14/case_1]</span>&quot;,
+      &quot;d2h&quot;: &quot;<span class="cite">[S14/case_2]</span>&quot;,
+      &quot;bidirectional&quot;: &quot;<span class="cite">[S14/case_4]</span>&quot;,
+      &quot;latency&quot;: &quot;<span class="cite">[S14/case_3]</span>&quot;
+    }
+  },
+  &quot;kernel_launch&quot;: {
+    &quot;warm_gpu_us&quot;: 1.5,
+    &quot;warm_host_us&quot;: 5.4,
+    &quot;cold_us&quot;: 108.7,
+    &quot;cuda_graph_us&quot;: 0.12,
+    &quot;sources&quot;: {
+      &quot;warm&quot;: &quot;<span class="cite">[S14/case_19]</span>&quot;,
+      &quot;cold&quot;: &quot;<span class="cite">[S14/case_18]</span>&quot;,
+      &quot;graph&quot;: &quot;<span class="cite">[S14/case_14]</span>&quot;
+    }
+  }
+}</code></pre>
+        <hr />
+        <h2 class="ch-title" id="b-14-power-and-thermal-parameters">
+          B.14 Power and Thermal Parameters
+        </h2>
+        <pre><code class="language-json">{
+  &quot;power&quot;: {
+    &quot;tdp_watts&quot;: 350,
+    &quot;max_observed_watts&quot;: 232,
+    &quot;max_observed_watts_note&quot;: &quot;10-min sustained FFMA, free boost 2572 MHz, steady-state from t~245s to 600s <span class="cite">[S20/case_10]</span>&quot;,
+    &quot;max_sustained_compute_watts&quot;: 212,
+    &quot;max_sustained_compute_watts_note&quot;: &quot;~150s FFMA-only at 2580 MHz; lower than case_10 because shorter run did not reach thermal/power equilibrium <span class="cite">[S20/case_8]</span>&quot;,
+    &quot;idle_with_context_watts&quot;: 48.4,
+    &quot;idle_no_context_watts&quot;: 6.6,
+    &quot;per_sm_mma_watts&quot;: 0.149,
+    &quot;per_sm_fma_watts&quot;: 0.229,
+    &quot;thermal_throttle_celsius&quot;: 92,
+    &quot;max_observed_celsius&quot;: 65,
+    &quot;max_observed_celsius_note&quot;: &quot;Steady-state at 232 W sustained, 27 C below 92 C throttle threshold <span class="cite">[S20/case_10]</span>&quot;,
+    &quot;best_chip_tflops_per_watt_format&quot;: &quot;NVFP4 OMMA.SF&quot;,
+    &quot;best_chip_tflops_per_watt_value&quot;: 2.36,
+    &quot;best_chip_tflops_per_watt_note&quot;: &quot;Chip-total (including idle ~38 W context); 210 TFLOPS / 89 W; FLOP-based unit <span class="cite">[S20/case_16]</span>&quot;,
+    &quot;best_tc_pipe_tops_per_watt_format&quot;: &quot;MX-FP4&quot;,
+    &quot;best_tc_pipe_tops_per_watt_value&quot;: 227.5,
+    &quot;best_tc_pipe_tops_per_watt_note&quot;: &quot;TC-pipe-only (delta W = 56.66 W vs context idle), bit-OPS unit (FP4 counted as 4-bit primitive ops aggregated to 12,936 TOPS); NOT directly comparable to chip-level TFLOPS/W. See Ch4 §4.3 for unit derivation <span class="cite">[S9/case_*]</span>&quot;,
+    &quot;sources&quot;: {
+      &quot;max_power&quot;: &quot;<span class="cite">[S20/case_10]</span>&quot;,
+      &quot;max_sustained_compute&quot;: &quot;<span class="cite">[S20/case_8]</span>&quot;,
+      &quot;idle&quot;: &quot;<span class="cite">[S20/case_5]</span>&quot;,
+      &quot;per_sm&quot;: &quot;<span class="cite">[S20/case_12]</span>&quot;,
+      &quot;throttle_threshold&quot;: &quot;<span class="cite">[S20/case_10]</span>&quot;,
+      &quot;max_temp&quot;: &quot;<span class="cite">[S20/case_10]</span>&quot;,
+      &quot;chip_efficiency&quot;: &quot;<span class="cite">[S20/case_16]</span>&quot;,
+      &quot;tc_pipe_efficiency&quot;: &quot;[Ch4 §4.3, S9/case_*]&quot;
+    }
+  }
+}</code></pre>
+        <hr />
+        <h2 class="ch-title" id="b-15-peak-throughput-parameters">
+          B.15 Peak Throughput Parameters
+        </h2>
+        <pre><code class="language-json">{
+  &quot;peak_tflops&quot;: {
+    &quot;fp64&quot;: 0.96,
+    &quot;fp32_cuda_cores&quot;: 58,
+    &quot;fp32_cuda_cores_note&quot;: &quot;Measured 58 TFLOPS @ 2092 MHz pinned (S20/case_9, 143 W); the legacy `52` value (S19/case_*) was a sweep-average that included thin-K shapes, not the saturated peak&quot;,
+    &quot;fp32_tensor_tf32&quot;: 129,
+    &quot;fp16_tensor_measured&quot;: 271,
+    &quot;fp16_tensor_measured_basis&quot;: &quot;cuBLAS best-case 270.53 TFLOPS @ M=N=K=8192 <span class="cite">[S18/case_3]</span> = 92.6% of theoretical chip peak&quot;,
+    &quot;fp16_tensor_theoretical&quot;: 293,
+    &quot;fp16_tensor_theoretical_basis&quot;: &quot;110 SM * (4 SMSP / 15.88 cyc) * 4096 FLOP/MMA * 2.572 GHz = 292.7 TFLOPS (rounded to 293) at 100% chip-level efficiency&quot;,
+    &quot;fp16_tensor&quot;: 271,
+    &quot;bf16_tensor_measured&quot;: 271,
+    &quot;bf16_tensor_measured_basis&quot;: &quot;BF16 shares HMMA.16816 hardware path; measured = 270.50 TFLOPS <span class="cite">[S18/case_3]</span>&quot;,
+    &quot;bf16_tensor&quot;: 271,
+    &quot;int8_tensor_tops&quot;: 541,
+    &quot;fp8_tensor&quot;: 545,
+    &quot;mxfp4_sustained&quot;: 1068.5,
+    &quot;mxfp4_theoretical_at_2377_nominal&quot;: 1070,
+    &quot;mxfp4_theoretical_at_2377_basis&quot;: &quot;110 SM × 4 SMSP / 15.59 cyc × 16384 FLOP/MMA × 2.377 GHz ≈ 1070 TFLOPS (CUTLASS reference baseline at nominal boost clock)&quot;,
+    &quot;mxfp4_theoretical_at_2572_boost&quot;: 1185,
+    &quot;mxfp4_theoretical_at_2572_basis&quot;: &quot;110 SM × 4 SMSP / 15.59 cyc × 16384 FLOP/MMA × 2.572 GHz ≈ 1185 TFLOPS (hardware peak at sustained boost clock; V-02 RESOLVED 2026-06-11)&quot;,
+    &quot;mxfp4_efficiency_dual_baseline&quot;: &quot;1076.5 / 1070 = 100.6% (vs nominal-clock baseline; surfaces clock-boost contribution) — OR — 1076.5 / 1185 = 90.8% (vs hardware peak; physically conservative). Use the latter for hardware-utilization analysis; use the former when comparing to CUTLASS published reference points.&quot;,
+    &quot;sources&quot;: {
+      &quot;cublas_measured&quot;: &quot;<span class="cite">[S19/case_6]</span>&quot;,
+      &quot;theoretical&quot;: &quot;<span class="cite">[S18/case_3]</span>&quot;,
+      &quot;mxfp4&quot;: &quot;<span class="cite">[S9/case_128]</span>&quot;
+    }
+  },
+  &quot;roofline&quot;: {
+    &quot;memory_bw_gbps&quot;: 1231,
+    &quot;memory_bw_gbps_basis&quot;: &quot;Sustained canonical DRAM read BW (S8/case_81; m-16 RESOLVED 2026-06-11). Use this value for all roofline crossover-AI calculations to avoid over-estimating the memory-bound region.&quot;,
+    &quot;memory_bw_peak_gbps&quot;: 1292,
+    &quot;memory_bw_peak_basis&quot;: &quot;Peak burst observed in short-run S21/case_* probes; not representative of sustained workload performance.&quot;,
+    &quot;crossover_ai_fp16&quot;: 220,
+    &quot;crossover_ai_fp16_basis&quot;: &quot;271 TFLOPS / 1.231 TB/s = 220.15 FLOP/byte (M-24 RESOLVED 2026-06-11; the earlier 203 value mixed methodology and is retracted)&quot;,
+    &quot;crossover_ai_fp8&quot;: 430,
+    &quot;crossover_ai_fp8_basis&quot;: &quot;529 / 1.231 = 429.73&quot;,
+    &quot;crossover_ai_int8&quot;: 427,
+    &quot;crossover_ai_int8_basis&quot;: &quot;526 / 1.231 = 427.30&quot;,
+    &quot;crossover_ai_mxfp4&quot;: 869,
+    &quot;crossover_ai_mxfp4_basis&quot;: &quot;1069 / 1.231 = 868.40&quot;,
+    &quot;crossover_ai_tf32&quot;: 105,
+    &quot;crossover_ai_tf32_basis&quot;: &quot;129 / 1.231 = 104.79 (theoretical TF32 tensor peak / DRAM canonical)&quot;,
+    &quot;crossover_ai_fp32_cuda&quot;: 47,
+    &quot;crossover_ai_fp32_cuda_basis&quot;: &quot;58 / 1.231 = 47.12 (pure FFMA path, S20/case_9 pinned 2092 MHz)&quot;,
+    &quot;memory_bw_gbps&quot;: 1292,
+    &quot;sources&quot;: {
+      &quot;crossover&quot;: &quot;<span class="cite">[S19/case_*]</span>&quot;,
+      &quot;bw&quot;: &quot;<span class="cite">[S8/case_81, S21/case_*]</span>&quot;
+    }
+  }
+}</code></pre>
+        <hr />
+        <h2 class="ch-title" id="b-16-scheduler-and-pipeline-parameters">
+          B.16 Scheduler and Pipeline Parameters
+        </h2>
+        <pre><code class="language-json">{
+  &quot;scheduler&quot;: {
+    &quot;policy&quot;: &quot;CGGTY&quot;,
+    &quot;policy_full_name&quot;: &quot;Compute_Greedy_GTO_Youngest&quot;,
+    &quot;dispatch_width_per_subcore&quot;: 1,
+    &quot;warp_slots_per_subcore&quot;: 12,
+    &quot;latency_hiding_warps_l1&quot;: 10,
+    &quot;latency_hiding_warps_dram&quot;: 6,
+    &quot;mma_ilp_for_full_hiding&quot;: 8,
+    &quot;tc_saturation_warps&quot;: 4,
+    &quot;sfu_saturation_warps_per_smsp&quot;: 4,
+    &quot;sources&quot;: {
+      &quot;policy&quot;: &quot;<span class="cite">[S11/case_28]</span>&quot;,
+      &quot;hiding_l1&quot;: &quot;<span class="cite">[S11/case_*, S21/case_*]</span>&quot;,
+      &quot;hiding_dram&quot;: &quot;<span class="cite">[S21/case_*]</span>&quot;,
+      &quot;tc_saturation&quot;: &quot;<span class="cite">[S9/case_*, S21/case_*]</span>&quot;
+    }
+  },
+  &quot;pipeline&quot;: {
+    &quot;total_pipes&quot;: 16,
+    &quot;reuse_bits_effect_alu&quot;: &quot;functionally_active_85pct_ilp8_throughput_impact&quot;,
+    &quot;reuse_bits_effect_tc&quot;: &quot;true_noop_ptxas_never_sets_hw_ignores&quot;,
+    &quot;stall_lt_latency_behavior&quot;: &quot;silent_stale_reads&quot;,
+    &quot;ptxas_stall_optimality&quot;: &quot;near_optimal_plus_0_percent&quot;,
+    &quot;mma_ldg_overlap_ratio&quot;: &quot;100_percent_at_leq_4_to_1&quot;,
+    &quot;sources&quot;: {
+      &quot;pipes&quot;: &quot;<span class="cite">[S22/case_*]</span>&quot;,
+      &quot;reuse&quot;: &quot;<span class="cite">[S11/case_*, S12/case_*, S21/case_*]</span>&quot;,
+      &quot;stall&quot;: &quot;<span class="cite">[S11/case_*]</span>&quot;,
+      &quot;ptxas&quot;: &quot;<span class="cite">[S21/case_*]</span>&quot;,
+      &quot;overlap&quot;: &quot;<span class="cite">[S9/case_*, S21/case_*]</span>&quot;
+    }
+  }
+}</code></pre>
+        <hr />
+        <h2 class="ch-title" id="b-17-derived-constants-for-performance-models">
+          B.17 Derived Constants for Performance Models
+        </h2>
+        <p>
+          These constants are calculated from measured values and intended for
+          direct use in analytical models.
+        </p>
+        <pre><code class="language-json">{
+  &quot;derived_constants&quot;: {
+    &quot;ops_per_tc_instruction_fp16&quot;: 4096,
+    &quot;ops_per_tc_instruction_fp16_basis&quot;: &quot;HMMA m16n8k16 = 2*16*8*16 = 4096 FLOPs (standard 2*m*n*k FLOP count)&quot;,
+    &quot;ops_per_tc_instruction_fp8&quot;: 8192,
+    &quot;ops_per_tc_instruction_fp8_basis&quot;: &quot;QMMA m16n8k32 = 2*16*8*32 = 8192 FLOPs&quot;,
+    &quot;ops_per_tc_instruction_fp4&quot;: 16384,
+    &quot;ops_per_tc_instruction_fp4_basis&quot;: &quot;OMMA.SF m16n8k64 = 2*16*8*64 = 16384 FLOPs&quot;,
+    &quot;tc_instructions_per_sm_per_cyc&quot;: 0.063,
+    &quot;peak_tc_tflops_formula&quot;: &quot;sm_count * ops_per_inst * clock_ghz / throughput_cyc&quot;,
+    &quot;memory_latency_in_ns_at_boost&quot;: {
+      &quot;l1_ns&quot;: 17.5,
+      &quot;l2_ns&quot;: 137.7,
+      &quot;dram_ns&quot;: 139.6
+    },
+    &quot;bytes_per_flop_at_roofline_fp16&quot;: 0.00493,
+    &quot;sm_active_for_full_bw&quot;: 110,
+    &quot;warps_for_full_dram_bw&quot;: 660,
+    &quot;notes&quot;: {
+      &quot;tc_tflops_fp16&quot;: &quot;110 SM * (4 SMSP / 15.88 cyc) MMA-issue/SM/cyc * 4096 FLOP/MMA * 2.572 GHz = 292.7 TFLOPS theoretical chip peak; cuBLAS measured best-case = 270.53 TFLOPS @ 8192^3 <span class="cite">[S18/case_3]</span> = 92.4% efficiency. Earlier draft note `110 * 512 * 2.572 / 15.88 = 9118 GOP/s = ~271 TFLOPS` was internally self-inconsistent (the formula evaluates to 9149.6 / 15.88 = 576, not 9118; and used the 8x-too-low 512 FLOP/MMA constant); fixed concurrently with the corrected ops_per_tc_instruction_* fields above.&quot;,
+      &quot;memory_bw&quot;: &quot;384/8 * 28 = 1344 GB/s theoretical&quot;
+    }
+  }
+}</code></pre>
+        <hr />
+        <h2 class="ch-title" id="b-18-usage-notes">B.18 Usage Notes</h2>
+        <h3 class="sub-title" id="loading-parameters-in-python">
+          Loading Parameters in Python
+        </h3>
+        <pre><code class="language-python">import yaml
+import json
+
+# YAML format
+with open(&quot;test_results/SM_120/sm120_params.yaml&quot;) as f:
+    params = yaml.safe_load(f)
+
+# JSON format
+with open(&quot;test_results/SM_120/sm120_params.json&quot;) as f:
+    params = json.load(f)
+
+# Example: compute roofline bound
+def roofline_tflops(arithmetic_intensity, params):
+    peak_tflops = params[&quot;peak_tflops&quot;][&quot;fp16_tensor&quot;]
+    mem_bw_tbps = params[&quot;dram&quot;][&quot;read_bw_measured_gbps&quot;] / 1000
+    return min(peak_tflops, arithmetic_intensity * mem_bw_tbps)</code></pre>
+        <h3 class="sub-title" id="integration-with-cycle-level-simulators">
+          Integration with Cycle-Level Simulators
+        </h3>
+        <p>
+          Parameters marked with <code>latency</code> and
+          <code>throughput</code> fields can be directly used as pipeline stage
+          delays in trace-driven simulators. The <code>pipe</code> field
+          identifies the functional unit for dispatch modeling. The
+          <code>issue_rate</code> field (where present instead of
+          <code>throughput</code>) represents the minimum cycles between
+          consecutive issue of the same instruction type to the same pipe,
+          accounting for resource conflicts.
+        </p>
+        <h3 class="sub-title" id="version-control">Version Control</h3>
+        <p>Parameter files should be regenerated whenever:</p>
+        <ol>
+          <li>New measurement sections are added</li>
+          <li>Anomalous measurements are resolved</li>
+          <li>Toolchain updates enable previously blocked tests</li>
+          <li>Clock frequency or driver changes affect absolute timings</li>
+        </ol>
+        <hr />
+
+        <footer class="page-footer">
+          <div class="foot-grid">
+            <div>
+              <strong>SM_120 / GB202 Blackwell</strong> · Microarchitecture
+              Analysis &amp; Reference · 2026
+            </div>
+            <div>1542 microbenchmark cases · 26 sections · ~13,400 lines</div>
+            <div class="foot-accent">
+              RTX PRO 5000 72GB · CUDA 13.3 · Data source: test_results/SM_120/
+            </div>
+          </div>
+        </footer>
+      </main>
+      <aside class="toc-right">
+        <h4>Chapter Navigation</h4>
+        <a href="#b-1-metadata">B.1 Metadata</a>
+        <a href="#b-2-topology-parameters">B.2 Topology Parameters</a>
+        <a href="#b-3-clock-parameters">B.3 Clock Parameters</a>
+        <a href="#b-4-register-file-parameters">B.4 Register File Parameters</a>
+        <a href="#b-5-shared-memory-parameters">B.5 Shared Memory Parameters</a>
+        <a href="#b-6-l1-cache-parameters">B.6 L1 Cache Parameters</a>
+        <a href="#b-7-l2-cache-parameters">B.7 L2 Cache Parameters</a>
+        <a href="#b-7a-tlb-parameters">B.7a TLB Parameters</a>
+        <a href="#b-8-dram-parameters">B.8 DRAM Parameters</a>
+        <a href="#b-9-instruction-latency-and-throughput-table"
+          >B.9 Instruction Latency and Throughput Table</a
+        >
+        <a href="#b-10-synchronization-parameters"
+          >B.10 Synchronization Parameters</a
+        >
+        <a href="#b-11-tma-engine-parameters">B.11 TMA Engine Parameters</a>
+        <a href="#b-12-cluster-parameters">B.12 Cluster Parameters</a>
+        <a href="#b-13-pcie-and-system-parameters"
+          >B.13 PCIe and System Parameters</a
+        >
+        <a href="#b-14-power-and-thermal-parameters"
+          >B.14 Power and Thermal Parameters</a
+        >
+        <a href="#b-15-peak-throughput-parameters"
+          >B.15 Peak Throughput Parameters</a
+        >
+        <a href="#b-16-scheduler-and-pipeline-parameters"
+          >B.16 Scheduler and Pipeline Parameters</a
+        >
+        <a href="#b-17-derived-constants-for-performance-models"
+          >B.17 Derived Constants for Performance Models</a
+        >
+        <a href="#b-18-usage-notes">B.18 Usage Notes</a>
+        <a class="sub" href="#loading-parameters-in-python"
+          >Loading Parameters in Python</a
+        >
+        <a class="sub" href="#integration-with-cycle-level-simulators"
+          >Integration with Cycle-Level Simulators</a
+        >
+        <a class="sub" href="#version-control">Version Control</a>
+      </aside>
+    </div>
+    <script
+      defer
+      src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"
+      integrity="sha384-7zkQWkzuo3B5mTepMUcHkMB5jZaolc2xDwL6VFqjFALcbeS9Ggm/Yr2r3Dy4lfFg"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      defer
+      src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+      integrity="sha384-43gviWU0YVjaDtb/GhzOouOXtZMP/7XUzwPTstBeZFe/+rCMvRwr4yROQP43s0Xk"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      defer
+      src="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/lib/highlight.min.js"
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (window.renderMathInElement) {
+          renderMathInElement(document.body, {
+            delimiters: [
+              { left: "$$", right: "$$", display: true },
+              { left: "$", right: "$", display: false },
+            ],
+            throwOnError: false,
+          });
+        }
+        if (window.hljs) {
+          document
+            .querySelectorAll("pre code[class^='language-']")
+            .forEach(function (el) {
+              try {
+                hljs.highlightElement(el);
+              } catch (e) {}
+            });
+        }
+      });
+    </script>
+    <script src="assets/js/toc.js" defer></script>
+  </body>
+</html>

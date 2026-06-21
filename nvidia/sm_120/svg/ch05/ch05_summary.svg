@@ -1,0 +1,196 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 720" role="img"
+     aria-label="Chapter 05 Summary: Instruction-Level Characterization — SM_120 Complete Pipeline Reference">
+  <defs>
+    <style><![CDATA[
+      .eyebrow{font:600 11px "JetBrains Mono",monospace;letter-spacing:0.16em;text-transform:uppercase}
+      .title  {font:500 24px "Fraunces",serif;fill:#0b1220;letter-spacing:-0.02em}
+      .sub    {font:italic 12px "Fraunces",serif;fill:#5b6679}
+      .ttl    {font:600 12px "JetBrains Mono",monospace;letter-spacing:0.06em}
+      .lbl-sm {font:500 9px "JetBrains Mono",monospace;fill:#5b6679;letter-spacing:0.04em;text-transform:uppercase}
+      .kpi-val{font:600 20px "Fraunces",serif;fill:#0b1220;letter-spacing:-0.01em}
+      .kpi-unit{font:500 10px "JetBrains Mono",monospace;fill:#6b7280}
+      .insight{font:500 11.5px "IBM Plex Sans",sans-serif;fill:#2a3548}
+      .cat-hdr{font:700 10px "JetBrains Mono",monospace;letter-spacing:0.08em;text-transform:uppercase}
+    ]]></style>
+  </defs>
+
+  <rect width="1080" height="720" fill="#fcfbf6"/>
+
+  <!-- Header -->
+  <g transform="translate(36,28)">
+    <rect x="0" y="0" width="3" height="60" fill="#6d28d9"/>
+    <text x="16" y="18" class="eyebrow" fill="#6d28d9">CHAPTER 05 · SM_120 / GB202 · 200 TEST CASES</text>
+    <text x="16" y="44" class="title">Instruction-Level Characterization</text>
+    <text x="16" y="64" class="sub">Per-instruction latency · throughput · pipeline depth · co-issue · 6 execution pipes fully characterized</text>
+  </g>
+
+  <!-- ═══════ Row 1: Core Latency KPIs (8 cards) ═══════ -->
+  <g transform="translate(36,108)">
+    <!-- Card: IADD3 -->
+    <g transform="translate(0,0)">
+      <rect x="0" y="0" width="120" height="72" rx="8" fill="#ffffff" stroke="#e6e4da"/>
+      <rect x="0" y="0" width="120" height="3" rx="8" fill="#16a34a" opacity="0.8"/>
+      <text x="12" y="20" class="lbl-sm">IADD3</text>
+      <text x="12" y="46" class="kpi-val">2c</text>
+      <text x="12" y="62" class="kpi-unit">ILP=2 · P0-lite</text>
+    </g>
+    <!-- Card: FFMA -->
+    <g transform="translate(130,0)">
+      <rect x="0" y="0" width="120" height="72" rx="8" fill="#ffffff" stroke="#e6e4da"/>
+      <rect x="0" y="0" width="120" height="3" rx="8" fill="#2563eb" opacity="0.8"/>
+      <text x="12" y="20" class="lbl-sm">FFMA</text>
+      <text x="12" y="46" class="kpi-val">4c</text>
+      <text x="12" y="62" class="kpi-unit">ILP=4 · P0-lite</text>
+    </g>
+    <!-- Card: IMAD -->
+    <g transform="translate(260,0)">
+      <rect x="0" y="0" width="120" height="72" rx="8" fill="#ffffff" stroke="#e6e4da"/>
+      <rect x="0" y="0" width="120" height="3" rx="8" fill="#ca8a04" opacity="0.8"/>
+      <text x="12" y="20" class="lbl-sm">IMAD</text>
+      <text x="12" y="46" class="kpi-val">4c</text>
+      <text x="12" y="62" class="kpi-unit">ILP=2 · P0-heavy</text>
+    </g>
+    <!-- Card: HFMA2 -->
+    <g transform="translate(390,0)">
+      <rect x="0" y="0" width="120" height="72" rx="8" fill="#ffffff" stroke="#e6e4da"/>
+      <rect x="0" y="0" width="120" height="3" rx="8" fill="#ca8a04" opacity="0.8"/>
+      <text x="12" y="20" class="lbl-sm">HFMA2</text>
+      <text x="12" y="46" class="kpi-val">4c</text>
+      <text x="12" y="62" class="kpi-unit">ILP=2 · TDM 2-cyc</text>
+    </g>
+    <!-- Card: MUFU bare -->
+    <g transform="translate(520,0)">
+      <rect x="0" y="0" width="120" height="72" rx="8" fill="#ffffff" stroke="#e6e4da"/>
+      <rect x="0" y="0" width="120" height="3" rx="8" fill="#d97706" opacity="0.8"/>
+      <text x="12" y="20" class="lbl-sm">MUFU bare</text>
+      <text x="12" y="46" class="kpi-val">18c</text>
+      <text x="12" y="62" class="kpi-unit">ILP=6 · P2/XU</text>
+    </g>
+    <!-- Card: SHFL -->
+    <g transform="translate(650,0)">
+      <rect x="0" y="0" width="120" height="72" rx="8" fill="#ffffff" stroke="#e6e4da"/>
+      <rect x="0" y="0" width="120" height="3" rx="8" fill="#dc2626" opacity="0.8"/>
+      <text x="12" y="20" class="lbl-sm">SHFL.sync</text>
+      <text x="12" y="46" class="kpi-val">29c</text>
+      <text x="12" y="62" class="kpi-unit">ILP=7 · crossbar</text>
+    </g>
+    <!-- Card: DFMA -->
+    <g transform="translate(780,0)">
+      <rect x="0" y="0" width="120" height="72" rx="8" fill="#ffffff" stroke="#e6e4da"/>
+      <rect x="0" y="0" width="120" height="3" rx="8" fill="#7c3aed" opacity="0.8"/>
+      <text x="12" y="20" class="lbl-sm">DFMA</text>
+      <text x="12" y="46" class="kpi-val">64c</text>
+      <text x="12" y="62" class="kpi-unit">no-pipe · 1/SMSP</text>
+    </g>
+    <!-- Card: div.u64 -->
+    <g transform="translate(910,0)">
+      <rect x="0" y="0" width="120" height="72" rx="8" fill="#ffffff" stroke="#e6e4da"/>
+      <rect x="0" y="0" width="120" height="3" rx="8" fill="#475569" opacity="0.8"/>
+      <text x="12" y="20" class="lbl-sm">div.u64</text>
+      <text x="12" y="46" class="kpi-val">422c</text>
+      <text x="12" y="62" class="kpi-unit">subroutine call</text>
+    </g>
+  </g>
+
+  <!-- ═══════ Row 2: Three Architecture Panels ═══════ -->
+
+  <!-- Panel 1: Dual-Subpipe Co-Issue -->
+  <g transform="translate(36,200)">
+    <rect x="0" y="0" width="330" height="200" rx="10" fill="#f0fdf4" stroke="#16a34a" stroke-width="0.8"/>
+    <text x="16" y="22" class="cat-hdr" fill="#166534">DUAL-SUBPIPE CO-ISSUE</text>
+
+    <g transform="translate(16,36)">
+      <text x="0" y="14" style="font:600 11px 'Inter',sans-serif;fill:#1e293b">P0-lite ↔ P0-heavy = 100%</text>
+      <text x="0" y="34" style="font:500 10px 'Inter',sans-serif;fill:#374151">IADD3 + FFMA execute in parallel</text>
+      <text x="0" y="50" style="font:500 10px 'Inter',sans-serif;fill:#374151">from the same warp, same cycle</text>
+
+      <rect x="0" y="62" width="298" height="24" rx="4" fill="#dcfce7"/>
+      <text x="149" y="78" text-anchor="middle" style="font:700 10px 'JetBrains Mono',monospace;fill:#166534">MIX/MAX ratio = 1.001 (perfect)</text>
+
+      <text x="0" y="106" style="font:italic 10px 'Inter',sans-serif;fill:#6b7280">Also confirmed:</text>
+      <text x="0" y="122" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#374151">P0↔P1: 100%  P0↔P2: 100%</text>
+      <text x="0" y="138" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#374151">P0↔CVT: 95%  P0↔LSU: 100%</text>
+      <text x="0" y="156" style="font:italic 9.5px 'Inter',sans-serif;fill:#6b7280">→ Up to 5 ops/cyc from 1 warp</text>
+    </g>
+  </g>
+
+  <!-- Panel 2: FP64 EU Architecture -->
+  <g transform="translate(382,200)">
+    <rect x="0" y="0" width="330" height="200" rx="10" fill="#ede9fe" stroke="#7c3aed" stroke-width="0.8"/>
+    <text x="16" y="22" class="cat-hdr" fill="#5b21b6">FP64 EU ARCHITECTURE</text>
+
+    <g transform="translate(16,36)">
+      <text x="0" y="14" style="font:600 11px 'Inter',sans-serif;fill:#1e293b">4 EUs per SM (1 per SMSP)</text>
+      <text x="0" y="34" style="font:500 10px 'Inter',sans-serif;fill:#374151">Non-pipelined: 64c per DFMA</text>
+      <text x="0" y="50" style="font:500 10px 'Inter',sans-serif;fill:#374151">1:32 throughput ratio vs FP32</text>
+
+      <rect x="0" y="62" width="298" height="24" rx="4" fill="#ddd6fe"/>
+      <text x="149" y="78" text-anchor="middle" style="font:700 10px 'JetBrains Mono',monospace;fill:#5b21b6">Consumer-tier FP64 (not HPC)</text>
+
+      <text x="0" y="106" style="font:italic 10px 'Inter',sans-serif;fill:#6b7280">Lane-mask dichotomy resolved:</text>
+      <text x="0" y="122" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#374151">All-32-lanes: 64c (true latency)</text>
+      <text x="0" y="138" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#374151">Lane-0-only:  76c (+19% artefact)</text>
+      <text x="0" y="156" style="font:italic 9.5px 'Inter',sans-serif;fill:#6b7280">→ Sparse masks incur dispatch penalty</text>
+    </g>
+  </g>
+
+  <!-- Panel 3: SFU/Conversion Pipeline -->
+  <g transform="translate(728,200)">
+    <rect x="0" y="0" width="316" height="200" rx="10" fill="#fef3c7" stroke="#d97706" stroke-width="0.8"/>
+    <text x="16" y="22" class="cat-hdr" fill="#92400e">SFU &amp; CONVERSION</text>
+
+    <g transform="translate(16,36)">
+      <text x="0" y="14" style="font:600 11px 'Inter',sans-serif;fill:#1e293b">MUFU: 18c bare, 47c PTX wrapper</text>
+      <text x="0" y="34" style="font:500 10px 'Inter',sans-serif;fill:#374151">Wrapper = range-reduction + LUT</text>
+      <text x="0" y="50" style="font:500 10px 'Inter',sans-serif;fill:#374151">Composite depth = 5.6 (not 2)</text>
+
+      <rect x="0" y="62" width="284" height="24" rx="4" fill="#fde68a"/>
+      <text x="142" y="78" text-anchor="middle" style="font:700 10px 'JetBrains Mono',monospace;fill:#92400e">CuAssembler bypass saves 28c</text>
+
+      <text x="0" y="106" style="font:italic 10px 'Inter',sans-serif;fill:#6b7280">CVT unit (independent from FP/INT):</text>
+      <text x="0" y="122" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#374151">Tier 1: 2.5c (INT width)</text>
+      <text x="0" y="138" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#374151">Tier 2: 7.5c  Tier 3: 12-19c</text>
+      <text x="0" y="156" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#374151">Tier 4: 64c (routes to FP64 pipe)</text>
+    </g>
+  </g>
+
+  <!-- ═══════ Row 3: Key Findings ═══════ -->
+  <g transform="translate(36,420)">
+    <rect x="0" y="0" width="1008" height="291" rx="12" fill="#EDE7FB" stroke="#8b5cf6" stroke-width="0.8"/>
+    <text x="20" y="24" class="ttl" fill="#6d28d9">KEY ARCHITECTURAL FINDINGS</text>
+
+    <g transform="translate(20,44)">
+      <g transform="translate(0,0)">
+        <circle cx="6" cy="8" r="3.5" fill="#6d28d9"/>
+        <text x="18" y="12" class="insight" style="font-weight:600">Pipeline depth ≠ latency</text>
+        <text x="18" y="28" style="font:400 10.5px 'IBM Plex Sans',sans-serif;fill:#5b6679">depth = ⌈latency / issue_interval⌉ — IMAD depth=2 despite 4c latency</text>
+      </g>
+      <g transform="translate(0,42)">
+        <circle cx="6" cy="8" r="3.5" fill="#6d28d9"/>
+        <text x="18" y="12" class="insight" style="font-weight:600">HFMA2 offers zero FP16 throughput advantage</text>
+        <text x="18" y="28" style="font:400 10.5px 'IBM Plex Sans',sans-serif;fill:#5b6679">Time-multiplexed on 32-bit FMA — 1 elem/cyc same as FP32. TC = 258× faster</text>
+      </g>
+      <g transform="translate(0,84)">
+        <circle cx="6" cy="8" r="3.5" fill="#6d28d9"/>
+        <text x="18" y="12" class="insight" style="font-weight:600">Warp shuffle 6-14× slower than Ampere/Hopper</text>
+        <text x="18" y="28" style="font:400 10.5px 'IBM Plex Sans',sans-serif;fill:#5b6679">29c due to mandatory .sync convergence barrier (independent thread scheduling)</text>
+      </g>
+      <g transform="translate(0,126)">
+        <circle cx="6" cy="8" r="3.5" fill="#6d28d9"/>
+        <text x="18" y="12" class="insight" style="font-weight:600">SFU wrapper dominates transcendental cost (2.6×)</text>
+        <text x="18" y="28" style="font:400 10.5px 'IBM Plex Sans',sans-serif;fill:#5b6679">Range-reduction for subnormals/overflow; bypassable via SASS patching</text>
+      </g>
+      <g transform="translate(0,168)">
+        <circle cx="6" cy="8" r="3.5" fill="#6d28d9"/>
+        <text x="18" y="12" class="insight" style="font-weight:600">Integer division is catastrophic: 60c (u32) / 422c (u64)</text>
+        <text x="18" y="28" style="font:400 10.5px 'IBM Plex Sans',sans-serif;fill:#5b6679">9-step reciprocal-multiply-correct decomposition; always strength-reduce</text>
+      </g>
+      <g transform="translate(0,210)">
+        <circle cx="6" cy="8" r="3.5" fill="#6d28d9"/>
+        <text x="18" y="12" class="insight" style="font-weight:600">CVT unit is physically independent (95% co-issue with FP32/INT)</text>
+        <text x="18" y="28" style="font:400 10.5px 'IBM Plex Sans',sans-serif;fill:#5b6679">4-tier routing: INT→2.5c, FP16↔32→7.5c, INT↔FP→12-19c, ↔FP64→64c</text>
+      </g>
+    </g>
+  </g>
+</svg>

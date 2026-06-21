@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 680" role="img"
+     aria-label="SM_120 Memory Ordering Scope Hierarchy — five concentric ordering domains with measured fence, acquire, and release costs">
+  <defs>
+    <marker id="arrowD" markerWidth="8" markerHeight="6" refX="4" refY="3" orient="auto">
+      <polygon points="0,0 8,3 0,6" fill="#5b6679"/>
+    </marker>
+    <marker id="arrowR" markerWidth="8" markerHeight="6" refX="4" refY="3" orient="auto">
+      <polygon points="0,0 8,3 0,6" fill="#9f1239"/>
+    </marker>
+    <style><![CDATA[
+      .ttl{font:600 14px "Fraunces",serif;fill:#0b1220}
+      .sub{font:italic 11px "Fraunces",serif;fill:#5b6679}
+      .scope-name{font:700 12px "JetBrains Mono",monospace;letter-spacing:0.08em}
+      .scope-desc{font:500 10px "JetBrains Mono",monospace;fill:#5b6679}
+      .badge{font:600 10.5px "JetBrains Mono",monospace;fill:#ffffff}
+      .badge-lbl{font:500 8.5px "JetBrains Mono",monospace;fill:#5b6679;letter-spacing:0.06em;text-transform:uppercase}
+      .sass{font:500 9px "JetBrains Mono",monospace;fill:#8e97a5}
+      .cliff{font:700 11px "JetBrains Mono",monospace;fill:#9f1239}
+      .cliff-sub{font:italic 9px "Fraunces",serif;fill:#9f1239}
+      .panel-ttl{font:600 11px "JetBrains Mono",monospace;letter-spacing:0.08em}
+      .panel-item{font:500 10px "JetBrains Mono",monospace;fill:#2a3548}
+      .panel-val{font:600 10.5px "JetBrains Mono",monospace}
+      .key{font:italic 11px "Fraunces",serif;fill:#5b6679}
+      .key-hl{font:600 11px "JetBrains Mono",monospace;fill:#5a8e00}
+      .arr-lbl{font:500 9px "JetBrains Mono",monospace;fill:#5b6679}
+    ]]></style>
+  </defs>
+  <rect width="1080" height="680" fill="#ffffff"/>
+  <text x="36" y="30" class="ttl">SM_120 Memory Ordering Scope Hierarchy</text>
+  <text x="36" y="48" class="sub">Five concentric ordering domains — measured fence, acquire, and release costs (cycles at 2.1 GHz base)</text>
+
+  <!-- ═══════════ SCOPE STACK (left side, x=36..680) ═══════════ -->
+
+  <!-- Layer 0: Thread-private -->
+  <rect x="36" y="66" width="644" height="40" rx="8" fill="#f6f4ed" stroke="#e6e4da"/>
+  <text x="54" y="90" class="scope-name" fill="#8e97a5">THREAD-PRIVATE</text>
+  <text x="230" y="90" class="scope-desc">Register file — no ordering constraint (0 cyc)</text>
+
+  <!-- Arrow CTA -->
+  <line x1="358" y1="106" x2="358" y2="122" stroke="#5b6679" stroke-width="1.5" marker-end="url(#arrowD)"/>
+
+  <!-- Layer 1: CTA scope -->
+  <rect x="36" y="124" width="644" height="70" rx="8" fill="#e9f3d2" stroke="#5a8e00" stroke-width="0.8"/>
+  <text x="54" y="146" class="scope-name" fill="#3d6b00">CTA SCOPE</text>
+  <text x="200" y="146" class="scope-desc">Shared memory + bar.sync visible (single thread block)</text>
+  <!-- badges -->
+  <rect x="54" y="155" width="82" height="20" rx="10" fill="#5a8e00"/>
+  <text x="95" y="169" class="badge" text-anchor="middle">fence 7 cyc</text>
+  <rect x="146" y="155" width="70" height="20" rx="10" fill="#5a8e00" opacity="0.75"/>
+  <text x="181" y="169" class="badge" text-anchor="middle">SC 6 cyc</text>
+  <text x="54" y="186" class="sass">SASS: MEMBAR.SC.CTA</text>
+  <!-- acquire/release at CTA scope are cheap -->
+  <text x="340" y="169" class="badge-lbl">ld (default)</text>
+  <text x="340" y="183" class="panel-val" fill="#5a8e00">44 cyc</text>
+  <text x="440" y="169" class="badge-lbl">st.release.cta</text>
+  <text x="440" y="183" class="panel-val" fill="#5a8e00">11.9 cyc</text>
+
+  <!-- Arrow + cliff -->
+  <line x1="358" y1="194" x2="358" y2="220" stroke="#9f1239" stroke-width="1.5" stroke-dasharray="3 2" marker-end="url(#arrowR)"/>
+  <text x="372" y="212" class="cliff">12×</text>
+
+  <!-- Layer 2: Cluster scope -->
+  <rect x="36" y="222" width="644" height="70" rx="8" fill="#fef3c7" stroke="#92400e" stroke-width="0.8"/>
+  <text x="54" y="244" class="scope-name" fill="#92400e">CLUSTER SCOPE</text>
+  <text x="230" y="244" class="scope-desc">DSMEM visible (cross-CTA within cluster, 2 SMs)</text>
+  <rect x="54" y="253" width="142" height="20" rx="10" fill="#d97706"/>
+  <text x="125" y="267" class="badge" text-anchor="middle">barrier.relax 85 cyc</text>
+  <rect x="206" y="253" width="132" height="20" rx="10" fill="#92400e"/>
+  <text x="272" y="267" class="badge" text-anchor="middle">barrier.full 371 cyc</text>
+  <text x="54" y="286" class="sass">SASS: UCGABAR_ARV + UCGABAR_WAIT (no MEMBAR for .relaxed)</text>
+
+  <!-- Arrow + cliff -->
+  <line x1="358" y1="292" x2="358" y2="318" stroke="#9f1239" stroke-width="1.5" stroke-dasharray="3 2" marker-end="url(#arrowR)"/>
+  <text x="372" y="310" class="cliff">3.4×</text>
+  <text x="404" y="310" class="cliff-sub">(40.7× vs CTA)</text>
+
+  <!-- Layer 3: GPU scope -->
+  <rect x="36" y="320" width="644" height="82" rx="8" fill="#ffedd5" stroke="#ea580c" stroke-width="0.8"/>
+  <text x="54" y="342" class="scope-name" fill="#9a3412">GPU SCOPE</text>
+  <text x="200" y="342" class="scope-desc">L2-visible to all 110 SMs on same GPU</text>
+  <rect x="54" y="351" width="100" height="20" rx="10" fill="#ea580c"/>
+  <text x="104" y="365" class="badge" text-anchor="middle">fence 285 cyc</text>
+  <rect x="164" y="351" width="120" height="20" rx="10" fill="#c2410c"/>
+  <text x="224" y="365" class="badge" text-anchor="middle">← ld.acquire 393</text>
+  <rect x="294" y="351" width="126" height="20" rx="10" fill="#9a3412"/>
+  <text x="357" y="365" class="badge" text-anchor="middle">st.release → 920</text>
+  <text x="54" y="390" class="sass">SASS: MEMBAR.ALL.GPU · LDG.E.STRONG.GPU (acquire) · STG.E.STRONG.GPU (release)</text>
+
+  <!-- Arrow + cliff -->
+  <line x1="358" y1="402" x2="358" y2="428" stroke="#9f1239" stroke-width="1.5" stroke-dasharray="3 2" marker-end="url(#arrowR)"/>
+  <text x="372" y="420" class="cliff">3.2×</text>
+
+  <!-- Layer 4: System scope -->
+  <rect x="36" y="430" width="644" height="82" rx="8" fill="#ffe4e6" stroke="#e11d48" stroke-width="0.8"/>
+  <text x="54" y="452" class="scope-name" fill="#9f1239">SYSTEM SCOPE</text>
+  <text x="220" y="452" class="scope-desc">PCIe-visible (CPU + other GPUs)</text>
+  <rect x="54" y="461" width="100" height="20" rx="10" fill="#e11d48"/>
+  <text x="104" y="475" class="badge" text-anchor="middle">fence 920 cyc</text>
+  <rect x="164" y="461" width="120" height="20" rx="10" fill="#be123c"/>
+  <text x="224" y="475" class="badge" text-anchor="middle">← ld.acquire 392</text>
+  <rect x="294" y="461" width="130" height="20" rx="10" fill="#881337"/>
+  <text x="359" y="475" class="badge" text-anchor="middle">st.release → 1320</text>
+  <text x="54" y="500" class="sass">SASS: MEMBAR.SC.GPU+SYS · 131× CTA cost · PCIe coherence round-trip ~440 ns</text>
+
+  <!-- ═══════════ PROXY PANEL (right side, x=706..1044) ═══════════ -->
+  <rect x="706" y="124" width="338" height="200" rx="10" fill="#ede7fb" stroke="#6d28d9" stroke-width="0.8"/>
+  <text x="724" y="146" class="panel-ttl" fill="#6d28d9">PROXY SCOPE (ORTHOGONAL)</text>
+  <text x="724" y="164" class="scope-desc">Async domain boundaries — independent of spatial scope</text>
+
+  <text x="724" y="190" class="badge-lbl">fence.proxy.async</text>
+  <text x="724" y="206" class="panel-val" fill="#6d28d9">CTA = 7 cyc · global = 163-168 cyc</text>
+
+  <text x="724" y="230" class="badge-lbl">fence.proxy.alias</text>
+  <text x="724" y="246" class="panel-val" fill="#6d28d9">839-853 cyc (MEMBAR.SC.GPU+SYS)</text>
+
+  <text x="724" y="270" class="badge-lbl">fence.proxy.tensormap</text>
+  <text x="724" y="286" class="panel-val" fill="#6d28d9">acquire = 66 cyc · release = 199 cyc</text>
+
+  <text x="724" y="310" class="scope-desc">Drains async copy/TMA completion</text>
+    <text x="724" y="322" class="scope-desc">without full store-queue flush</text>
+
+  <!-- ═══════════ ACQUIRE / RELEASE SEMANTICS LEGEND (right bottom) ═══════════ -->
+  <rect x="706" y="340" width="338" height="172" rx="10" fill="#fcfbf6" stroke="#e6e4da"/>
+  <text x="724" y="362" class="panel-ttl" fill="#0b1220">ACQUIRE / RELEASE SEMANTICS</text>
+
+  <!-- Acquire diagram -->
+  <text x="724" y="386" class="scope-name" fill="#c2410c">← ACQUIRE (load)</text>
+  <text x="724" y="402" class="scope-desc">Invalidate L1 → force L2 coherence check</text>
+  <text x="724" y="416" class="scope-desc">All subsequent loads/stores see up-to-date data</text>
+  <text x="724" y="434" class="panel-val" fill="#c2410c">GPU: 393 cyc · SYS: 392 cyc</text>
+
+  <!-- Release diagram -->
+  <text x="724" y="460" class="scope-name" fill="#881337">RELEASE → (store)</text>
+  <text x="724" y="476" class="scope-desc">Drain store buffer → push to L2/PCIe</text>
+  <text x="724" y="490" class="scope-desc">All prior loads/stores visible before this write</text>
+  <text x="724" y="508" class="panel-val" fill="#881337">GPU: 920 cyc · SYS: 1320 cyc</text>
+
+  <!-- ═══════════ KEY FINDING BANNER (bottom) ═══════════ -->
+  <rect x="36" y="530" width="1008" height="54" rx="10" fill="#e9f3d2" stroke="#5a8e00" stroke-width="0.8"/>
+  <text x="54" y="554" class="key">Key architectural finding:</text>
+  <text x="260" y="554" class="key-hl">SC = acq_rel on SM_120 — zero overhead for sequential consistency at any scope.</text>
+  <text x="54" y="572" class="key">SM_120's memory model is TSO-like; fence.sc costs equal fence.acq_rel (6 vs 7 cyc at CTA, 290 vs 285 at GPU, 888 vs 920 at SYS).</text>
+
+  <!-- ═══════════ COST THERMOMETER (bottom center) ═══════════ -->
+  <g transform="translate(36,600)">
+    <text x="0" y="14" class="badge-lbl">cost scale</text>
+    <rect x="80" y="4" width="60" height="14" rx="7" fill="#5a8e00"/>
+    <text x="110" y="15" class="badge" text-anchor="middle" font-size="9">7 cyc</text>
+    <rect x="150" y="4" width="70" height="14" rx="7" fill="#d97706"/>
+    <text x="185" y="15" class="badge" text-anchor="middle" font-size="9">85 cyc</text>
+    <rect x="230" y="4" width="80" height="14" rx="7" fill="#ea580c"/>
+    <text x="270" y="15" class="badge" text-anchor="middle" font-size="9">285 cyc</text>
+    <rect x="320" y="4" width="80" height="14" rx="7" fill="#e11d48"/>
+    <text x="360" y="15" class="badge" text-anchor="middle" font-size="9">920 cyc</text>
+    <rect x="410" y="4" width="90" height="14" rx="7" fill="#881337"/>
+    <text x="455" y="15" class="badge" text-anchor="middle" font-size="9">1320 cyc</text>
+    <text x="520" y="14" class="arr-lbl">Increasing visibility scope →</text>
+  </g>
+
+  <!-- Source reference -->
+  <text x="36" y="650" class="sass">Sources: S8/case_64-71, S8/case_123-125, S8/case_169-170, S7/case_41-42, S10/case_100</text>
+</svg>

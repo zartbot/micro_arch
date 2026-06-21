@@ -1,0 +1,1170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Power, Thermal &amp; Efficiency · SM_120 Microarch Reference</title>
+<link rel="stylesheet" href="assets/css/style.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" integrity="sha384-nB0miv6/jRmo5UMMR1wu3Gz6NLsoTkbqJghGIsx//Rlm+ZU03BU6SQNC66uf4l5+" crossorigin="anonymous">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/styles/atom-one-light.min.css">
+<style>
+/* protect non-color overrides over hljs theme */
+pre code.hljs { background: transparent !important; padding: 0 !important; }
+</style>
+</head>
+<body>
+<div class="shell">
+<aside class="toc">
+<a class="toc-back" href="index.html">← Index</a>
+<div class="toc-brand">SM_120 <span class="accent">GB202</span> · <em>Microarch</em></div>
+<span class="toc-tag">FINAL REPORT · 2026</span>
+<h4>All Chapters</h4>
+<a href="01_architecture_overview.html">01 · Architecture Overview</a>
+<a href="02_memory_subsystem.html">02 · Memory Subsystem</a>
+<a href="03_sm_microarchitecture.html">03 · SM Microarchitecture</a>
+<a href="04_tensorcore_architecture.html">04 · TensorCore Architecture</a>
+<a href="05_instruction_level_characterization.html">05 · Instruction-Level Characterization</a>
+<a href="06_on_chip_network_async.html">06 · On-Chip Network &amp; Async</a>
+<a href="07_warp_scheduler_control.html">07 · Warp Scheduler &amp; Control</a>
+<a href="08_workload_analysis.html">08 · Workload Analysis</a>
+<a href="09_power_thermal_efficiency.html" style="font-weight:600;color:var(--ink)">09 · Power, Thermal &amp; Efficiency</a>
+<a href="10_system_level_multi_gpu.html">10 · System-Level &amp; Multi-GPU</a>
+<a href="11_optimization_guidance.html">11 · Optimization Guidance</a>
+<a href="12_ptxas_compiler_behavior.html">12 · ptxas Compiler Behavior</a>
+<a href="13_unified_performance_model.html">13 · Unified Performance Model</a>
+<a href="14_sm100_to_sm120_porting_guide.html">14 · SM_100 → SM_120 Porting Guide</a>
+<a href="15_agent_ground_truth.html">15 · Agent Ground Truth</a>
+<a href="16_open_questions.html">16 · Open Questions</a>
+<a href="17_cross_reference_map.html">17 · Cross-Reference Map</a>
+<a href="18_appendix_a_test_coverage.html">18 · Appendix A — Test Coverage</a>
+<a href="19_appendix_b_machine_readable.html">19 · Appendix B — Machine-Readable Parameters</a>
+<a href="20_appendix_c_methodology.html">20 · Appendix C — Measurement Methodology</a>
+</aside>
+<main class="content">
+
+<header class="hero">
+<div class="hero-eyebrow"><span class="pulse"></span>CHAPTER 09 · SM_120 · GB202 BLACKWELL</div>
+<h1 class="hero-title">Power, Thermal &amp; Efficiency</h1>
+<p class="lede">This chapter presents a comprehensive characterization of the power consumption, thermal behavior, and energy efficiency of the NVIDIA SM_120 (GB202, RTX PRO 5000 72GB) across all supported compute precisions and workload types. Through 17 dedicated experiments (Section 20) and cross-referenced tensor core power measurements (Section 9), we establish that SM_120 operates well below its 350W TDP under all single-workload scenarios, achieves near-perfect DVFS linearity, and exhibits an 864x efficiency span from FP64 CUDA cores (0.011 TFLOPS/W) to Sparse INT8 Tensor Cores (9.49 TOPS/W). The data reveals that Tensor Cores are paradoxically cooler than CUDA cores at comparable or higher throughput, that clock gating is active at per-SM granularity, and that the efficiency-optimal operating point lies at approximately 1500 MHz — 32% more efficient than maximum clock.</p>
+</header>
+
+<figure class="diagram"><object data="svg/ch09/ch09_summary.svg" type="image/svg+xml" aria-label="Chapter 9 Executive Summary — power envelope (max 232W/350W TDP), 864× efficiency span, DVFS sweet spot at 1500 MHz, clock gating model, TC/CUDA paradox"></object><figcaption><span class="fig-num">FIG 09.0</span>Chapter 9 Executive Summary — the SM_120 power architecture characterized across all precisions: power states (6.6–232 W), TFLOPS/W efficiency ladder (0.011–9.49), DVFS linearity with 1500 MHz sweet spot, per-SM clock gating, and 7 key architectural insights including the TC-cooler-than-CUDA paradox and constant-power/scaling-OPs behavior.</figcaption></figure>
+<h2 class="ch-title" id="9-1-power-envelope-characterization">9.1 Power Envelope Characterization</h2>
+<h3 class="sub-title" id="9-1-1-tdp-and-maximum-observed-power">9.1.1 TDP and Maximum Observed Power</h3>
+<p>The RTX PRO 5000 72GB carries a rated TDP of 350W. However, no single-workload scenario tested in this study achieved more than 66% of this thermal design power.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Value</th>
+<th>Source</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Rated TDP</td>
+<td>350 W</td>
+<td>Specification</td>
+</tr>
+<tr>
+<td>Idle power (pre-CUDA context)</td>
+<td>6.6 W (1.9% TDP)</td>
+<td><code>section_20/case_5</code></td>
+</tr>
+<tr>
+<td>CUDA context overhead</td>
+<td>+42 W</td>
+<td><code>section_20/case_5</code></td>
+</tr>
+<tr>
+<td>Idle power (with CUDA context)</td>
+<td>48.4 W (13.8% TDP)</td>
+<td><code>section_20/case_5</code></td>
+</tr>
+<tr>
+<td>Maximum observed power</td>
+<td>232 W (66% TDP)</td>
+<td><code>section_20/case_10</code></td>
+</tr>
+<tr>
+<td>Maximum sustained compute power</td>
+<td>212 W (60% TDP)</td>
+<td><code>section_20/case_8</code></td>
+</tr>
+<tr>
+<td>TDP headroom (never utilized)</td>
+<td>118 W (34% TDP)</td>
+<td>Derived (350 - 232)</td>
+</tr>
+</tbody>
+</table></div>
+<p>The 138W gap between maximum observed power and TDP is never utilized under any single sustained workload. This suggests the 350W TDP budget accommodates multi-GPU NVLink power allocation and transient burst headroom that the PCIe-only SM_120 configuration cannot fully exercise.</p>
+<h3 class="sub-title" id="9-1-2-power-state-hierarchy">9.1.2 Power State Hierarchy</h3>
+<p>SM_120 exhibits a well-defined power state hierarchy spanning from driver idle to maximum boost-clock operation.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>State</th>
+<th>Power (W)</th>
+<th>% TDP</th>
+<th>Temperature (C)</th>
+<th>Source</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Pre-CUDA context (driver idle)</td>
+<td>6.6</td>
+<td>1.9%</td>
+<td>—</td>
+<td>Case 5</td>
+</tr>
+<tr>
+<td>CUDA context overhead</td>
+<td>+42</td>
+<td>+12%</td>
+<td>—</td>
+<td>Case 5</td>
+</tr>
+<tr>
+<td>CUDA context idle</td>
+<td>48.4</td>
+<td>13.8%</td>
+<td>—</td>
+<td>Cases 5, 7</td>
+</tr>
+<tr>
+<td>Memory BW saturated</td>
+<td>106</td>
+<td>30.4%</td>
+<td>—</td>
+<td>Case 7</td>
+</tr>
+<tr>
+<td>MMA FP16 TC (sustained)</td>
+<td>108–113</td>
+<td>31%</td>
+<td>48</td>
+<td>Cases 1, 7, 9</td>
+</tr>
+<tr>
+<td>FP16 HFMA2 CUDA</td>
+<td>123–131</td>
+<td>35–37%</td>
+<td>48</td>
+<td>Cases 1, 7, 9</td>
+</tr>
+<tr>
+<td>BF16 HFMA2 CUDA</td>
+<td>126–132</td>
+<td>36–38%</td>
+<td>49</td>
+<td>Cases 1, 9</td>
+</tr>
+<tr>
+<td>FP32 FFMA CUDA</td>
+<td>143–149</td>
+<td>41–43%</td>
+<td>40–48</td>
+<td>Cases 1, 3, 7, 9, 11</td>
+</tr>
+<tr>
+<td>INT32 IMAD CUDA</td>
+<td>160–164</td>
+<td>46–47%</td>
+<td>53</td>
+<td>Cases 1, 9</td>
+</tr>
+<tr>
+<td>Boost-clock FFMA (2572 MHz)</td>
+<td>192–212</td>
+<td>55–61%</td>
+<td>57–65</td>
+<td>Cases 8, 10, 11</td>
+</tr>
+<tr>
+<td><strong>Maximum observed</strong></td>
+<td><strong>232</strong></td>
+<td><strong>66%</strong></td>
+<td><strong>65</strong></td>
+<td><strong>Case 10</strong></td>
+</tr>
+</tbody>
+</table></div>
+<p>The CUDA context itself costs 42W (12% TDP), representing the largest fixed overhead component. This fixed cost is dominated by clock tree distribution, L2 cache leakage, memory controller idle power, and I/O ring power.</p>
+<hr>
+<h2 class="ch-title" id="9-2-thermal-stability-and-throttling-behavior">9.2 Thermal Stability and Throttling Behavior</h2>
+<h3 class="sub-title" id="9-2-1-thermal-throttle-threshold">9.2.1 Thermal Throttle Threshold</h3>
+<p>SM_120 implements a thermal throttle threshold at 92 degrees C. Under all tested workload conditions, the GPU never approaches this threshold, maintaining at minimum 27 degrees C of headroom.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Test</th>
+<th>Duration</th>
+<th>Max Temp (C)</th>
+<th>Throttle Threshold</th>
+<th>Headroom</th>
+<th>Clock Stable</th>
+<th>Source</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>FP32 @2100 MHz</td>
+<td>35 s</td>
+<td>41</td>
+<td>92</td>
+<td>51 C</td>
+<td>Yes (2077–2085 MHz)</td>
+<td>Case 2</td>
+</tr>
+<tr>
+<td>All 6 formats @2092 MHz</td>
+<td>60 s each</td>
+<td>53 (INT32)</td>
+<td>92</td>
+<td>39 C</td>
+<td>Yes (zero drift)</td>
+<td>Case 9</td>
+</tr>
+<tr>
+<td>Boost-clock TC+FFMA</td>
+<td>150 s</td>
+<td>57</td>
+<td>92</td>
+<td>35 C</td>
+<td>Yes (2572 MHz)</td>
+<td>Case 8</td>
+</tr>
+<tr>
+<td>Boost-clock sustained</td>
+<td>621 s (10 min)</td>
+<td>65</td>
+<td>92</td>
+<td>27 C</td>
+<td>Yes (2572 MHz)</td>
+<td>Case 10</td>
+</tr>
+</tbody>
+</table></div>
+<p>No thermal throttling was observed under any test condition. Even after 10 minutes of sustained boost-clock operation at 232W, the GPU stabilized at 65 degrees C — well below the 92-degree throttle point. Clock frequency remained perfectly stable throughout all tests with zero drift.</p>
+<h3 class="sub-title" id="9-2-2-per-format-thermal-profiles">9.2.2 Per-Format Thermal Profiles</h3>
+<p>All six tested precision formats sustain the full pinned clock (2092 MHz) for 60+ seconds with zero drift, but exhibit distinct thermal signatures.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Format</th>
+<th>Sustained Power (W)</th>
+<th>Temperature (C)</th>
+<th>Clock Drift</th>
+<th>Source</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>TC MMA FP16</td>
+<td>108–109</td>
+<td>48</td>
+<td>0 MHz</td>
+<td>Case 9</td>
+</tr>
+<tr>
+<td>FP16 HFMA2</td>
+<td>123–131</td>
+<td>48</td>
+<td>0 MHz</td>
+<td>Case 9</td>
+</tr>
+<tr>
+<td>BF16 HFMA2</td>
+<td>126–132</td>
+<td>49</td>
+<td>0 MHz</td>
+<td>Case 9</td>
+</tr>
+<tr>
+<td>FP32 FFMA</td>
+<td>143–149</td>
+<td>40–48</td>
+<td>0 MHz</td>
+<td>Case 9</td>
+</tr>
+<tr>
+<td>INT32 IMAD</td>
+<td>160–164</td>
+<td>53</td>
+<td>0 MHz</td>
+<td>Case 9</td>
+</tr>
+<tr>
+<td>FP64 DFMA</td>
+<td>71–87</td>
+<td>—</td>
+<td>0 MHz</td>
+<td>Cases 1, 4</td>
+</tr>
+</tbody>
+</table></div>
+<p>INT32 IMAD draws the most power (164W) and reaches the highest temperature (53 C), while Tensor Core MMA FP16 is the coolest compute workload at 48 C despite delivering 4x the throughput of CUDA FP32.</p>
+<hr>
+<h2 class="ch-title" id="9-3-tflopsw-efficiency-across-precisions">9.3 TFLOPS/W Efficiency Across Precisions</h2>
+<h3 class="sub-title" id="9-3-1-complete-efficiency-hierarchy">9.3.1 Complete Efficiency Hierarchy</h3>
+<p>The full efficiency hierarchy spans 864x from least efficient (FP64 CUDA) to most efficient (Sparse INT8 TC), revealing SM_120's compute efficiency landscape.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Precision</th>
+<th>Compute Unit</th>
+<th>TFLOPS/TOPS</th>
+<th>Power (W)</th>
+<th>TFLOPS/W</th>
+<th>Relative to FP32 CUDA</th>
+<th>Source</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>FP64 (DFMA)</td>
+<td>CUDA core</td>
+<td>0.78–0.91</td>
+<td>71–87</td>
+<td>0.011</td>
+<td>0.03x</td>
+<td>Cases 1, 4, 6</td>
+</tr>
+<tr>
+<td>INT32 (IMAD)</td>
+<td>CUDA core</td>
+<td>29.5</td>
+<td>160–164</td>
+<td>0.185</td>
+<td>0.47x</td>
+<td>Cases 1, 9</td>
+</tr>
+<tr>
+<td>FP32 (FFMA)</td>
+<td>CUDA core</td>
+<td>56–58</td>
+<td>143–149</td>
+<td>0.39</td>
+<td>1.00x (reference)</td>
+<td>Cases 1, 4, 6, 7</td>
+</tr>
+<tr>
+<td>BF16 (HFMA2)</td>
+<td>CUDA core</td>
+<td>59.0</td>
+<td>126–132</td>
+<td>0.44–0.47</td>
+<td>1.14x</td>
+<td>Cases 1, 4, 6</td>
+</tr>
+<tr>
+<td>FP16 (HFMA2)</td>
+<td>CUDA core</td>
+<td>59.0</td>
+<td>123–131</td>
+<td>0.44–0.48</td>
+<td>1.14x</td>
+<td>Cases 1, 4, 6</td>
+</tr>
+<tr>
+<td>INT8 (DP4A)</td>
+<td>CUDA core</td>
+<td>115 TOPS</td>
+<td>121–123</td>
+<td>0.94–0.96</td>
+<td>2.47x</td>
+<td>Cases 4, 6</td>
+</tr>
+<tr>
+<td>TF32 (mma.sync)</td>
+<td>Tensor Core</td>
+<td>58.1</td>
+<td>108</td>
+<td>0.54</td>
+<td>1.39x</td>
+<td>Case 6</td>
+</tr>
+<tr>
+<td>MXFP4 (QMMA.SF)</td>
+<td>Tensor Core</td>
+<td>105</td>
+<td>89</td>
+<td>1.18</td>
+<td>3.04x</td>
+<td>Case 16</td>
+</tr>
+<tr>
+<td>BF16 (mma.sync)</td>
+<td>Tensor Core</td>
+<td>232</td>
+<td>112</td>
+<td>2.08</td>
+<td>5.36x</td>
+<td>Case 6</td>
+</tr>
+<tr>
+<td>FP16 (mma.sync)</td>
+<td>Tensor Core</td>
+<td>232–235</td>
+<td>109–113</td>
+<td>2.08–2.14</td>
+<td>5.39x</td>
+<td>Cases 1, 6, 7, 15</td>
+</tr>
+<tr>
+<td>INT8 (mma.sync)</td>
+<td>Tensor Core</td>
+<td>233 TOPS</td>
+<td>104</td>
+<td>2.24</td>
+<td>5.77x</td>
+<td>Case 6</td>
+</tr>
+<tr>
+<td>NVFP4 (OMMA.SF)</td>
+<td>Tensor Core</td>
+<td>210</td>
+<td>89</td>
+<td>2.36</td>
+<td>6.08x</td>
+<td>Case 16</td>
+</tr>
+<tr>
+<td>Dense INT8 (IMMA)</td>
+<td>Tensor Core</td>
+<td>465 TOPS</td>
+<td>92</td>
+<td>5.04</td>
+<td>12.98x</td>
+<td>Case 17</td>
+</tr>
+<tr>
+<td>Sparse INT8 (IMMA.SP)</td>
+<td>Tensor Core</td>
+<td>929 TOPS</td>
+<td>98</td>
+<td>9.49</td>
+<td>24.44x</td>
+<td>Case 17</td>
+</tr>
+</tbody>
+</table></div>
+<figure class="diagram">
+<object data="svg/ch09/ch09_efficiency_ladder.svg" type="image/svg+xml" aria-label="SM_120 TFLOPS/W efficiency hierarchy — 864× span from FP64 CUDA to Sparse INT8 TC, organized by efficiency bands"></object>
+<figcaption><span class="fig-num">FIG 09.1</span>Complete TFLOPS/W efficiency hierarchy across all 14 measured precision/compute-unit combinations — bars are log-proportional to efficiency; left-side band classifications (ultra-high 5.0–9.5, high 1.18–2.36, medium 0.54–0.96, low 0.011–0.48) group formats by practical deployment tier. The 864× range from FP64 DFMA (0.011) to Sparse INT8 IMMA.SP (9.49) reflects the fundamental architectural advantage of amortizing control overhead across larger OPs-per-instruction. <span class="cite">[S20/case_1-17, S9/case_128-137]</span></figcaption>
+</figure>
+<p>The visualization reveals a clear architectural pattern: <strong>all Tensor Core formats draw approximately identical power (89–113 W)</strong> regardless of precision, while throughput scales proportionally with the number of operations processed per MMA instruction. This "constant power, scaling OPs" characteristic means each halving of operand precision approximately doubles energy efficiency at zero additional hardware cost. The transition from CUDA cores to Tensor Cores provides a one-time 5.3× efficiency gain (FP16: 0.46 CUDA → 2.08 TC), establishing TC utilization as the single most impactful power optimization lever on SM_120.</p>
+<h3 class="sub-title" id="9-3-2-efficiency-bands">9.3.2 Efficiency Bands</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Band</th>
+<th>Range (TFLOPS/W)</th>
+<th>Formats</th>
+<th>Representative Power</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Ultra-low</td>
+<td>0.01</td>
+<td>FP64 CUDA</td>
+<td>71–87 W</td>
+</tr>
+<tr>
+<td>Low</td>
+<td>0.18–0.48</td>
+<td>INT32, FP32, FP16/BF16 CUDA</td>
+<td>123–164 W</td>
+</tr>
+<tr>
+<td>Medium</td>
+<td>0.54–1.18</td>
+<td>INT8 CUDA, TF32 TC, MXFP4 TC</td>
+<td>89–123 W</td>
+</tr>
+<tr>
+<td>High</td>
+<td>2.08–2.36</td>
+<td>FP16/BF16/INT8 TC, NVFP4 TC</td>
+<td>89–113 W</td>
+</tr>
+<tr>
+<td>Ultra-high</td>
+<td>5.04–9.49</td>
+<td>Dense/Sparse INT8 IMMA TC</td>
+<td>92–98 W</td>
+</tr>
+</tbody>
+</table></div>
+<h3 class="sub-title" id="9-3-3-tc-power-profile-constant-power-scaling-ops">9.3.3 TC Power Profile: Constant Power, Scaling OPs</h3>
+<p>A critical finding is that all Tensor Core formats draw approximately identical chip-level power (~57W average in Section 9 measurements, 89–113W in Section 20 full-chip measurements), while TOPS scales proportionally with reduced precision.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>TC Format</th>
+<th>TFLOPS/TOPS</th>
+<th>Power (W)</th>
+<th>TFLOPS/W</th>
+<th>OPs per MMA</th>
+<th>Source</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>FP16 (mma.sync m16n8k16)</td>
+<td>232–235</td>
+<td>109–113</td>
+<td>2.08–2.14</td>
+<td>512</td>
+<td>Cases 1, 6</td>
+</tr>
+<tr>
+<td>INT8 (mma.sync m16n8k32)</td>
+<td>233 TOPS</td>
+<td>104</td>
+<td>2.24</td>
+<td>1024</td>
+<td>Case 6</td>
+</tr>
+<tr>
+<td>Dense INT8 (IMMA m16n8k32)</td>
+<td>465 TOPS</td>
+<td>92</td>
+<td>5.04</td>
+<td>1024</td>
+<td>Case 17</td>
+</tr>
+<tr>
+<td>NVFP4 (OMMA.SF m16n8k64)</td>
+<td>210</td>
+<td>89</td>
+<td>2.36</td>
+<td>2048</td>
+<td>Case 16</td>
+</tr>
+<tr>
+<td>Sparse INT8 (IMMA.SP m16n8k64)</td>
+<td>929 TOPS</td>
+<td>98</td>
+<td>9.49</td>
+<td>2048</td>
+<td>Case 17</td>
+</tr>
+</tbody>
+</table></div>
+<p>The Tensor Core pipeline executes the same number of MMA instructions per cycle regardless of precision — each instruction simply processes proportionally more FLOPs at lower precision. Power consumption is dominated by control/scheduling infrastructure, not by the arithmetic switching activity itself. This results in TFLOPS/W scaling roughly proportional to the OPs-per-instruction increase.</p>
+<hr>
+<h2 class="ch-title" id="9-4-dvfs-characterization">9.4 DVFS Characterization</h2>
+<h3 class="sub-title" id="9-4-1-core-clock-sweep">9.4.1 Core Clock Sweep</h3>
+<p>Two independent DVFS sweeps (Cases 3 and 11) demonstrate near-perfect linear throughput scaling across the full clock range, with super-linear power scaling.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Clock (MHz)</th>
+<th>TFLOPS (FP32)</th>
+<th>Power (W)</th>
+<th>TFLOPS/W</th>
+<th>Linearity vs Ideal</th>
+<th>Source</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>575</td>
+<td>15.7</td>
+<td>48</td>
+<td>0.33</td>
+<td>baseline</td>
+<td>Cases 3, 11</td>
+</tr>
+<tr>
+<td>887</td>
+<td>24.5</td>
+<td>66</td>
+<td>0.37</td>
+<td>101%</td>
+<td>Cases 3, 11</td>
+</tr>
+<tr>
+<td>1177</td>
+<td>32.5</td>
+<td>70</td>
+<td>0.46</td>
+<td>101%</td>
+<td>Cases 3, 11</td>
+</tr>
+<tr>
+<td><strong>1492</strong></td>
+<td><strong>41.5</strong></td>
+<td><strong>85</strong></td>
+<td><strong>0.49</strong></td>
+<td><strong>102%</strong></td>
+<td><strong>Cases 3, 11</strong></td>
+</tr>
+<tr>
+<td>1792</td>
+<td>49.8</td>
+<td>103</td>
+<td>0.49</td>
+<td>102%</td>
+<td>Cases 3, 11</td>
+</tr>
+<tr>
+<td>2092</td>
+<td>58.3</td>
+<td>143</td>
+<td>0.41</td>
+<td>102%</td>
+<td>Cases 3, 11</td>
+</tr>
+<tr>
+<td>2392</td>
+<td>66.6</td>
+<td>158</td>
+<td>0.42</td>
+<td>102%</td>
+<td>Cases 3, 11</td>
+</tr>
+<tr>
+<td>2572</td>
+<td>71.8</td>
+<td>193</td>
+<td>0.37</td>
+<td>102%</td>
+<td>Case 11</td>
+</tr>
+<tr>
+<td>2606 (clock wall)</td>
+<td>72.7</td>
+<td>204</td>
+<td>0.36</td>
+<td>—</td>
+<td>Case 3</td>
+</tr>
+</tbody>
+</table></div>
+<p>Throughput scales at 101–102% of ideal linearity across the entire range from 574 to 2606 MHz, indicating zero frequency-dependent pipeline hazards. No clock wall was encountered until ~2610 MHz, which is substantially below the advertised 3090 MHz boost specification.</p>
+<h3 class="sub-title" id="9-4-2-efficiency-optimal-operating-point">9.4.2 Efficiency-Optimal Operating Point</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Value</th>
+<th>Source</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Peak efficiency clock (FP32)</td>
+<td>1492–1500 MHz</td>
+<td>Cases 3, 11</td>
+</tr>
+<tr>
+<td>Peak TFLOPS/W at optimal</td>
+<td>0.49 TFLOPS/W</td>
+<td>Case 11</td>
+</tr>
+<tr>
+<td>Relative to max-clock efficiency</td>
+<td>1.32x better than 2572 MHz (0.37 TFLOPS/W)</td>
+<td>Case 11</td>
+</tr>
+<tr>
+<td>Throughput at optimal</td>
+<td>41.5 TFLOPS (57.8% of max)</td>
+<td>Case 11</td>
+</tr>
+<tr>
+<td>Power at optimal</td>
+<td>85 W (24.3% TDP)</td>
+<td>Case 11</td>
+</tr>
+</tbody>
+</table></div>
+<p>The 1500 MHz operating point delivers 32% better energy efficiency than maximum clock at the cost of only 42% throughput reduction. For power-constrained deployments, this represents the ideal DVFS setting.</p>
+<h3 class="sub-title" id="9-4-3-memory-clock-sweep">9.4.3 Memory Clock Sweep</h3>
+<p>GDDR7 memory operates at discrete frequency bins rather than a continuous range. Only 3 effective operating points were observed despite 5 target clock values.</p>
+<aside class="callout callout-info">
+<p><strong>Two theoretical-BW figures coexist in this report</strong>: (1) <code>1344 GB/s</code> (Ch1 §1.2, Ch2, AppB §B.8 <code>theoretical_bw_gbps_spec</code>) is the <strong>chip silicon spec</strong>: 384 bits / 8 × 28 Gbps pin clock = 1344 GB/s. (2) <code>1283 GB/s</code> (this section, AppB §B.8 <code>theoretical_bw_gbps_operational</code>) is the <strong>operational ceiling on this RTX PRO 5000 72GB SKU</strong>: under sustained load the memory controller clamps to 13365 MHz (vs the 14001 MHz target), giving 384 bits × 13365 MHz × 2 (DDR) / 8 = 1283 GB/s <span class="cite">[S20/case_13]</span>. The ~4.5% gap is <strong>clock binning specific to this SKU</strong>, not GDDR7 inline-ECC overhead. The achieved-BW % below uses 1283 (operational) as the comparison baseline; against the spec ceiling 1344, peak achieved is 1112 / 1344 = 82.7%.</p>
+</aside>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Mem Clock (MHz)</th>
+<th>Copy BW (GB/s)</th>
+<th>Triad BW (GB/s)</th>
+<th>% of 1283 GB/s Operational Theoretical</th>
+<th>Source</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>810</td>
+<td>53.1</td>
+<td>53.4</td>
+<td>4.2%</td>
+<td>Case 13</td>
+</tr>
+<tr>
+<td>7001</td>
+<td>592.0</td>
+<td>603.6</td>
+<td>47.0%</td>
+<td>Case 13</td>
+</tr>
+<tr>
+<td>13365</td>
+<td>1076.5</td>
+<td>1112.2</td>
+<td>86.7%</td>
+<td>Case 13</td>
+</tr>
+</tbody>
+</table></div>
+<p>Peak DRAM bandwidth reaches 1112 GB/s at the maximum sustained 13365 MHz memory clock (87% of 1283 GB/s operational theoretical, 82.7% of 1344 GB/s silicon spec theoretical). Triad consistently outperforms Copy by 3–5% due to write-allocate avoidance.</p>
+<hr>
+<h2 class="ch-title" id="9-5-clock-gating-and-per-sm-power">9.5 Clock Gating and Per-SM Power</h2>
+<h3 class="sub-title" id="9-5-1-per-sm-incremental-power">9.5.1 Per-SM Incremental Power</h3>
+<p>SM_120 demonstrates active clock gating at per-SM granularity, with measurably distinct power profiles for FMA versus MMA workloads. Two complementary sweeps were performed: a <strong>per-SM scan</strong> at {1, 2, 4, 8, 16, 32, 64, 110} SMs (Case 12) and a <strong>fixed-stride 14-SM scan</strong> at {1, 14, 28, ..., 98, 110} (Case 14). Per the canonical topology probe <strong>GB202 = 11 GPCs × 10 SMs/GPC = 110 SMs</strong> <span class="cite">[S3/case_5]</span>; Case 14's 14-SM stride is therefore <strong>not GPC-aligned</strong> — each step on average crosses ~1.4 real 10-SM GPC boundaries. The two slopes measure different things and are <strong>not contradictory</strong> — see §9.5.3 for the methodology reconciliation.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Workload</th>
+<th style="text-align: center;">Per-SM scan slope (Case 12)</th>
+<th style="text-align: center;">14-SM stride scan slope (Case 14)</th>
+<th style="text-align: center;">Fixed Overhead (W)</th>
+<th style="text-align: center;">Full-Chip Delta (110 SM)</th>
+<th style="text-align: center;">R² (per-SM / 14-SM stride)</th>
+<th>Source</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>MMA FP16 TC</td>
+<td style="text-align: center;">0.149 W/SM</td>
+<td style="text-align: center;">0.115 W/SM (≈ 1.15 W per real 10-SM GPC)</td>
+<td style="text-align: center;">18.7–21.8</td>
+<td style="text-align: center;">24 W</td>
+<td style="text-align: center;">0.765 / 0.770</td>
+<td>Cases 12, 14</td>
+</tr>
+<tr>
+<td>FMA FP32 CUDA</td>
+<td style="text-align: center;">0.229 W/SM</td>
+<td style="text-align: center;">0.743 W/SM (≈ 7.43 W per real 10-SM GPC)</td>
+<td style="text-align: center;">15.5–21.9</td>
+<td style="text-align: center;">35.7 W (delta from idle; 86 W total)</td>
+<td style="text-align: center;">0.823 / <strong>0.977</strong></td>
+<td>Cases 12, 14</td>
+</tr>
+<tr>
+<td><strong>FMA / MMA ratio</strong></td>
+<td style="text-align: center;"><strong>1.54x</strong></td>
+<td style="text-align: center;"><strong>6.5x</strong></td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;"><strong>1.49x (delta)</strong></td>
+<td style="text-align: center;">—</td>
+<td>—</td>
+</tr>
+</tbody>
+</table></div>
+<h3 class="sub-title" id="9-5-2-clock-gating-evidence">9.5.2 Clock Gating Evidence</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Property</th>
+<th>MMA Workload</th>
+<th>FMA Workload</th>
+<th>Source</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1 SM incremental power</td>
+<td>+7.6 W above idle</td>
+<td>+9.0 W above idle</td>
+<td>Case 12</td>
+</tr>
+<tr>
+<td>110 SM incremental power</td>
+<td>+24.1 W above idle</td>
+<td>+35.7 W above idle</td>
+<td>Case 12</td>
+</tr>
+<tr>
+<td>Per-SM at full chip</td>
+<td>0.22 W/SM</td>
+<td>0.32 W/SM</td>
+<td>Case 12</td>
+</tr>
+<tr>
+<td>Per real 10-SM GPC</td>
+<td>~1.15 W/GPC (slope × 10)</td>
+<td>~7.43 W/GPC (slope × 10)</td>
+<td>Case 14 (slope) × <span class="cite">[S3/case_5]</span> (10 SMs/GPC)</td>
+</tr>
+<tr>
+<td>Per 14-SM stride step</td>
+<td>~1.6 W (Case 14 step)</td>
+<td>~10.4 W (Case 14 step)</td>
+<td>Case 14 (NOT GPC-aligned)</td>
+</tr>
+<tr>
+<td>Scaling model</td>
+<td>Sub-linear (saturates ~30 W)</td>
+<td>Linear (R-squared = 0.977)</td>
+<td>Case 14</td>
+</tr>
+<tr>
+<td>Full-chip % TDP @2100 MHz</td>
+<td>21%</td>
+<td>25%</td>
+<td>Case 12</td>
+</tr>
+</tbody>
+</table></div>
+<p>The strong linear scaling for FMA workloads (R-squared = 0.977) confirms active clock gating: unused SMs draw negligible power. The FMA datapath draws 1.5–3.6x more power per SM than MMA, explaining why Tensor Core workloads achieve higher energy efficiency despite superior throughput. MMA power saturates at approximately 30W above idle, suggesting TC power consumption is dominated by fixed per-SM infrastructure rather than per-operation switching energy.</p>
+<h3 class="sub-title" id="9-5-3-sm-vs-gpc-granularity-discrepancy">9.5.3 SM vs GPC Granularity Discrepancy</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Granularity</th>
+<th>FMA Fit</th>
+<th>MMA Fit</th>
+<th>Source</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Per-SM scan (Case 12: N ∈ {1,2,4,8,16,32,64,110})</td>
+<td>0.229 W/SM</td>
+<td>0.149 W/SM</td>
+<td>Case 12</td>
+</tr>
+<tr>
+<td>14-SM stride scan (Case 14: N ∈ {1,14,28,...,98,110})</td>
+<td>0.743 W/SM</td>
+<td>0.115 W/SM</td>
+<td>Case 14</td>
+</tr>
+<tr>
+<td>Discrepancy factor</td>
+<td>3.2x</td>
+<td>~1x</td>
+<td>Cases 12, 14</td>
+</tr>
+</tbody>
+</table></div>
+<p>The 3.2× FMA gap reflects <strong>different sampling strategies, not contradictory measurements</strong>, and is independent of the actual GPC count (which is <strong>11 GPCs × 10 SMs/GPC = 110 SMs</strong> per <span class="cite">[S3/case_5]</span>):</p>
+<ul>
+<li><strong>Per-SM scan</strong> activates additional SMs <strong>within already-powered GPCs</strong> across most of its range (e.g., 1→2→4→8 SMs all sit in the same first GPC since one GPC = 10 SMs). The slope (0.229 W/SM) captures only the marginal SM cost; GPC-level shared resources (L1 cache, register-file crossbar, instruction-fetch unit, GPC clock tree) are absorbed into the intercept (~22 W).</li>
+<li><strong>14-SM stride scan</strong> steps in arbitrary 14-SM increments — these steps are <strong>not aligned to the real 10-SM GPC boundary</strong>. On average each step crosses ~1.4 fresh GPCs, so the step inevitably powers up new GPC shared infrastructure. The slope (0.743 W/SM) therefore bundles per-SM dynamic cost <strong>plus</strong> amortized GPC-activation cost, yielding the larger value at R² = 0.977. Dividing 0.743 W/SM by the actual 10-SM GPC size gives ~7.43 W per real GPC (not 10.4 W per 14-SM step × 8 imaginary GPCs).</li>
+<li>For <strong>MMA</strong> the two slopes nearly agree (0.149 vs 0.115 W/SM) because tensor-core power saturates at ~30 W delta and is dominated by fixed overhead, leaving little marginal SM cost to redistribute between intercept and slope.</li>
+</ul>
+<aside class="callout callout-info">
+<p><strong>Note on Case 14's stride choice</strong>: The 14-SM stride was selected by the test author based on an a-priori estimate of "~14 SMs/GPC". The canonical topology probe <span class="cite">[S3/case_5]</span> subsequently confirmed <strong>11 GPCs × 10 SMs/GPC</strong> via SM enumeration (nsmid=110), TPC pairing (55 pairs), and atomic-contention bimodal analysis (F=4.55). Case 14's per-step values should therefore be interpreted as <strong>"per 14-SM block"</strong> (which spans on average 1.4 real GPCs), not as <strong>"per GPC"</strong>.</p>
+</aside>
+<p>Combining intercept and slope, the per-SM model predicts full-chip FMA delta ≈ <code>21.9 + 110 × 0.229 ≈ 47 W</code>, vs Case 12's measured 35.7 W (the ~12 W residual is the sub-linear saturation captured by R² = 0.82). The 14-SM stride model gives <code>15.5 + 110 × 0.743 ≈ 97 W</code>, vs Case 14's measured 90.3 W at 110 SMs (within ~7 %). Either model confirms that the bulk of the observed ~140 W full-chip power is fixed overhead (L2, memory controllers, I/O, clock tree); only ~25–35 W is the SM-scaled dynamic component.</p>
+<figure class="diagram">
+<object data="svg/ch09/ch09_dvfs_power.svg" type="image/svg+xml" aria-label="SM_120 DVFS linearity and per-SM power characterization — throughput scaling, efficiency sweet spot, FMA vs MMA per-SM scaling, clock gating model"></object>
+<figcaption><span class="fig-num">FIG 09.2</span>DVFS and Per-SM Power Model — Panel A shows near-perfect throughput linearity (101–102% ideal) from 574–2606 MHz; Panel B plots TFLOPS/W efficiency peaking at ~1500 MHz (0.49, 32% better than max clock); Panel C contrasts FMA (linear, R²=0.977) vs MMA (sub-linear, saturating ~30W) per-SM scaling; Panel D derives the step-function power model with per-pipe incremental costs. <span class="cite">[S20/case_3,11-14, S24/case_28-31]</span></figcaption>
+</figure>
+<p>The DVFS data establishes two actionable deployment strategies: for <strong>throughput-maximizing</strong> workloads, operate at maximum stable clock (2572 MHz) accepting the 0.37 TFLOPS/W efficiency; for <strong>power-constrained</strong> deployments (e.g., dense 8-GPU inference racks), operate at 1500 MHz where power drops from ~193W to ~85W (56% reduction) with only 42% throughput loss. The per-SM power model reveals that the bulk of chip power (~105–120W) is fixed overhead (L2, memory controllers, clock tree, I/O ring) regardless of SM count — the compute-dynamic component (FMA: 0.23 W/SM, MMA: 0.15 W/SM) represents only ~25–35W of the total, explaining why partial-SM utilization provides limited power savings.</p>
+<hr>
+<h2 class="ch-title" id="9-6-advanced-workload-efficiency">9.6 Advanced Workload Efficiency</h2>
+<h3 class="sub-title" id="9-6-1-cluster-scheduling-power-overhead">9.6.1 Cluster Scheduling Power Overhead</h3>
+<p>Cluster scheduling adds negligible overhead to Tensor Core workloads, confirming that cluster-based multicast TMA pipelines pay no meaningful power penalty.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>No Cluster</th>
+<th>Cluster = 8</th>
+<th>Delta</th>
+<th>Source</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>TFLOPS</td>
+<td>232.3</td>
+<td>232.8</td>
+<td>+0.2%</td>
+<td>Case 15</td>
+</tr>
+<tr>
+<td>Power (W)</td>
+<td>108.4</td>
+<td>109.9</td>
+<td>+1.4% (~1.5 W)</td>
+<td>Case 15</td>
+</tr>
+<tr>
+<td>TFLOPS/W</td>
+<td>2.143</td>
+<td>2.119</td>
+<td>-1.1%</td>
+<td>Case 15</td>
+</tr>
+</tbody>
+</table></div>
+<h3 class="sub-title" id="9-6-2-fp4-format-comparison-nvfp4-vs-mxfp4">9.6.2 FP4 Format Comparison (NVFP4 vs MXFP4)</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Format</th>
+<th>SASS Opcode</th>
+<th>TFLOPS</th>
+<th>Power (W)</th>
+<th>TFLOPS/W</th>
+<th>vs FP16 TC</th>
+<th>Source</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>FP16 TC (reference)</td>
+<td>mma.sync</td>
+<td>235</td>
+<td>113</td>
+<td>2.08</td>
+<td>1.00x</td>
+<td>Cases 1, 6</td>
+</tr>
+<tr>
+<td>MXFP4 (k=32)</td>
+<td>QMMA.SF.16832</td>
+<td>105</td>
+<td>89</td>
+<td>1.18</td>
+<td>0.57x</td>
+<td>Case 16</td>
+</tr>
+<tr>
+<td>NVFP4 (k=64)</td>
+<td>OMMA.SF.16864</td>
+<td>210</td>
+<td>89</td>
+<td>2.36</td>
+<td>1.14x</td>
+<td>Case 16</td>
+</tr>
+</tbody>
+</table></div>
+<p>NVFP4 (OMMA.SF) delivers 2x the throughput of MXFP4 (QMMA.SF) at identical power (both 89W), because NVFP4's k=64 tile processes twice the K-dimension per instruction. NVFP4 achieves 13.5% higher efficiency than FP16 TC at 21% lower power, making it the most efficient non-integer format on SM_120.</p>
+<h3 class="sub-title" id="9-6-3-sparse-vs-dense-int8">9.6.3 Sparse vs Dense INT8</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Mode</th>
+<th>SASS Opcode</th>
+<th>TOPS</th>
+<th>Power (W)</th>
+<th>TOPS/W</th>
+<th>Cycles/MMA</th>
+<th>Source</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Dense INT8</td>
+<td>IMMA m16n8k32</td>
+<td>465.4</td>
+<td>92.3</td>
+<td>5.04</td>
+<td>4.1</td>
+<td>Case 17</td>
+</tr>
+<tr>
+<td>Sparse INT8</td>
+<td>IMMA.SP m16n8k64</td>
+<td>928.7</td>
+<td>97.8</td>
+<td>9.49</td>
+<td>4.1</td>
+<td>Case 17</td>
+</tr>
+<tr>
+<td><strong>Sparse/Dense ratio</strong></td>
+<td>—</td>
+<td><strong>2.00x</strong></td>
+<td><strong>1.06x</strong></td>
+<td><strong>1.88x</strong></td>
+<td><strong>1.00x</strong></td>
+<td>—</td>
+</tr>
+</tbody>
+</table></div>
+<p>Sparse INT8 achieves exactly 2.0x throughput of dense at only +6% power, confirming native 2:1 structured sparsity acceleration. The identical 4.1 cycles/MMA indicates that the sparse pathway processes twice the K-dimension per cycle at identical pipeline utilization. <strong>[✅ Resolved Anomaly — Lessons Learned]</strong>: The original anomalous measurement (showing 1:1 ratio, treated as a sparse-pathway bug for ~2 days) was traced to a compiler artifact where 50-register pressure forced ptxas to insert 4 MOV instructions between every IMMA.SP. After reducing register pressure (Case 17 retest) the native 2:1 sparse acceleration was confirmed. <strong>Lesson</strong>: when sparse/dense ratios deviate from expected, first check ptxas register-allocation overhead before suspecting hardware. This finding is now considered fully resolved and is retained here for methodological reference, not as an open concern.</p>
+<hr>
+<h2 class="ch-title" id="9-7-key-insights">9.7 Key Insights</h2>
+<h3 class="sub-title" id="ki-9-1-sm_120-never-reaches-tdp-under-any-single-workload-max-66">KI-9.1: SM_120 Never Reaches TDP Under Any Single Workload (Max 66%)</h3>
+<ul>
+<li><strong>Phenomenon</strong>: Maximum observed power is 232W / 350W TDP (66%) after 10 minutes of sustained boost-clock operation (<span class="cite">[S20/case_10]</span>). Shorter tests (<span class="cite">[S20/case_8]</span>, ~24 sec) show only 212W because thermal equilibrium is not reached. No thermal throttle: steady-state 65 degrees C with 27 degrees C headroom below the 92 degrees C threshold.</li>
+<li><strong>Mechanism</strong>: The 350W TDP accommodates multi-GPU NVLink power budget and burst headroom that SM_120 (PCIe-only) cannot fully utilize. Single-workload power is compute-pipeline limited, not TDP-capped.</li>
+<li><strong>Implication</strong>: For inference serving, the 118W headroom (350 - 232) is available for mixed workloads — running TC compute + memory streaming + host transfers simultaneously would still not reach TDP.</li>
+<li><strong>Confidence</strong>: High</li>
+</ul>
+<h3 class="sub-title" id="ki-9-2-tc-paradoxically-cooler-than-cuda-cores-at-comparable-tflops">KI-9.2: TC Paradoxically Cooler Than CUDA Cores at Comparable TFLOPS</h3>
+<ul>
+<li><strong>Phenomenon</strong>: TC MMA FP16 = 108W at 235 TFLOPS. CUDA FP32 FFMA = 143W at 119 TFLOPS (calculated at 2x OPs/FMA). TC delivers 2.18x TFLOPS at 0.76x power.</li>
+<li><strong>Mechanism</strong>: Tensor Cores amortize control/scheduler overhead across 512 FLOPs per instruction (m16n8k16). CUDA cores require per-instruction dispatch for each 2 FLOPs (FMA), expending proportionally more energy on control logic relative to useful compute.</li>
+<li><strong>Implication</strong>: Power-constrained deployments should maximize TC utilization. Even non-standard TC usage (e.g., TF32 matrix operations for non-GEMM workloads) improves energy efficiency by 1.4x over equivalent CUDA core computation.</li>
+<li><strong>Confidence</strong>: Medium</li>
+</ul>
+<h3 class="sub-title" id="ki-9-3-dvfs-perfectly-linear-best-efficiency-at-1500-mhz">KI-9.3: DVFS Perfectly Linear — Best Efficiency at ~1500 MHz</h3>
+<ul>
+<li><strong>Phenomenon</strong>: Throughput scales at 101–102% of ideal linearly from 574 to 2606 MHz. No clock wall observed until ~2610 MHz. Peak efficiency at ~1500 MHz (0.49 TFLOPS/W, 32% better than max clock 0.37 TFLOPS/W).</li>
+<li><strong>Mechanism</strong>: Power scales approximately as V-squared-f while throughput scales as f, so power efficiency monotonically decreases with frequency. No frequency-dependent pipeline hazards exist on SM_120.</li>
+<li><strong>Implication</strong>: For dense 8-GPU inference deployments, operating at 1500 MHz reduces per-GPU power from ~193W to ~85W (a 56% reduction) with only 42% throughput loss. This enables thermal-feasible high-density rack configurations without PCIe thermal limits.</li>
+<li><strong>Confidence</strong>: High</li>
+</ul>
+<h3 class="sub-title" id="ki-9-4-powertop-halves-per-precision-step-constant-power-scaling-ops">KI-9.4: Power/TOP Halves Per Precision Step — Constant Power, Scaling OPs</h3>
+<ul>
+<li><strong>Phenomenon</strong>: All TC formats draw identical ~57W average chip power. TOPS scales with precision: FP16 = 268, FP8 = 536, NVFP4 = 210, Sparse INT8 = 929. TFLOPS/W: FP16 TC = 2.08, NVFP4 OMMA.SF = 2.36, Dense INT8 = 5.04, Sparse INT8 = 9.49 TOPS/W. The per-SM power measurement (<span class="cite">[S20/case_16]</span>) shows MXFP4 QMMA.SF = 105 TFLOPS at 89W = 1.18 TFLOPS/W, NVFP4 OMMA.SF = 210 TFLOPS at 89W = 2.36 TFLOPS/W.</li>
+<li><strong>Mechanism</strong>: The TC pipeline executes the same number of MMA instructions regardless of precision. Each instruction processes proportionally more FLOPs at lower precision. Power is dominated by control/scheduling infrastructure, not arithmetic switching energy.</li>
+<li><strong>Implication</strong>: For inference workloads that can tolerate reduced precision, each step down the precision ladder approximately halves power per TOP with zero additional hardware cost.</li>
+<li><strong>Confidence</strong>: High</li>
+</ul>
+<h3 class="sub-title" id="ki-9-5-per-sm-clock-gating-confirmed-0-15-wsm-mma-0-23-wsm-fma">KI-9.5: Per-SM Clock Gating Confirmed: 0.15 W/SM (MMA), 0.23 W/SM (FMA)</h3>
+<ul>
+<li><strong>Phenomenon</strong>: Incremental power per active SM is measurable and distinct per workload type. FMA draws 1.54x more per-SM power than MMA at per-SM scan granularity. Linear scaling (R² = 0.977) for FMA at per-GPC granularity; MMA power saturates at ~30W delta.</li>
+<li><strong>Mechanism</strong>: Inactive SMs are clock-gated (confirmed by <span class="cite">[S24/case_31]</span>: zero startup penalty rules out deep power gating). FMA draws more per-SM power because each FFMA instruction activates the full operand collector and writeback path for 2 FLOPs, while HMMA amortizes the same path over 512 FLOPs.</li>
+<li><strong>Implication</strong>: For workloads that cannot fill all 110 SMs, power scales proportionally with active SM count. Recommended budgeting formulas (with intercept included):</li>
+<li>FMA: <code>P_total ≈ P_idle + 21.9 W + N_active × 0.229 W/SM</code></li>
+<li>MMA: <code>P_total ≈ P_idle + 18.7 W + N_active × 0.149 W/SM</code>
+    These per-SM-scan formulas are accurate for <strong>N_active ≥ 14</strong> (at least one full GPC active). Below 14 SMs (single GPC partially populated), per-SM cost is dominated by GPC-level fixed overhead and the empirical W/SM curve from Case 12 (5.4–17.1 W/SM at N = 1–16) should be used directly rather than the linear slope.</li>
+<li><strong>Confidence</strong>: High</li>
+</ul>
+<h3 class="sub-title" id="ki-9-6-the-350w-tdp-budget-reveals-sm_120s-positioning-as-a-compute-density-gpu">KI-9.6: The 350W TDP Budget Reveals SM_120's Positioning as a "Compute-Density" GPU</h3>
+<ul>
+<li><strong>Phenomenon</strong>: Maximum observed power 232W (66% TDP) under sustained 10-minute workloads (<span class="cite">[S20/case_10]</span>). The 118W gap (350 - 232) is never utilized. TC FP16 draws only 108W at 235 TFLOPS. All TC formats draw identical ~57W at chip level.</li>
+<li><strong>Cross-reference</strong>: The per-SM power data (MMA = 0.15 W/SM, FMA = 0.23 W/SM) means 110 SMs x 0.23 W/SM = only 25.3W for full-chip FMA — the remaining power (118–187W) is fixed overhead (L2, memory controllers, I/O, clock tree). This power headroom means SM_120 is thermally "free" for mixed workloads — running TC compute + memory streaming + host transfers simultaneously would still not reach TDP.</li>
+<li><strong>Implication</strong>: For inference serving, SM_120 at 1500 MHz provides 32% better TFLOPS/W (0.49 vs 0.37) with only 42% throughput loss. At 1500 MHz, power drops to ~80W total, enabling dense 8-GPU deployments without PCIe thermal limits. For MoE inference with bursty per-expert compute, the 350W TDP headroom absorbs transient power spikes without throttling.</li>
+<li><strong>Confidence</strong>: High</li>
+</ul>
+<hr>
+<h2 class="ch-title" id="9-7a-section-24-follow-up-clock-gating-and-per-pipe-power">9.7a Section 24 Follow-Up: Clock Gating and Per-Pipe Power</h2>
+<p>Section 24 follow-up experiments (Cases 28-31) resolved the clock-gating vs power-gating question and established per-pipe power consumption at SM granularity.</p>
+<h3 class="sub-title" id="clock-gating-confirmed-not-power-gating">Clock Gating Confirmed (Not Power Gating)</h3>
+<p>Case 31 measured the startup latency of idle-to-active SM transitions: <strong>zero startup penalty</strong> was observed. This rules out deep power gating (which requires microsecond-scale power domain ramp-up and state restoration) and confirms that SM_120 uses <strong>clock gating</strong> for inactive SMs. The clock tree is simply ungated when an SM receives work, providing instant activation.</p>
+<h3 class="sub-title" id="per-pipe-power-consumption">Per-Pipe Power Consumption</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Pipe</th>
+<th>W/SM (incremental)</th>
+<th>Source</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>FMA (FFMA)</td>
+<td>0.23</td>
+<td><span class="cite">[S24/case_28]</span>, case_30</td>
+</tr>
+<tr>
+<td>Tensor Core (MMA)</td>
+<td>0.15</td>
+<td><span class="cite">[S24/case_28]</span>, case_30</td>
+</tr>
+<tr>
+<td>LSU (load/store)</td>
+<td>0.065</td>
+<td><span class="cite">[S24/case_28]</span>, case_30</td>
+</tr>
+</tbody>
+</table></div>
+<h3 class="sub-title" id="tcfma-co-issue-power">TC+FMA Co-Issue Power</h3>
+<p>Case 29 measured power during simultaneous TC and FMA execution: only <strong>+0.004 W/SM</strong> above TC-only power. This confirms that the FMA pipe's marginal power contribution is negligible when co-issuing with Tensor Cores, consistent with the TC pipeline dominating SM power consumption during mixed workloads.</p>
+<h3 class="sub-title" id="power-model-step-function">Power Model: Step Function</h3>
+<p>Case 28 reveals that SM_120 chip-level power follows a step-function model:</p>
+<pre><code>P_total = P_idle + P_activation x (any SM active)</code></pre>
+<p>All pipes (FMA, TC, LSU) draw <strong>identical total power at nvidia-smi resolution</strong> (~60.7W) once at least one SM is active. The per-pipe differences (0.065-0.23 W/SM) are measurable only through careful per-SM incremental analysis. At the chip level, the fixed activation cost (clock tree, L2, memory controllers, I/O ring) dominates, and the per-SM compute power is a small fraction of total draw.</p>
+<hr>
+<h2 class="ch-title" id="9-8-methodology-notes">9.8 Methodology Notes</h2>
+<ul>
+<li>Power measured via <code>nvidia-smi --query-gpu=power.draw --format=csv,noheader,nounits</code> polled at 100ms intervals during sustained workloads.</li>
+<li>Clocks pinned via <code>nvidia-smi -lgc {min},{max}</code> to eliminate DVFS variation during efficiency measurements; unlocked for DVFS sweep cases.</li>
+<li>Throughput calculated from instruction counts x clock frequency x SM count x ops-per-instruction, cross-validated against nvidia-smi reported GPU utilization.</li>
+<li>All sustained tests: 60s minimum (Cases 9, 15, 16), up to 621s (Case 10), with power sampling throughout.</li>
+<li>Temperature readings from <code>nvidia-smi --query-gpu=temperature.gpu</code>; GPU fan on auto throughout.</li>
+<li>Case 17 (Sparse INT8) is a retest — the original measurement showed anomalous 1:1 sparse/dense ratio caused by ptxas inserting 4 MOV instructions per IMMA.SP due to 50-register pressure; retest with reduced register pressure confirms native 2:1 sparse acceleration.</li>
+<li>DRAM clock sweep (Case 13) via <code>nvidia-smi -lmc</code> reveals only 3 discrete operating points despite 5 target clocks, indicating GDDR7 operates at fixed frequency bins.</li>
+</ul>
+
+<footer class="page-footer">
+<div class="foot-grid">
+<div><strong>SM_120 / GB202 Blackwell</strong> · Microarchitecture Analysis &amp; Reference · 2026</div>
+<div>1542 microbenchmark cases · 26 sections · ~13,400 lines</div>
+<div class="foot-accent">RTX PRO 5000 72GB · CUDA 13.3 · Data source: test_results/SM_120/</div>
+</div>
+</footer>
+
+</main>
+<aside class="toc-right">
+<h4>Chapter Navigation</h4>
+<a href="#9-1-power-envelope-characterization">9.1 Power Envelope Characterization</a>
+<a class="sub" href="#9-1-1-tdp-and-maximum-observed-power">9.1.1 TDP and Maximum Observed Power</a>
+<a class="sub" href="#9-1-2-power-state-hierarchy">9.1.2 Power State Hierarchy</a>
+<a href="#9-2-thermal-stability-and-throttling-behavior">9.2 Thermal Stability and Throttling Behavior</a>
+<a class="sub" href="#9-2-1-thermal-throttle-threshold">9.2.1 Thermal Throttle Threshold</a>
+<a class="sub" href="#9-2-2-per-format-thermal-profiles">9.2.2 Per-Format Thermal Profiles</a>
+<a href="#9-3-tflopsw-efficiency-across-precisions">9.3 TFLOPS/W Efficiency Across Precisions</a>
+<a class="sub" href="#9-3-1-complete-efficiency-hierarchy">9.3.1 Complete Efficiency Hierarchy</a>
+<a class="sub" href="#9-3-2-efficiency-bands">9.3.2 Efficiency Bands</a>
+<a class="sub" href="#9-3-3-tc-power-profile-constant-power-scaling-ops">9.3.3 TC Power Profile: Constant Power, Scaling OPs</a>
+<a href="#9-4-dvfs-characterization">9.4 DVFS Characterization</a>
+<a class="sub" href="#9-4-1-core-clock-sweep">9.4.1 Core Clock Sweep</a>
+<a class="sub" href="#9-4-2-efficiency-optimal-operating-point">9.4.2 Efficiency-Optimal Operating Point</a>
+<a class="sub" href="#9-4-3-memory-clock-sweep">9.4.3 Memory Clock Sweep</a>
+<a href="#9-5-clock-gating-and-per-sm-power">9.5 Clock Gating and Per-SM Power</a>
+<a class="sub" href="#9-5-1-per-sm-incremental-power">9.5.1 Per-SM Incremental Power</a>
+<a class="sub" href="#9-5-2-clock-gating-evidence">9.5.2 Clock Gating Evidence</a>
+<a class="sub" href="#9-5-3-sm-vs-gpc-granularity-discrepancy">9.5.3 SM vs GPC Granularity Discrepancy</a>
+<a href="#9-6-advanced-workload-efficiency">9.6 Advanced Workload Efficiency</a>
+<a class="sub" href="#9-6-1-cluster-scheduling-power-overhead">9.6.1 Cluster Scheduling Power Overhead</a>
+<a class="sub" href="#9-6-2-fp4-format-comparison-nvfp4-vs-mxfp4">9.6.2 FP4 Format Comparison (NVFP4 vs MXFP4)</a>
+<a class="sub" href="#9-6-3-sparse-vs-dense-int8">9.6.3 Sparse vs Dense INT8</a>
+<a href="#9-7-key-insights">9.7 Key Insights</a>
+<a class="sub" href="#ki-9-1-sm_120-never-reaches-tdp-under-any-single-workload-max-66">KI-9.1: SM_120 Never Reaches TDP Under Any Single Workload (Max 66%)</a>
+<a class="sub" href="#ki-9-2-tc-paradoxically-cooler-than-cuda-cores-at-comparable-tflops">KI-9.2: TC Paradoxically Cooler Than CUDA Cores at Comparable TFLOPS</a>
+<a class="sub" href="#ki-9-3-dvfs-perfectly-linear-best-efficiency-at-1500-mhz">KI-9.3: DVFS Perfectly Linear — Best Efficiency at ~1500 MHz</a>
+<a class="sub" href="#ki-9-4-powertop-halves-per-precision-step-constant-power-scaling-ops">KI-9.4: Power/TOP Halves Per Precision Step — Constant Power, Scaling OPs</a>
+<a class="sub" href="#ki-9-5-per-sm-clock-gating-confirmed-0-15-wsm-mma-0-23-wsm-fma">KI-9.5: Per-SM Clock Gating Confirmed: 0.15 W/SM (MMA), 0.23 W/SM (FMA)</a>
+<a class="sub" href="#ki-9-6-the-350w-tdp-budget-reveals-sm_120s-positioning-as-a-compute-density-gpu">KI-9.6: The 350W TDP Budget Reveals SM_120&#x27;s Positioning as a &quot;Compute-Density&quot; GPU</a>
+<a href="#9-7a-section-24-follow-up-clock-gating-and-per-pipe-power">9.7a Section 24 Follow-Up: Clock Gating and Per-Pipe Power</a>
+<a class="sub" href="#clock-gating-confirmed-not-power-gating">Clock Gating Confirmed (Not Power Gating)</a>
+<a class="sub" href="#per-pipe-power-consumption">Per-Pipe Power Consumption</a>
+<a class="sub" href="#tcfma-co-issue-power">TC+FMA Co-Issue Power</a>
+<a class="sub" href="#power-model-step-function">Power Model: Step Function</a>
+<a href="#9-8-methodology-notes">9.8 Methodology Notes</a>
+</aside>
+</div>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" integrity="sha384-7zkQWkzuo3B5mTepMUcHkMB5jZaolc2xDwL6VFqjFALcbeS9Ggm/Yr2r3Dy4lfFg" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" integrity="sha384-43gviWU0YVjaDtb/GhzOouOXtZMP/7XUzwPTstBeZFe/+rCMvRwr4yROQP43s0Xk" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/lib/highlight.min.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  if (window.renderMathInElement) {
+    renderMathInElement(document.body, {
+      delimiters: [
+        {left: "$$", right: "$$", display: true},
+        {left: "$", right: "$", display: false}
+      ],
+      throwOnError: false
+    });
+  }
+  if (window.hljs) {
+    document.querySelectorAll("pre code[class^='language-']").forEach(function(el) {
+      try { hljs.highlightElement(el); } catch (e) {}
+    });
+  }
+});
+</script>
+<script src="assets/js/toc.js" defer></script>
+</body>
+</html>

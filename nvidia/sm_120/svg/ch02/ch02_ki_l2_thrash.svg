@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 120" role="img"
+     aria-label="KI-2.3: L2 thrashing cliff at 96 MB — 5110 GB/s drops to 1227 GB/s (4.17x)">
+  <defs><style><![CDATA[
+    .ttl{font:600 13px "Fraunces",serif;fill:#0b1220}.lbl{font:600 11px "JetBrains Mono",monospace;fill:#2a3548}.lbl-sm{font:500 10px "JetBrains Mono",monospace;fill:#5b6679}.num{font:700 15px "JetBrains Mono",monospace}.stage{font:600 10px "JetBrains Mono",monospace;fill:#fff}
+  ]]></style></defs>
+  <rect width="1080" height="120" fill="#ffffff"/>
+  <text x="36" y="22" class="ttl">KI-2.3: L2 Thrashing Cliff — BW drops 4.17× in a 16 MB window at 96 MB working set</text>
+  <g transform="translate(36,38)">
+    <!-- BW bar representing the cliff -->
+    <rect x="0" y="0" width="500" height="28" rx="4" fill="#059669"/>
+    <text x="250" y="19" class="stage" text-anchor="middle">L2-resident: 5110 GB/s (4–96 MB)</text>
+    <rect x="520" y="0" width="120" height="28" rx="4" fill="#D97706"/>
+    <text x="580" y="19" class="stage" text-anchor="middle">4.17×</text>
+    <rect x="660" y="0" width="120" height="28" rx="4" fill="#DC2626"/>
+    <text x="720" y="19" class="stage" text-anchor="middle">1227 GB/s</text>
+    <text x="800" y="19" class="lbl-sm">DRAM floor (>384 MB)</text>
+  </g>
+  <g transform="translate(36,78)">
+    <text x="0" y="14" class="lbl-sm">Mitigation: cudaAccessPolicyWindow (60 MB max persist) → 13.3% latency reduction for pinned region</text>
+    <text x="0" y="30" class="lbl-sm">Transition zone: 96 MB → 384 MB (gradual pseudo-LRU degradation, not sharp step)</text>
+  </g>
+</svg>

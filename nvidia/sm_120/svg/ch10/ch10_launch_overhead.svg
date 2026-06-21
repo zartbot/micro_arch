@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 600" role="img"
+     aria-label="Kernel launch overhead comparison: warm host vs GPU-side vs CUDA graph">
+  <defs>
+    <linearGradient id="hostG" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#FFE4E6"/>
+      <stop offset="1" stop-color="#FFEDD5"/>
+    </linearGradient>
+    <linearGradient id="gpuG" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#FEF3C7"/>
+      <stop offset="1" stop-color="#FFFBEB"/>
+    </linearGradient>
+    <linearGradient id="grG" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#E9F3D2"/>
+      <stop offset="1" stop-color="#F4FAE2"/>
+    </linearGradient>
+    <style><![CDATA[
+      .ttl{font:600 14px "Fraunces",serif;fill:#0b1220}
+      .sub{font:italic 11px "Fraunces",serif;fill:#5b6679}
+      .lbl{font:600 12px "JetBrains Mono",monospace;fill:#2a3548}
+      .lbl-sm{font:500 10px "JetBrains Mono",monospace;fill:#5b6679}
+      .num{font:600 28px "Fraunces",serif;fill:#0b1220;letter-spacing:-0.02em}
+      .axL{font:500 10px "JetBrains Mono",monospace;fill:#5b6679}
+    ]]></style>
+  </defs>
+  <rect width="1080" height="600" fill="#ffffff"/>
+  <text x="36" y="32" class="ttl">Kernel Launch Overhead · Warm Host vs GPU-Side vs CUDA Graph</text>
+  <text x="36" y="52" class="sub">CUDA Graph reduces launch overhead by 45× over warm-host launch — critical for short kernels and dispatching loops</text>
+
+  <!-- Bar chart: log-scaled time -->
+  <g transform="translate(80,90)">
+    <!-- y axis (logarithmic) marks: 0.1, 1, 10 μs -->
+    <line x1="0" y1="0" x2="0" y2="280" stroke="#5b6679" stroke-width="1.2"/>
+    <line x1="0" y1="280" x2="900" y2="280" stroke="#5b6679" stroke-width="1.2"/>
+    <!-- log scale: y=280 - log10(t/0.1)*80; range t in [0.1, 10] -->
+    <!-- t=0.1 → y=280; t=1 → y=200; t=10 → y=120; t=100 → y=40 -->
+    <line x1="0" y1="200" x2="900" y2="200" stroke="#e6e4da" stroke-dasharray="3 3"/>
+    <line x1="0" y1="120" x2="900" y2="120" stroke="#e6e4da" stroke-dasharray="3 3"/>
+    <line x1="0" y1="40"  x2="900" y2="40"  stroke="#e6e4da" stroke-dasharray="3 3"/>
+    <text x="-12" y="284" class="axL" text-anchor="end">0.1</text>
+    <text x="-12" y="204" class="axL" text-anchor="end">1.0</text>
+    <text x="-12" y="124" class="axL" text-anchor="end">10</text>
+    <text x="-12" y="44" class="axL" text-anchor="end">100 μs</text>
+
+    <!-- 3 bars: graph 0.12 μs (y=280-log10(1.2)*80=280-6.34=273.7), gpu-side 1.5 μs (y=200-log10(1.5)*80=185.9), warm host 5.4 μs (y=200-log10(5.4)*80=141.4) -->
+    <!-- bar widths 200, gap 60 -->
+    <g>
+      <rect x="60"  y="273.7" width="200" height="6.3" rx="3" fill="url(#grG)" stroke="#76b900"/>
+      <text x="160" y="266" class="lbl" fill="#5a8e00" text-anchor="middle">0.12 μs</text>
+      <text x="160" y="298" class="lbl" text-anchor="middle">CUDA Graph</text>
+      <text x="160" y="316" class="lbl-sm" text-anchor="middle">cudaGraphLaunch</text>
+      <text x="160" y="332" class="lbl-sm" text-anchor="middle">amortized fixed-cost</text>
+
+      <g transform="translate(260,0)">
+        <rect x="60"  y="185.9" width="200" height="94.1" rx="3" fill="url(#gpuG)" stroke="#b45309"/>
+        <text x="160" y="178" class="lbl" fill="#92400e" text-anchor="middle">1.5 μs</text>
+        <text x="160" y="298" class="lbl" text-anchor="middle">GPU-side launch</text>
+        <text x="160" y="316" class="lbl-sm" text-anchor="middle">cudaLaunchKernel from device</text>
+        <text x="160" y="332" class="lbl-sm" text-anchor="middle">CDP / dynamic parallelism</text>
+      </g>
+
+      <g transform="translate(520,0)">
+        <rect x="60"  y="141.4" width="200" height="138.6" rx="3" fill="url(#hostG)" stroke="#e11d48"/>
+        <text x="160" y="134" class="lbl" fill="#9f1239" text-anchor="middle">5.4 μs</text>
+        <text x="160" y="298" class="lbl" text-anchor="middle">Warm host launch</text>
+        <text x="160" y="316" class="lbl-sm" text-anchor="middle">cudaLaunchKernel from CPU</text>
+        <text x="160" y="332" class="lbl-sm" text-anchor="middle">driver/runtime path</text>
+      </g>
+    </g>
+
+    <!-- speedup callouts -->
+    <text x="450" y="356" class="lbl" fill="#5a8e00" text-anchor="middle">Graph vs Warm host: 45× faster</text>
+    <text x="450" y="374" class="lbl-sm" fill="#5a8e00" text-anchor="middle">Critical when kernel runtime &lt; 50 μs (overhead-bound)</text>
+  </g>
+
+  <!-- Recommendations -->
+  <g transform="translate(80,480)">
+    <rect x="0" y="0" width="900" height="86" rx="10" fill="#fcfbf6" stroke="#e6e4da"/>
+    <text x="14" y="22" class="lbl">When to use which</text>
+    <text x="14" y="42" class="lbl-sm">• <tspan font-weight="600">Static graphs</tspan> (RNN inference, fixed-shape inference) → CUDA Graph</text>
+    <text x="14" y="58" class="lbl-sm">• <tspan font-weight="600">Dynamic shapes / dispatch logic on device</tspan> → GPU-side launch (CDP)</text>
+    <text x="14" y="74" class="lbl-sm">• <tspan font-weight="600">Long kernels (≥ 100 μs)</tspan> → either warm-host or graph (overhead amortized)</text>
+  </g>
+</svg>

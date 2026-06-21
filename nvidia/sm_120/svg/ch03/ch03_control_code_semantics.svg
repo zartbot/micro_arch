@@ -1,0 +1,333 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 960" role="img"
+     aria-label="SM_120 17-bit Control Code Semantics: bit-field decomposition, scheduler decision workflow, and producer-consumer example">
+  <defs>
+    <marker id="ar" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto">
+      <path d="M0,0 L7,3.5 L0,7 Z" fill="#5b6679"/>
+    </marker>
+    <marker id="ar-amber" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto">
+      <path d="M0,0 L7,3.5 L0,7 Z" fill="#b45309"/>
+    </marker>
+    <marker id="ar-blue" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto">
+      <path d="M0,0 L7,3.5 L0,7 Z" fill="#2563eb"/>
+    </marker>
+    <marker id="ar-green" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto">
+      <path d="M0,0 L7,3.5 L0,7 Z" fill="#16a34a"/>
+    </marker>
+    <marker id="ar-red" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto">
+      <path d="M0,0 L7,3.5 L0,7 Z" fill="#dc2626"/>
+    </marker>
+    <marker id="ar-purple" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto">
+      <path d="M0,0 L7,3.5 L0,7 Z" fill="#6d28d9"/>
+    </marker>
+    <linearGradient id="stallG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FEF3C7"/><stop offset="1" stop-color="#FFFBEB"/>
+    </linearGradient>
+    <linearGradient id="yieldG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#DCFCE7"/><stop offset="1" stop-color="#F0FDF4"/>
+    </linearGradient>
+    <linearGradient id="sbG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#DBEAFE"/><stop offset="1" stop-color="#EFF6FF"/>
+    </linearGradient>
+    <linearGradient id="waitG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFE4E6"/><stop offset="1" stop-color="#FFF1F2"/>
+    </linearGradient>
+    <linearGradient id="reuseG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#E9D5FF"/><stop offset="1" stop-color="#F5F3FF"/>
+    </linearGradient>
+    <linearGradient id="flowG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f8fafc"/><stop offset="1" stop-color="#ffffff"/>
+    </linearGradient>
+    <style><![CDATA[
+      .ttl{font:600 15px "Fraunces",serif;fill:#0b1220}
+      .sub{font:italic 11.5px "Fraunces",serif;fill:#5b6679}
+      .sect{font:600 13px "Fraunces",serif}
+      .lbl{font:600 11.5px "JetBrains Mono",monospace}
+      .lbl-sm{font:500 10px "JetBrains Mono",monospace;fill:#5b6679}
+      .desc{font:500 10px "JetBrains Mono",monospace;fill:#5b6679}
+      .badge{font:600 9.5px "JetBrains Mono",monospace}
+      .bit{font:600 9px "JetBrains Mono",monospace;fill:#8e97a5}
+      .field{font:600 11px "JetBrains Mono",monospace}
+      .big-num{font:700 18px "JetBrains Mono",monospace}
+      .note{font:500 9.5px "JetBrains Mono",monospace;fill:#8e97a5}
+      .warn{font:600 10px "JetBrains Mono",monospace;fill:#dc2626}
+      .safe{font:600 10px "JetBrains Mono",monospace;fill:#16a34a}
+      .zone-t{font:600 12px "Fraunces",serif}
+    ]]></style>
+  </defs>
+
+  <rect width="1080" height="960" fill="#ffffff"/>
+
+  <!-- Title -->
+  <text x="36" y="32" class="ttl">SM_120 Control Code Semantics — 17-bit Scheduling Metadata per Instruction</text>
+  <text x="36" y="52" class="sub">How the warp scheduler uses the 6 embedded fields to manage instruction issue timing and dependence tracking [S13/case_1-13]</text>
+
+  <!-- ═══════ TOP: Bit-Field Register Diagram ═══════ -->
+  <g transform="translate(30, 72)">
+    <text x="0" y="0" class="bit">bit 127                                                                                                                bit 105</text>
+
+    <!-- Full 23-bit upper control area [127:105] -->
+    <g transform="translate(0, 12)">
+      <!-- Reserved [127:126] -->
+      <rect x="0" y="0" width="56" height="52" fill="#f1f5f9" stroke="#94a3b8" stroke-width="0.8"/>
+      <text x="28" y="18" class="field" fill="#64748b" text-anchor="middle">rsv</text>
+      <text x="28" y="34" class="bit" text-anchor="middle">[127:126]</text>
+      <text x="28" y="48" class="bit" text-anchor="middle">2 bits</text>
+
+      <!-- Reuse [125:122] -->
+      <rect x="56" y="0" width="100" height="52" fill="url(#reuseG)" stroke="#7c3aed" stroke-width="1"/>
+      <text x="106" y="18" class="field" fill="#6d28d9" text-anchor="middle">reuse</text>
+      <text x="106" y="34" class="bit" text-anchor="middle">[125:122]</text>
+      <text x="106" y="48" class="bit" text-anchor="middle">4 bits</text>
+
+      <!-- WaitBarrier [121:116] -->
+      <rect x="156" y="0" width="180" height="52" fill="url(#waitG)" stroke="#e11d48" stroke-width="1.2"/>
+      <text x="246" y="18" class="field" fill="#9f1239" text-anchor="middle">WaitBarrier</text>
+      <text x="246" y="34" class="bit" text-anchor="middle">[121:116]</text>
+      <text x="246" y="48" class="bit" text-anchor="middle">6 bits</text>
+
+      <!-- RdBarrier [115:113] -->
+      <rect x="336" y="0" width="130" height="52" fill="url(#sbG)" stroke="#2563eb" stroke-width="1"/>
+      <text x="401" y="18" class="field" fill="#1d4ed8" text-anchor="middle">RdBarrier</text>
+      <text x="401" y="34" class="bit" text-anchor="middle">[115:113]</text>
+      <text x="401" y="48" class="bit" text-anchor="middle">3 bits</text>
+
+      <!-- WrBarrier [112:110] -->
+      <rect x="466" y="0" width="130" height="52" fill="url(#sbG)" stroke="#2563eb" stroke-width="1"/>
+      <text x="531" y="18" class="field" fill="#1d4ed8" text-anchor="middle">WrBarrier</text>
+      <text x="531" y="34" class="bit" text-anchor="middle">[112:110]</text>
+      <text x="531" y="48" class="bit" text-anchor="middle">3 bits</text>
+
+      <!-- yield [109] -->
+      <rect x="596" y="0" width="80" height="52" fill="url(#yieldG)" stroke="#16a34a" stroke-width="1"/>
+      <text x="636" y="18" class="field" fill="#166534" text-anchor="middle">yield</text>
+      <text x="636" y="34" class="bit" text-anchor="middle">[109]</text>
+      <text x="636" y="48" class="bit" text-anchor="middle">1 bit</text>
+
+      <!-- stall [108:105] -->
+      <rect x="676" y="0" width="140" height="52" fill="url(#stallG)" stroke="#b45309" stroke-width="1.2"/>
+      <text x="746" y="18" class="field" fill="#92400e" text-anchor="middle">stall</text>
+      <text x="746" y="34" class="bit" text-anchor="middle">[108:105]</text>
+      <text x="746" y="48" class="bit" text-anchor="middle">4 bits</text>
+
+      <!-- Bracket for 17-bit control -->
+      <path d="M156,54 L156,62 L816,62 L816,54" fill="none" stroke="#334155" stroke-width="1"/>
+      <text x="486" y="76" class="lbl" fill="#334155" text-anchor="middle">← 17-bit Control Code [121:105] →</text>
+    </g>
+  </g>
+
+  <!-- ═══════ MIDDLE: Per-Field Semantic Cards ═══════ -->
+  <g transform="translate(30, 178)">
+    <!-- stall card -->
+    <rect x="0" y="0" width="250" height="140" rx="10" fill="url(#stallG)" stroke="#b45309" stroke-width="0.8"/>
+    <text x="14" y="22" class="zone-t" fill="#92400e">stall [4 bits]</text>
+    <text x="14" y="40" class="lbl-sm">Minimum inter-issue delay (same warp)</text>
+    <line x1="14" y1="48" x2="236" y2="48" stroke="#b45309" stroke-width="0.3" opacity="0.5"/>
+    <text x="14" y="64" class="badge" fill="#92400e">0 = HW scoreboard fallback</text>
+    <text x="14" y="80" class="desc">  (always correct, but 17× slower)</text>
+    <text x="14" y="98" class="badge" fill="#92400e">1–15 = exact N-cycle delay</text>
+    <text x="14" y="114" class="desc">  (1:1 linear, compiler-trusted)</text>
+    <text x="14" y="132" class="warn">  wrong value → silent corruption!</text>
+
+    <!-- yield card -->
+    <rect x="262" y="0" width="200" height="140" rx="10" fill="url(#yieldG)" stroke="#16a34a" stroke-width="0.8"/>
+    <text x="276" y="22" class="zone-t" fill="#166534">yield [1 bit]</text>
+    <text x="276" y="40" class="lbl-sm">Warp slot scheduling hint</text>
+    <line x1="276" y1="48" x2="448" y2="48" stroke="#16a34a" stroke-width="0.3" opacity="0.5"/>
+    <text x="276" y="66" class="badge" fill="#166534">0 = YIELD this slot</text>
+    <text x="276" y="82" class="desc">  (let other warps run)</text>
+    <text x="276" y="100" class="badge" fill="#166534">1 = HOLD (continue)</text>
+    <text x="276" y="116" class="desc">  (stay on same warp)</text>
+    <text x="276" y="134" class="note">inverted semantics!</text>
+
+    <!-- WrBarrier card -->
+    <rect x="474" y="0" width="250" height="140" rx="10" fill="url(#sbG)" stroke="#2563eb" stroke-width="0.8"/>
+    <text x="488" y="22" class="zone-t" fill="#1d4ed8">WrBarrier [3 bits]</text>
+    <text x="488" y="40" class="lbl-sm">Producer scoreboard assignment</text>
+    <line x1="488" y1="48" x2="710" y2="48" stroke="#2563eb" stroke-width="0.3" opacity="0.5"/>
+    <text x="488" y="66" class="badge" fill="#1d4ed8">0–5 = assign to SB counter</text>
+    <text x="488" y="82" class="desc">  (SBn++ on dispatch)</text>
+    <text x="488" y="100" class="badge" fill="#1d4ed8">7 = none (fixed-latency op)</text>
+    <text x="488" y="116" class="desc">  (stall counter handles dep)</text>
+    <text x="488" y="134" class="note">LDG→SB3-4, LDS→SB0-1</text>
+
+    <!-- RdBarrier + WaitBarrier card -->
+    <rect x="736" y="0" width="284" height="140" rx="10" fill="url(#waitG)" stroke="#e11d48" stroke-width="0.8"/>
+    <text x="750" y="22" class="zone-t" fill="#9f1239">RdBarrier [3] + WaitBarrier [6]</text>
+    <text x="750" y="40" class="lbl-sm">Consumer dependence gating</text>
+    <line x1="750" y1="48" x2="1006" y2="48" stroke="#e11d48" stroke-width="0.3" opacity="0.5"/>
+    <text x="750" y="66" class="badge" fill="#9f1239">RdBarrier: SB ID this insn waits on</text>
+    <text x="750" y="82" class="desc">  (0-5=SB ID, 7=none)</text>
+    <text x="750" y="100" class="badge" fill="#9f1239">WaitBarrier: 6-bit one-hot mask</text>
+    <text x="750" y="116" class="desc">  (bit N=1 → wait for SBn==0)</text>
+    <text x="750" y="134" class="note">blocks issue until all flagged SBs complete</text>
+  </g>
+
+  <!-- ═══════ BOTTOM LEFT: Scheduler Decision Flow ═══════ -->
+  <g transform="translate(30, 340)">
+    <rect x="0" y="0" width="520" height="320" rx="12" fill="url(#flowG)" stroke="#334155" stroke-width="1"/>
+    <text x="16" y="24" class="sect" fill="#334155">Scheduler Issue Decision Flow (per cycle, per warp)</text>
+
+    <!-- Step 1: Check WaitBarrier -->
+    <g transform="translate(20, 44)">
+      <rect x="0" y="0" width="220" height="40" rx="8" fill="url(#waitG)" stroke="#e11d48" stroke-width="1"/>
+      <text x="110" y="16" class="lbl" fill="#9f1239" text-anchor="middle">1. Check WaitBarrier</text>
+      <text x="110" y="32" class="desc" text-anchor="middle">any flagged SB ≠ 0 ?</text>
+
+      <!-- Branch: blocked -->
+      <line x1="220" y1="20" x2="260" y2="20" stroke="#dc2626" stroke-width="1.2" marker-end="url(#ar-red)"/>
+      <text x="270" y="16" class="warn">YES → BLOCK</text>
+      <text x="270" y="30" class="note">(warp ineligible)</text>
+    </g>
+
+    <!-- Arrow down (pass) -->
+    <line x1="130" y1="88" x2="130" y2="104" stroke="#16a34a" stroke-width="1.2" marker-end="url(#ar-green)"/>
+    <text x="142" y="100" class="safe">NO (all SBs clear)</text>
+
+    <!-- Step 2: Check stall countdown -->
+    <g transform="translate(20, 108)">
+      <rect x="0" y="0" width="220" height="40" rx="8" fill="url(#stallG)" stroke="#b45309" stroke-width="1"/>
+      <text x="110" y="16" class="lbl" fill="#92400e" text-anchor="middle">2. Check Stall Counter</text>
+      <text x="110" y="32" class="desc" text-anchor="middle">countdown &gt; 0 ?</text>
+
+      <line x1="220" y1="20" x2="260" y2="20" stroke="#dc2626" stroke-width="1.2" marker-end="url(#ar-red)"/>
+      <text x="270" y="16" class="warn">YES → WAIT</text>
+      <text x="270" y="30" class="note">(decrement each cycle)</text>
+    </g>
+
+    <!-- Arrow down -->
+    <line x1="130" y1="152" x2="130" y2="168" stroke="#16a34a" stroke-width="1.2" marker-end="url(#ar-green)"/>
+    <text x="142" y="164" class="safe">NO (counter == 0)</text>
+
+    <!-- Step 3: Check yield -->
+    <g transform="translate(20, 172)">
+      <rect x="0" y="0" width="220" height="40" rx="8" fill="url(#yieldG)" stroke="#16a34a" stroke-width="1"/>
+      <text x="110" y="16" class="lbl" fill="#166534" text-anchor="middle">3. Check Yield Hint</text>
+      <text x="110" y="32" class="desc" text-anchor="middle">yield=0 ?</text>
+
+      <line x1="220" y1="20" x2="260" y2="20" stroke="#b45309" stroke-width="1.2" marker-end="url(#ar-amber)"/>
+      <text x="270" y="16" class="badge" fill="#b45309">YES → suggest switch</text>
+      <text x="270" y="30" class="note">(not mandatory, hint only)</text>
+    </g>
+
+    <!-- Arrow down -->
+    <line x1="130" y1="216" x2="130" y2="232" stroke="#16a34a" stroke-width="1.2" marker-end="url(#ar-green)"/>
+
+    <!-- Step 4: ISSUE -->
+    <g transform="translate(20, 236)">
+      <rect x="0" y="0" width="220" height="50" rx="8" fill="#16a34a" opacity="0.12" stroke="#16a34a" stroke-width="1.2"/>
+      <text x="110" y="18" class="lbl" fill="#16a34a" text-anchor="middle">4. ISSUE Instruction</text>
+      <text x="110" y="34" class="desc" text-anchor="middle">set stall countdown = stall[4]</text>
+      <text x="110" y="46" class="desc" text-anchor="middle">if WrBarrier≠7: SBn++</text>
+    </g>
+
+    <!-- Side note about reuse -->
+    <g transform="translate(260, 242)">
+      <rect x="0" y="0" width="240" height="44" rx="6" fill="url(#reuseG)" stroke="#7c3aed" stroke-width="0.6"/>
+      <text x="12" y="16" class="badge" fill="#6d28d9">+ Reuse flags [125:122]</text>
+      <text x="12" y="32" class="desc">operands with bit=1 cached in RFC</text>
+      <text x="12" y="42" class="note">(reduces next read to 0-cycle)</text>
+    </g>
+  </g>
+
+  <!-- ═══════ BOTTOM RIGHT: Producer-Consumer Example ═══════ -->
+  <g transform="translate(570, 340)">
+    <rect x="0" y="0" width="480" height="320" rx="12" fill="#f8fafc" stroke="#334155" stroke-width="1"/>
+    <text x="16" y="24" class="sect" fill="#334155">Concrete Example: LDG → FFMA Dependency</text>
+    <text x="16" y="39" class="desc">How control codes encode </text>
+    <text x="16" y="52" class="desc">variable-latency producer → fixed-latency consumer chain</text>
+
+    <!-- Producer instruction -->
+    <g transform="translate(20, 58)">
+      <rect x="0" y="0" width="440" height="56" rx="8" fill="url(#sbG)" stroke="#2563eb" stroke-width="1"/>
+      <text x="12" y="18" class="lbl" fill="#1d4ed8">PRODUCER: LDG.E R10, desc[UR4][R2]</text>
+      <text x="12" y="36" class="desc">stall=1 (fire-and-forget) | WrBarrier=3 (SB3++) | yield=1</text>
+      <text x="12" y="50" class="note">→ issues immediately, SB3 tracks completion asynchronously</text>
+    </g>
+
+    <!-- Arrow with time passing -->
+    <line x1="240" y1="118" x2="240" y2="148" stroke="#5b6679" stroke-width="1.2" stroke-dasharray="4,3"/>
+    <text x="254" y="132" class="note">44–354 cycles (L1/L2 latency)</text>
+    <text x="254" y="144" class="note">warp continues issuing other insns</text>
+
+    <!-- Intervening instructions -->
+    <g transform="translate(20, 152)">
+      <rect x="0" y="0" width="440" height="36" rx="6" fill="#f1f5f9" stroke="#e2e8f0" stroke-width="0.6"/>
+      <text x="12" y="14" class="desc">FFMA R3, R3, R4, R5 ;   stall=4, WrBarrier=7 (fixed-lat, no SB)</text>
+      <text x="12" y="28" class="desc">IADD3 R6, R6, R7, RZ ;  stall=2, WrBarrier=7 (2-cyc ALU)</text>
+    </g>
+
+    <!-- Arrow -->
+    <line x1="240" y1="192" x2="240" y2="208" stroke="#5b6679" stroke-width="1" stroke-dasharray="4,3"/>
+
+    <!-- Consumer instruction -->
+    <g transform="translate(20, 212)">
+      <rect x="0" y="0" width="440" height="56" rx="8" fill="url(#waitG)" stroke="#e11d48" stroke-width="1"/>
+      <text x="12" y="18" class="lbl" fill="#9f1239">CONSUMER: FFMA R11, R10, R12, R13</text>
+      <text x="12" y="36" class="desc">stall=1 | WaitBarrier=0b001000 (wait SB3) | yield=1</text>
+      <text x="12" y="50" class="note">→ blocks until SB3==0 (LDG data in R10 is valid)</text>
+    </g>
+
+    <!-- Completion notification -->
+    <g transform="translate(20, 278)">
+      <rect x="0" y="0" width="440" height="30" rx="6" fill="#DCFCE7" stroke="#16a34a" stroke-width="0.8"/>
+      <text x="12" y="18" class="safe">Memory subsystem completes → SB3-- → consumer unblocked → R10 valid</text>
+    </g>
+  </g>
+
+  <!-- ═══════ BOTTOM STRIP: Reuse Flags Detail ═══════ -->
+  <g transform="translate(30, 680)">
+    <rect x="0" y="0" width="1020" height="120" rx="12" fill="url(#reuseG)" stroke="#7c3aed" stroke-width="0.8"/>
+    <text x="16" y="24" class="sect" fill="#6d28d9">Reuse Flags [125:122] — Per-Operand Register File Cache (RFC) Hints</text>
+
+    <!-- 4-bit visual -->
+    <g transform="translate(20, 42)">
+      <rect x="0" y="0" width="80" height="34" rx="6" fill="#ffffff" stroke="#7c3aed" stroke-width="0.8"/>
+      <text x="40" y="15" class="field" fill="#6d28d9" text-anchor="middle">src3</text>
+      <text x="40" y="30" class="bit" text-anchor="middle">[125]</text>
+      <rect x="86" y="0" width="80" height="34" rx="6" fill="#ffffff" stroke="#7c3aed" stroke-width="0.8"/>
+      <text x="126" y="15" class="field" fill="#6d28d9" text-anchor="middle">src2</text>
+      <text x="126" y="30" class="bit" text-anchor="middle">[124]</text>
+      <rect x="172" y="0" width="80" height="34" rx="6" fill="#ffffff" stroke="#7c3aed" stroke-width="0.8"/>
+      <text x="212" y="15" class="field" fill="#6d28d9" text-anchor="middle">src1</text>
+      <text x="212" y="30" class="bit" text-anchor="middle">[123]</text>
+      <rect x="258" y="0" width="80" height="34" rx="6" fill="#ffffff" stroke="#7c3aed" stroke-width="0.8"/>
+      <text x="298" y="15" class="field" fill="#6d28d9" text-anchor="middle">src0</text>
+      <text x="298" y="30" class="bit" text-anchor="middle">[122]</text>
+
+      <text x="356" y="14" class="lbl" fill="#6d28d9">bit = 1 → cache in RFC (0-cycle on next access)</text>
+      <text x="356" y="32" class="desc">bit = 0 → no caching hint (read from RF each time)</text>
+    </g>
+
+    <!-- ALU vs TC -->
+    <g transform="translate(20, 84)">
+      <rect x="0" y="0" width="470" height="22" rx="4" fill="#16a34a" opacity="0.1" stroke="#16a34a" stroke-width="0.5"/>
+      <text x="8" y="15" class="safe">ALU (FFMA/FADD/IMAD): functionally active → +85% ILP throughput improvement</text>
+      <rect x="480" y="0" width="450" height="22" rx="4" fill="#dc2626" opacity="0.08" stroke="#dc2626" stroke-width="0.5"/>
+      <text x="488" y="15" class="warn">TC (HMMA/QMMA/OMMA): true no-op — ptxas never sets, 0% effect if forced</text>
+    </g>
+  </g>
+
+  <!-- ═══════ VERY BOTTOM: Key Takeaways ═══════ -->
+  <g transform="translate(30, 820)">
+    <rect x="0" y="0" width="1020" height="110" rx="12" fill="#EDE7FB" stroke="#6d28d9" stroke-width="0.8"/>
+    <text x="16" y="22" class="sect" fill="#6d28d9">Key Design Principles</text>
+
+    <g transform="translate(16, 38)">
+      <text x="0" y="0" class="lbl" fill="#334155">1. Dual-Path Dependence:</text>
+      <text x="200" y="0" class="lbl-sm">Fixed-latency ops use stall counter (compiler-trusted); variable-latency ops use 6 HW scoreboards.</text>
+
+      <text x="0" y="22" class="lbl" fill="#334155">2. Compiler-Trusted:</text>
+      <text x="200" y="22" class="lbl-sm">Wrong stall value = silent corruption (no trap!). stall=0 is the only safe fallback (17× penalty).</text>
+
+      <text x="0" y="44" class="lbl" fill="#334155">3. Area Efficiency:</text>
+      <text x="200" y="44" class="lbl-sm">17 bits/instruction + 6 SB counters/warp replaces a full CAM-based scoreboard (saves ~10K transistor-bits/SM).</text>
+
+      <text x="0" y="66" class="lbl" fill="#334155">4. RFC Synergy:</text>
+      <text x="200" y="66" class="lbl-sm">Reuse bits feed the RFC, turning repeated operand reads into 0-cycle hits — ALU pipe benefits +85%.</text>
+    </g>
+  </g>
+
+  <!-- Source -->
+  <text x="36" y="950" class="note">[source: S13/case_1-2, S13/case_10-13, S11/case_71-80, S11/case_128-156]</text>
+</svg>

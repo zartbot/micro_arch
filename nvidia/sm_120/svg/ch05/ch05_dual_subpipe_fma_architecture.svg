@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 720" role="img" aria-label="SM_120 Dual-Subpipe FMA Architecture — Co-Issue Microarchitecture">
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#374151"/>
+    </marker>
+    <marker id="arrow-green" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#059669"/>
+    </marker>
+    <linearGradient id="headerGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#1e293b"/>
+      <stop offset="100%" style="stop-color:#334155"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1080" height="720" fill="#fafbfc"/>
+
+  <!-- Title -->
+  <text x="540" y="34" text-anchor="middle" style="font:700 16px 'Inter','Segoe UI',sans-serif;fill:#0f172a">SM_120 Dual-Subpipe FMA Architecture</text>
+  <text x="540" y="54" text-anchor="middle" style="font:italic 11px 'Inter','Segoe UI',sans-serif;fill:#64748b">Per-SMSP execution model — perfect INT32 + FP32 co-issue verified by microbenchmark (MIX/MAX = 1.001)</text>
+
+  <!-- ═══════════════════ SMSP Warp Scheduler ═══════════════════ -->
+  <rect x="360" y="72" width="360" height="42" rx="6" fill="url(#headerGrad)"/>
+  <text x="540" y="98" text-anchor="middle" style="font:600 12px 'JetBrains Mono',monospace;fill:#f1f5f9">SMSP Warp Scheduler (single dispatch port)</text>
+
+  <!-- Arrow from scheduler to mux -->
+  <line x1="540" y1="114" x2="540" y2="142" stroke="#374151" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- ═══════════════════ Selector Mux ═══════════════════ -->
+  <rect x="430" y="144" width="220" height="34" rx="5" fill="#e0e7ff" stroke="#6366f1" stroke-width="1.2"/>
+  <text x="540" y="166" text-anchor="middle" style="font:600 11px 'JetBrains Mono',monospace;fill:#4338ca">FMA Group Opcode Selector MUX</text>
+
+  <!-- Branching arrows from mux to two pipes -->
+  <path d="M480,178 L480,196 L310,196 L310,218" fill="none" stroke="#374151" stroke-width="1.8" marker-end="url(#arrow)"/>
+  <path d="M600,178 L600,196 L770,196 L770,218" fill="none" stroke="#374151" stroke-width="1.8" marker-end="url(#arrow)"/>
+
+  <!-- Labels on branches -->
+  <text x="370" y="193" text-anchor="middle" style="font:italic 9.5px 'Inter',sans-serif;fill:#6b7280">INT/FP32 ops</text>
+  <text x="710" y="193" text-anchor="middle" style="font:italic 9.5px 'Inter',sans-serif;fill:#6b7280">MUL/Shift/FP16 ops</text>
+
+  <!-- ═══════════════════ pipe_fma (fmalite) ═══════════════════ -->
+  <rect x="140" y="220" width="340" height="310" rx="10" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.5"/>
+  <!-- Pipe header -->
+  <rect x="140" y="220" width="340" height="36" rx="10" fill="#dcfce7" stroke="#16a34a" stroke-width="1.5"/>
+  <rect x="140" y="246" width="340" height="10" fill="#dcfce7"/>
+  <text x="310" y="244" text-anchor="middle" style="font:700 12.5px 'JetBrains Mono',monospace;fill:#15803d">pipe_fma (fmalite)</text>
+
+  <!-- Instructions in fmalite -->
+  <g transform="translate(160,270)">
+    <rect x="0" y="0" width="300" height="28" rx="4" fill="#ffffff" stroke="#bbf7d0" stroke-width="1"/>
+    <text x="12" y="18" style="font:600 11px 'JetBrains Mono',monospace;fill:#166534">IADD3</text>
+    <text x="100" y="18" style="font:400 10px 'Inter',sans-serif;fill:#4b5563">INT32 add/sub</text>
+    <text x="250" y="18" style="font:700 10.5px 'JetBrains Mono',monospace;fill:#dc2626">2 cyc</text>
+  </g>
+  <g transform="translate(160,304)">
+    <rect x="0" y="0" width="300" height="28" rx="4" fill="#ffffff" stroke="#bbf7d0" stroke-width="1"/>
+    <text x="12" y="18" style="font:600 11px 'JetBrains Mono',monospace;fill:#166534">LOP3.LUT</text>
+    <text x="100" y="18" style="font:400 10px 'Inter',sans-serif;fill:#4b5563">3-input logic</text>
+    <text x="250" y="18" style="font:700 10.5px 'JetBrains Mono',monospace;fill:#dc2626">4 cyc</text>
+  </g>
+  <g transform="translate(160,338)">
+    <rect x="0" y="0" width="300" height="28" rx="4" fill="#ffffff" stroke="#bbf7d0" stroke-width="1"/>
+    <text x="12" y="18" style="font:600 11px 'JetBrains Mono',monospace;fill:#166534">ISETP</text>
+    <text x="100" y="18" style="font:400 10px 'Inter',sans-serif;fill:#4b5563">INT compare → pred</text>
+    <text x="250" y="18" style="font:700 10.5px 'JetBrains Mono',monospace;fill:#dc2626">5 cyc</text>
+  </g>
+  <g transform="translate(160,372)">
+    <rect x="0" y="0" width="300" height="28" rx="4" fill="#ffffff" stroke="#bbf7d0" stroke-width="1"/>
+    <text x="12" y="18" style="font:600 11px 'JetBrains Mono',monospace;fill:#166534">FFMA</text>
+    <text x="100" y="18" style="font:400 10px 'Inter',sans-serif;fill:#4b5563">FP32 fused multiply-add</text>
+    <text x="250" y="18" style="font:700 10.5px 'JetBrains Mono',monospace;fill:#dc2626">4 cyc</text>
+  </g>
+  <g transform="translate(160,406)">
+    <rect x="0" y="0" width="300" height="28" rx="4" fill="#ffffff" stroke="#bbf7d0" stroke-width="1"/>
+    <text x="12" y="18" style="font:600 11px 'JetBrains Mono',monospace;fill:#166534">FADD</text>
+    <text x="100" y="18" style="font:400 10px 'Inter',sans-serif;fill:#4b5563">FP32 add</text>
+    <text x="250" y="18" style="font:700 10.5px 'JetBrains Mono',monospace;fill:#dc2626">4 cyc</text>
+  </g>
+
+  <!-- Throughput box for fmalite -->
+  <rect x="170" y="448" width="280" height="34" rx="5" fill="#065f46" opacity="0.9"/>
+  <text x="310" y="470" text-anchor="middle" style="font:700 11.5px 'JetBrains Mono',monospace;fill:#ffffff">Peak: 1.0 ops/cyc (ILP=4 sat.)</text>
+
+  <!-- Pipeline depth annotation -->
+  <text x="310" y="505" text-anchor="middle" style="font:500 10px 'Inter',sans-serif;fill:#374151">Pipeline depth: 4 stages (FFMA) / 2 stages (IADD3)</text>
+  <text x="310" y="520" text-anchor="middle" style="font:500 10px 'Inter',sans-serif;fill:#374151">Saturation ILP: 4 (FFMA), 2 (IADD3)</text>
+
+  <!-- ═══════════════════ pipe_fmaheavy ═══════════════════ -->
+  <rect x="600" y="220" width="340" height="310" rx="10" fill="#fef3c7" stroke="#d97706" stroke-width="1.5"/>
+  <!-- Pipe header -->
+  <rect x="600" y="220" width="340" height="36" rx="10" fill="#fde68a" stroke="#d97706" stroke-width="1.5"/>
+  <rect x="600" y="246" width="340" height="10" fill="#fde68a"/>
+  <text x="770" y="244" text-anchor="middle" style="font:700 12.5px 'JetBrains Mono',monospace;fill:#92400e">pipe_fmaheavy</text>
+
+  <!-- Instructions in fmaheavy -->
+  <g transform="translate(620,270)">
+    <rect x="0" y="0" width="300" height="28" rx="4" fill="#ffffff" stroke="#fde68a" stroke-width="1"/>
+    <text x="12" y="18" style="font:600 11px 'JetBrains Mono',monospace;fill:#92400e">IMAD</text>
+    <text x="100" y="18" style="font:400 10px 'Inter',sans-serif;fill:#4b5563">INT32 multiply-add</text>
+    <text x="250" y="18" style="font:700 10.5px 'JetBrains Mono',monospace;fill:#dc2626">4 cyc</text>
+  </g>
+  <g transform="translate(620,304)">
+    <rect x="0" y="0" width="300" height="28" rx="4" fill="#ffffff" stroke="#fde68a" stroke-width="1"/>
+    <text x="12" y="18" style="font:600 11px 'JetBrains Mono',monospace;fill:#92400e">SHF</text>
+    <text x="100" y="18" style="font:400 10px 'Inter',sans-serif;fill:#4b5563">Funnel shift</text>
+    <text x="250" y="18" style="font:700 10.5px 'JetBrains Mono',monospace;fill:#dc2626">4 cyc</text>
+  </g>
+  <g transform="translate(620,338)">
+    <rect x="0" y="0" width="300" height="28" rx="4" fill="#ffffff" stroke="#fde68a" stroke-width="1"/>
+    <text x="12" y="18" style="font:600 11px 'JetBrains Mono',monospace;fill:#92400e">PRMT</text>
+    <text x="100" y="18" style="font:400 10px 'Inter',sans-serif;fill:#4b5563">Byte permutation</text>
+    <text x="250" y="18" style="font:700 10.5px 'JetBrains Mono',monospace;fill:#dc2626">4 cyc</text>
+  </g>
+  <g transform="translate(620,372)">
+    <rect x="0" y="0" width="300" height="28" rx="4" fill="#ffffff" stroke="#fde68a" stroke-width="1"/>
+    <text x="12" y="18" style="font:600 11px 'JetBrains Mono',monospace;fill:#92400e">HFMA2</text>
+    <text x="100" y="18" style="font:400 10px 'Inter',sans-serif;fill:#4b5563">FP16x2 packed FMA</text>
+    <text x="217" y="18" style="font:700 10.5px 'JetBrains Mono',monospace;fill:#dc2626">4c / 2 issue</text>
+  </g>
+  <g transform="translate(620,406)">
+    <rect x="0" y="0" width="300" height="28" rx="4" fill="#ffffff" stroke="#fde68a" stroke-width="1"/>
+    <text x="12" y="18" style="font:600 11px 'JetBrains Mono',monospace;fill:#92400e">IDP.4A</text>
+    <text x="100" y="18" style="font:400 10px 'Inter',sans-serif;fill:#4b5563">INT8 dot-product (dp4a)</text>
+    <text x="250" y="18" style="font:700 10.5px 'JetBrains Mono',monospace;fill:#dc2626">4 cyc</text>
+  </g>
+  <g transform="translate(620,440)">
+    <rect x="0" y="0" width="300" height="28" rx="4" fill="#ffffff" stroke="#fde68a" stroke-width="1"/>
+    <text x="12" y="18" style="font:600 11px 'JetBrains Mono',monospace;fill:#92400e">FSEL</text>
+    <text x="100" y="18" style="font:400 10px 'Inter',sans-serif;fill:#4b5563">FP select (predicated)</text>
+    <text x="250" y="18" style="font:700 10.5px 'JetBrains Mono',monospace;fill:#dc2626">5 cyc</text>
+  </g>
+
+  <!-- Throughput box for fmaheavy -->
+  <rect x="630" y="482" width="280" height="34" rx="5" fill="#78350f" opacity="0.9"/>
+  <text x="770" y="504" text-anchor="middle" style="font:700 11.5px 'JetBrains Mono',monospace;fill:#ffffff">Peak: 1.0 ops/cyc (ILP=2 sat.)</text>
+
+  <!-- Pipeline depth annotation -->
+  <text x="770" y="540" text-anchor="middle" style="font:500 10px 'Inter',sans-serif;fill:#374151">Pipeline depth: 2 stages (IMAD)</text>
+  <text x="770" y="556" text-anchor="middle" style="font:500 10px 'Inter',sans-serif;fill:#374151">2-cycle issue for HFMA2 (time-multiplexed)</text>
+
+  <!-- ═══════════════════ Co-Issue Zone (bottom) ═══════════════════ -->
+  <!-- Bidirectional co-issue indicator -->
+  <rect x="140" y="566" width="800" height="70" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="1.2" stroke-dasharray="4,2"/>
+
+  <!-- Co-issue arrows -->
+  <path d="M420,586 L540,586 L540,608 L660,608" fill="none" stroke="#059669" stroke-width="2.5" stroke-dasharray="6,3" marker-end="url(#arrow-green)"/>
+  <path d="M660,586 L540,586 L540,608 L420,608" fill="none" stroke="#059669" stroke-width="2.5" stroke-dasharray="6,3" marker-end="url(#arrow-green)"/>
+
+  <text x="540" y="580" text-anchor="middle" style="font:700 12px 'Inter',sans-serif;fill:#1d4ed8">PERFECT CO-ISSUE: Zero Contention</text>
+  <text x="540" y="627" text-anchor="middle" style="font:500 10.5px 'JetBrains Mono',monospace;fill:#1e40af">Aggregate: 2.0 ops/cyc (IADD3 + FFMA simultaneous)</text>
+
+  <!-- ═══════════════════ Evidence / Verification Box ═══════════════════ -->
+  <rect x="140" y="640" width="800" height="66" rx="8" fill="#f8fafc" stroke="#94a3b8" stroke-width="0.8"/>
+
+  <text x="160" y="660" style="font:600 10px 'Inter',sans-serif;fill:#475569">Measurement Evidence:</text>
+  <text x="160" y="678" style="font:400 9.5px 'JetBrains Mono',monospace;fill:#64748b">Case 5 (latency mode): MIX/MAX = 1.000 across all ratios (1:1, 2:1, 1:2) — 4096 ops each test</text>
+  <text x="160" y="693" style="font:400 9.5px 'JetBrains Mono',monospace;fill:#64748b">Case 32 (throughput mode): 2048 ops in 1025 cyc → MIX/MAX = 1.001 — NCU: pipe_fmalite + pipe_fma counters separate</text>
+
+  <!-- Legend for pipe colors -->
+  <rect x="20" y="240" width="12" height="12" rx="2" fill="#dcfce7" stroke="#16a34a" stroke-width="0.8"/>
+  <text x="38" y="250" style="font:500 9px 'Inter',sans-serif;fill:#374151">INT32 + FP32</text>
+  <rect x="20" y="260" width="12" height="12" rx="2" fill="#fde68a" stroke="#d97706" stroke-width="0.8"/>
+  <text x="38" y="270" style="font:500 9px 'Inter',sans-serif;fill:#374151">INT MUL + Shift + FP16</text>
+
+  <!-- No switching penalty annotation -->
+  <text x="440" y="560" text-anchor="middle" style="font:italic 9.5px 'Inter',sans-serif;fill:#6b7280">No switching penalty between subpipes (verified Ch3 §3.4.4)</text>
+</svg>

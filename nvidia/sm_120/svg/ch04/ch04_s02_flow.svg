@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 620" role="img"
+     aria-label="4.7.8 ldmatrix/stmatrix Architecture — bidirectional smem-RF data path with latency, throughput, and key properties">
+  <defs>
+    <style><![CDATA[
+      .eyebrow{font:600 11px "JetBrains Mono",monospace;letter-spacing:0.14em;text-transform:uppercase}
+      .title  {font:500 18px "Fraunces",serif;fill:#0b1220;letter-spacing:-0.02em}
+      .ttl    {font:600 11px "JetBrains Mono",monospace;letter-spacing:0.04em}
+      .lbl    {font:500 10px "JetBrains Mono",monospace;fill:#5b6679}
+      .lbl-sm {font:500 9px "JetBrains Mono",monospace;fill:#5b6679;letter-spacing:0.03em;text-transform:uppercase}
+      .val    {font:600 16px "Fraunces",serif;fill:#0b1220}
+      .val-sm {font:600 12px "Fraunces",serif;fill:#0b1220}
+      .note   {font:500 10.5px "IBM Plex Sans",sans-serif;fill:#2a3548}
+      .note-em{font:600 10.5px "IBM Plex Sans",sans-serif;fill:#e11d48}
+      .note-gr{font:600 10.5px "IBM Plex Sans",sans-serif;fill:#16a34a}
+      .note-bl{font:600 10.5px "IBM Plex Sans",sans-serif;fill:#2563eb}
+      .cyc-val{font:500 9px "JetBrains Mono",monospace;fill:#5b6679}
+    ]]></style>
+    <marker id="ar-r" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto">
+      <path d="M0,0 L7,3.5 L0,7 Z" fill="#2563eb"/>
+    </marker>
+    <marker id="ar-l" markerWidth="7" markerHeight="7" refX="2" refY="3.5" orient="auto">
+    <path d="M0,0 L7,3.5 L0,7 Z" fill="#e11d48"/>
+    </marker>
+  </defs>
+
+  <rect width="1080" height="620" fill="#fcfbf6"/>
+
+  <!-- Header -->
+  <g transform="translate(36,24)">
+    <rect x="0" y="0" width="3" height="40" fill="#e11d48"/>
+    <text x="14" y="14" class="eyebrow" fill="#e11d48">§4.7.8 · LDMATRIX / STMATRIX SUMMARY</text>
+    <text x="14" y="36" class="title">Bidirectional Smem ↔ RF Data Path for MMA Operands</text>
+  </g>
+
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <!-- SECTION 1: Architecture diagram (Smem ←→ RF) -->
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <g transform="translate(36,80)">
+
+    <!-- Shared Memory box (left) -->
+    <rect x="0" y="0" width="280" height="180" rx="12" fill="#EFF6FF" stroke="#2563eb" stroke-width="1.4"/>
+    <text x="16" y="22" class="ttl" fill="#2563eb">SHARED MEMORY (99 KB)</text>
+    <text x="16" y="44" class="note">XOR-swizzled tile buffer</text>
+    <text x="16" y="62" class="note">Bank-conflict free with swizzle</text>
+    <text x="16" y="82" class="note">A/B operand tiles (TMA loaded)</text>
+    <text x="16" y="102" class="note">D accumulator output tiles</text>
+    <line x1="16" y1="114" x2="264" y2="114" stroke="#d1d0c7" stroke-width="0.6"/>
+    <text x="16" y="132" class="cyc-val">128 B/cyc read bandwidth</text>
+    <text x="16" y="148" class="cyc-val">Accessed via warp-collective ops</text>
+    <text x="16" y="164" class="cyc-val">(not per-thread LD/ST)</text>
+
+    <!-- Register File box (right) -->
+    <rect x="680" y="0" width="280" height="180" rx="12" fill="#FDF4FF" stroke="#9333ea" stroke-width="1.4"/>
+    <text x="696" y="22" class="ttl" fill="#9333ea">REGISTER FILE (256 regs/thr)</text>
+    <text x="696" y="44" class="note">MMA operand fragments:</text>
+    <text x="696" y="62" class="note">A: 4 regs (m16n8k16 FP16)</text>
+    <text x="696" y="80" class="note">B: 2 regs</text>
+    <text x="696" y="98" class="note">C/D: 4 regs (accumulator)</text>
+    <line x1="696" y1="110" x2="944" y2="110" stroke="#d1d0c7" stroke-width="0.6"/>
+    <text x="696" y="128" class="cyc-val">MMA-ready register layout</text>
+    <text x="696" y="144" class="cyc-val">No per-thread shuffle needed</text>
+    <text x="696" y="164" class="cyc-val">Direct → TC operand collector</text>
+
+    <!-- ldmatrix arrow (Smem → RF) -->
+    <g transform="translate(300,40)">
+      <line x1="0" y1="20" x2="358" y2="20" stroke="#2563eb" stroke-width="2" marker-end="url(#ar-r)"/>
+      <rect x="80" y="4" width="200" height="36" rx="6" fill="#EFF6FF" stroke="#2563eb" stroke-width="0.8"/>
+      <text x="96" y="18" class="ttl" fill="#2563eb">LDSM.16.M88.4</text>
+      <text x="96" y="34" class="cyc-val" fill="#2563eb">ldmatrix.x4.m8n8.b16</text>
+    </g>
+    <!-- ldmatrix metrics -->
+    <g transform="translate(380,94)">
+      <text x="0" y="0" class="note-bl">Latency: 33 cyc (ptr chase)</text>
+      <text x="0" y="16" class="note-bl">Throughput: 1.68 cyc/op @ ILP=8</text>
+      <text x="0" y="32" class="note-gr">.trans = 0 cyc (FREE crossbar)</text>
+    </g>
+
+    <!-- stmatrix arrow (RF → Smem) -->
+    <g transform="translate(300,128)">
+      <line x1="360" y1="20" x2="2" y2="20" stroke="#e11d48" stroke-width="2" marker-end="url(#ar-l)"/>
+      <rect x="80" y="4" width="200" height="36" rx="6" fill="#FFF1F2" stroke="#e11d48" stroke-width="0.8"/>
+      <text x="96" y="18" class="ttl" fill="#e11d48">STSM.16.M88.4</text>
+      <text x="96" y="34" class="cyc-val" fill="#e11d48">stmatrix.x4.m8n8.b16</text>
+    </g>
+    <!-- stmatrix metrics -->
+    <g transform="translate(380,182)">
+      <text x="0" y="0" class="note-em">Latency: ~40 cyc (dep chain)</text>
+      <text x="0" y="16" class="note-em">Throughput: 15.99 cyc/op</text>
+      <text x="0" y="32" class="note">.b8 .trans = 0 cyc (same HW path)</text>
+    </g>
+  </g>
+
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <!-- SECTION 2: Key Properties Grid -->
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <g transform="translate(36,300)">
+    <text x="0" y="0" class="ttl" fill="#e11d48">KEY MEASURED PROPERTIES</text>
+
+    <g transform="translate(0,18)">
+      <rect x="0" y="0" width="1008" height="190" rx="10" fill="#ffffff" stroke="#e6e4da"/>
+
+      <!-- Row 1 -->
+      <g transform="translate(16,16)">
+        <rect x="0" y="0" width="310" height="46" rx="6" fill="#f0fdf4" stroke="#16a34a" stroke-width="0.6"/>
+        <text x="12" y="16" class="ttl" fill="#16a34a">.trans modifier</text>
+        <text x="12" y="36" class="note">0 cyc overhead — zero-cost crossbar permutation</text>
+
+        <rect x="330" y="0" width="310" height="46" rx="6" fill="#f0fdf4" stroke="#16a34a" stroke-width="0.6"/>
+        <text x="342" y="16" class="ttl" fill="#16a34a">.b8 stmatrix modifier</text>
+        <text x="342" y="36" class="note">0 cyc overhead — same HW path as .b16</text>
+
+        <rect x="660" y="0" width="330" height="46" rx="6" fill="#FEF3C7" stroke="#f59e0b" stroke-width="0.6"/>
+        <text x="672" y="16" class="ttl" fill="#92400e">ldmatrix .b8 (m8n8)</text>
+        <text x="672" y="36" class="note">NOT available on SM_120 (uses .b16 packing)</text>
+      </g>
+
+      <!-- Row 2 -->
+      <g transform="translate(16,74)">
+        <rect x="0" y="0" width="310" height="46" rx="6" fill="#EFF6FF" stroke="#2563eb" stroke-width="0.6"/>
+        <text x="12" y="16" class="ttl" fill="#2563eb">Width scaling x1→x2→x4</text>
+        <text x="12" y="36" class="note">+3 cyc/doubling (sub-linear, pipelined)</text>
+
+        <rect x="330" y="0" width="310" height="46" rx="6" fill="#EFF6FF" stroke="#2563eb" stroke-width="0.6"/>
+        <text x="342" y="16" class="ttl" fill="#2563eb">ldmatrix + MMA overlap</text>
+        <text x="342" y="36" class="note">Fully hidden: +0.7 cyc only (29 cyc window)</text>
+
+        <rect x="660" y="0" width="330" height="46" rx="6" fill="#FDF4FF" stroke="#9333ea" stroke-width="0.6"/>
+        <text x="672" y="16" class="ttl" fill="#9333ea">Pipeline depth (ldmatrix)</text>
+        <text x="672" y="36" class="note">3.15 (= 5.29 / 1.68 cyc, ILP=1 vs ILP=8)</text>
+      </g>
+
+      <!-- Row 3 -->
+      <g transform="translate(16,132)">
+        <rect x="0" y="0" width="310" height="46" rx="6" fill="#FFF1F2" stroke="#e11d48" stroke-width="0.6"/>
+        <text x="12" y="16" class="ttl" fill="#e11d48">stmatrix vs shfl_sync</text>
+        <text x="12" y="36" class="note">1.75× latency advantage (52 vs 91 cyc dep chain)</text>
+
+        <rect x="330" y="0" width="310" height="46" rx="6" fill="#FFF1F2" stroke="#e11d48" stroke-width="0.6"/>
+        <text x="342" y="16" class="ttl" fill="#e11d48">stmatrix throughput parity</text>
+        <text x="342" y="36" class="note">1.01× vs shfl fallback (both ~10 cyc/op at saturation)</text>
+
+        <rect x="660" y="0" width="330" height="46" rx="6" fill="#f9f8f4" stroke="#d1d0c7" stroke-width="0.6"/>
+        <text x="672" y="16" class="ttl" fill="#5b6679">Partial load (x2 vs x4)</text>
+        <text x="672" y="36" class="note">x2 saves 3.99 cyc vs x4 (no partial discard savings)</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <!-- SECTION 3: Key insight -->
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <g transform="translate(36,518)">
+    <rect x="0" y="0" width="1008" height="70" rx="10" fill="#FEF3C7" stroke="#f59e0b" stroke-width="0.8"/>
+    <text x="20" y="18" class="ttl" fill="#92400e">DESIGN IMPLICATION FOR GEMM/ATTENTION KERNELS</text>
+    <text x="20" y="38" class="note">ldmatrix.x4 is the ONLY path to produce MMA-ready register layouts without explicit thread shuffling.</text>
+    <text x="20" y="54" class="note">Use stmatrix on latency-critical paths (1.75× vs shfl); use shfl fallback for throughput-bound epilogues (parity). Always prefer .trans for K^T access (free).</text>
+  </g>
+
+  <!-- Footer -->
+  <g transform="translate(36,602)">
+    <line x1="0" y1="0" x2="1008" y2="0" stroke="#e6e4da" stroke-width="0.8"/>
+    <text x="0" y="14" class="cyc-val">Source: [S9/case_146-154] ldmatrix/stmatrix sweep · [S9/case_175] .b8 availability · [S9/case_150] shfl comparison</text>
+    <text x="850" y="14" class="cyc-val">SM_120 · 2026</text>
+  </g>
+</svg>

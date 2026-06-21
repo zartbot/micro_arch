@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 646" role="img" aria-label="6.6.1 TMA Engine Internal Architecture">
+  <rect width="1080" height="646" fill="#ffffff"/>
+  <text x="36" y="32" style="font:600 14px 'Fraunces',serif;fill:#0b1220">6.6.1 TMA Engine Internal Architecture</text>
+  <text x="36" y="52" style="font:italic 11px 'Fraunces',serif;fill:#5b6679">Measured microarchitectural parameters and structure</text>
+
+    <g transform="translate(40,86)">
+      <rect x="0" y="0" width="480" height="90" rx="10" fill="#EEF2FF" stroke="#1e40af" stroke-width="0.8"/>
+      <text x="16" y="22" style="font:600 11.5px 'JetBrains Mono',monospace;fill:#1e40af">TMA Engine Latency Model (Inferred from Measurements)</text>
+      <text x="16" y="44" style="font:500 10px 'JetBrains Mono',monospace;fill:#5b6679"></text>
+      <text x="16" y="62" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#8e97a5"></text>
+    </g>
+    <g transform="translate(540,86)">
+      <rect x="0" y="0" width="480" height="90" rx="10" fill="#EEF2FF" stroke="#1e40af" stroke-width="0.8"/>
+      <text x="16" y="22" style="font:600 11.5px 'JetBrains Mono',monospace;fill:#1e40af">Phase 1: Descriptor Decode + Address Generation (~440 cyc)</text>
+      <text x="16" y="44" style="font:500 10px 'JetBrains Mono',monospace;fill:#5b6679">- Descriptor read from smem (tensormap, 128B structure) · - Multi-dimensional coordinate →</text>
+      <text x="16" y="62" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#8e97a5">- Box/im2col mode address computation · - Crossbar request arbitration</text>
+    </g>
+    <g transform="translate(40,192)">
+      <rect x="0" y="0" width="480" height="90" rx="10" fill="#EEF2FF" stroke="#1e40af" stroke-width="0.8"/>
+      <text x="16" y="22" style="font:600 11.5px 'JetBrains Mono',monospace;fill:#1e40af">Evidence: TMA 1D latency is FLAT 479-482 cyc for sizes 128B-</text>
+      <text x="16" y="44" style="font:500 10px 'JetBrains Mono',monospace;fill:#5b6679"></text>
+      <text x="16" y="62" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#8e97a5"></text>
+    </g>
+    <g transform="translate(540,192)">
+      <rect x="0" y="0" width="480" height="90" rx="10" fill="#EEF2FF" stroke="#1e40af" stroke-width="0.8"/>
+      <text x="16" y="22" style="font:600 11.5px 'JetBrains Mono',monospace;fill:#1e40af">This 440-cyc floor is pure overhead (no data dependency)</text>
+      <text x="16" y="44" style="font:500 10px 'JetBrains Mono',monospace;fill:#5b6679"></text>
+      <text x="16" y="62" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#8e97a5"></text>
+    </g>
+    <g transform="translate(40,298)">
+      <rect x="0" y="0" width="480" height="90" rx="10" fill="#EEF2FF" stroke="#1e40af" stroke-width="0.8"/>
+      <text x="16" y="22" style="font:600 11.5px 'JetBrains Mono',monospace;fill:#1e40af">Dimensionality adds 0 cyc (1D vs 5D at 128B: both ~480 cyc)</text>
+      <text x="16" y="44" style="font:500 10px 'JetBrains Mono',monospace;fill:#5b6679"></text>
+      <text x="16" y="62" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#8e97a5"></text>
+    </g>
+    <g transform="translate(540,298)">
+      <rect x="0" y="0" width="480" height="90" rx="10" fill="#EEF2FF" stroke="#1e40af" stroke-width="0.8"/>
+      <text x="16" y="22" style="font:600 11.5px 'JetBrains Mono',monospace;fill:#1e40af">Phase 2: Data Transfer (~0.031 cyc/byte linear)</text>
+      <text x="16" y="44" style="font:500 10px 'JetBrains Mono',monospace;fill:#5b6679">- L2 cache read + GXBAR transit · - Shared memory write (via DMA path, bypassing RF)</text>
+      <text x="16" y="62" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#8e97a5">- mbarrier completion signal</text>
+    </g>
+    <g transform="translate(40,404)">
+      <rect x="0" y="0" width="480" height="90" rx="10" fill="#EEF2FF" stroke="#1e40af" stroke-width="0.8"/>
+      <text x="16" y="22" style="font:600 11.5px 'JetBrains Mono',monospace;fill:#1e40af">Evidence: TMA 2D latency scales linearly beyond 1KB</text>
+      <text x="16" y="44" style="font:500 10px 'JetBrains Mono',monospace;fill:#5b6679">32x32 (4KB): 567 cyc = 440 + 4096×0.031 = 567 ✓ · 64x64 (16KB): 971 cyc = 440 + 16384×0.03</text>
+      <text x="16" y="62" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#8e97a5">128x128 (64KB): 2486 cyc = 440 + 65536×0.031 = 2472 ≈ 2486 ✓</text>
+    </g>
+    <g transform="translate(540,404)">
+      <rect x="0" y="0" width="480" height="90" rx="10" fill="#EEF2FF" stroke="#1e40af" stroke-width="0.8"/>
+      <text x="16" y="22" style="font:600 11.5px 'JetBrains Mono',monospace;fill:#1e40af">Linear coefficient: ~0.062 cyc/byte = 16.1 B/cyc DMA write r</text>
+      <text x="16" y="44" style="font:500 10px 'JetBrains Mono',monospace;fill:#5b6679"></text>
+      <text x="16" y="62" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#8e97a5"></text>
+    </g>
+    <g transform="translate(40,510)">
+      <rect x="0" y="0" width="480" height="90" rx="10" fill="#EEF2FF" stroke="#1e40af" stroke-width="0.8"/>
+      <text x="16" y="22" style="font:600 11.5px 'JetBrains Mono',monospace;fill:#1e40af">This matches the shared memory write port bandwidth (128B/8 </text>
+      <text x="16" y="44" style="font:500 10px 'JetBrains Mono',monospace;fill:#5b6679"></text>
+      <text x="16" y="62" style="font:500 9.5px 'JetBrains Mono',monospace;fill:#8e97a5"></text>
+    </g>
+</svg>

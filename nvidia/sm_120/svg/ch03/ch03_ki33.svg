@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 300" role="img"
+     aria-label="KI-3.3: 10 of 15 pipe pairs achieve full co-issue with 29-cycle MMA window absorbing 27 non-MMA instructions">
+  <defs>
+    <style><![CDATA[
+      .ttl{font:600 14px "Fraunces",serif;fill:#0b1220}
+      .sub{font:italic 11px "Fraunces",serif;fill:#5b6679}
+      .lbl{font:600 11px "JetBrains Mono",monospace}
+      .lbl-sm{font:500 10px "JetBrains Mono",monospace;fill:#5b6679}
+      .badge{font:600 9.5px "JetBrains Mono",monospace}
+      .note{font:500 9px "JetBrains Mono",monospace;fill:#8e97a5}
+      .safe{font:600 10px "JetBrains Mono",monospace;fill:#16a34a}
+      .warn{font:600 10px "JetBrains Mono",monospace;fill:#dc2626}
+    ]]></style>
+  </defs>
+  <rect width="1080" height="300" fill="#ffffff"/>
+  <text x="36" y="28" class="ttl">KI-3.3: 10/15 Pipe Pairs Achieve ≤2.2% Switching Overhead</text>
+  <text x="36" y="46" class="sub">The 29-cycle MMA window absorbs up to 27 non-MMA instructions — epilogue is effectively free. [S22/case_19-53]</text>
+
+  <!-- Sorted penalty bars -->
+  <g transform="translate(40, 66)">
+    <rect x="0" y="0" width="620" height="210" rx="10" fill="#f8fafc" stroke="#334155" stroke-width="0.8"/>
+    <text x="12" y="20" class="lbl" fill="#334155">Pipe Pair Overhead (sorted, measured)</text>
+
+    <g transform="translate(14, 34)">
+      <!-- Green pairs (0-3%) -->
+      <rect x="0" y="0" width="4" height="14" rx="2" fill="#16a34a"/><text x="10" y="11" class="badge" fill="#16a34a">FMA+LSU 0%</text>
+      <rect x="0" y="18" width="4" height="14" rx="2" fill="#16a34a"/><text x="10" y="29" class="badge" fill="#16a34a">ALU+LSU 0%</text>
+      <rect x="0" y="36" width="4" height="14" rx="2" fill="#16a34a"/><text x="10" y="47" class="badge" fill="#16a34a">XU+LSU 0%</text>
+      <rect x="0" y="54" width="4" height="14" rx="2" fill="#16a34a"/><text x="10" y="65" class="badge" fill="#16a34a">ALU+TC 0%</text>
+      <rect x="0" y="72" width="4" height="14" rx="2" fill="#16a34a"/><text x="10" y="83" class="badge" fill="#16a34a">TC+XU 0%</text>
+
+      <rect x="150" y="0" width="6" height="14" rx="2" fill="#16a34a"/><text x="162" y="11" class="badge" fill="#16a34a">FMA+FP64 0.4%</text>
+      <rect x="150" y="18" width="10" height="14" rx="2" fill="#16a34a"/><text x="166" y="29" class="badge" fill="#16a34a">FMA+TC 2.4%</text>
+      <rect x="150" y="36" width="10" height="14" rx="2" fill="#16a34a"/><text x="166" y="47" class="badge" fill="#16a34a">ALU+TC 2.2%</text>
+      <rect x="150" y="54" width="4" height="14" rx="2" fill="#16a34a"/><text x="162" y="65" class="badge" fill="#16a34a">FMA+TMA 0%</text>
+      <rect x="150" y="72" width="4" height="14" rx="2" fill="#16a34a"/><text x="162" y="83" class="badge" fill="#16a34a">Unif+FMA 0%</text>
+
+      <!-- Yellow/Orange -->
+      <rect x="320" y="0" width="30" height="14" rx="2" fill="#f59e0b"/><text x="356" y="11" class="badge" fill="#92400e">FMA+ALU 8.3%</text>
+      <rect x="320" y="18" width="36" height="14" rx="2" fill="#f59e0b"/><text x="362" y="29" class="badge" fill="#92400e">FMA+TEX 10%</text>
+      <rect x="320" y="36" width="60" height="14" rx="2" fill="#ea580c"/><text x="386" y="47" class="badge" fill="#9a3412">LSU+TC 17.4%</text>
+
+      <!-- Red -->
+      <rect x="320" y="58" width="200" height="14" rx="2" fill="#dc2626" opacity="0.6"/><text x="526" y="69" class="badge" fill="#991b1b">FMA+XU 132%</text>
+      <rect x="320" y="76" width="210" height="14" rx="2" fill="#dc2626" opacity="0.6"/><text x="536" y="87" class="badge" fill="#991b1b">ALU+XU 143%</text>
+    </g>
+
+    <!-- Legend -->
+    <g transform="translate(14, 132)">
+      <rect x="0" y="0" width="590" height="60" rx="6" fill="#EDE7FB" stroke="#6d28d9" stroke-width="0.5"/>
+      <text x="12" y="16" class="lbl" fill="#6d28d9">TC-dominated rule: when MMA &gt;80% of cycles →</text>
+      <text x="12" y="34" class="safe">ALL non-TC pipes (FMA, ALU, XU) execute for FREE in MMA stall bubbles</text>
+      <text x="12" y="50" class="note">29-cyc MMA window fits up to 27 FFMA or 7 MUFU.RCP operations at zero cost [S22/case_54]</text>
+    </g>
+  </g>
+
+  <!-- Right: MMA window visual -->
+  <g transform="translate(680, 66)">
+    <rect x="0" y="0" width="360" height="210" rx="10" fill="#f8fafc" stroke="#334155" stroke-width="0.8"/>
+    <text x="12" y="20" class="lbl" fill="#334155">29-Cycle MMA Execution Window</text>
+
+    <g transform="translate(14, 36)">
+      <rect x="0" y="0" width="330" height="24" rx="4" fill="#6d28d9" opacity="0.15" stroke="#6d28d9" stroke-width="0.8"/>
+      <text x="165" y="16" class="badge" fill="#6d28d9" text-anchor="middle">HMMA executing (29 cycles)</text>
+
+      <text x="0" y="44" class="lbl-sm">Available slots for non-MMA:</text>
+      <rect x="0" y="52" width="24" height="16" rx="2" fill="#16a34a" opacity="0.3"/>
+      <rect x="26" y="52" width="24" height="16" rx="2" fill="#16a34a" opacity="0.3"/>
+      <rect x="52" y="52" width="24" height="16" rx="2" fill="#16a34a" opacity="0.3"/>
+      <rect x="78" y="52" width="24" height="16" rx="2" fill="#16a34a" opacity="0.3"/>
+      <rect x="104" y="52" width="24" height="16" rx="2" fill="#16a34a" opacity="0.3"/>
+      <rect x="130" y="52" width="24" height="16" rx="2" fill="#2563eb" opacity="0.3"/>
+      <rect x="156" y="52" width="24" height="16" rx="2" fill="#2563eb" opacity="0.3"/>
+      <rect x="182" y="52" width="24" height="16" rx="2" fill="#F3E8FF" stroke="#6d28d9" stroke-width="0.4"/>
+      <text x="210" y="64" class="note">... up to 27 slots</text>
+
+      <text x="0" y="88" class="badge" fill="#16a34a">FFMA ×5</text>
+      <text x="80" y="88" class="badge" fill="#2563eb">IADD3 ×2</text>
+      <text x="160" y="88" class="badge" fill="#6d28d9">MUFU ×1</text>
+
+      <text x="0" y="112" class="safe">Total: 8 insns fit in 1 MMA window</text>
+      <text x="0" y="130" class="note">Typical GEMM epilogue: 256 FFMA adds only</text>
+      <text x="0" y="146" class="note">2.2% to a 1842-cycle HMMA chain</text>
+    </g>
+  </g>
+</svg>

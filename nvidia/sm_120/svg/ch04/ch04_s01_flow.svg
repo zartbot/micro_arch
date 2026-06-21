@@ -1,0 +1,241 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 860" role="img"
+     aria-label="4.4 SM_120 TensorCore Operand Feeding Path — No Tensor Memory, DRAM→TMA→Smem→ldmatrix→RF→MMA pipeline with latency annotations">
+  <defs>
+    <style><![CDATA[
+      .eyebrow{font:600 11px "JetBrains Mono",monospace;letter-spacing:0.16em;text-transform:uppercase}
+      .title  {font:500 20px "Fraunces",serif;fill:#0b1220;letter-spacing:-0.02em}
+      .sub    {font:italic 12px "Fraunces",serif;fill:#5b6679}
+      .ttl    {font:600 12px "JetBrains Mono",monospace;letter-spacing:0.04em}
+      .lbl    {font:500 11px "JetBrains Mono",monospace;fill:#5b6679}
+      .lbl-sm {font:500 10px "JetBrains Mono",monospace;fill:#5b6679;letter-spacing:0.04em;text-transform:uppercase}
+      .val    {font:600 18px "Fraunces",serif;fill:#0b1220}
+      .val-sm {font:600 14px "Fraunces",serif;fill:#0b1220}
+      .note   {font:500 11px "IBM Plex Sans",sans-serif;fill:#2a3548}
+      .note-em{font:600 11px "IBM Plex Sans",sans-serif;fill:#e11d48}
+      .note-bl{font:600 11px "IBM Plex Sans",sans-serif;fill:#2563eb}
+      .cyc-lbl{font:600 10px "JetBrains Mono",monospace;fill:#0b1220}
+      .cyc-val{font:500 9px "JetBrains Mono",monospace;fill:#5b6679}
+      .box-lbl{font:600 11px "JetBrains Mono",monospace}
+      .pipe-lbl{font:500 10px "IBM Plex Sans",sans-serif;fill:#5b6679}
+    ]]></style>
+    <marker id="ar" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#5b6679"/>
+    </marker>
+    <marker id="ar-red" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#e11d48"/>
+    </marker>
+    <marker id="ar-blue" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#2563eb"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1080" height="860" fill="#fcfbf6"/>
+
+  <!-- Header -->
+  <g transform="translate(36,28)">
+    <rect x="0" y="0" width="3" height="48" fill="#e11d48"/>
+    <text x="16" y="6" class="eyebrow" fill="#e11d48">§4.4 · OPERAND FEEDING ARCHITECTURE</text>
+    <text x="16" y="30" class="title">SM_120 TensorCore Data Path — No Tensor Memory</text>
+  </g>
+  <text x="52" y="76" class="sub">All operands traverse: DRAM → TMA → Shared Memory → ldmatrix → Register File → MMA (no bypass path exists)</text>
+
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <!-- MAIN PIPELINE FLOW (vertical, center) -->
+  <!-- ═══════════════════════════════════════════════════════════ -->
+
+  <!-- DRAM Box -->
+  <g transform="translate(340,90)">
+    <rect x="0" y="0" width="400" height="56" rx="10" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.2"/>
+    <text x="20" y="22" class="box-lbl" fill="#16a34a">DRAM (HBM3e · 72 GB)</text>
+    <text x="20" y="42" class="lbl">1231 GB/s peak BW · off-chip</text>
+    <text x="280" y="42" class="val-sm" fill="#16a34a">72 GB</text>
+  </g>
+
+  <!-- Arrow: DRAM → Smem -->
+  <line x1="540" y1="146" x2="540" y2="192" stroke="#5b6679" stroke-width="1.5" marker-end="url(#ar)"/>
+  <!-- Latency annotation on arrow -->
+  <g transform="translate(556,160)">
+    <rect x="0" y="0" width="180" height="28" rx="5" fill="#FEF3C7" stroke="#f59e0b" stroke-width="0.8"/>
+    <text x="8" y="12" class="cyc-lbl" fill="#92400e">cp.async.bulk (TMA)</text>
+    <text x="8" y="24" class="cyc-val">479 cyc latency · 2D descriptor</text>
+  </g>
+
+  <!-- Shared Memory Box -->
+  <g transform="translate(340,196)">
+    <rect x="0" y="0" width="400" height="76" rx="10" fill="#EFF6FF" stroke="#2563eb" stroke-width="1.2"/>
+    <text x="20" y="22" class="box-lbl" fill="#2563eb">Shared Memory (99 KB / SM)</text>
+    <text x="20" y="42" class="lbl">XOR-swizzled tile buffer (A/B operands)</text>
+    <text x="20" y="60" class="note">Bank conflicts: 0 with proper swizzle pattern</text>
+    <text x="300" y="60" class="val-sm" fill="#2563eb">128 B/cyc</text>
+  </g>
+
+  <!-- Arrow: Smem → RF via ldmatrix -->
+  <line x1="540" y1="272" x2="540" y2="330" stroke="#5b6679" stroke-width="1.5" marker-end="url(#ar)"/>
+  <!-- ldmatrix annotation -->
+  <g transform="translate(556,282)">
+    <rect x="0" y="0" width="290" height="40" rx="5" fill="#FFF1F2" stroke="#e11d48" stroke-width="0.8"/>
+    <text x="8" y="14" class="cyc-lbl" fill="#e11d48">ldmatrix.x4 (LDSM.16.M88.4)</text>
+    <text x="8" y="26" class="cyc-val">Latency: 49 cyc (dep chain) · 33 cyc (ptr chase)</text>
+    <text x="8" y="37" class="cyc-val">Throughput: 1.68 cyc/op @ ILP=8 · .trans = FREE</text>
+  </g>
+
+  <!-- Register File Box -->
+  <g transform="translate(340,334)">
+    <rect x="0" y="0" width="400" height="90" rx="10" fill="#FDF4FF" stroke="#9333ea" stroke-width="1.2"/>
+    <text x="20" y="22" class="box-lbl" fill="#9333ea">Register File (256 regs/thread)</text>
+
+    <!-- Fragment breakdown -->
+    <g transform="translate(20,36)">
+      <rect x="0" y="0" width="90" height="22" rx="4" fill="#e11d48" opacity="0.1" stroke="#e11d48" stroke-width="0.6"/>
+      <text x="6" y="15" class="cyc-lbl" fill="#e11d48">A: 4-8 regs</text>
+
+      <rect x="100" y="0" width="80" height="22" rx="4" fill="#2563eb" opacity="0.1" stroke="#2563eb" stroke-width="0.6"/>
+      <text x="106" y="15" class="cyc-lbl" fill="#2563eb">B: 2-4 regs</text>
+
+      <rect x="190" y="0" width="90" height="22" rx="4" fill="#f59e0b" opacity="0.12" stroke="#f59e0b" stroke-width="0.6"/>
+      <text x="196" y="15" class="cyc-lbl" fill="#92400e">C/D: 4-8 regs</text>
+    </g>
+    <text x="20" y="76" class="note">RF → TC input: 80.3 B/cyc measured (= 1280 B / 15.94 cyc)</text>
+  </g>
+
+  <!-- Arrow: RF → TC -->
+  <line x1="540" y1="424" x2="540" y2="470" stroke="#e11d48" stroke-width="1.8" marker-end="url(#ar-red)"/>
+  <!-- RF read bottleneck annotation -->
+  <g transform="translate(556,432)">
+    <rect x="0" y="0" width="230" height="28" rx="5" fill="#FFF1F2" stroke="#e11d48" stroke-width="0.8"/>
+    <text x="8" y="12" class="note-em">RF read: ~16 cyc (bottleneck)</text>
+    <text x="8" y="24" class="cyc-val">10 regs × 4B × 32 threads = 1280 B/MMA</text>
+  </g>
+
+  <!-- Tensor Core Box -->
+  <g transform="translate(270,474)">
+    <rect x="0" y="0" width="540" height="140" rx="12" fill="#FFF1F2" stroke="#e11d48" stroke-width="1.5"/>
+    <text x="20" y="24" class="box-lbl" fill="#e11d48">Tensor Core (1 per SMSP × 4 SMSP/SM)</text>
+    <text x="20" y="44" class="lbl">m16n8k{8,16,32,64} · 29 cyc latency · 15.88 cyc/mma @ ILP≥4</text>
+
+    <!-- Instruction family boxes -->
+    <g transform="translate(20,58)">
+      <rect x="0" y="0" width="86" height="54" rx="5" fill="#e11d48" opacity="0.08" stroke="#e11d48" stroke-width="0.8"/>
+      <text x="8" y="14" class="cyc-lbl" fill="#e11d48">HMMA</text>
+      <text x="8" y="28" class="cyc-val">FP16 / BF16</text>
+      <text x="8" y="40" class="cyc-val">TF32</text>
+
+      <rect x="96" y="0" width="86" height="54" rx="5" fill="#e11d48" opacity="0.08" stroke="#e11d48" stroke-width="0.8"/>
+      <text x="104" y="14" class="cyc-lbl" fill="#e11d48">QMMA</text>
+      <text x="104" y="28" class="cyc-val">FP8 / FP6</text>
+      <text x="104" y="40" class="cyc-val">FP4 (E2M1)</text>
+
+      <rect x="192" y="0" width="96" height="54" rx="5" fill="#e11d48" opacity="0.08" stroke="#e11d48" stroke-width="0.8"/>
+      <text x="200" y="14" class="cyc-lbl" fill="#e11d48">OMMA.SF</text>
+      <text x="200" y="28" class="cyc-val">MX-FP4 (k=64)</text>
+      <text x="200" y="40" class="cyc-val">NV-FP4 (ue4m3)</text>
+
+      <rect x="298" y="0" width="82" height="54" rx="5" fill="#2563eb" opacity="0.08" stroke="#2563eb" stroke-width="0.8"/>
+      <text x="306" y="14" class="cyc-lbl" fill="#2563eb">IMMA</text>
+      <text x="306" y="28" class="cyc-val">INT8</text>
+      <text x="306" y="40" class="cyc-val">6.55 cyc/mma</text>
+
+      <rect x="390" y="0" width="106" height="54" rx="5" fill="#d1d0c7" opacity="0.3" stroke="#999" stroke-width="0.8" stroke-dasharray="3,2"/>
+      <text x="398" y="14" class="cyc-lbl" fill="#999">DMMA</text>
+      <text x="398" y="28" class="cyc-val" fill="#999">FP64 (→pipe_fp64)</text>
+      <text x="398" y="40" class="cyc-val" fill="#999">579 cyc, separate</text>
+    </g>
+
+    <text x="20" y="126" class="note">All non-FP64 formats: identical 29 cyc / 15.88 cyc timing (format-agnostic pipeline)</text>
+  </g>
+
+  <!-- Arrow: TC → D accumulator writeback -->
+  <line x1="540" y1="614" x2="540" y2="650" stroke="#5b6679" stroke-width="1.2" marker-end="url(#ar)"/>
+  <text x="548" y="636" class="lbl">D accumulator → RF (reuse C=D for K-loop)</text>
+
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <!-- LEFT SIDE: SM_100 contrast (what SM_120 LACKS) -->
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <g transform="translate(36,100)">
+    <rect x="0" y="0" width="280" height="160" rx="10" fill="#f5f5f5" stroke="#d1d0c7" stroke-width="1" stroke-dasharray="4,3"/>
+    <text x="14" y="20" class="ttl" fill="#999">SM_100 HAS (SM_120 DOES NOT)</text>
+
+    <text x="14" y="46" class="note" fill="#999">Tensor Memory (256 KB)</text>
+    <text x="14" y="64" class="note" fill="#999">Direct TM → TC feeding path</text>
+    <text x="14" y="82" class="note" fill="#999">tcgen05 / wgmma interface</text>
+    <text x="14" y="100" class="note" fill="#999">Warpgroup-level async dispatch</text>
+
+    <line x1="14" y1="112" x2="266" y2="112" stroke="#d1d0c7" stroke-width="0.8"/>
+    <text x="14" y="130" class="note" fill="#999">SM_120 uses ONLY mma.sync</text>
+    <text x="14" y="148" class="note" fill="#999">All operands must pass through RF</text>
+  </g>
+
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <!-- RIGHT SIDE: Pipeline overhead summary -->
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <g transform="translate(768,100)">
+    <rect x="0" y="0" width="276" height="160" rx="10" fill="#FFF1F2" stroke="#e11d48" stroke-width="1"/>
+    <text x="14" y="20" class="ttl" fill="#e11d48">PIPELINE OVERHEAD</text>
+
+    <text x="14" y="46" class="lbl-sm">Smem → RF cost per MMA</text>
+    <text x="14" y="68" class="val" fill="#e11d48">11.0 cyc</text>
+    <text x="110" y="68" class="note">(27.5% of total)</text>
+
+    <line x1="14" y1="82" x2="262" y2="82" stroke="#e6e4da" stroke-width="0.8"/>
+
+    <text x="14" y="100" class="lbl-sm">Data starvation ratio</text>
+    <text x="14" y="122" class="val" fill="#e11d48">4.4×</text>
+    <text x="64" y="122" class="note">(TMA BW / TC consumption)</text>
+
+    <line x1="14" y1="136" x2="262" y2="136" stroke="#e6e4da" stroke-width="0.8"/>
+    <text x="14" y="152" class="note-em">This is what SM_100's TM eliminates</text>
+  </g>
+
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <!-- BOTTOM: Full-path latency tiers -->
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <g transform="translate(36,670)">
+    <text x="0" y="0" class="ttl" fill="#e11d48">FULL-PATH LATENCY TIERS</text>
+
+    <g transform="translate(0,16)">
+      <!-- Tier 1 -->
+      <rect x="0" y="0" width="240" height="58" rx="8" fill="#ffffff" stroke="#e6e4da"/>
+      <rect x="0" y="0" width="240" height="3" rx="8" fill="#16a34a"/>
+      <text x="12" y="20" class="lbl-sm">Tier 1: MMA only (RF-resident)</text>
+      <text x="12" y="40" class="val-sm">29 cyc</text>
+      <text x="80" y="40" class="cyc-val">TC pipeline only</text>
+
+      <!-- Tier 2 -->
+      <rect x="260" y="0" width="280" height="58" rx="8" fill="#ffffff" stroke="#e6e4da"/>
+      <rect x="260" y="0" width="280" height="3" rx="8" fill="#f59e0b"/>
+      <text x="272" y="20" class="lbl-sm">Tier 2: Smem → ldmatrix → MMA</text>
+      <text x="272" y="40" class="val-sm">29.3 cyc</text>
+      <text x="348" y="40" class="cyc-val">(+0.7 cyc — ldmatrix fully hidden)</text>
+
+      <!-- Tier 3 LDG -->
+      <rect x="560" y="0" width="240" height="58" rx="8" fill="#ffffff" stroke="#e6e4da"/>
+      <rect x="560" y="0" width="240" height="3" rx="8" fill="#e11d48"/>
+      <text x="572" y="20" class="lbl-sm">Tier 3: Global → Smem → MMA (LDG)</text>
+      <text x="572" y="40" class="val-sm">126 cyc</text>
+      <text x="636" y="40" class="cyc-val">DRAM latency dominates</text>
+
+      <!-- Tier 3 cp.async -->
+      <rect x="820" y="0" width="224" height="58" rx="8" fill="#ffffff" stroke="#e6e4da"/>
+      <rect x="820" y="0" width="224" height="3" rx="8" fill="#e11d48" opacity="0.6"/>
+      <text x="832" y="20" class="lbl-sm">Tier 3: Global → Smem (cp.async)</text>
+      <text x="832" y="40" class="val-sm">118 cyc</text>
+      <text x="898" y="40" class="cyc-val">(-6.3% vs LDG)</text>
+    </g>
+
+    <!-- Starvation annotation -->
+    <g transform="translate(0,90)">
+      <rect x="0" y="0" width="1008" height="44" rx="8" fill="#FEF3C7" stroke="#f59e0b" stroke-width="0.8"/>
+      <text x="16" y="18" class="note">Pipeline must overlap ≥ 118 / 15.94 ≈ <tspan style="font-weight:700;fill:#e11d48">7.4 MMA operations</tspan> of data prefetch to keep TC saturated.</text>
+      <text x="16" y="36" class="note">Production solution: 2–3 stage software pipeline + ×4 operand reuse → achieves 94–100% of theoretical peak.</text>
+    </g>
+  </g>
+
+  <!-- Footer -->
+  <g transform="translate(36,836)">
+    <line x1="0" y1="0" x2="1008" y2="0" stroke="#e6e4da" stroke-width="0.8"/>
+    <text x="0" y="16" class="cyc-val">Source: [S9/case_27-31] feeding path · [S9/case_29] full-path latency · [S18/case_4] TMA BW · §3.3.2 RF ports</text>
+    <text x="800" y="16" class="cyc-val">SM_120 / GB202 · 2026</text>
+  </g>
+</svg>

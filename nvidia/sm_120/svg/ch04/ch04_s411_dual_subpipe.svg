@@ -1,0 +1,268 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 920" role="img"
+     aria-label="4.1.1 HMMA Dual-Subpipe Pipeline Model — 2-slot execution with RF-read bottleneck">
+  <defs>
+    <style><![CDATA[
+      .eyebrow{font:600 11px "JetBrains Mono",monospace;letter-spacing:0.16em;text-transform:uppercase}
+      .title  {font:500 22px "Fraunces",serif;fill:#0b1220;letter-spacing:-0.02em}
+      .sub    {font:italic 12px "Fraunces",serif;fill:#5b6679}
+      .ttl    {font:600 12px "JetBrains Mono",monospace;letter-spacing:0.04em}
+      .lbl    {font:500 11px "JetBrains Mono",monospace;fill:#5b6679}
+      .lbl-sm {font:500 10px "JetBrains Mono",monospace;fill:#5b6679;letter-spacing:0.04em;text-transform:uppercase}
+      .val    {font:600 18px "Fraunces",serif;fill:#0b1220}
+      .val-sm {font:600 14px "Fraunces",serif;fill:#0b1220}
+      .note   {font:500 11px "IBM Plex Sans",sans-serif;fill:#2a3548}
+      .note-em{font:600 11px "IBM Plex Sans",sans-serif;fill:#e11d48}
+      .cyc-lbl{font:600 10px "JetBrains Mono",monospace;fill:#0b1220}
+      .cyc-val{font:500 9px "JetBrains Mono",monospace;fill:#5b6679}
+    ]]></style>
+    <marker id="ar" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto">
+      <path d="M0,0 L7,3.5 L0,7 Z" fill="#5b6679"/>
+    </marker>
+    <marker id="ar-red" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto">
+      <path d="M0,0 L7,3.5 L0,7 Z" fill="#e11d48"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1080" height="920" fill="#fcfbf6"/>
+
+  <!-- Header -->
+  <g transform="translate(36,28)">
+    <rect x="0" y="0" width="3" height="52" fill="#e11d48"/>
+    <text x="16" y="16" class="eyebrow" fill="#e11d48">TC PIPELINE INTERNAL ARCHITECTURE</text>
+    <text x="16" y="42" class="title">HMMA Dual-Subpipe Model: 2-Slot Execution with RF-Read Bottleneck</text>
+  </g>
+
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <!-- SECTION 1: Timeline Diagram -->
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <g transform="translate(36,100)">
+    <text x="0" y="0" class="ttl" fill="#e11d48">PIPELINE TIMELINE · ILP=2</text>
+    <text x="280" y="0" class="sub">Pipeline depth = 29 / 15.88 = 1.81 → 2 slots with partial overlap</text>
+
+    <!-- Timeline axis -->
+    <line x1="100" y1="30" x2="860" y2="30" stroke="#d1d0c7" stroke-width="1"/>
+    <!-- Cycle markers -->
+    <g>
+      <line x1="100" y1="26" x2="100" y2="34" stroke="#0b1220" stroke-width="1.5"/>
+      <text x="100" y="48" class="cyc-lbl" text-anchor="middle">0</text>
+    </g>
+    <g>
+      <line x1="330" y1="26" x2="330" y2="34" stroke="#0b1220" stroke-width="1.5"/>
+      <text x="330" y="48" class="cyc-lbl" text-anchor="middle">13</text>
+    </g>
+    <g>
+      <line x1="612" y1="26" x2="612" y2="34" stroke="#0b1220" stroke-width="1.5"/>
+      <text x="612" y="48" class="cyc-lbl" text-anchor="middle">29</text>
+    </g>
+    <g>
+      <line x1="842" y1="26" x2="842" y2="34" stroke="#0b1220" stroke-width="1.5"/>
+      <text x="842" y="48" class="cyc-lbl" text-anchor="middle">42</text>
+    </g>
+
+    <!-- MMA_0 bar -->
+    <rect x="100" y="60" width="512" height="32" rx="4" fill="#e11d48" opacity="0.15" stroke="#e11d48" stroke-width="1.2"/>
+    <rect x="100" y="60" width="512" height="32" rx="4" fill="url(#grad0)" opacity="0.3"/>
+    <text x="108" y="81" class="ttl" fill="#e11d48">MMA_0</text>
+    <text x="280" y="81" class="lbl">dispatch → systolic array → accumulator writeback</text>
+    <text x="620" y="81" class="note-em">✓ complete</text>
+
+    <!-- MMA_1 bar -->
+    <rect x="330" y="104" width="512" height="32" rx="4" fill="#2563eb" opacity="0.12" stroke="#2563eb" stroke-width="1.2"/>
+    <text x="338" y="125" class="ttl" fill="#2563eb">MMA_1</text>
+    <text x="510" y="125" class="lbl">dispatch → systolic array → accumulator writeback</text>
+    <text x="850" y="125" style="font:600 11px 'IBM Plex Sans',sans-serif;fill:#2563eb">✓ complete</text>
+
+    <!-- Gap annotation -->
+    <line x1="100" y1="148" x2="100" y2="162" stroke="#5b6679" stroke-width="0.8"/>
+    <line x1="330" y1="148" x2="330" y2="162" stroke="#5b6679" stroke-width="0.8"/>
+    <line x1="100" y1="155" x2="330" y2="155" stroke="#e11d48" stroke-width="1.2" stroke-dasharray="3,2"/>
+    <text x="215" y="172" class="cyc-lbl" text-anchor="middle" fill="#e11d48">13 cyc gap</text>
+    <text x="215" y="186" class="cyc-val" text-anchor="middle">(0.81 × 29 ≈ 13)</text>
+
+    <!-- 29-cycle span annotation -->
+    <line x1="100" y1="196" x2="100" y2="208" stroke="#5b6679" stroke-width="0.8"/>
+    <line x1="612" y1="196" x2="612" y2="208" stroke="#5b6679" stroke-width="0.8"/>
+    <line x1="100" y1="202" x2="612" y2="202" stroke="#5b6679" stroke-width="1" marker-end="url(#ar)"/>
+    <text x="356" y="218" class="lbl" text-anchor="middle">29 cyc latency (MMA_0)</text>
+  </g>
+
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <!-- SECTION 2: ILP Scaling KPIs -->
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <g transform="translate(36,340)">
+    <text x="0" y="0" class="ttl" fill="#e11d48">ILP SCALING · MEASURED THROUGHPUT</text>
+
+    <!-- ILP=1 -->
+    <g transform="translate(0,18)">
+      <rect x="0" y="0" width="230" height="70" rx="8" fill="#ffffff" stroke="#e6e4da"/>
+      <rect x="0" y="0" width="230" height="3" rx="8" fill="#5b6679" opacity="0.5"/>
+      <text x="14" y="22" class="lbl-sm">ILP = 1</text>
+      <text x="14" y="48" class="val">28.78</text>
+      <text x="100" y="48" class="lbl">cyc/mma</text>
+      <text x="14" y="62" class="cyc-val">latency-bound (1.00×)</text>
+    </g>
+
+    <!-- ILP=2 -->
+    <g transform="translate(250,18)">
+      <rect x="0" y="0" width="230" height="70" rx="8" fill="#ffffff" stroke="#e6e4da"/>
+      <rect x="0" y="0" width="230" height="3" rx="8" fill="#f59e0b" opacity="0.7"/>
+      <text x="14" y="22" class="lbl-sm">ILP = 2</text>
+      <text x="14" y="48" class="val">16.87</text>
+      <text x="100" y="48" class="lbl">cyc/mma</text>
+      <text x="14" y="62" class="cyc-val">1.71× speedup (2nd slot active)</text>
+    </g>
+
+    <!-- ILP=4 -->
+    <g transform="translate(500,18)">
+      <rect x="0" y="0" width="230" height="70" rx="8" fill="#ffffff" stroke="#e6e4da"/>
+      <rect x="0" y="0" width="230" height="3" rx="8" fill="#e11d48" opacity="0.7"/>
+      <text x="14" y="22" class="lbl-sm">ILP = 4 (SATURATED)</text>
+      <text x="14" y="48" class="val">15.88</text>
+      <text x="100" y="48" class="lbl">cyc/mma</text>
+      <text x="14" y="62" class="cyc-val">1.81× speedup (bubbles filled)</text>
+    </g>
+
+    <!-- ILP=8 -->
+    <g transform="translate(750,18)">
+      <rect x="0" y="0" width="230" height="70" rx="8" fill="#ffffff" stroke="#e6e4da"/>
+      <rect x="0" y="0" width="230" height="3" rx="8" fill="#d1d0c7" opacity="0.7"/>
+      <text x="14" y="22" class="lbl-sm">ILP = 8</text>
+      <text x="14" y="48" class="val">15.88</text>
+      <text x="100" y="48" class="lbl">cyc/mma</text>
+      <text x="14" y="62" class="cyc-val">NO gain → proves only 2 slots</text>
+    </g>
+  </g>
+
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <!-- SECTION 3: RF-Read Bottleneck Analysis -->
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <g transform="translate(36,460)">
+    <text x="0" y="0" class="ttl" fill="#e11d48">RF-READ BOTTLENECK · WHY 15.88 cyc IS THE FLOOR</text>
+
+    <g transform="translate(0,20)">
+      <!-- RF box -->
+      <rect x="0" y="0" width="340" height="190" rx="10" fill="#ffffff" stroke="#e6e4da" stroke-width="1.2"/>
+      <rect x="0" y="0" width="340" height="26" rx="10" fill="#FFF1F2"/>
+      <text x="14" y="17" class="ttl" fill="#e11d48">REGISTER FILE READ</text>
+
+      <!-- Operand breakdown -->
+      <text x="20" y="50" class="note">Per HMMA m16n8k16:</text>
+      <g transform="translate(20,62)">
+        <rect x="0" y="0" width="100" height="20" rx="3" fill="#e11d48" opacity="0.12"/>
+        <text x="6" y="14" class="cyc-lbl">A: 4 regs</text>
+      </g>
+      <g transform="translate(130,62)">
+        <rect x="0" y="0" width="80" height="20" rx="3" fill="#2563eb" opacity="0.12"/>
+        <text x="6" y="14" class="cyc-lbl">B: 2 regs</text>
+      </g>
+      <g transform="translate(220,62)">
+        <rect x="0" y="0" width="100" height="20" rx="3" fill="#f59e0b" opacity="0.15"/>
+        <text x="6" y="14" class="cyc-lbl">C: 4 regs</text>
+      </g>
+
+      <text x="20" y="104" class="note">Total: 10 registers × 4B = 40B / thread</text>
+      <text x="20" y="120" class="note">Warp total: 40B × 32 = 1,280 B / MMA</text>
+      <line x1="20" y1="130" x2="320" y2="130" stroke="#e6e4da" stroke-width="0.8"/>
+      <text x="20" y="148" class="note">RF read ports: 2 per bank (§3.3.2)</text>
+      <text x="20" y="166" class="note-em">10 reads ÷ ~0.63 reads/cyc ≈ 16 cyc</text>
+    </g>
+
+    <!-- Arrow connecting RF to throughput -->
+    <line x1="360" y1="110" x2="410" y2="110" stroke="#e11d48" stroke-width="1.5" marker-end="url(#ar-red)"/>
+
+    <!-- Throughput box -->
+    <g transform="translate(430,20)">
+      <rect x="0" y="0" width="320" height="190" rx="10" fill="#FFF1F2" stroke="#e11d48" stroke-width="1"/>
+      <text x="14" y="24" class="ttl" fill="#e11d48">MEASURED THROUGHPUT MATCH</text>
+
+      <text x="20" y="56" class="lbl-sm">RF read cost (calculated)</text>
+      <text x="20" y="80" class="val">~16 cyc</text>
+
+      <line x1="20" y1="94" x2="300" y2="94" stroke="#e11d48" stroke-width="0.5" stroke-dasharray="4,3"/>
+
+      <text x="20" y="114" class="lbl-sm">Measured throughput floor</text>
+      <text x="20" y="138" class="val">15.88 cyc</text>
+
+      <text x="20" y="164" class="note-em">→ TC is RF-read-limited, NOT execution-limited</text>
+    </g>
+
+    <!-- Conclusion box -->
+    <g transform="translate(770,20)">
+      <rect x="0" y="0" width="240" height="190" rx="10" fill="#ffffff" stroke="#e6e4da"/>
+      <text x="14" y="22" class="lbl-sm">IMPLICATION</text>
+      <text x="14" y="48" class="note">The systolic array</text>
+      <text x="14" y="64" class="note">itself is FASTER than</text>
+      <text x="14" y="80" class="note">the operand delivery</text>
+      <text x="14" y="96" class="note">path.</text>
+      <line x1="14" y1="108" x2="220" y2="108" stroke="#e6e4da" stroke-width="0.8"/>
+      <text x="14" y="128" class="note">Bottleneck hierarchy:</text>
+      <text x="14" y="146" class="note-em">1. RF read ports</text>
+      <text x="14" y="162" class="note">2. Systolic array</text>
+      <text x="14" y="178" class="cyc-val">(array has spare capacity)</text>
+    </g>
+  </g>
+
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <!-- SECTION 4: 2-Slot Execution Model Diagram -->
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <g transform="translate(36,690)">
+    <text x="0" y="0" class="ttl" fill="#e11d48">2-SLOT EXECUTION MODEL · ARCHITECTURAL INTERPRETATION</text>
+
+    <g transform="translate(0,20)">
+      <!-- Slot 0 -->
+      <rect x="0" y="0" width="480" height="50" rx="8" fill="#e11d48" opacity="0.06" stroke="#e11d48" stroke-width="1"/>
+      <text x="14" y="20" class="ttl" fill="#e11d48">SLOT 0</text>
+      <text x="14" y="38" class="note">Active MMA executes in systolic array (29 cyc)</text>
+      <text x="350" y="30" class="val-sm" fill="#e11d48">Active</text>
+    </g>
+
+    <g transform="translate(0,80)">
+      <!-- Slot 1 -->
+      <rect x="0" y="0" width="480" height="50" rx="8" fill="#2563eb" opacity="0.06" stroke="#2563eb" stroke-width="1"/>
+      <text x="14" y="20" class="ttl" fill="#2563eb">SLOT 1</text>
+      <text x="14" y="38" class="note">2nd MMA starts after 13-cyc gap (partial overlap)</text>
+      <text x="350" y="30" class="val-sm" fill="#2563eb">Active</text>
+    </g>
+
+    <g transform="translate(0,140)">
+      <!-- No Slot 2 -->
+      <rect x="0" y="0" width="480" height="40" rx="8" fill="#f5f5f5" stroke="#d1d0c7" stroke-width="1" stroke-dasharray="4,3"/>
+      <text x="14" y="18" class="lbl" fill="#999">SLOT 2</text>
+      <text x="80" y="18" class="note" fill="#999">— does NOT exist (ILP=8 = ILP=4 proves this)</text>
+      <text x="350" y="26" style="font:600 13px 'Fraunces',serif;fill:#999">✗ absent</text>
+    </g>
+
+    <!-- Right side: Key equations -->
+    <g transform="translate(520,0)">
+      <rect x="0" y="0" width="490" height="170" rx="10" fill="#ffffff" stroke="#e6e4da"/>
+      <text x="16" y="22" class="lbl-sm">KEY RELATIONSHIPS</text>
+
+      <text x="16" y="50" class="note">Pipeline depth = latency / throughput = 29 / 15.88 =</text>
+      <text x="420" y="50" class="val-sm" fill="#e11d48">1.81</text>
+
+      <text x="16" y="76" class="note">ILP=2 speedup = 28.78 / 16.87 =</text>
+      <text x="270" y="76" class="val-sm" fill="#e11d48">1.71×</text>
+      <text x="310" y="76" class="cyc-val">(2nd slot captures most overlap)</text>
+
+      <text x="16" y="102" class="note">ILP=4 speedup = 28.78 / 15.88 =</text>
+      <text x="270" y="102" class="val-sm" fill="#e11d48">1.81×</text>
+      <text x="310" y="102" class="cyc-val">(fills scheduling bubbles)</text>
+
+      <text x="16" y="128" class="note">ILP=4→8 speedup =</text>
+      <text x="165" y="128" class="val-sm">1.00×</text>
+      <text x="210" y="128" class="cyc-val">(zero gain → exactly 2 slots, no 3rd)</text>
+
+      <line x1="16" y1="140" x2="474" y2="140" stroke="#e6e4da" stroke-width="0.8"/>
+      <text x="16" y="160" class="note-em">Conclusion: 2 execution slots + RF-read port contention = 1.81 effective depth</text>
+    </g>
+  </g>
+
+  <!-- Footer -->
+  <g transform="translate(36,894)">
+    <line x1="0" y1="0" x2="1008" y2="0" stroke="#e6e4da" stroke-width="0.8"/>
+    <text x="0" y="18" class="cyc-val">Source: [S9/case_8] ILP scaling sweep · [S9/case_101] IMMA comparison · §3.3.2 RF port architecture</text>
+    
+  </g>
+</svg>

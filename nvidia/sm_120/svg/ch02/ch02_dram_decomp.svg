@@ -1,0 +1,269 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 720" role="img"
+     aria-label="DRAM latency decomposition — 880 cyc worst-case same-bank serialization breakdown + GDDR7 timing fundamentals">
+  <defs>
+    <marker id="ar" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto">
+      <path d="M0,0 L7,3.5 L0,7 Z" fill="#475569"/>
+    </marker>
+    <marker id="arR" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto">
+      <path d="M0,0 L7,3.5 L0,7 Z" fill="#dc2626"/>
+    </marker>
+    <style><![CDATA[
+      .ttl{font:600 13px "Fraunces",serif;fill:#0b1220}
+      .sub{font:italic 10.5px "Fraunces",serif;fill:#5b6679}
+      .seg-lbl{font:700 10px "JetBrains Mono",monospace;fill:#fff}
+      .seg-val{font:600 10.5px "JetBrains Mono",monospace}
+      .seg-desc{font:500 9.5px "JetBrains Mono",monospace;fill:#5b6679}
+      .total{font:700 13px "JetBrains Mono",monospace}
+      .pct{font:500 9px "JetBrains Mono",monospace;fill:#5b6679}
+      .ann{font:italic 10px "Fraunces",serif;fill:#5b6679}
+      .callout{font:700 10px "JetBrains Mono",monospace;fill:#9f1239}
+      .section{font:600 12px "Fraunces",serif}
+      .lbl{font:600 11px "JetBrains Mono",monospace;fill:#2a3548}
+      .lbl-sm{font:500 9.5px "JetBrains Mono",monospace;fill:#5b6679}
+      .lbl-xs{font:400 8.5px "JetBrains Mono",monospace;fill:#434343}
+      .timer{font:600 10px "JetBrains Mono",monospace;fill:#1d4ed8}
+      .perf{font:700 10px "JetBrains Mono",monospace;fill:#9f1239}
+      .cyc{font:700 11px "JetBrains Mono",monospace;fill:#ffffff}
+    ]]></style>
+  </defs>
+  <rect width="1080" height="720" fill="#ffffff"/>
+  <text x="36" y="28" class="ttl">DRAM Latency Decomposition: Same-Bank Serialization (880 cyc worst case)</text>
+  <text x="36" y="44" class="sub">Single-warp pointer-chase, 128 MB working set, stride = 128 B [S21/case_73, S24/case_8, S24/case_11]</text>
+
+  <!-- ═══════════ WATERFALL BAR (y=60, height=40) ═══════════ -->
+  <rect x="140" y="60" width="27" height="40" fill="#5b6679"/>
+  <rect x="167" y="60" width="46" height="40" fill="#1e40af"/>
+  <rect x="213" y="60" width="64" height="40" fill="#d97706"/>
+  <rect x="277" y="60" width="64" height="40" fill="#ea580c"/>
+  <rect x="341" y="60" width="400" height="40" fill="#e11d48"/>
+  <rect x="741" y="60" width="200" height="40" fill="#6d28d9"/>
+
+  <!-- Segment labels -->
+  <text x="153" y="84" class="seg-lbl" font-size="8">L2</text>
+  <text x="178" y="84" class="seg-lbl">MC Q</text>
+  <text x="232" y="84" class="seg-lbl">ACT</text>
+  <text x="296" y="84" class="seg-lbl">CAS</text>
+  <text x="490" y="76" class="seg-lbl" font-size="12">same-bank tRP wait</text>
+  <text x="490" y="94" class="seg-lbl" font-size="9">(closed-page precharge serialization)</text>
+  <text x="800" y="84" class="seg-lbl">data return</text>
+
+  <line x1="941" y1="56" x2="941" y2="104" stroke="#0b1220" stroke-width="2"/>
+  <text x="950" y="84" class="total" fill="#0b1220">≈ 880 cyc</text>
+
+  <!-- ═══════════ BREAKDOWN TABLE ═══════════ -->
+  <text x="36" y="130" class="seg-desc">Stage</text>
+  <text x="280" y="130" class="seg-desc">Cycles</text>
+  <text x="360" y="130" class="seg-desc">%</text>
+  <text x="420" y="130" class="seg-desc">Physical mechanism</text>
+
+  <rect x="36" y="136" width="12" height="12" rx="2" fill="#5b6679"/>
+  <text x="56" y="148" class="seg-val" fill="#5b6679">L2-miss detect</text>
+  <text x="280" y="148" class="seg-val" fill="#5b6679">~30</text>
+  <text x="360" y="148" class="pct">3.4%</text>
+  <text x="420" y="148" class="seg-desc">Tag lookup + miss signal propagation</text>
+
+  <rect x="36" y="156" width="12" height="12" rx="2" fill="#1e40af"/>
+  <text x="56" y="168" class="seg-val" fill="#1e40af">MC queueing</text>
+  <text x="280" y="168" class="seg-val" fill="#1e40af">~50</text>
+  <text x="360" y="168" class="pct">5.7%</text>
+  <text x="420" y="168" class="seg-desc">Request scheduling in memory controller</text>
+
+  <rect x="36" y="176" width="12" height="12" rx="2" fill="#d97706"/>
+  <text x="56" y="188" class="seg-val" fill="#d97706">DRAM ACT (tRCD)</text>
+  <text x="280" y="188" class="seg-val" fill="#d97706">~70</text>
+  <text x="360" y="188" class="pct">8.0%</text>
+  <text x="420" y="188" class="seg-desc">Row activation — sense amplifier charges bitlines</text>
+
+  <rect x="36" y="196" width="12" height="12" rx="2" fill="#ea580c"/>
+  <text x="56" y="208" class="seg-val" fill="#ea580c">CAS (tCL)</text>
+  <text x="280" y="208" class="seg-val" fill="#ea580c">~70</text>
+  <text x="360" y="208" class="pct">8.0%</text>
+  <text x="420" y="208" class="seg-desc">Column access strobe — data selected from open row</text>
+
+  <rect x="36" y="216" width="12" height="12" rx="2" fill="#e11d48"/>
+  <text x="56" y="228" class="seg-val" fill="#e11d48">same-bank tRP wait</text>
+  <text x="280" y="228" class="seg-val" fill="#e11d48">~440</text>
+  <text x="360" y="228" class="callout">50%</text>
+  <text x="420" y="228" class="seg-desc">Closed-page: bank still in precharge when next access arrives</text>
+
+  <rect x="36" y="240" width="12" height="12" rx="2" fill="#6d28d9"/>
+  <text x="56" y="252" class="seg-val" fill="#6d28d9">Data return</text>
+  <text x="280" y="252" class="seg-val" fill="#6d28d9">~220</text>
+  <text x="360" y="252" class="pct">25%</text>
+  <text x="420" y="252" class="seg-desc">GDDR7 burst read + GXBAR return path to SM</text>
+
+  <line x1="36" y1="264" x2="700" y2="264" stroke="#e6e4da" stroke-width="1"/>
+  <text x="56" y="280" class="total" fill="#0b1220">Total ≈ 880 cyc</text>
+  <text x="220" y="280" class="seg-desc">(measured: 882.7 cyc) | stride ≥ 1280B → tRP overlap → recovers to ~370 cyc</text>
+
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <!-- BOTTOM: DDR/GDDR7 TIMING FUNDAMENTALS -->
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <g transform="translate(36,300)">
+    <rect x="0" y="0" width="1008" height="400" rx="10" fill="#f8fafc" stroke="#334155" stroke-width="1"/>
+    <text x="16" y="22" class="section" fill="#1e3a5f">DDR/GDDR7 Timing Fundamentals — Key Parameters and Bank State Machine</text>
+
+    <!-- LEFT: Timing parameter table -->
+    <g transform="translate(16,38)">
+      <rect x="0" y="0" width="440" height="260" rx="8" fill="#ffffff" stroke="#e2e8f0"/>
+      <text x="12" y="20" class="lbl" fill="#1d4ed8">DRAM Timing Parameters (GDDR7 @ 28 Gbps)</text>
+
+      <!-- Header -->
+      <rect x="8" y="28" width="424" height="18" rx="3" fill="#e0e7ff"/>
+      <text x="16" y="40" class="lbl-xs" fill="#3730a3">Parameter</text>
+      <text x="100" y="40" class="lbl-xs" fill="#3730a3">Full Name</text>
+      <text x="240" y="40" class="lbl-xs" fill="#3730a3">Measured</text>
+      <text x="330" y="40" class="lbl-xs" fill="#3730a3">Role</text>
+
+      <!-- tRCD -->
+      <rect x="8" y="50" width="424" height="24" rx="2" fill="#ffffff"/>
+      <text x="16" y="66" class="timer">tRCD</text>
+      <text x="100" y="66" class="lbl-xs">RAS-to-CAS Delay</text>
+      <text x="240" y="66" class="perf">~70 cyc</text>
+      <text x="330" y="66" class="lbl-xs">Row open time</text>
+
+      <!-- tCL -->
+      <rect x="8" y="74" width="424" height="24" rx="2" fill="#f8fafc"/>
+      <text x="16" y="90" class="timer">tCL</text>
+      <text x="100" y="90" class="lbl-xs">CAS Latency</text>
+      <text x="240" y="90" class="perf">~70 cyc</text>
+      <text x="330" y="90" class="lbl-xs">Column read time</text>
+
+      <!-- tRP -->
+      <rect x="8" y="98" width="424" height="24" rx="2" fill="#fef2f2"/>
+      <text x="16" y="114" class="timer" fill="#dc2626">tRP</text>
+      <text x="100" y="114" class="lbl-xs">Row Precharge</text>
+      <text x="240" y="114" class="perf">~440 cyc</text>
+      <text x="330" y="114" class="lbl-xs" fill="#dc2626">Row close (dominant!)</text>
+
+      <!-- tRAS -->
+      <rect x="8" y="122" width="424" height="24" rx="2" fill="#ffffff"/>
+      <text x="16" y="138" class="timer">tRAS</text>
+      <text x="100" y="138" class="lbl-xs">Row Active Time</text>
+      <text x="240" y="138" class="lbl-sm">tRCD+tCL+burst</text>
+      <text x="330" y="138" class="lbl-xs">Min row open</text>
+
+      <!-- tRC -->
+      <rect x="8" y="146" width="424" height="24" rx="2" fill="#f8fafc"/>
+      <text x="16" y="162" class="timer">tRC</text>
+      <text x="100" y="162" class="lbl-xs">Row Cycle</text>
+      <text x="240" y="162" class="lbl-sm">tRAS + tRP</text>
+      <text x="330" y="162" class="lbl-xs">Full bank cycle</text>
+
+      <!-- tRRD -->
+      <rect x="8" y="170" width="424" height="24" rx="2" fill="#ffffff"/>
+      <text x="16" y="186" class="timer">tRRD</text>
+      <text x="100" y="186" class="lbl-xs">Row-to-Row Delay</text>
+      <text x="240" y="186" class="lbl-sm">~few cyc</text>
+      <text x="330" y="186" class="lbl-xs">Cross-bank ACT gap</text>
+
+      <!-- tREFI -->
+      <rect x="8" y="194" width="424" height="24" rx="2" fill="#fef9c3"/>
+      <text x="16" y="210" class="timer" fill="#b45309">tREFI</text>
+      <text x="100" y="210" class="lbl-xs">Refresh Interval</text>
+      <text x="240" y="210" class="lbl-sm">periodic (~5%)</text>
+      <text x="330" y="210" class="lbl-xs" fill="#b45309">P99 jitter 2.48×</text>
+
+      <!-- Note -->
+      <text x="12" y="236" class="lbl-xs">GB202: closed-page (auto-precharge) — every access</text>
+      <text x="12" y="250" class="lbl-xs">ends with implicit PRE → next same-bank ACT waits tRP</text>
+    </g>
+
+    <!-- RIGHT: Bank State Machine -->
+    <g transform="translate(472,38)">
+      <rect x="0" y="0" width="520" height="260" rx="8" fill="#ffffff" stroke="#e2e8f0"/>
+      <text x="12" y="20" class="lbl" fill="#1d4ed8">Bank State Machine (Closed-Page Policy)</text>
+
+      <!-- State machine diagram -->
+      <g transform="translate(16,36)">
+        <!-- IDLE state -->
+        <rect x="0" y="30" width="72" height="32" rx="16" fill="#e0e7ff" stroke="#4338ca" stroke-width="1.2"/>
+        <text x="36" y="50" class="lbl" text-anchor="middle" fill="#3730a3">IDLE</text>
+
+        <!-- ACT arrow -->
+        <line x1="72" y1="46" x2="120" y2="46" stroke="#4f46e5" stroke-width="1.5" marker-end="url(#ar)"/>
+        <text x="96" y="38" class="timer" text-anchor="middle">ACT</text>
+
+        <!-- ACTIVE state -->
+        <rect x="124" y="30" width="80" height="32" rx="16" fill="#dcfce7" stroke="#16a34a" stroke-width="1.2"/>
+        <text x="164" y="50" class="lbl" text-anchor="middle" fill="#15803d">ACTIVE</text>
+        <text x="164" y="74" class="lbl-xs" text-anchor="middle">tRCD ≈ 70 cyc</text>
+
+        <!-- CAS arrow -->
+        <line x1="204" y1="46" x2="252" y2="46" stroke="#16a34a" stroke-width="1.5" marker-end="url(#ar)"/>
+        <text x="228" y="38" class="timer" text-anchor="middle">RD</text>
+
+        <!-- READING state -->
+        <rect x="256" y="30" width="72" height="32" rx="16" fill="#fef3c7" stroke="#b45309" stroke-width="1.2"/>
+        <text x="292" y="50" class="lbl" text-anchor="middle" fill="#92400e">READ</text>
+        <text x="292" y="74" class="lbl-xs" text-anchor="middle">tCL ≈ 70 cyc</text>
+
+        <!-- Auto-precharge arrow -->
+        <line x1="328" y1="46" x2="376" y2="46" stroke="#dc2626" stroke-width="1.5" marker-end="url(#arR)"/>
+        <text x="352" y="38" class="timer" text-anchor="middle" fill="#dc2626">PRE</text>
+
+        <!-- PRECHARGING state -->
+        <rect x="380" y="30" width="100" height="32" rx="16" fill="#fee2e2" stroke="#dc2626" stroke-width="1.2"/>
+        <text x="430" y="50" class="lbl" text-anchor="middle" fill="#991b1b">PRECHARGE</text>
+        <text x="430" y="74" class="perf" text-anchor="middle">tRP ≈ 440 cyc!</text>
+
+        <!-- Return to IDLE (curved path) -->
+        <path d="M430 62 L430 100 L36 100 L36 62" stroke="#dc2626" stroke-width="1.2" fill="none" stroke-dasharray="4 2" marker-end="url(#arR)"/>
+        <text x="233" y="96" class="lbl-sm" text-anchor="middle" fill="#dc2626">auto-precharge → tRP wait → bank ready</text>
+      </g>
+
+      <!-- Timing waveform -->
+      <g transform="translate(16,146)">
+        <text x="0" y="12" class="lbl" fill="#334155">Timing Waveform — Two Same-Bank Accesses:</text>
+
+        <!-- Command bus -->
+        <text x="0" y="32" class="lbl-xs">CMD:</text>
+        <g transform="translate(36,20)">
+          <rect x="0" y="0" width="28" height="14" rx="2" fill="#818cf8"/>
+          <text x="14" y="11" class="lbl-xs" text-anchor="middle" fill="#fff">ACT</text>
+          <rect x="34" y="0" width="24" height="14" rx="2" fill="#6366f1"/>
+          <text x="46" y="11" class="lbl-xs" text-anchor="middle" fill="#fff">RD</text>
+          <rect x="64" y="0" width="28" height="14" rx="2" fill="#dc2626"/>
+          <text x="78" y="11" class="lbl-xs" text-anchor="middle" fill="#fff">PRE</text>
+
+          <!-- tRP gap -->
+          <rect x="96" y="0" width="180" height="14" rx="2" fill="#fee2e2" stroke="#dc2626" stroke-width="0.5" stroke-dasharray="3 2"/>
+          <text x="186" y="11" class="lbl-xs" text-anchor="middle" fill="#dc2626">← tRP (440 cyc) →</text>
+
+          <!-- Second access -->
+          <rect x="280" y="0" width="28" height="14" rx="2" fill="#818cf8"/>
+          <text x="294" y="11" class="lbl-xs" text-anchor="middle" fill="#fff">ACT</text>
+          <rect x="314" y="0" width="24" height="14" rx="2" fill="#6366f1"/>
+          <text x="326" y="11" class="lbl-xs" text-anchor="middle" fill="#fff">RD</text>
+        </g>
+
+        <!-- Data bus -->
+        <text x="0" y="52" class="lbl-xs">DATA:</text>
+        <g transform="translate(36,40)">
+          <rect x="48" y="0" width="30" height="14" rx="2" fill="#a78bfa"/>
+          <text x="63" y="11" class="lbl-xs" text-anchor="middle" fill="#fff">D0</text>
+          <rect x="328" y="0" width="30" height="14" rx="2" fill="#a78bfa"/>
+          <text x="343" y="11" class="lbl-xs" text-anchor="middle" fill="#fff">D1</text>
+        </g>
+
+        <text x="36" y="72" class="lbl-xs">Access 1           tRP stall (50% of total!)             Access 2</text>
+      </g>
+
+      <!-- Key insight -->
+      <g transform="translate(12,232)">
+        <rect x="0" y="0" width="496" height="20" rx="4" fill="#fef2f2" stroke="#dc2626" stroke-width="0.6"/>
+        <text x="8" y="14" class="perf">Closed-page: EVERY access pays tRCD+tCL+tRP — no row-buffer "hits"</text>
+      </g>
+    </g>
+
+    <!-- Bottom: Different-bank comparison -->
+    <g transform="translate(16,310)">
+      <rect x="0" y="0" width="976" height="72" rx="8" fill="#f0fdf4" stroke="#16a34a" stroke-width="0.8"/>
+      <text x="16" y="18" class="lbl" fill="#15803d">Different-Bank Access (stride ≥ 1280B) — tRP overlaps with next bank's ACT:</text>
+      <text x="16" y="38" class="seg-desc">When consecutive accesses hit DIFFERENT banks, the prior bank's precharge</text>
+      <text x="16" y="52" class="seg-desc">runs in parallel with the new bank's ACT → tRP wait collapses to 0 → base latency ~370 cyc</text>
+      <text x="16" y="66" class="perf" fill="#16a34a">Result: 880 → 370 cyc (2.38× improvement) — stride ≥ 1KB guarantees cross-bank access</text>
+    </g>
+  </g>
+</svg>

@@ -1,0 +1,289 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 920" role="img"
+     aria-label="§ 8.3.1 FlashAttention Bottleneck Decomposition — per-tile cycle budget, thin-K efficiency, SFU co-issue">
+  <defs>
+    <style><![CDATA[
+      .eyebrow { font: 600 11px "JetBrains Mono", monospace; letter-spacing: 0.16em; text-transform: uppercase }
+      .title   { font: 500 24px "Fraunces", serif; fill: #0b1220; letter-spacing: -0.02em }
+      .sub     { font: italic 12px "Fraunces", serif; fill: #5b6679 }
+      .panel-h { font: 600 13px "JetBrains Mono", monospace; letter-spacing: 0.06em; fill: #0b1220 }
+      .panel-sub { font: italic 11px "Fraunces", serif; fill: #5b6679 }
+      .lbl-sm  { font: 500 9px "JetBrains Mono", monospace; fill: #5b6679; letter-spacing: 0.05em; text-transform: uppercase }
+      .lbl     { font: 500 11px "IBM Plex Sans", sans-serif; fill: #2a3548 }
+      .lbl-mono{ font: 500 10px "JetBrains Mono", monospace; fill: #2a3548 }
+      .lbl-mono-em { font: 700 10px "JetBrains Mono", monospace; fill: #0b1220 }
+      .lbl-w   { font: 600 10px "IBM Plex Sans", sans-serif; fill: #ffffff }
+      .lbl-w-mono { font: 500 9px "JetBrains Mono", monospace; fill: #ffffff }
+      .big-num { font: 700 28px "Fraunces", serif }
+    ]]></style>
+  </defs>
+
+  <rect width="1280" height="920" fill="#fcfbf6"/>
+
+  <!-- ============ Header ============ -->
+  <g transform="translate(40,32)">
+    <text x="0" y="0" class="eyebrow" fill="#dc2626">SECTION 8.3.1 · FLASHATTENTION BOTTLENECK DECOMPOSITION</text>
+    <text x="0" y="28" class="title">Per-Tile Cycle Budget — Thin-K GEMM Dominates, Not Softmax</text>
+    <text x="0" y="50" class="sub">d=128, mma.sync.m16n8k16, online softmax with SFU co-issue; ~520 cyc/tile total</text>
+    <text x="0" y="68" class="lbl-sm">Source: [S19/cases_62-71] · [S5/case_98] · [S18/case_11] · [S9/case_160]</text>
+  </g>
+
+  <!-- ============ Panel A: Cycle Budget Waterfall ============ -->
+  <g transform="translate(40,108)">
+    <rect x="0" y="0" width="700" height="340" rx="6" fill="#ffffff" stroke="#e2d8c8" stroke-width="0.8"/>
+    <text x="14" y="22" class="panel-h">A · PER-TILE CYCLE BUDGET (d=128, ~520 CYC TOTAL)</text>
+    <text x="14" y="38" class="panel-sub">Stacked waterfall: each stage contributes to total tile latency</text>
+
+    <!-- Stage bars (horizontal stacked) -->
+    <!-- Q x K^T MMA: 232 cyc = 45% -->
+    <g transform="translate(14,60)">
+      <rect x="0" y="0" width="290" height="48" rx="4" fill="#2563eb" opacity="0.8"/>
+      <text x="10" y="18" class="lbl-w-mono">Q x K^T MMA</text>
+      <text x="10" y="34" class="lbl-w-mono">8 x mma.sync.m16n8k16</text>
+      <text x="10" y="46" class="lbl-w-mono" font-size="8">29 cyc/MMA x 8 = 232 cyc</text>
+      <text x="298" y="18" class="lbl-mono-em" fill="#2563eb">232 cyc</text>
+      <text x="298" y="34" class="lbl-mono" fill="#2563eb">45%</text>
+    </g>
+
+    <!-- Online Softmax: 130 cyc = 25% -->
+    <g transform="translate(14,118)">
+      <rect x="0" y="0" width="163" height="48" rx="4" fill="#d97706" opacity="0.75"/>
+      <text x="10" y="18" class="lbl-w-mono">Online Softmax</text>
+      <text x="10" y="34" class="lbl-w-mono">max+exp2+rowsum+rescale</text>
+      <text x="10" y="46" class="lbl-w-mono" font-size="8">~130 cyc total</text>
+      <text x="171" y="18" class="lbl-mono-em" fill="#b45309">130 cyc</text>
+      <text x="171" y="34" class="lbl-mono" fill="#b45309">25%</text>
+    </g>
+
+    <!-- Score x V MMA: 232 cyc = 25% (but partially overlapped) -->
+    <g transform="translate(14,176)">
+      <rect x="0" y="0" width="290" height="48" rx="4" fill="#16a34a" opacity="0.75"/>
+      <text x="10" y="18" class="lbl-w-mono">Score x V MMA</text>
+      <text x="10" y="34" class="lbl-w-mono">8 x mma.sync.m16n8k16</text>
+      <text x="10" y="46" class="lbl-w-mono" font-size="8">29 cyc/MMA x 8 = 232 cyc</text>
+      <text x="298" y="18" class="lbl-mono-em" fill="#15803d">232 cyc</text>
+      <text x="298" y="34" class="lbl-mono" fill="#15803d">25% (wall)</text>
+    </g>
+
+    <!-- Accum Reformat: 26 cyc = 5% -->
+    <g transform="translate(14,234)">
+      <rect x="0" y="0" width="65" height="48" rx="4" fill="#7c3aed" opacity="0.7"/>
+      <text x="73" y="18" class="lbl-mono-em" fill="#7c3aed">Accum Reformat</text>
+      <text x="73" y="34" class="lbl-mono" fill="#7c3aed">D→smem→A: 102.8 cyc/tile</text>
+      <text x="73" y="48" class="lbl-mono" fill="#5b6679">sync overhead 40.6% of reformat</text>
+    </g>
+
+    <!-- Percentage pie summary -->
+    <g transform="translate(400,60)">
+      <rect x="0" y="0" width="280" height="222" rx="4" fill="#f8fafc" stroke="#cbd5e1" stroke-width="0.6"/>
+      <text x="12" y="18" class="lbl-sm" fill="#5b6679">COMPONENT BREAKDOWN</text>
+      <line x1="12" y1="24" x2="268" y2="24" stroke="#cbd5e1" stroke-width="0.5"/>
+
+      <rect x="12" y="34" width="12" height="12" rx="2" fill="#2563eb"/>
+      <text x="30" y="44" class="lbl-mono">Q x K^T MMA:</text>
+      <text x="160" y="44" class="lbl-mono-em">232 cyc (45%)</text>
+
+      <rect x="12" y="56" width="12" height="12" rx="2" fill="#d97706"/>
+      <text x="30" y="66" class="lbl-mono">Online Softmax:</text>
+      <text x="160" y="66" class="lbl-mono-em">130 cyc (25%)</text>
+
+      <rect x="12" y="78" width="12" height="12" rx="2" fill="#16a34a"/>
+      <text x="30" y="88" class="lbl-mono">Score x V MMA:</text>
+      <text x="160" y="88" class="lbl-mono-em">232 cyc (25%)</text>
+
+      <rect x="12" y="100" width="12" height="12" rx="2" fill="#7c3aed"/>
+      <text x="30" y="110" class="lbl-mono">Accum Reformat:</text>
+      <text x="160" y="110" class="lbl-mono-em">~26 cyc (5%)</text>
+
+      <line x1="12" y1="120" x2="268" y2="120" stroke="#cbd5e1" stroke-width="0.5"/>
+      <text x="12" y="136" class="lbl-mono-em">Total: ~520 cyc/tile</text>
+      <text x="12" y="152" class="lbl-mono" fill="#5b6679">Compute-bound at seq ≥ 2048</text>
+
+      <line x1="12" y1="166" x2="268" y2="166" stroke="#cbd5e1" stroke-width="0.5"/>
+      <text x="12" y="182" class="lbl-sm" fill="#dc2626">REAL BOTTLENECK</text>
+      <text x="12" y="198" class="lbl-mono-em" fill="#dc2626">Thin-K GEMM (46% eff)</text>
+      <text x="12" y="214" class="lbl-mono" fill="#dc2626">NOT softmax (runs free via SFU)</text>
+    </g>
+
+    <!-- SM_120 note -->
+    <g transform="translate(14,296)">
+      <rect x="0" y="0" width="666" height="28" rx="3" fill="#fffbeb" stroke="#d97706" stroke-width="0.5"/>
+      <text x="12" y="18" class="lbl-mono" fill="#b45309">SM_120 note: MMA path has +27.5% overhead from smem→RF stage (no Tensor Memory bypass available)</text>
+    </g>
+  </g>
+
+  <!-- ============ Panel B: Efficiency Comparison ============ -->
+  <g transform="translate(760,108)">
+    <rect x="0" y="0" width="480" height="340" rx="6" fill="#ffffff" stroke="#e2d8c8" stroke-width="0.8"/>
+    <text x="14" y="22" class="panel-h">B · GEMM EFFICIENCY: THIN-K vs STANDARD</text>
+    <text x="14" y="38" class="panel-sub">Why K=128 caps attention at 46-61% TC utilization</text>
+
+    <!-- Q x K^T bar (46%) -->
+    <g transform="translate(14,56)">
+      <text x="0" y="14" class="lbl-mono-em">Q x K^T (K=128):</text>
+      <rect x="110" y="2" width="138" height="18" rx="2" fill="#2563eb" opacity="0.7"/>
+      <text x="254" y="14" class="lbl-mono-em" fill="#dc2626">46%</text>
+      <text x="290" y="14" class="lbl-mono" fill="#5b6679">thin-K bottleneck</text>
+    </g>
+
+    <!-- Score x V bar (61%) -->
+    <g transform="translate(14,84)">
+      <text x="0" y="14" class="lbl-mono-em">Score x V (K=seq):</text>
+      <rect x="110" y="2" width="183" height="18" rx="2" fill="#16a34a" opacity="0.7"/>
+      <text x="299" y="14" class="lbl-mono-em" fill="#15803d">61%</text>
+      <text x="325" y="14" class="lbl-mono" fill="#5b6679">larger K helps</text>
+    </g>
+
+    <!-- Standard GEMM bar (95-100%) -->
+    <g transform="translate(14,112)">
+      <text x="0" y="14" class="lbl-mono-em">GEMM K=4096:</text>
+      <rect x="110" y="2" width="290" height="18" rx="2" fill="#cbd5e1" opacity="0.7"/>
+      <text x="406" y="14" class="lbl-mono-em" fill="#5b6679">95-100%</text>
+    </g>
+
+    <!-- Explanation box -->
+    <g transform="translate(14,146)">
+      <rect x="0" y="0" width="448" height="188" rx="4" fill="#fef2f2" stroke="#dc2626" stroke-width="0.6"/>
+      <text x="12" y="18" class="lbl-sm" fill="#dc2626">WHY 46% EFFICIENCY AT K=128</text>
+      <line x1="12" y1="24" x2="436" y2="24" stroke="#dc2626" stroke-width="0.3"/>
+
+      <text x="12" y="42" class="lbl-mono">K-loop: 128 / 16 = 8 dependent MMAs</text>
+      <text x="12" y="58" class="lbl-mono">Each MMA: 29 cyc latency, ILP=1 within K</text>
+      <text x="12" y="74" class="lbl-mono">Pure K-chain: 8 x 29 = 232 cyc/tile</text>
+
+      <line x1="12" y1="86" x2="436" y2="86" stroke="#fecaca" stroke-width="0.5"/>
+      <text x="12" y="102" class="lbl-mono-em" fill="#dc2626">Three sources of overhead:</text>
+      <text x="12" y="118" class="lbl-mono">(1) Tile setup: mbarrier + ldmatrix per K-step</text>
+      <text x="12" y="134" class="lbl-mono">(2) Low K-reuse: operands loaded 8x, used once</text>
+      <text x="12" y="150" class="lbl-mono">(3) Smem→RF: 11 cyc/MMA x 8 = 88 cyc overhead</text>
+
+      <line x1="12" y1="162" x2="436" y2="162" stroke="#fecaca" stroke-width="0.5"/>
+      <text x="12" y="176" class="lbl-mono" fill="#dc2626">Overhead fraction: 88/127 = 69% of compute time</text>
+    </g>
+  </g>
+
+  <!-- ============ Panel C: SFU Co-Issue Window ============ -->
+  <g transform="translate(40,468)">
+    <rect x="0" y="0" width="580" height="250" rx="6" fill="#ffffff" stroke="#e2d8c8" stroke-width="0.8"/>
+    <text x="14" y="22" class="panel-h">C · SFU CO-ISSUE: SOFTMAX RUNS FREE DURING MMA</text>
+    <text x="14" y="38" class="panel-sub">MUFU.EX2 (18 cyc) co-issues 100% with TC pipe — zero extra overhead</text>
+
+    <!-- Timeline visualization -->
+    <g transform="translate(14,56)">
+      <!-- MMA pipe row -->
+      <text x="0" y="14" class="lbl-mono-em">TC Pipe:</text>
+      <rect x="80" y="0" width="460" height="26" rx="3" fill="#2563eb" opacity="0.7"/>
+      <text x="90" y="16" class="lbl-w-mono">MMA.m16n8k16 ← 29 cyc latency → stall → MMA.m16n8k16 ← 29 cyc →</text>
+
+      <!-- SFU pipe row -->
+      <text x="0" y="50" class="lbl-mono-em">XU/SFU:</text>
+      <rect x="200" y="36" width="100" height="26" rx="3" fill="#d97706" opacity="0.7"/>
+      <text x="210" y="52" class="lbl-w-mono">MUFU.EX2 (18c)</text>
+      <rect x="360" y="36" width="80" height="26" rx="3" fill="#d97706" opacity="0.5"/>
+      <text x="370" y="52" class="lbl-w-mono">SUB+MUL</text>
+
+      <!-- Co-issue arrow -->
+      <line x1="250" y1="28" x2="250" y2="34" stroke="#15803d" stroke-width="1.5"/>
+      <text x="200" y="80" class="lbl-mono-em" fill="#15803d">← CO-ISSUED (0% overhead) →</text>
+    </g>
+
+    <!-- Key insight box -->
+    <g transform="translate(14,150)">
+      <rect x="0" y="0" width="546" height="74" rx="4" fill="#ecfdf5" stroke="#16a34a" stroke-width="0.6"/>
+      <text x="12" y="18" class="lbl-sm" fill="#15803d">ARCHITECTURAL INSIGHT</text>
+      <text x="12" y="36" class="lbl-mono" fill="#15803d">XU + Tensor = 0% overhead (Chapter 3, §3.4.3 co-issue matrix)</text>
+      <text x="12" y="52" class="lbl-mono" fill="#15803d">Softmax fast-math optimizations provide NEGLIGIBLE benefit</text>
+      <text x="12" y="68" class="lbl-mono" fill="#15803d">because the computation already runs free in idle pipe slots</text>
+    </g>
+  </g>
+
+  <!-- ============ Panel D: Key Metrics & Implications ============ -->
+  <g transform="translate(640,468)">
+    <rect x="0" y="0" width="600" height="250" rx="6" fill="#ffffff" stroke="#e2d8c8" stroke-width="0.8"/>
+    <text x="14" y="22" class="panel-h">D · KEY METRICS AND OPTIMIZATION IMPLICATIONS</text>
+
+    <!-- Metrics table -->
+    <g transform="translate(14,42)">
+      <rect x="0" y="0" width="572" height="194" rx="4" fill="#f8fafc" stroke="#cbd5e1" stroke-width="0.6"/>
+      <text x="12" y="18" class="lbl-sm" fill="#5b6679">FLASHATTENTION SM_120 CHARACTERIZATION</text>
+      <line x1="12" y1="24" x2="560" y2="24" stroke="#cbd5e1" stroke-width="0.5"/>
+
+      <text x="12" y="42" class="lbl-mono-em">Q x K^T efficiency:</text>
+      <text x="180" y="42" class="lbl-mono-em" fill="#dc2626">46% (thin-K=128)</text>
+      <text x="340" y="42" class="lbl-mono-em">Score x V eff:</text>
+      <text x="460" y="42" class="lbl-mono">60.7%</text>
+
+      <text x="12" y="62" class="lbl-mono-em">MMA per K-step:</text>
+      <text x="180" y="62" class="lbl-mono">29 cyc (m16n8k16)</text>
+      <text x="340" y="62" class="lbl-mono-em">K-loop depth:</text>
+      <text x="460" y="62" class="lbl-mono">8 iterations</text>
+
+      <text x="12" y="82" class="lbl-mono-em">Softmax cost:</text>
+      <text x="180" y="82" class="lbl-mono">130 cyc (25% wall)</text>
+      <text x="340" y="82" class="lbl-mono-em">SFU overhead:</text>
+      <text x="460" y="82" class="lbl-mono-em" fill="#15803d">0 cyc (free)</text>
+
+      <text x="12" y="102" class="lbl-mono-em">Rescale cost:</text>
+      <text x="180" y="102" class="lbl-mono">21.1 cyc (sub+exp2+mul)</text>
+      <text x="340" y="102" class="lbl-mono-em">Rowsum:</text>
+      <text x="460" y="102" class="lbl-mono">7.25 cyc/MMA</text>
+
+      <text x="12" y="122" class="lbl-mono-em">Reformat cost:</text>
+      <text x="180" y="122" class="lbl-mono">102.8 cyc (2.9x MMA)</text>
+      <text x="340" y="122" class="lbl-mono-em">Smem→RF path:</text>
+      <text x="460" y="122" class="lbl-mono">+27.5% overhead</text>
+
+      <text x="12" y="142" class="lbl-mono-em">Total/tile:</text>
+      <text x="180" y="142" class="lbl-mono-em">~520 cyc</text>
+      <text x="340" y="142" class="lbl-mono-em">MMA+merge:</text>
+      <text x="460" y="142" class="lbl-mono">80.6% overlap</text>
+
+      <line x1="12" y1="152" x2="560" y2="152" stroke="#cbd5e1" stroke-width="0.5"/>
+      <text x="12" y="168" class="lbl-mono-em" fill="#dc2626">Bottleneck: thin-K GEMM (46% TC eff) — NOT softmax</text>
+      <text x="12" y="182" class="lbl-mono" fill="#5b6679">Increasing head_dim to 256 would raise K-loop to 16 iters → ~60-70% eff</text>
+    </g>
+  </g>
+
+  <!-- ============ Panel E: Structural Efficiency Cap ============ -->
+  <g transform="translate(40,728)">
+    <rect x="0" y="0" width="1200" height="168" rx="6" fill="#ffffff" stroke="#e2d8c8" stroke-width="0.8"/>
+    <text x="14" y="22" class="panel-h">E · STRUCTURAL EFFICIENCY CAP: HEAD_DIM DETERMINES ATTENTION THROUGHPUT</text>
+
+    <!-- head_dim scaling model -->
+    <g transform="translate(14,42)">
+      <!-- d=64 -->
+      <text x="0" y="14" class="lbl-mono">d=64:</text>
+      <rect x="60" y="2" width="96" height="16" rx="2" fill="#fecaca" stroke="#dc2626" stroke-width="0.5"/>
+      <text x="164" y="14" class="lbl-mono" fill="#dc2626">~32% eff (4 K-iters)</text>
+
+      <!-- d=128 (current) -->
+      <text x="0" y="38" class="lbl-mono-em">d=128:</text>
+      <rect x="60" y="26" width="138" height="16" rx="2" fill="#fee2e2" stroke="#dc2626" stroke-width="0.8"/>
+      <text x="206" y="38" class="lbl-mono-em" fill="#dc2626">46% eff (8 K-iters) ← CURRENT</text>
+
+      <!-- d=256 -->
+      <text x="0" y="62" class="lbl-mono">d=256:</text>
+      <rect x="60" y="50" width="192" height="16" rx="2" fill="#fef3c7" stroke="#d97706" stroke-width="0.5"/>
+      <text x="260" y="62" class="lbl-mono" fill="#b45309">~60-70% eff (16 K-iters)</text>
+
+      <!-- d=4096 (standard GEMM) -->
+      <text x="0" y="86" class="lbl-mono">K=4096:</text>
+      <rect x="60" y="74" width="290" height="16" rx="2" fill="#dcfce7" stroke="#16a34a" stroke-width="0.5"/>
+      <text x="358" y="86" class="lbl-mono" fill="#15803d">95-100% eff (256 K-iters)</text>
+    </g>
+
+    <!-- Optimization implications -->
+    <g transform="translate(580,42)">
+      <rect x="0" y="0" width="566" height="110" rx="4" fill="#fffbeb" stroke="#d97706" stroke-width="0.6"/>
+      <text x="12" y="18" class="lbl-sm" fill="#b45309">OPTIMIZATION IMPLICATIONS</text>
+      <line x1="12" y1="24" x2="564" y2="24" stroke="#d97706" stroke-width="0.3"/>
+
+      <text x="12" y="42" class="lbl-mono">1. Softmax fast-math provides negligible gain (already free via SFU co-issue)</text>
+      <text x="12" y="58" class="lbl-mono">2. Larger head_dim (256+) is the ONLY way to improve K-loop efficiency</text>
+      <text x="12" y="74" class="lbl-mono">3. FlashAttention tiling (small Br x Bc) compounds the thin-K problem</text>
+      <text x="12" y="90" class="lbl-mono">4. Causal mask via SELP = 0 cyc overhead; additive mask = +40.6% (avoid)</text>
+      <text x="12" y="106" class="lbl-mono">5. MMA+merge interleave: 80.6% overlap, only +3.6% over MMA-only</text>
+    </g>
+  </g>
+
+</svg>

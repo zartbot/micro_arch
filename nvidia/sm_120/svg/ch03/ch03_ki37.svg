@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 300" role="img"
+     aria-label="KI-3.7: 2-bank RF with +1 cyc conflict fully hidden by ptxas parity allocation and RFC">
+  <defs>
+    <style><![CDATA[
+      .ttl{font:600 14px "Fraunces",serif;fill:#0b1220}
+      .sub{font:italic 11px "Fraunces",serif;fill:#5b6679}
+      .lbl{font:600 11px "JetBrains Mono",monospace}
+      .lbl-sm{font:500 10px "JetBrains Mono",monospace;fill:#5b6679}
+      .badge{font:600 9.5px "JetBrains Mono",monospace}
+      .note{font:500 9px "JetBrains Mono",monospace;fill:#8e97a5}
+      .safe{font:600 10px "JetBrains Mono",monospace;fill:#16a34a}
+      .warn{font:600 10px "JetBrains Mono",monospace;fill:#dc2626}
+    ]]></style>
+  </defs>
+  <rect width="1080" height="300" fill="#ffffff"/>
+  <text x="36" y="28" class="ttl">KI-3.7: Register File Has 2 Banks (R%2) — +1 cyc Conflict Fully Hidden by ptxas</text>
+  <text x="36" y="46" class="sub">Three-tier operand delivery: RFC(0-cyc) → RF-mixed(0-cyc) → RF-conflict(+1-cyc). ptxas guarantees tier 1-2. [S12/case_1]</text>
+
+  <!-- Three tiers -->
+  <g transform="translate(40, 66)">
+    <rect x="0" y="0" width="620" height="230" rx="10" fill="#f8fafc" stroke="#334155" stroke-width="0.8"/>
+    <text x="12" y="20" class="lbl" fill="#334155">Three-Tier Operand Delivery (priority order)</text>
+
+    <g transform="translate(14, 36)">
+      <!-- Tier 1 -->
+      <rect x="0" y="0" width="590" height="44" rx="6" fill="#DCFCE7" stroke="#16a34a" stroke-width="0.8"/>
+      <text x="8" y="16" class="badge" fill="#16a34a">TIER 1: RFC Hit</text>
+      <text x="130" y="16" class="safe">0 cycles added</text>
+      <text x="280" y="16" class="lbl-sm">≥24 entries/warp, .reuse bit enables caching</text>
+      <text x="8" y="34" class="lbl-sm">Result: 1.342 cyc/FFMA (production, ptxas+RFC optimized)</text>
+      <text x="390" y="34" class="safe">← ptxas default path</text>
+
+      <!-- Tier 2 -->
+      <rect x="0" y="52" width="590" height="44" rx="6" fill="#DBEAFE" stroke="#2563eb" stroke-width="0.8"/>
+      <text x="8" y="68" class="badge" fill="#2563eb">TIER 2: RF Mixed Parity</text>
+      <text x="180" y="68" class="lbl" fill="#2563eb">0 cycles added</text>
+      <text x="325" y="68" class="lbl-sm">E+O operands → 2 ports serve all in 1 cycle</text>
+      <text x="8" y="86" class="lbl-sm">Result: 2.038 cyc/FFMA (no RFC, but conflict-free)</text>
+      <text x="390" y="86" class="note">← ptxas parity allocator guarantees</text>
+
+      <!-- Tier 3 -->
+      <rect x="0" y="104" width="590" height="44" rx="6" fill="#FEE2E2" stroke="#dc2626" stroke-width="0.8"/>
+      <text x="8" y="120" class="badge" fill="#dc2626">TIER 3: RF Bank Conflict</text>
+      <text x="180" y="120" class="warn">+1 cycle penalty</text>
+      <text x="325" y="120" class="lbl-sm">all-same-parity → ceil(3/2) = 2 read phases</text>
+      <text x="8" y="138" class="lbl-sm">Result: 3.034 cyc/FFMA (CuAssembler SASS patch ONLY)</text>
+      <text x="390" y="138" class="warn">← NEVER in production code</text>
+    </g>
+
+    <!-- Summary -->
+    <g transform="translate(14, 194)">
+      <rect x="0" y="0" width="590" height="22" rx="4" fill="#EDE7FB" stroke="#6d28d9" stroke-width="0.5"/>
+      <text x="8" y="15" class="lbl-sm">HW-SW Co-Design: simpler 2-bank RF saves silicon; compiler guarantees zero observable penalty.</text>
+    </g>
+  </g>
+
+  <!-- Right: bank assignment -->
+  <g transform="translate(680, 66)">
+    <rect x="0" y="0" width="360" height="230" rx="10" fill="#f8fafc" stroke="#334155" stroke-width="0.8"/>
+    <text x="12" y="20" class="lbl" fill="#334155">Bank Assignment: R % 2</text>
+
+    <g transform="translate(14, 46)">
+      <!-- Bank 0 -->
+      <rect x="0" y="0" width="330" height="36" rx="6" fill="#DBEAFE" stroke="#2563eb" stroke-width="0.6"/>
+      <text x="8" y="14" class="badge" fill="#2563eb">Bank 0 (EVEN):</text>
+      <text x="130" y="14" class="lbl-sm">R0, R2, R4, R6, R8, R10 ...</text>
+      <text x="8" y="30" class="note">2 read ports</text>
+
+      <!-- Bank 1 -->
+      <rect x="0" y="44" width="330" height="36" rx="6" fill="#FEE2E2" stroke="#dc2626" stroke-width="0.6"/>
+      <text x="8" y="58" class="badge" fill="#dc2626">Bank 1 (ODD):</text>
+      <text x="130" y="58" class="lbl-sm">R1, R3, R5, R7, R9, R11 ...</text>
+      <text x="8" y="74" class="note">2 read ports</text>
+    </g>
+
+    <!-- Key finding -->
+    <g transform="translate(14, 142)">
+      <rect x="0" y="0" width="330" height="72" rx="6" fill="#FEF3C7" stroke="#b45309" stroke-width="0.5"/>
+      <text x="8" y="16" class="lbl" fill="#92400e">Contradicts Huerta 2025 (4-bank model):</text>
+      <text x="8" y="34" class="lbl-sm">R4, R8, R6 are same mod-2 bank (all even)</text>
+      <text x="8" y="50" class="lbl-sm">→ slow (3.034 cyc) even though different mod-4</text>
+      <text x="8" y="66" class="safe">2-bank model predicts ALL measurements correctly</text>
+    </g>
+  </g>
+</svg>

@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 520" role="img"
+     aria-label="4.4.1 GEMM Latency Tier Decomposition — three tiers from RF-resident (29 cyc) through smem (29.3 cyc) to global memory (118-126 cyc)">
+  <defs>
+    <style><![CDATA[
+      .eyebrow{font:600 11px "JetBrains Mono",monospace;letter-spacing:0.14em;text-transform:uppercase}
+      .title  {font:500 18px "Fraunces",serif;fill:#0b1220;letter-spacing:-0.02em}
+      .ttl    {font:600 11px "JetBrains Mono",monospace;letter-spacing:0.04em}
+      .lbl    {font:500 10px "JetBrains Mono",monospace;fill:#5b6679}
+      .lbl-sm {font:500 9px "JetBrains Mono",monospace;fill:#5b6679;letter-spacing:0.03em;text-transform:uppercase}
+      .val    {font:600 20px "Fraunces",serif;fill:#0b1220}
+      .val-sm {font:600 13px "Fraunces",serif;fill:#0b1220}
+      .note   {font:500 10.5px "IBM Plex Sans",sans-serif;fill:#2a3548}
+      .note-em{font:600 10.5px "IBM Plex Sans",sans-serif;fill:#e11d48}
+      .note-gr{font:600 10.5px "IBM Plex Sans",sans-serif;fill:#16a34a}
+      .note-bl{font:600 10.5px "IBM Plex Sans",sans-serif;fill:#2563eb}
+      .cyc-val{font:500 9px "JetBrains Mono",monospace;fill:#5b6679}
+    ]]></style>
+    <marker id="ar" markerWidth="6" markerHeight="6" refX="4" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#5b6679"/>
+    </marker>
+  </defs>
+
+  <rect width="1080" height="520" fill="#fcfbf6"/>
+
+  <!-- Header -->
+  <g transform="translate(36,24)">
+    <rect x="0" y="0" width="3" height="40" fill="#e11d48"/>
+    <text x="14" y="14" class="eyebrow" fill="#e11d48">§4.4.1 · GEMM DATA PATH LATENCY</text>
+    <text x="14" y="36" class="title">Three-Tier Latency Decomposition (Case 29)</text>
+  </g>
+
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <!-- Tier visualization: horizontal bars proportional to latency -->
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <g transform="translate(36,78)">
+
+    <!-- Tier 1: MMA only (29 cyc) -->
+    <g transform="translate(0,0)">
+      <text x="0" y="12" class="lbl-sm">TIER 1</text>
+      <text x="0" y="28" class="note">MMA only</text>
+      <text x="0" y="42" class="cyc-val">(RF-resident operands)</text>
+
+      <!-- Bar: 29/126 × 700 ≈ 161 -->
+      <g transform="translate(150,0)">
+        <rect x="0" y="0" width="161" height="48" rx="6" fill="#16a34a" opacity="0.15" stroke="#16a34a" stroke-width="1.2"/>
+        <text x="12" y="20" class="ttl" fill="#16a34a">TC Pipeline</text>
+        <text x="12" y="38" class="cyc-val" fill="#16a34a">29 cyc execution</text>
+      </g>
+
+      <text x="316" y="28" class="val" fill="#16a34a">29 cyc</text>
+      <text x="396" y="28" class="note">Bottleneck: accumulator RAW dependency</text>
+    </g>
+
+    <!-- Tier 2: smem → ldmatrix → MMA (29.3 cyc) -->
+    <g transform="translate(0,68)">
+      <text x="0" y="12" class="lbl-sm">TIER 2</text>
+      <text x="0" y="28" class="note">smem → ldmatrix</text>
+      <text x="0" y="42" class="cyc-val">→ MMA</text>
+
+      <!-- Bar: 29.3/126 × 700 ≈ 163 -->
+      <g transform="translate(150,0)">
+        <rect x="0" y="0" width="4" height="48" rx="2" fill="#2563eb" opacity="0.3"/>
+        <rect x="6" y="0" width="157" height="48" rx="6" fill="#16a34a" opacity="0.15" stroke="#16a34a" stroke-width="1"/>
+        <text x="14" y="20" class="cyc-val" fill="#2563eb">ldmatrix</text>
+        <text x="14" y="38" class="cyc-val" fill="#16a34a">+ MMA (29 cyc dominates)</text>
+      </g>
+
+      <text x="316" y="28" class="val" fill="#16a34a">29.3 cyc</text>
+      <text x="410" y="28" class="note">ldmatrix fully hidden (+0.7 cyc only)</text>
+    </g>
+
+    <!-- Gap annotation between Tier 2 and Tier 3 -->
+    <g transform="translate(150,130)">
+      <line x1="0" y1="8" x2="700" y2="8" stroke="#e11d48" stroke-width="1" stroke-dasharray="4,3"/>
+      <text x="280" y="24" class="note-em">↓ 4.0–4.3× jump = DATA STARVATION RATIO ↓</text>
+    </g>
+
+    <!-- Tier 3a: global → smem → ldmatrix → MMA via LDG (126 cyc) -->
+    <g transform="translate(0,156)">
+      <text x="0" y="12" class="lbl-sm">TIER 3a</text>
+      <text x="0" y="28" class="note">global → smem</text>
+      <text x="0" y="42" class="cyc-val">→ ldmatrix → MMA (LDG)</text>
+
+      <!-- Bar: 126/126 × 700 = 700 -->
+      <g transform="translate(150,0)">
+        <rect x="0" y="0" width="700" height="48" rx="6" fill="#e11d48" opacity="0.1" stroke="#e11d48" stroke-width="1"/>
+        <!-- Sub-segments -->
+        <rect x="0" y="0" width="538" height="48" rx="6" fill="#e11d48" opacity="0.08"/>
+        <text x="12" y="20" class="cyc-val" fill="#e11d48">DRAM latency (~97 cyc)</text>
+        <rect x="542" y="0" width="4" height="48" fill="#2563eb" opacity="0.3"/>
+        <text x="554" y="20" class="cyc-val" fill="#2563eb">ldmatrix</text>
+        <rect x="610" y="0" width="90" height="48" rx="0" fill="#16a34a" opacity="0.1"/>
+        <text x="618" y="20" class="cyc-val" fill="#16a34a">MMA</text>
+        <text x="12" y="38" class="cyc-val">LDG → smem copy → ldmatrix → execute</text>
+      </g>
+
+      <text x="856" y="28" class="val" fill="#e11d48">126 cyc</text>
+    </g>
+
+    <!-- Tier 3b: cp.async path (118 cyc) -->
+    <g transform="translate(0,218)">
+      <text x="0" y="12" class="lbl-sm">TIER 3b</text>
+      <text x="0" y="28" class="note">global → smem</text>
+      <text x="0" y="42" class="cyc-val">→ ldmatrix → MMA (cp.async)</text>
+
+      <!-- Bar: 118/126 × 700 ≈ 655 -->
+      <g transform="translate(150,0)">
+        <rect x="0" y="0" width="655" height="48" rx="6" fill="#f59e0b" opacity="0.1" stroke="#f59e0b" stroke-width="1"/>
+        <rect x="0" y="0" width="500" height="48" rx="6" fill="#f59e0b" opacity="0.06"/>
+        <text x="12" y="20" class="cyc-val" fill="#92400e">DRAM latency (~89 cyc, cp.async saves 8 cyc)</text>
+        <rect x="504" y="0" width="4" height="48" fill="#2563eb" opacity="0.3"/>
+        <text x="516" y="20" class="cyc-val" fill="#2563eb">ldmatrix</text>
+        <rect x="570" y="0" width="85" height="48" fill="#16a34a" opacity="0.1"/>
+        <text x="578" y="20" class="cyc-val" fill="#16a34a">MMA</text>
+        <text x="12" y="38" class="cyc-val">cp.async.bulk bypasses RF for smem copy → -6.3% vs LDG</text>
+      </g>
+
+      <text x="812" y="28" class="val" fill="#f59e0b">118 cyc</text>
+      <text x="876" y="28" class="note">(-6.3%)</text>
+    </g>
+  </g>
+
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <!-- Bottom: Prefetch requirement callout -->
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <g transform="translate(36,376)">
+    <rect x="0" y="0" width="1008" height="116" rx="10" fill="#FEF3C7" stroke="#f59e0b" stroke-width="0.8"/>
+    <text x="20" y="20" class="ttl" fill="#92400e">SOFTWARE PIPELINE REQUIREMENT</text>
+
+    <g transform="translate(20,38)">
+      <text x="0" y="0" class="note">To keep the TC saturated at 15.94 cyc/mma, the GEMM software pipeline must overlap:</text>
+      <text x="0" y="22" class="note">118 cyc (full-path latency) ÷ 15.94 cyc/mma (TC throughput) = <tspan style="font-weight:700;fill:#e11d48">7.4 MMA operations</tspan> of data prefetch lookahead</text>
+      <text x="0" y="46" class="note">Production solution: <tspan style="font-weight:700">2–3 stage software pipeline</tspan> (measured 1.92× speedup in §18) + <tspan style="font-weight:700">×4 operand reuse</tspan> (saves 12.6 cyc/MMA)</text>
+      <text x="0" y="66" class="note">This combination enables cuBLAS/CUTLASS to achieve 94–100% of theoretical TC peak for large GEMM shapes.</text>
+    </g>
+  </g>
+
+  <!-- Footer -->
+  <g transform="translate(36,498)">
+    <line x1="0" y1="0" x2="1008" y2="0" stroke="#e6e4da" stroke-width="0.8"/>
+    <text x="0" y="14" class="cyc-val">Source: [S9/case_29] full-path latency measurement · [S9/case_28] smem+ldmatrix overhead · [S18/case_4] software pipeline</text>
+    <text x="850" y="14" class="cyc-val">SM_120 · 2026</text>
+  </g>
+</svg>

@@ -1,0 +1,4054 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SM Microarchitecture · SM_120 Microarch Reference</title>
+    <link rel="stylesheet" href="assets/css/style.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css"
+      integrity="sha384-nB0miv6/jRmo5UMMR1wu3Gz6NLsoTkbqJghGIsx//Rlm+ZU03BU6SQNC66uf4l5+"
+      crossorigin="anonymous"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/styles/atom-one-light.min.css"
+    />
+    <style>
+      /* protect non-color overrides over hljs theme */
+      pre code.hljs {
+        background: transparent !important;
+        padding: 0 !important;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="shell">
+      <aside class="toc">
+        <a class="toc-back" href="index.html">← Index</a>
+        <div class="toc-brand">
+          SM_120 <span class="accent">GB202</span> · <em>Microarch</em>
+        </div>
+        <span class="toc-tag">FINAL REPORT · 2026</span>
+        <h4>All Chapters</h4>
+        <a href="01_architecture_overview.html">01 · Architecture Overview</a>
+        <a href="02_memory_subsystem.html">02 · Memory Subsystem</a>
+        <a
+          href="03_sm_microarchitecture.html"
+          style="font-weight: 600; color: var(--ink)"
+          >03 · SM Microarchitecture</a
+        >
+        <a href="04_tensorcore_architecture.html"
+          >04 · TensorCore Architecture</a
+        >
+        <a href="05_instruction_level_characterization.html"
+          >05 · Instruction-Level Characterization</a
+        >
+        <a href="06_on_chip_network_async.html"
+          >06 · On-Chip Network &amp; Async</a
+        >
+        <a href="07_warp_scheduler_control.html"
+          >07 · Warp Scheduler &amp; Control</a
+        >
+        <a href="08_workload_analysis.html">08 · Workload Analysis</a>
+        <a href="09_power_thermal_efficiency.html"
+          >09 · Power, Thermal &amp; Efficiency</a
+        >
+        <a href="10_system_level_multi_gpu.html"
+          >10 · System-Level &amp; Multi-GPU</a
+        >
+        <a href="11_optimization_guidance.html">11 · Optimization Guidance</a>
+        <a href="12_ptxas_compiler_behavior.html"
+          >12 · ptxas Compiler Behavior</a
+        >
+        <a href="13_unified_performance_model.html"
+          >13 · Unified Performance Model</a
+        >
+        <a href="14_sm100_to_sm120_porting_guide.html"
+          >14 · SM_100 → SM_120 Porting Guide</a
+        >
+        <a href="15_agent_ground_truth.html">15 · Agent Ground Truth</a>
+        <a href="16_open_questions.html">16 · Open Questions</a>
+        <a href="17_cross_reference_map.html">17 · Cross-Reference Map</a>
+        <a href="18_appendix_a_test_coverage.html"
+          >18 · Appendix A — Test Coverage</a
+        >
+        <a href="19_appendix_b_machine_readable.html"
+          >19 · Appendix B — Machine-Readable Parameters</a
+        >
+        <a href="20_appendix_c_methodology.html"
+          >20 · Appendix C — Measurement Methodology</a
+        >
+      </aside>
+      <main class="content">
+        <header class="hero">
+          <div class="hero-eyebrow">
+            <span class="pulse"></span>CHAPTER 03 · SM_120 · GB202 BLACKWELL
+          </div>
+          <h1 class="hero-title">SM Microarchitecture</h1>
+          <p class="lede">
+            This chapter presents the complete internal architecture of the
+            SM_120 Streaming Multiprocessor, encompassing pipeline topology,
+            dispatch model, co-issue rules, instruction encoding, and sub-pipe
+            structure. The SM_120 employs a strict 4-SMSP (Sub-Core)
+            single-issue architecture with 16 distinct execution pipes, a
+            redesigned operand collector that eliminates bank-conflict
+            penalties, and a compiler-guided scheduling model with 6 hardware
+            scoreboard counters. The characterization is derived from 249
+            microbenchmark cases across Sections 11 (156 cases), 12 (37 cases),
+            13 (instruction encoding), and 22 (56 NCU pipe-verification cases).
+            Key findings include: .reuse bits are functionally active (+85% ILP
+            throughput impact), 10 of 15 pipe pairs achieve full co-issue, and
+            the memory pipe queue depth (12-13) significantly exceeds prior
+            architectures.
+          </p>
+        </header>
+
+        <figure class="diagram">
+          <object
+            data="svg/ch03/ch03_summary.svg"
+            type="image/svg+xml"
+            aria-label="Chapter 3 summary — 16 pipes, dual-subpipe FMA, CGGTY scheduler"
+          ></object>
+          <figcaption>
+            <span class="fig-num">FIG 03.0</span>Chapter 3 summary — 16 pipes,
+            dual-subpipe FMA, CGGTY scheduler
+          </figcaption>
+        </figure>
+        <h2 class="ch-title" id="3-0-sub-core-smsp-block-diagram">
+          3.0 Sub-Core (SMSP) Block Diagram
+        </h2>
+        <p>
+          Each SM contains four identical Sub-Cores (SMSPs), each capable of
+          issuing one instruction per cycle from its resident warp pool. The
+          diagram below summarizes the per-SMSP execution resources and their
+          measured parameters.
+        </p>
+        <figure class="diagram">
+          <object
+            data="svg/ch03/ch03_subcore.svg"
+            type="image/svg+xml"
+            aria-label="Sub-Core (SMSP) block diagram — scheduler + decode + RF + 6 pipes + TC"
+          ></object>
+          <figcaption>
+            Sub-Core (SMSP) block diagram — scheduler + decode + RF + 6 pipes +
+            TC
+          </figcaption>
+        </figure>
+        <p>
+          [source: Section 11 (156 cases), Section 12 (37 cases), Section 22 (56
+          cases)]
+        </p>
+
+        <p>
+          The SM_120 Sub-Core (SMSP) is the fundamental execution building block
+          of the Streaming Multiprocessor — four identical, fully independent
+          SMSPs compose each SM, collectively delivering up to 4 instructions
+          per cycle at the SM level while each individual SMSP adheres to a
+          strict single-issue-per-cycle discipline. Each SMSP hosts a pool of 12
+          resident warps (48 total per SM), a private register file of 16,384 ×
+          32-bit entries, a dedicated warp scheduler, a decode stage, an operand
+          collector with register file cache (RFC), and six distinct execution
+          pipe groups: the FMA-lite pipe (handling FP32 multiply-add, FP16/BF16
+          packed arithmetic, and simple FP operations at 4-cycle latency and 1.0
+          ops/cycle throughput), the FMA-heavy pipe (integer multiply-add IMAD,
+          bit manipulation LOP3/SHF/PRMT/BFE, and select/min-max operations at
+          4–5 cycles), the XU/SFU pipe (transcendental approximations
+          MUFU.RCP/SIN/COS/EX2/TANH at 18–44 cycles with a pipeline depth of 5
+          allowing 5 simultaneous in-flight operations), the LSU pipe
+          (global/shared/atomic loads and stores with a remarkably deep MSHR
+          queue of 12–13 outstanding requests per warp), the U-pipe
+          (warp-uniform operations executing once for the entire warp via a
+          separate 64-entry uniform register file), and the TensorCore pipe
+          (matrix multiply-accumulate HMMA/QMMA/IMMA supporting FP16, BF16,
+          TF32, FP8/FP6/FP4 with MX scaling, and INT8 at 29-cycle latency with a
+          sustained throughput of 15.88 cycles per MMA operation).
+        </p>
+        <p>
+          The instruction lifecycle within an SMSP proceeds through a
+          well-defined pipeline: the warp scheduler selects one eligible warp
+          per cycle using a hybrid greedy-then-youngest (CGGTY) policy with
+          zero-cycle context-switch overhead (since all warp state resides
+          locally in the RF), then fetches the next instruction from the
+          per-SMSP L0 I-cache (~4 KB, backed by a shared 64 KB L1 I-cache with a
+          streaming prefetcher that fully hides L0 miss latency for
+          straight-line code). The 128-bit instruction word is decoded into its
+          two logical halves: the lower 64-bit opcode word (operation and
+          operands) and the upper 64-bit control word containing the 17-bit
+          scheduling metadata — a 4-bit stall counter specifying minimum
+          inter-issue delay, a 1-bit yield hint (inverted semantics), two 3-bit
+          scoreboard IDs (WrBarrier for producers, RdBarrier for consumers), a
+          6-bit WaitBarrier bitmask gating issue on SB completion, and a 4-bit
+          reuse field providing per-operand RFC caching hints. The scheduler
+          trusts the compiler-set stall counter absolutely for fixed-latency
+          instructions (wrong values produce silent data corruption, not
+          stalls), while variable-latency operations (LDG, LDSM, TMA) are
+          tracked by 6 hardware scoreboard counters that provide completion
+          notification to dependent consumers.
+        </p>
+        <p>
+          The register file and operand delivery system represents a key area of
+          SM_120's hardware-software co-design philosophy. The 16,384-entry RF
+          employs a 2-bank architecture with bank assignment determined by
+          simple register number parity (R%2: even registers in Bank 0, odd in
+          Bank 1), providing 2 read ports per bank. When all three source
+          operands reside in the same parity bank, a +1.0 cycle penalty is
+          incurred from the additional read cycle needed (ceil(3/2) = 2 read
+          phases). However, the ptxas compiler's parity-aware register allocator
+          ensures that this conflict never manifests in practice — it is
+          observable only through CuAssembler SASS binary patching that bypasses
+          the compiler entirely. Fronting the RF is a Register File Cache (RFC)
+          with ≥24 entries per warp (substantially larger than SM_70's ~8 or
+          SM_80's ~16 entries), which caches recently-read operands and provides
+          them directly to the operand collector on subsequent accesses. The
+          RFC's generous capacity, combined with the 4-bit .reuse hints in the
+          control word, delivers a measured +85% throughput improvement for
+          ILP-rich ALU code by eliminating RF read cycles for cached operands.
+          The operand collector itself acts as a staging buffer that gathers all
+          source operands — from the RFC (0-cycle hit), the RF banks (1-cycle
+          normal, 2-cycle on bank conflict), or the bypass network (forwarding
+          results directly from execution units) — before dispatching the
+          fully-formed operation to the target execution pipe.
+        </p>
+        <p>
+          Within the broader SM architecture, the four SMSPs operate as fully
+          independent processing elements: each has its own scheduler, decode
+          logic, RF, RFC, and complete set of execution pipe backends. Warps are
+          statically bound to sub-cores at block launch via round-robin-by-4
+          assignment (warps 0–3 to SC0, 4–7 to SC1, etc.) and never migrate,
+          eliminating cross-sub-core synchronization overhead at the cost of
+          potential load imbalance. The only shared resources are the L1 I-cache
+          (64 KB), the L1 data cache, the shared memory banks, and the TMA
+          engine. This isolation means that cross-SMSP pipe contention is
+          exactly zero — each SMSP's pipe backends operate independently
+          (verified at &lt;0.2% variance). The co-issue matrix measured across
+          the six pipe groups reveals that 10 of 15 pipe pairs achieve full or
+          near-full overlap: FMA-lite co-issues perfectly with FMA-heavy
+          (1.001×), FMA with TensorCore (1.00×), FMA with XU/SFU (1.00×), and
+          TensorCore with distributed shared memory (1.00×), while partial
+          contention exists only for LSU + Tensor consumer paths (0.78×) due to
+          writeback port sharing when LDS results feed into FMA consumers.
+        </p>
+        <p>
+          The performance characteristics of this design yield several notable
+          advantages over prior architectures. The deep MSHR queue (12–13
+          entries vs SM_89's ~5–6 or SM_90's ~8) enables substantially higher
+          memory-level parallelism per warp, reducing occupancy requirements for
+          memory-bound kernels. The single-issue discipline with
+          compiler-managed scheduling eliminates the area cost of hardware
+          interlocks (saving ~48K comparator entries that a full hardware
+          scoreboard would require for 48 warps × 256 registers), trading
+          silicon area for compiler complexity. The 4-warp latency hiding
+          threshold for FFMA (4 cycles × 1 issue/cycle = 4 warps to saturate)
+          means that even modest occupancy achieves peak compute throughput. And
+          the 29-cycle TensorCore MMA window provides up to 27 dispatch slots
+          for non-MMA instructions to execute "for free" — sufficient to absorb
+          typical GEMM epilogues (bias, activation, quantization) with
+          negligible (&lt;3%) overhead on the critical MMA chain. Together,
+          these design choices position the SM_120 SMSP as an area-efficient,
+          throughput-optimized execution engine that relies on deep compiler
+          cooperation rather than expensive hardware speculation to maximize
+          utilization of its 16 execution pipes.
+        </p>
+
+        <hr />
+        <h2 class="ch-title" id="3-1-execution-pipeline-taxonomy">
+          3.1 Execution Pipeline Taxonomy
+        </h2>
+        <p>
+          SM<em>120 has </em><em>16 distinct instruction pipes</em>* verified
+          via NCU <code>smsp\_\_pipe*\*</code> performance metrics:
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Pipe</th>
+                <th>NCU Name</th>
+                <th>Representative SASS</th>
+                <th>Latency</th>
+                <th>Throughput</th>
+                <th>Source</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>FMA</td>
+                <td>pipe_fma</td>
+                <td>FFMA, FMUL, IMAD</td>
+                <td>4 cyc</td>
+                <td>1.0 ops/cyc</td>
+                <td><code>S22/case_13</code></td>
+              </tr>
+              <tr>
+                <td>FMA-lite</td>
+                <td>pipe_fmalite</td>
+                <td>FADD, HADD2</td>
+                <td>4 cyc</td>
+                <td>1.0 ops/cyc</td>
+                <td><code>S22/case_35</code></td>
+              </tr>
+              <tr>
+                <td>FMA-heavy</td>
+                <td>pipe_fmaheavy</td>
+                <td>FMNMX, FSEL, SHF, IMAD</td>
+                <td>5 cyc</td>
+                <td>~0.7 ops/cyc</td>
+                <td><code>S22/case_36</code></td>
+              </tr>
+              <tr>
+                <td>ALU</td>
+                <td>pipe_alu</td>
+                <td>IADD3, LOP3, ISETP</td>
+                <td>2-4 cyc</td>
+                <td>1.0 ops/cyc</td>
+                <td><code>S22/case_14</code></td>
+              </tr>
+              <tr>
+                <td>ALU-heavy</td>
+                <td>pipe_aluheavy</td>
+                <td>IMAD.WIDE, BFE, BFI</td>
+                <td>4+ cyc</td>
+                <td>~0.25 ops/cyc</td>
+                <td><code>S22/case_38</code></td>
+              </tr>
+              <tr>
+                <td>XU (SFU)</td>
+                <td>pipe_xu</td>
+                <td>MUFU.*</td>
+                <td>18-44 cyc</td>
+                <td>~0.1 ops/cyc</td>
+                <td><code>S22/case_15</code></td>
+              </tr>
+              <tr>
+                <td>LSU</td>
+                <td>pipe_lsu</td>
+                <td>LDG, STG, LDS, STS, ATOM</td>
+                <td>varies</td>
+                <td>~0.5 ops/cyc</td>
+                <td><code>S22/case_16</code></td>
+              </tr>
+              <tr>
+                <td>FP64</td>
+                <td>pipe_fp64</td>
+                <td>DFMA, DADD, DMUL, DMMA</td>
+                <td>64 cyc</td>
+                <td>0.016 ops/cyc</td>
+                <td><code>S22/case_17</code></td>
+              </tr>
+              <tr>
+                <td>Tensor</td>
+                <td>pipe_tensor</td>
+                <td>HMMA, IMMA, QMMA, OMMA</td>
+                <td>29 cyc</td>
+                <td>0.063 mma/cyc</td>
+                <td><code>S22/case_18</code></td>
+              </tr>
+              <tr>
+                <td>TEX</td>
+                <td>pipe_tex</td>
+                <td>TLD, SULD (tex1Dfetch)</td>
+                <td>145 cyc</td>
+                <td>varies</td>
+                <td><code>S22/case_39</code></td>
+              </tr>
+              <tr>
+                <td>TMA</td>
+                <td>pipe_tma</td>
+                <td>UTMALDG, UTMASTG</td>
+                <td>479+ cyc</td>
+                <td>~148 cyc/op</td>
+                <td><code>S22/case_40</code></td>
+              </tr>
+              <tr>
+                <td>CBU</td>
+                <td>pipe_cbu</td>
+                <td>BRA, EXIT, BSSY, BSYNC</td>
+                <td>~3-7 cyc</td>
+                <td>1 branch/cyc</td>
+                <td><code>S22/case_41</code></td>
+              </tr>
+              <tr>
+                <td>ADU</td>
+                <td>pipe_adu</td>
+                <td>(address divergence unit)</td>
+                <td>auto</td>
+                <td>auto</td>
+                <td><code>S22/case_32</code></td>
+              </tr>
+              <tr>
+                <td>Uniform</td>
+                <td>pipe_uniform</td>
+                <td>UIADD3, S2UR, CS2UR</td>
+                <td>varies</td>
+                <td>compiler-internal</td>
+                <td><code>S22/case_42</code></td>
+              </tr>
+              <tr>
+                <td>IPA</td>
+                <td>pipe_ipa</td>
+                <td>(graphics-only)</td>
+                <td>N/A</td>
+                <td>N/A</td>
+                <td><code>S22/case_33</code></td>
+              </tr>
+              <tr>
+                <td>WorkID</td>
+                <td>pipe_workid</td>
+                <td>(not directly measurable)</td>
+                <td>N/A</td>
+                <td>N/A</td>
+                <td><code>S22/case_34</code></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          <strong>Tensor sub-pipes</strong>: HMMA (FP16/BF16/TF32) and IMMA
+          (INT8) share the tensor pipe but have distinct NCU sub-counters. DMMA
+          routes to <code>pipe_fp64</code> (op_dmma), NOT
+          <code>pipe_tensor</code>. [source: <code>S22/case_10</code>,
+          <code>S22/case_11</code>]
+        </p>
+        <p><strong>SM_120 vs SM_100 pipe differences</strong>:</p>
+        <ul>
+          <li>
+            <code>pipe_tensor_subpipe_dmma</code> is <strong>absent</strong> on
+            SM_120; DMMA uses <code>pipe_fp64_op_dmma</code> instead [source:
+            <code>S22/case_11</code>]
+          </li>
+          <li>
+            All <code>tcgen05</code>/QGMMA/TMEM counters are
+            <strong>completely absent</strong> (0 metrics) [source:
+            <code>doc/sm_120_pipe_arch.md</code>]
+          </li>
+        </ul>
+        <hr />
+        <h2 class="ch-title" id="3-2-128-bit-instruction-encoding">
+          3.2 128-bit Instruction Encoding
+        </h2>
+        <p>
+          SM_120 uses 128-bit (16-byte) fixed-width instruction encoding. Each
+          instruction word contains two logical halves: an
+          <strong>opcode word</strong> (lower 64 bits) encoding the operation
+          and operands, and a <strong>control word</strong> (upper 64 bits)
+          encoding scheduling hints.
+        </p>
+        <h3 class="sub-title" id="3-2-1-full-128-bit-instruction-layout">
+          3.2.1 128-bit Instruction Layout and Control Code Decomposition
+        </h3>
+        <p>
+          Every SM_120 instruction occupies exactly 128 bits (PC step = 0x10).
+          The upper 64 bits carry scheduling metadata (control codes, reuse
+          hints) while the lower 64 bits encode the operation and operands. The
+          SVG diagram above visualizes the field partitioning.
+        </p>
+        <figure class="diagram">
+          <object
+            data="svg/ch03/ch03_instruction_format.svg"
+            type="image/svg+xml"
+            aria-label="SM_120 128-bit instruction encoding: full layout with 17-bit control code decomposition and reuse flags"
+          ></object>
+          <figcaption>
+            SM_120 128-bit instruction encoding — upper: full word layout
+            (reserved + reuse + 17-bit control + ext opcode + primary opcode);
+            lower-left: 17-bit control code field decomposition [121:105];
+            lower-right: reuse flags [125:122]
+          </figcaption>
+        </figure>
+        <p>
+          The 17-bit control code [121:105] embeds all scheduling state inline:
+          a 4-bit <strong>stall counter</strong> (minimum inter-issue delay), a
+          1-bit <strong>yield</strong> hint (inverted semantics: 0 = yield
+          slot), two 3-bit scoreboard IDs (<strong>WrBarrier</strong> for
+          producers, <strong>RdBarrier</strong> for consumers), and a 6-bit
+          <strong>WaitBarrier</strong> one-hot mask gating issue on SB
+          completion. The 4-bit <strong>reuse</strong> field [125:122] provides
+          per-operand RFC caching hints — functionally active for ALU
+          instructions (+85% ILP throughput) but true no-ops for TC instructions
+          (HMMA/QMMA/OMMA.SF).
+        </p>
+        <h4>SASS Encoding Examples</h4>
+        <p>
+          Below are representative instructions with their full 128-bit hex
+          encoding (upper 64-bit control word | lower 64-bit opcode word) as
+          seen in <code>cuobjdump --dump-sass</code> output:
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>SASS Assembly</th>
+                <th>Control Word (upper 64b)</th>
+                <th>Key Fields Decoded</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>FFMA R5, R2, R3, R7</code></td>
+                <td><code>opcode=0x7423</code></td>
+                <td>
+                  dst=R5, src0=R2, src1=R3, src2=R7; stall=1, yield=1, reuse=101
+                </td>
+              </tr>
+              <tr>
+                <td><code>HMMA.16816.F32 R4, R8, R12, R4</code></td>
+                <td><code>opcode=0x723c</code></td>
+                <td>
+                  TC pipe; fragment registers packed in src fields; stall=11,
+                  reuse=000 (TC no-op)
+                </td>
+              </tr>
+              <tr>
+                <td><code>LDG.E.STRONG.SM R10, desc[UR4][R2]</code></td>
+                <td><code>descriptor-based</code></td>
+                <td>
+                  UR in uniform reg field, R.64 offset; WrBarrier=SB3, stall=1
+                  (fire-and-forget)
+                </td>
+              </tr>
+              <tr>
+                <td><code>FFMA R5, R2, 0.5, R7</code></td>
+                <td><code>src1=0x3f000000</code></td>
+                <td>
+                  32-bit immediate (0.5f in FP32) in src1 field; same opcode
+                  class as reg FFMA
+                </td>
+              </tr>
+              <tr>
+                <td><code>STG.E [R2], R5</code></td>
+                <td><code>fire-and-forget</code></td>
+                <td>
+                  No SB wait needed on consumer side; stall=1, no WrBarrier (4.3
+                  cyc/store)
+                </td>
+              </tr>
+              <tr>
+                <td><code>DEPBAR.LE SB0, 0x0</code></td>
+                <td><code>barrier insn</code></td>
+                <td>
+                  Explicit SB wait; used ONLY for cp.async (never for regular
+                  LDG on SM_120)
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>Key observations from the encoding:</p>
+        <ul>
+          <li>
+            <strong>Descriptor-based addressing</strong> (LDG/STG): SM_120 uses
+            uniform register descriptors (<code>desc[URn]</code>) instead of
+            legacy 64-bit address pointers, enabling hardware bounds checking
+          </li>
+          <li>
+            <strong>Immediate encoding</strong>: 32-bit immediates occupy the
+            src1 field directly, eliminating the need for separate MOV+op pairs
+          </li>
+          <li>
+            <strong>TC instructions</strong> pack matrix fragment register
+            groups into the standard src0/src1/src2 fields (4-8 consecutive
+            registers starting at the encoded Rn)
+          </li>
+          <li>
+            <strong>Control code separation</strong>: the scheduling metadata is
+            orthogonal to the operation — the same FFMA opcode can carry any
+            stall/yield/SB combination without affecting its functional behavior
+          </li>
+        </ul>
+        <p>
+          [source: <code>S13/case_1-2</code>, <code>S13/case_10-13</code>,
+          <code>S11/case_71-80</code>]
+        </p>
+        <h3 class="sub-title" id="3-2-2-control-code-semantic-summary">
+          3.2.2 Control Code Semantic Summary
+        </h3>
+        <figure class="diagram">
+          <object
+            data="svg/ch03/ch03_control_code_semantics.svg"
+            type="image/svg+xml"
+            aria-label="SM_120 17-bit Control Code Semantics: bit-field decomposition, scheduler decision workflow, and producer-consumer example"
+          ></object>
+          <figcaption>
+            SM_120 Control Code Semantics — 17-bit scheduling metadata
+            decomposition with per-field semantics, scheduler issue decision
+            flow, and a concrete LDG→FFMA producer-consumer dependency example.
+            [source: S13/case_1-13, S11/case_128-156]
+          </figcaption>
+        </figure>
+        <p>
+          The diagram above illustrates how the 17-bit control code embedded in
+          each 128-bit instruction governs the warp scheduler's issue decision.
+          Every cycle, the scheduler evaluates a candidate warp's next
+          instruction through a strict priority-ordered gate sequence:
+        </p>
+        <p>
+          <strong>Gate 1 — WaitBarrier check</strong>: The scheduler inspects
+          the 6-bit <code>WaitBarrier[121:116]</code> one-hot bitmask. If any
+          flagged scoreboard counter (SB0–SB5) has a non-zero value — meaning a
+          prior variable-latency operation has not yet completed — the warp is
+          immediately blocked and the scheduler moves to the next candidate.
+          This is the primary mechanism for enforcing memory dependence
+          correctness.
+        </p>
+        <p>
+          <strong>Gate 2 — Stall countdown</strong>: If the warp passes the
+          WaitBarrier gate, the scheduler checks whether the stall countdown
+          timer (initialized to <code>stall[108:105]</code> when the previous
+          instruction issued) has reached zero. The countdown decrements by 1
+          each cycle, enforcing the minimum inter-issue delay that the ptxas
+          compiler encoded for fixed-latency dependencies. A non-zero countdown
+          blocks the warp for that cycle.
+        </p>
+        <p>
+          <strong>Gate 3 — Yield hint</strong>: With both hard gates passed, the
+          scheduler consults the <code>yield[109]</code> bit. If yield=0
+          (inverted semantics: "yield this slot"), the scheduler is encouraged
+          to switch to another eligible warp — though this is a hint, not a hard
+          block. If yield=1, the scheduler prefers to continue issuing from the
+          same warp, maximizing instruction-level locality.
+        </p>
+        <p>
+          <strong>Issue + Side-effects</strong>: Upon issuing the instruction,
+          two side-effects occur simultaneously: (a) the stall countdown is
+          loaded with the new instruction's stall value, and (b) if
+          <code>WrBarrier[112:110] ≠ 7</code>, the specified scoreboard counter
+          is incremented (SBn++), registering this instruction as a pending
+          producer whose completion the memory subsystem will later signal by
+          decrementing the same counter.
+        </p>
+        <p>
+          <strong>Reuse flags (orthogonal)</strong>: The 4-bit reuse field
+          [125:122] operates independently of the scheduling logic — it
+          instructs the operand collector to cache the flagged source operands
+          in the Register File Cache (RFC) so that subsequent instructions
+          reading the same registers get a 0-cycle hit instead of a full RF bank
+          read. This optimization delivers +85% throughput for ALU instructions
+          in ILP-rich code, but is a true no-op for TensorCore instructions
+          which use an independent operand fetch path.
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Field</th>
+                <th style="text-align: center">Bits</th>
+                <th style="text-align: center">Width</th>
+                <th style="text-align: center">Default</th>
+                <th>Semantics</th>
+                <th style="text-align: center">Measured Effect</th>
+                <th>Source</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>stall</strong></td>
+                <td style="text-align: center">[108:105]</td>
+                <td style="text-align: center">4</td>
+                <td style="text-align: center">0-15</td>
+                <td>Minimum cycles before next issue from same warp</td>
+                <td style="text-align: center">
+                  Strict 1:1 linear; 0=HW scoreboard
+                </td>
+                <td><code>S11/case_128-131</code></td>
+              </tr>
+              <tr>
+                <td><strong>yield</strong></td>
+                <td style="text-align: center">[109]</td>
+                <td style="text-align: center">1</td>
+                <td style="text-align: center">0 or 1</td>
+                <td>0=yield this warp's slot; 1=continue (inverted)</td>
+                <td style="text-align: center">
+                  Blocks latency hiding when yield=0 + stall=0
+                </td>
+                <td><code>S11/case_142-148</code></td>
+              </tr>
+              <tr>
+                <td><strong>WrBarrier</strong></td>
+                <td style="text-align: center">[112:110]</td>
+                <td style="text-align: center">3</td>
+                <td style="text-align: center">7(none)</td>
+                <td>SB counter this insn produces to (0-5, 7=none)</td>
+                <td style="text-align: center">
+                  Variable-latency producer tracking
+                </td>
+                <td><code>S13/case_12</code></td>
+              </tr>
+              <tr>
+                <td><strong>RdBarrier</strong></td>
+                <td style="text-align: center">[115:113]</td>
+                <td style="text-align: center">3</td>
+                <td style="text-align: center">7(none)</td>
+                <td>SB counter this insn consumes from (0-5, 7=none)</td>
+                <td style="text-align: center">
+                  Consumer waits for SB completion
+                </td>
+                <td><code>S13/case_12</code></td>
+              </tr>
+              <tr>
+                <td><strong>WaitBarrier</strong></td>
+                <td style="text-align: center">[121:116]</td>
+                <td style="text-align: center">6</td>
+                <td style="text-align: center">0x00</td>
+                <td>Bitmask: wait for SB counters before issue</td>
+                <td style="text-align: center">6 SB barrier, one-hot</td>
+                <td><code>S13/case_12</code></td>
+              </tr>
+              <tr>
+                <td><strong>reuse</strong></td>
+                <td style="text-align: center">[125:122]</td>
+                <td style="text-align: center">4</td>
+                <td style="text-align: center">varies</td>
+                <td>Per-operand RFC hint (src3,src2,src1,src0)</td>
+                <td style="text-align: center">
+                  <strong>ALU: +85% ILP; TC: no-op</strong>
+                </td>
+                <td><code>S11/case_149-156</code></td>
+              </tr>
+              <tr>
+                <td><strong>reserved</strong></td>
+                <td style="text-align: center">[127:126]</td>
+                <td style="text-align: center">2</td>
+                <td style="text-align: center">0</td>
+                <td>Always zero</td>
+                <td style="text-align: center">--</td>
+                <td><code>S13/case_2</code></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <h3
+          class="sub-title"
+          id="3-2-3-control-code-behavioral-rules-cuassembler-verified"
+        >
+          3.2.3 Control Code Behavioral Rules (CuAssembler-Verified)
+        </h3>
+        <p><strong>Stall counter rules</strong> (Section 11.8.2, 4 cases):</p>
+        <ol>
+          <li>
+            <code>stall=0</code>: Triggers HW scoreboard fallback --
+            <strong>always correct</strong> even for dependencies [source:
+            <code>S11/case_129</code>]
+          </li>
+          <li>
+            <code>stall=1-3 (&lt; latency)</code>:
+            <strong>SILENT stale register read</strong> -- consumer reads
+            previous value, no trap, no error [source:
+            <code>S11/case_132-135</code>]
+          </li>
+          <li>
+            <code>stall=4 (= FFMA latency)</code>: Correct boundary -- consumer
+            reads valid output [source: <code>S11/case_136</code>]
+          </li>
+          <li>
+            <code>stall=N (independent)</code>: Exact N cycles delay, 1:1
+            linear, no saturation at stall=15 [source:
+            <code>S11/case_128,131</code>]
+          </li>
+          <li>
+            Stall counter <strong>replaces</strong> (not adds to) dependency
+            wait -- <code>stall=2</code> on 4-cyc dep results in reads after 2
+            cyc (stale) [source: <code>S11/case_130</code>]
+          </li>
+        </ol>
+        <p><strong>Yield bit rules</strong> (Section 11.8.4, 7 cases):</p>
+        <ol>
+          <li>
+            <code>yield=0 + stall=0</code>: Blocks latency hiding -- 32 warps
+            regress to single-warp throughput [source:
+            <code>S11/case_142</code>]
+          </li>
+          <li>
+            <code>yield=0 + stall&gt;=latency</code>: No effect -- stall already
+            prevents re-issue before completion [source:
+            <code>S11/case_148</code>]
+          </li>
+          <li>
+            Partial yield (N% of instructions): Proportional blocking -- 25%
+            yield results in 75% throughput [source: <code>S11/case_145</code>]
+          </li>
+          <li>
+            Yield on producer only: ZERO effect -- it is the consumer's yield
+            that matters [source: <code>S11/case_146</code>]
+          </li>
+        </ol>
+        <p><strong>SB (Scoreboard) rules</strong> (Sections 12, 13):</p>
+        <ul>
+          <li>6 SB counters (SB0-SB5), dynamically assigned by ptxas</li>
+          <li>
+            LDG typically uses SB3-4; LDS uses SB0-1 [source:
+            <code>S13/case_12</code>]
+          </li>
+          <li>
+            Co-consumed loads share same SB -- 3 cyc savings vs distinct SB
+            assignment [source: <code>S21/case_105</code>]
+          </li>
+          <li>
+            SB exhaustion cliff: N=5 to 6 outstanding variable-latency ops
+            causes 44.8x stall (17 to 761 cyc, L1-cached path) [source:
+            <code>S11/case_44</code>]; under L2-forced long latency the
+            effective cliff shifts to N=10-11 → 12 (358 to 726 cyc, ~2x)
+            [source: <code>S12/case_24</code>]
+          </li>
+          <li>
+            DEPBAR.LE: Explicit SB wait instruction, used ONLY for cp.async (not
+            standard LDG) [source: <code>S21/case_12</code>]
+          </li>
+        </ul>
+        <p>
+          <strong>Reuse bit rules</strong> (Section 11.8.5 + S12/case_1 + Case
+          155):
+        </p>
+        <ul>
+          <li>
+            <strong>ALU instructions (FFMA/FADD/IMAD)</strong>: .reuse bits
+            [60:58] are <strong>functionally active</strong> — +85% throughput
+            in ILP-rich code (stall=1); 0% in latency-bound dep chains (stall≥4)
+            [source: <code>S11/case_155</code>, <code>S12/case_1</code>]
+          </li>
+          <li>
+            <strong>TC instructions (HMMA/QMMA/OMMA.SF)</strong>: .reuse bits
+            are <strong>true no-op</strong> — ptxas never sets them (bits
+            [60:58]=000); forcing them to 111 produces 0% delta. TC pipeline
+            uses independent operand fetch path, does not use RFC [source:
+            <code>S21/case_78</code> retest]
+          </li>
+          <li>
+            SM_120's operand collector absorbs RF bank conflicts (+1 cyc
+            penalty) but RFC provides additional caching benefit for ALU pipes
+          </li>
+        </ul>
+        <figure class="diagram">
+          <object
+            data="svg/ch03/ch03_scheduling_model.svg"
+            type="image/svg+xml"
+            aria-label="SM_120 Hybrid Instruction Scheduling Model: compiler stall counters for fixed-latency ops + 6 HW scoreboard counters for variable-latency ops, with area savings comparison"
+          ></object>
+          <figcaption>
+            SM_120 Instruction Scheduling Model — hybrid two-mechanism
+            dependence tracking: 4-bit compiler stall counters (left) for
+            fixed-latency ALU/FP/TC instructions, and 6 hardware scoreboard
+            counters (right) for variable-latency memory/async operations.
+            Bottom: area comparison showing 6.2× savings over a full hardware
+            scoreboard. [source: S11/case_77, S13/case_12]
+          </figcaption>
+        </figure>
+
+        <p>
+          The diagram above captures the complete instruction scheduling
+          workflow of the SM_120. When the warp scheduler dispatches an
+          instruction, it classifies the operation into one of two
+          dependence-tracking paths based on latency determinism — a
+          compile-time decision embedded directly into the 17-bit control word
+          of each 128-bit instruction.
+        </p>
+        <p>
+          <strong>Path 1 — Fixed-latency instructions</strong> (left column):
+          For operations whose execution time is known at compile time — FFMA (4
+          cycles), IADD3 (2 cycles), HMMA (29 cycles), MUFU transcendentals
+          (18–44 cycles), and all other ALU/FP/TC instructions — the ptxas
+          compiler encodes the exact inter-issue delay into the 4-bit
+          <code>stall[108:105]</code> field. The hardware scheduler simply
+          counts down this value before re-issuing the same warp; it performs
+          <strong>no RAW hazard check whatsoever</strong> when stall ≥ 1. This
+          "trust the compiler" model means that an incorrect stall value
+          produces silent data corruption (the consumer reads stale register
+          contents) rather than a pipeline stall or trap. The sole safety valve
+          is <code>stall=0</code>, which triggers a full hardware scoreboard
+          fallback — always correct but 17× slower than the optimal stall
+          setting for IADD3 (34 cycles vs 2 cycles). In production code, ptxas
+          never emits <code>stall=0</code> for analyzable instructions; it is
+          reserved as a conservative escape hatch for code paths where static
+          latency analysis is infeasible.
+        </p>
+        <p>
+          <strong>Path 2 — Variable-latency instructions</strong> (right
+          column): For operations whose completion time depends on runtime
+          conditions — LDG (L1 hit: 44 cycles, L2: 354 cycles), LDSM, TMA (479+
+          cycles), cp.async, and all memory/atomic operations — the hardware
+          provides 6 scoreboard counters (SB0–SB5) per warp. The producer
+          instruction's control word sets <code>WrBarrier[112:110]</code> to a
+          scoreboard ID (0–5), incrementing that counter on dispatch. When the
+          memory subsystem completes the operation, it asynchronously decrements
+          the counter. The consumer instruction encodes a
+          <code>WaitBarrier[121:116]</code> bitmask specifying which SB counters
+          must reach zero before issue. This mechanism allows up to 5
+          fully-overlapping variable-latency operations per warp (using SB1–SB5,
+          with SB0 often reserved); the 6th operation triggers the catastrophic
+          SB exhaustion cliff — a 44.8× stall from 17 to 761 cycles as the warp
+          must serialize behind the oldest outstanding load. Under L2-dominated
+          access patterns, ptxas can share a single SB counter across multiple
+          co-consumed loads, effectively extending the cliff to N=10–12
+          outstanding operations.
+        </p>
+        <p>
+          <strong>Area efficiency</strong>: This hybrid design requires only 41
+          bits of scheduling state per warp (36 bits for 6×6 SB counters plus 4
+          stall bits plus 1 yield bit), compared to 256+ bits that a full
+          hardware scoreboard would need for per-register dependency tracking
+          with CAM comparators. Across 48 warps per SM, this represents a
+          savings of over 10,000 transistor-bits — a compelling demonstration of
+          hardware-software co-design where compiler intelligence substitutes
+          for silicon complexity.
+        </p>
+
+        <hr />
+        <h2 class="ch-title" id="3-3-sm-dispatch-model">
+          3.3 SM Dispatch Model
+        </h2>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Parameter</th>
+                <th>Measured Value</th>
+                <th>Source</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Issue width per SMSP</td>
+                <td>
+                  Single-issue (only <code>smsp__issue_inst0</code> and
+                  <code>smsp__issue_inst1</code> exist)
+                </td>
+                <td><code>S22/case_1</code></td>
+              </tr>
+              <tr>
+                <td>Per-SMSP IPC ceiling</td>
+                <td>0.92 (theoretical 1.0; single-warp on its own SMSP)</td>
+                <td><code>S22/case_2</code></td>
+              </tr>
+              <tr>
+                <td>4-SMSP aggregate IPC (single-warp/SMSP)</td>
+                <td>3.66 (99.1% of ideal 4.0; 4 warps, 1 per SMSP)</td>
+                <td><code>S22/case_3</code></td>
+              </tr>
+              <tr>
+                <td>4-SMSP aggregate IPC (multi-warp saturated)</td>
+                <td>3.76 @ 4W; ~4.8 @ 32W (memory-latency hiding regime)</td>
+                <td><code>S22/case_4</code></td>
+              </tr>
+              <tr>
+                <td>I-buffer depth</td>
+                <td>~4 entries/warp; ILP=4 saturates at 1.08 cyc/insn</td>
+                <td><code>S11/case_21</code></td>
+              </tr>
+              <tr>
+                <td>Address calculation</td>
+                <td>
+                  Uniform=regular (44 vs 44 cyc); divergent=114 cyc (2.6x)
+                </td>
+                <td><code>S11/case_14</code></td>
+              </tr>
+              <tr>
+                <td>Result queue contention</td>
+                <td>
+                  Zero write-back contention; 4-ILP IADD3 sustains 1 cyc/op
+                </td>
+                <td><code>S11/case_12</code></td>
+              </tr>
+              <tr>
+                <td>Execution unit latch</td>
+                <td>
+                  IADD3=2 cyc, HADD2=4 cyc, VIADD.16x2=5 cyc; no half-warp
+                  serialization
+                </td>
+                <td><code>S11/case_11</code></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          <strong>Predicated instructions</strong>: Predicated-off instructions
+          consume the full dispatch slot (ratio = 1.000 vs predicated-true,
+          <span class="cite">[S26/case_26]</span>). Predication is a correctness
+          mechanism that prevents result writeback but provides zero throughput
+          benefit.
+        </p>
+        <h3
+          class="sub-title"
+          id="3-3-1-microarchitectural-analysis-of-the-dispatch-model"
+        >
+          3.3.1 Microarchitectural Analysis of the Dispatch Model
+        </h3>
+        <p>
+          The SM_120 dispatch architecture reveals a fundamental design
+          trade-off: maximizing area efficiency through single-issue sub-cores
+          while maintaining high aggregate throughput via warp-level
+          parallelism. The measured data constrains a precise model of the
+          internal pipeline structure.
+        </p>
+        <p>
+          <strong>Evidence for single-issue, not dual-issue</strong>: Case
+          11.1/01 measures INT32+FP32 interleaving at MIX/MAX = 0.076, meaning
+          the mixed workload completes in almost exactly max(INT_time, FP_time)
+          — no dual-issue benefit exists within a single warp. If SM_120 had a
+          second issue slot (as some AMD architectures employ), mixed INT+FP
+          streams would show MIX/MAX approaching 0.5 (50% speedup). The measured
+          7.6% "overlap" is entirely attributable to the 4-warp interleaving
+          effect across SMSPs in the same block.
+        </p>
+        <p>
+          <strong>I-buffer depth constrains ILP exploitation</strong>: The
+          instruction buffer holds approximately 4 entries per warp (Case
+          11.2/21). This means the scheduler can look ahead by at most 4
+          instructions when seeking independent operations to issue. With FFMA
+          latency of 4 cycles, ILP=4 exactly fills the pipeline (4 independent
+          chains × 1 cyc issue = 4 cyc covered). Beyond ILP=4, additional
+          parallelism yields only marginal throughput improvement (1.08 → 1.01
+          cyc/op from ILP=4 to ILP=16). This I-buffer depth is consistent with
+          the 128-bit instruction width: 4 × 16 bytes = 64 bytes, fitting within
+          a single L0 I-cache line.
+        </p>
+        <p>
+          <strong>Result queue is non-blocking</strong>: Case 11.1/12
+          demonstrates zero write-back contention even at ILP=4 with IADD3
+          (2-cycle latency, 1 cyc/op throughput). This implies at least 4 write
+          ports to the register file per SMSP (one per pipeline stage in
+          flight), or equivalently, a bypass network that forwards results to
+          dependent consumers without queueing. The absence of write-port
+          contention is remarkable for a 4-deep FMA pipeline and suggests either
+          (a) results bypass directly from execution units to the operand
+          collector, or (b) the RF has separate write ports per pipe backend.
+        </p>
+        <p>
+          <strong>Execution unit latch occupancy</strong>: The measured IADD3=2
+          cyc, HADD2=4 cyc, VIADD.16x2=5 cyc pattern (Case 11.1/11) reveals that
+          different ALU sub-pipes have distinct pipeline depths. The 2-cycle
+          IADD3 path implies a simple 2-stage execute+writeback for basic
+          integer addition, while the 4-cycle HADD2 path suggests the FP16×2
+          datapath uses the full FMA pipeline (likely packed through the fmalite
+          backend). The 5-cycle VIADD path indicates an additional decode stage
+          for the SIMD vector format. Crucially, no half-warp serialization is
+          observed for any operation, confirming that ALL arithmetic units
+          operate on full 32-thread warps in a single pass — there is no
+          half-warp execution on SM_120 (unlike some older AMD RDNA
+          architectures).
+        </p>
+        <p>
+          <strong>Memory pipe queue depth — a deep MSHR architecture</strong>:
+          Case 11.6/97 reveals the most architecturally significant finding:
+          SM_120's LSU can sustain 12-13 independent outstanding loads per warp
+          before stalling. The stall cliff is dramatic — from 2 cycles at N=12
+          to 984 cycles at N=14 (a 492× increase). This behavior is precisely
+          consistent with a fixed-size miss-status holding register (MSHR) that
+          tracks outstanding cache misses:
+        </p>
+        <figure class="diagram">
+          <object
+            data="svg/ch03/ch03_lsu_queue_model.svg"
+            type="image/svg+xml"
+            aria-label="SM_120 LSU Queue Model: MSHR-based memory-level parallelism per warp with 12–13 entry queue depth and generational scaling"
+          ></object>
+          <figcaption>
+            SM_120 LSU Queue Model &amp; Dispatch Architecture — MSHR-based
+            memory-level parallelism showing three regimes (full parallelism at
+            N≤12, transition at N=13, catastrophic stall at N≥14) with
+            generational scaling comparison and dispatch pipeline flow. [source:
+            S11/case_97, S12/case_24]
+          </figcaption>
+        </figure>
+        <p>
+          This deep queue enables SM_120 to sustain much higher memory-level
+          parallelism (MLP) per warp, reducing the occupancy requirements for
+          memory-bound kernels. With 12-13 loads in flight and L2 latency of 354
+          cycles, the theoretical MLP bandwidth per warp is (12.5 × 128B) / 354
+          cyc = 4.5 B/cyc — already exceeding the per-SM L2 bandwidth
+          allocation.
+        </p>
+        <h3
+          class="sub-title"
+          id="3-3-2-register-file-and-operand-delivery-architecture"
+        >
+          3.3.2 Register File and Operand Delivery Architecture
+        </h3>
+        <p>
+          The SM_120 register file and operand delivery system represents a
+          major architectural evolution from prior NVIDIA generations.
+          CuAssembler SASS binary patching (the only technique capable of
+          bypassing ptxas's bank-conflict avoidance) reveals the precise
+          internal structure.
+        </p>
+        <h4
+          class="minor"
+          id="3-3-2-1-register-file-banking-2-bank-parity-architecture"
+        >
+          3.3.2.1 Register File Banking: 2-Bank Parity Architecture
+        </h4>
+        <p>
+          CuAssembler binary patching of 3,520 FFMA instructions across 22
+          distinct register configurations (Case 12/01, retest) definitively
+          establishes the RF banking:
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Configuration</th>
+                <th>Registers (src0,src1,src2)</th>
+                <th>Parity</th>
+                <th style="text-align: center">cyc/FFMA</th>
+                <th>Source</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>All-even (bank conflict)</td>
+                <td>R4, R8, R12</td>
+                <td>E,E,E</td>
+                <td style="text-align: center"><strong>3.034</strong></td>
+                <td><span class="cite">[S12/case_1]</span></td>
+              </tr>
+              <tr>
+                <td>All-even (spread)</td>
+                <td>R2, R14, R20</td>
+                <td>E,E,E</td>
+                <td style="text-align: center"><strong>3.034</strong></td>
+                <td><span class="cite">[S12/case_1]</span></td>
+              </tr>
+              <tr>
+                <td>All-odd (bank conflict)</td>
+                <td>R5, R9, R13</td>
+                <td>O,O,O</td>
+                <td style="text-align: center"><strong>3.034</strong></td>
+                <td><span class="cite">[S12/case_1]</span></td>
+              </tr>
+              <tr>
+                <td>All-odd (high regs)</td>
+                <td>R21, R23, R25</td>
+                <td>O,O,O</td>
+                <td style="text-align: center"><strong>3.034</strong></td>
+                <td><span class="cite">[S12/case_1]</span></td>
+              </tr>
+              <tr>
+                <td>Mixed parity (2E+1O)</td>
+                <td>R4, R8, R5</td>
+                <td>E,E,O</td>
+                <td style="text-align: center"><strong>2.038</strong></td>
+                <td><span class="cite">[S12/case_1]</span></td>
+              </tr>
+              <tr>
+                <td>Mixed parity (1E+2O)</td>
+                <td>R5, R9, R4</td>
+                <td>O,O,E</td>
+                <td style="text-align: center"><strong>2.038</strong></td>
+                <td><span class="cite">[S12/case_1]</span></td>
+              </tr>
+              <tr>
+                <td>Mixed parity (spread)</td>
+                <td>R4, R5, R6</td>
+                <td>E,O,E</td>
+                <td style="text-align: center"><strong>2.038</strong></td>
+                <td><span class="cite">[S12/case_1]</span></td>
+              </tr>
+              <tr>
+                <td>Compiler-optimized (with .reuse)</td>
+                <td>ptxas-assigned</td>
+                <td>mixed</td>
+                <td style="text-align: center"><strong>1.342</strong></td>
+                <td><span class="cite">[S12/case_1]</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          <strong
+            >Definitive finding: SM_120 has a 2-bank register file with bank = R
+            % 2 (even/odd parity)</strong
+          >. This contradicts the Huerta 2025 model predicting 4 banks (R%4).
+          The critical distinguishing test: R4(mod4=0), R8(mod4=0), R6(mod4=2) —
+          all three are in different mod-4 banks but the SAME mod-2 bank (all
+          even), and the result is slow (3.034 cyc/FFMA). Under a 4-bank model
+          this should be fast. The 2-bank model correctly predicts every single
+          measurement.
+        </p>
+        <figure class="diagram">
+          <object
+            data="svg/ch03/ch03_rf_banking_model.svg"
+            type="image/svg+xml"
+            aria-label="SM_120 Register File 2-Bank Parity Architecture: banking model, conflict scenarios, and ptxas mitigation"
+          ></object>
+          <figcaption>
+            SM_120 Register File Banking Model — 2-bank parity architecture
+            (Bank = R%2) with three-tier operand delivery, conflict scenarios,
+            and ptxas compiler mitigations achieving 1.342 cyc/FFMA in
+            production. [source: S12/case_1]
+          </figcaption>
+        </figure>
+        <p>
+          <strong
+            >Operand Read Workflow — How the Three-Tier System Works</strong
+          >: When the warp scheduler issues an instruction (e.g.,
+          <code>FFMA R5, R2, R3, R7</code>), the operand collector must gather
+          three source operands before dispatching the operation to the FMA
+          execution pipe. The read path proceeds through a priority-ordered
+          three-tier hierarchy:
+        </p>
+        <p>
+          <strong>Tier 1 (RFC Hit, 0-cycle)</strong>: The operand collector
+          first checks the Register File Cache (≥24 entries per warp). If the
+          instruction's control word has the corresponding
+          <code>.reuse</code> bit set (bits [125:122]) and the operand was
+          recently read, the RFC supplies it immediately with zero additional
+          latency. This is the fast path that ptxas aggressively optimizes for —
+          in ILP-rich ALU code, RFC hits deliver a measured +85% throughput
+          improvement by entirely eliminating RF bank reads for cached operands.
+        </p>
+        <p>
+          <strong>Tier 2 (RF Normal Read, 1-cycle)</strong>: On RFC miss, the
+          operand collector reads from the physical register file. With the
+          2-bank parity architecture (even registers in Bank 0, odd in Bank 1),
+          a 3-source instruction whose operands span both banks completes in a
+          single cycle — each bank provides up to 2 reads simultaneously, and
+          max(ceil(2/2), ceil(1/2)) = 1 cycle suffices. The ptxas compiler's
+          parity-aware register allocator guarantees this configuration for all
+          production code.
+        </p>
+        <p>
+          <strong>Tier 3 (RF Bank Conflict, 2-cycle)</strong>: If all three
+          source operands reside in the same parity bank (e.g., R4, R8, R12 —
+          all even), the bank's 2 read ports cannot serve 3 requests in one
+          cycle. The read splits into two phases: ceil(3/2) = 2 cycles, imposing
+          a +1.0 cycle penalty. This scenario is observable
+          <em>only</em> through CuAssembler SASS binary patching that bypasses
+          ptxas's conflict-avoidance logic — it never occurs in normally
+          compiled code.
+        </p>
+        <p>
+          <strong
+            >Why zero penalty is observed at the PTX/application level</strong
+          >: Case 11.3/46 measures FFMA with PTX-level register constraints and
+          sees 0 cyc delta between "same-bank" and "cross-bank" configurations.
+          This is NOT because bank conflicts don't exist — it is because ptxas's
+          register allocator prevents all-same-parity configurations from ever
+          occurring in compiled SASS. The SASS binary patching in Case 12/01
+          bypasses ptxas entirely to expose the underlying hardware behavior.
+          The two results are completely consistent: conflicts exist in hardware
+          but are perfectly hidden by the compiler. This represents a textbook
+          example of hardware-software co-design: a simpler 2-bank RF with only
+          2 read ports per bank saves significant silicon area, while the
+          compiler's intelligence (parity allocation + RFC caching) delivers
+          performance equivalent to — or better than — a more complex multi-port
+          design.
+        </p>
+        <h4
+          class="minor"
+          id="3-3-2-2-register-file-cache-rfc-24-entries-deep-enough-to-mask-all-conflicts"
+        >
+          3.3.2.2 Register File Cache (RFC): ≥24 Entries, Deep Enough to Mask
+          All Conflicts
+        </h4>
+        <p>
+          The RFC capacity sweep (Case 12/06) reveals that SM_120's RFC never
+          causes a visible latency cliff up to 24 distinct registers:
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th style="text-align: center">Chain Length (distinct regs)</th>
+                <th style="text-align: center">Latency (cyc/op)</th>
+                <th>RFC Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="text-align: center">1</td>
+                <td style="text-align: center">4.984</td>
+                <td>RFC hit (trivially)</td>
+              </tr>
+              <tr>
+                <td style="text-align: center">4</td>
+                <td style="text-align: center">4.984</td>
+                <td>RFC hit</td>
+              </tr>
+              <tr>
+                <td style="text-align: center">8</td>
+                <td style="text-align: center">4.984</td>
+                <td>RFC hit (SM_70 cliff here)</td>
+              </tr>
+              <tr>
+                <td style="text-align: center">12</td>
+                <td style="text-align: center">4.984</td>
+                <td>RFC hit</td>
+              </tr>
+              <tr>
+                <td style="text-align: center">16</td>
+                <td style="text-align: center">4.984</td>
+                <td>RFC hit (SM_80 cliff here)</td>
+              </tr>
+              <tr>
+                <td style="text-align: center">20</td>
+                <td style="text-align: center">4.983</td>
+                <td>RFC hit</td>
+              </tr>
+              <tr>
+                <td style="text-align: center">24</td>
+                <td style="text-align: center">4.983</td>
+                <td>RFC hit (no cliff detected)</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          <strong>The RFC has ≥24 entries per warp</strong>, significantly
+          larger than SM_70 (~8 entries) or SM_80 (~8-16 entries). This deep
+          RFC, combined with the 2-bank RF, creates a three-tier operand
+          delivery system:
+        </p>
+        <figure class="diagram">
+          <object
+            data="svg/ch03/ch03_s04_flow.svg"
+            type="image/svg+xml"
+            aria-label="SM_120 Three-Tier Operand Delivery System: RFC ≥24 entries with 2-bank RF, generational scaling, and .reuse bit interaction"
+          ></object>
+          <figcaption>
+            SM_120 Three-Tier Operand Delivery System — RFC hit (0-cycle, ≥24
+            entries) → RF normal read (1-cycle, mixed parity) → RF conflict
+            (2-cycle, same parity). Includes RFC capacity sweep showing no
+            cliff, generational comparison, and .reuse bit RFC interaction.
+            [source: S12/case_1, S12/case_6]
+          </figcaption>
+        </figure>
+        <p>
+          <strong
+            >How the Three-Tier System Eliminates Bank-Conflict
+            Penalties</strong
+          >: When the operand collector needs to fetch source registers for an
+          instruction, it follows a strict priority hierarchy. At the top tier,
+          the RFC provides 0-cycle access to any operand that was recently read
+          and flagged with a <code>.reuse</code> bit — with ≥24 entries per
+          warp, the RFC can hold the entire working set of most GEMM inner
+          loops. The capacity sweep (Case 12/06) confirms that no latency cliff
+          appears even at 24 distinct registers, a 3× improvement over SM_80's
+          ~8-16 entry RFC.
+        </p>
+        <p>
+          On RFC miss, the operand collector falls to Tier 2: a direct RF bank
+          read. The ptxas compiler's parity-aware register allocator ensures
+          that the three source operands always span both banks (at least one
+          even and one odd register), allowing all reads to complete in a single
+          cycle through the 2 read ports per bank. This guarantee holds for all
+          code compiled through the standard toolchain — including PTX inline
+          assembly with <code>+r</code> constraints, since ptxas still controls
+          physical register assignment.
+        </p>
+        <p>
+          Tier 3 (bank conflict, +1.0 cycle penalty) is reachable only when all
+          three operands are forced into the same parity bank via CuAssembler
+          SASS binary patching — a technique that bypasses ptxas entirely. This
+          tier exists in hardware but is architecturally invisible to
+          application developers. The measured data (3.034 vs 2.038 cyc/FFMA)
+          serves solely to confirm the 2-bank hardware model; it never affects
+          real workloads.
+        </p>
+        <p>
+          The combined effect of RFC caching + parity allocation delivers a
+          production-level throughput of <strong>1.342 cyc/FFMA</strong> — 34%
+          faster than the conflict-free-no-reuse baseline (2.038 cyc) and 56%
+          faster than the worst-case conflict scenario (3.034 cyc). This
+          demonstrates how SM_120's hardware-software co-design philosophy
+          achieves the performance of a complex multi-port register file using
+          only a simple 2-bank, 2-port-per-bank design augmented by compiler
+          intelligence.
+        </p>
+        <h4
+          class="minor"
+          id="3-3-2-3-reconciling-zero-penalty-with-2-bank-conflict"
+        >
+          3.3.2.3 Reconciling "Zero Penalty" with "2-Bank + Conflict"
+        </h4>
+        <p>
+          The apparent contradiction between Case 11.3/46 ("zero bank-conflict
+          penalty") and Case 12/01 ("+1.0 cyc penalty") is resolved by
+          understanding <strong>who assigns registers</strong>:
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Who assigns registers?</th>
+                <th>Bank conflicts?</th>
+                <th>Observable penalty?</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>ptxas (normal compilation)</td>
+                <td>Always avoided</td>
+                <td><strong>Zero</strong> (by construction)</td>
+              </tr>
+              <tr>
+                <td>PTX inline asm (+r constraint)</td>
+                <td>ptxas still controls physical regs</td>
+                <td><strong>Zero</strong> (ptxas mitigates)</td>
+              </tr>
+              <tr>
+                <td>CuAssembler SASS patching</td>
+                <td>Forced same-parity</td>
+                <td><strong>+1.0 cyc</strong> (hardware revealed)</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          The "operand collector absorbs all conflicts" statement from earlier
+          analysis was imprecise. More accurately:
+          <strong
+            >the operand collector + RFC + parity-aware ptxas together produce
+            zero observable penalty for any code compiled through the normal
+            toolchain</strong
+          >. The underlying hardware still has 2-bank conflicts, but the
+          system-level design ensures they never manifest. This is a remarkable
+          example of hardware-software co-design: a simpler (2-bank, 2-port) RF
+          is sufficient because the compiler guarantees conflict avoidance.
+        </p>
+        <h3
+          class="sub-title"
+          id="3-3-3-warp-scheduling-policy-hybrid-gto-with-static-binding"
+        >
+          3.3.3 Warp Scheduling Policy: Hybrid GTO with Static Binding
+        </h3>
+        <p>
+          The SM_120 warp scheduler implements a nuanced policy that cannot be
+          described by a single label. The measured evidence constrains a
+          multi-regime model:
+        </p>
+        <p>
+          <strong
+            >Regime 1 — Low occupancy (≤4 warps per SM, 1 per sub-core): Pure
+            greedy</strong
+          >
+        </p>
+        <p>
+          At 1-4 warps, the scheduler behaves as a pure greedy/GTO scheduler: it
+          continues issuing from the same warp until that warp stalls, then
+          switches to the youngest eligible warp. Evidence:
+        </p>
+        <ul>
+          <li>
+            Context switch overhead = 0 cycles for 1-16 warps (Case 47).
+            Per-warp FFMA chain time is identical to single-warp baseline (4096
+            cyc at all warp counts 1-16).
+          </li>
+          <li>
+            Hot-warp bias ratio = 1.000 at 1-4 total warps (Case 25): a
+            compute-ready warp gets 100% of dispatch slots while stalled warps
+            contribute zero interference.
+          </li>
+          <li>
+            Asymmetric workload (1x vs 10x FFMA) produces duration ratio = 9.9x
+            (Case 28), proving each warp progresses independently.
+          </li>
+        </ul>
+        <p>
+          <strong
+            >Regime 2 — Medium occupancy (5-16 warps): Fairness
+            transition</strong
+          >
+        </p>
+        <p>
+          As warp count exceeds one per sub-core, the scheduler begins sharing
+          dispatch slots more evenly:
+        </p>
+        <ul>
+          <li>
+            Hot-warp bias grows from 1.000 (4W) to 1.39 (8W) to 1.96 (16W) (Case
+            25). The ready warp no longer gets all slots; stalled warps receive
+            occasional dispatch attempts.
+          </li>
+          <li>
+            Per-warp FFMA time remains constant up to 16W (Case 47), meaning the
+            sharing doesn't hurt individual warp throughput yet — warp
+            interleaving hides the dependency latency.
+          </li>
+        </ul>
+        <p>
+          <strong
+            >Regime 3 — High occupancy (17-48 warps): Resource
+            contention</strong
+          >
+        </p>
+        <p>Beyond 16 warps (&gt;4 per sub-core), contention becomes visible:</p>
+        <ul>
+          <li>
+            Per-warp FFMA dep chain at 24W: 6.25 cyc/op (+2.25 overhead, Case
+            47). The sub-core scheduler cannot interleave fast enough to serve
+            all warps without pipeline bubble waste.
+          </li>
+          <li>
+            At 32W: 8.12 cyc/op (+4.12 overhead). Linear scaling with warp count
+            suggests per-sub-core pipeline pressure, not a step function.
+          </li>
+          <li>
+            Hot-warp bias saturates at 2.01 (32W) — the ready warp gets only
+            half the slots.
+          </li>
+        </ul>
+        <p>
+          <strong>Static warp-to-sub-core binding</strong> (Case 33): SM_120
+          pins warps to sub-cores at block launch and never migrates them.
+          Mapping rule: round-robin-by-4 (blockWarps 0-3 → SC0, 4-7 → SC1,
+          etc.). Zero binding changes observed across 970 samples. This
+          eliminates cross-sub-core load balancing but simplifies the hardware
+          and ensures zero context-switch overhead (the per-warp RF is local to
+          the sub-core).
+        </p>
+        <p>
+          <strong>Stall turnaround curves</strong> reveal the occupancy
+          requirements for different latency types:
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Stall Source</th>
+                <th style="text-align: center">Latency</th>
+                <th style="text-align: center">Warps to Hide</th>
+                <th>Model</th>
+                <th>Source</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>FFMA dependency</td>
+                <td style="text-align: center">4 cyc</td>
+                <td style="text-align: center">4 warps (1/SC)</td>
+                <td>Linear: aggregate IPC scales 1×→4× at 1→4 warps</td>
+                <td><span class="cite">[S11/case_37]</span></td>
+              </tr>
+              <tr>
+                <td>L2 pointer-chase</td>
+                <td style="text-align: center">424 cyc</td>
+                <td style="text-align: center">Never (&gt;100 needed)</td>
+                <td>Linear up to 48W, never saturates</td>
+                <td><span class="cite">[S11/case_38]</span></td>
+              </tr>
+              <tr>
+                <td>__syncthreads barrier</td>
+                <td style="text-align: center">12+2W cyc</td>
+                <td style="text-align: center">32 warps (76 cyc cap)</td>
+                <td>Linear: 12+2W, saturates at W=32</td>
+                <td><span class="cite">[S11/case_39]</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          <strong>Barrier cost model</strong>: The
+          <code>__syncthreads</code> barrier costs exactly 12 + 2×W cycles,
+          where W is the number of warps. This linear formula implies the
+          barrier hardware serializes per-warp arrival notifications at 2 cycles
+          each, with a 12-cycle base cost for the barrier state machine.
+          Saturation at W=32 (76 cyc) implies the hardware has a 32-warp barrier
+          register, matching the maximum warps per block (32 × 32 = 1024
+          threads).
+        </p>
+        <h3
+          class="sub-title"
+          id="3-3-4-instruction-fetch-architecture-two-level-i-cache-with-streaming-prefetch"
+        >
+          3.3.4 Instruction Fetch Architecture: Two-Level I-Cache with Streaming
+          Prefetch
+        </h3>
+        <p>
+          The instruction fetch path consists of a small per-sub-core L0 I-cache
+          backed by a shared L1 I-cache:
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Parameter</th>
+                <th>Value</th>
+                <th>Source</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>L0 I-cache size</td>
+                <td>~4 KB per SMSP</td>
+                <td>
+                  <span class="cite">[S13/case_17]</span> (branch pattern
+                  method)
+                </td>
+              </tr>
+              <tr>
+                <td>L0 line size</td>
+                <td>128 B (8 instructions × 16 B)</td>
+                <td>Consistent with 128-bit encoding</td>
+              </tr>
+              <tr>
+                <td>L1 I-cache size</td>
+                <td>~64 KB per SM (shared)</td>
+                <td><span class="cite">[S13/case_17]</span></td>
+              </tr>
+              <tr>
+                <td>L0 miss penalty</td>
+                <td>+0.06 cyc/insn (6%)</td>
+                <td><span class="cite">[S13/case_17]</span></td>
+              </tr>
+              <tr>
+                <td>L1 miss penalty</td>
+                <td>+0.31 cyc/insn (30%)</td>
+                <td><span class="cite">[S13/case_17]</span></td>
+              </tr>
+              <tr>
+                <td>Streaming prefetch</td>
+                <td>Fully hides L0 miss for straight-line code</td>
+                <td><span class="cite">[S11/case_66]</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          <strong>Streaming prefetch effectiveness</strong>: Case 66
+          demonstrates that straight-line code from 512B to 16KB produces
+          IDENTICAL throughput (1.085 cyc/insn) despite code sizes 4× the L0
+          capacity. The stream prefetcher completely masks L0 miss latency for
+          sequential instruction streams. The only scenarios where L0 overflow
+          matters are frequent branches that defeat the prefetcher.
+        </p>
+        <p>
+          <strong>No branch predictor</strong>: S26 Cases 21-23 definitively
+          confirm SM_120 has NO branch predictor. The previously observed
+          cold-to-warm latency drop (§7.4.3) is attributed to I-cache warming,
+          not branch prediction.
+        </p>
+        <p>
+          <strong>Practical implication for loop unrolling</strong>: The GEMM
+          mainloop can be aggressively unrolled up to 16KB (the L1 I-cache)
+          without I-fetch penalties, since the mainloop's sequential structure
+          engages the streaming prefetcher. Beyond 16KB, the L1 miss penalty
+          (30%) begins to degrade throughput — this sets the practical unroll
+          ceiling for SM_120.
+        </p>
+        <hr />
+        <h2 class="ch-title" id="3-4-pipe-hierarchy-and-co-issue-architecture">
+          3.4 Pipe Hierarchy and Co-Issue Architecture
+        </h2>
+        <h3 class="sub-title" id="3-4-1-per-smsp-pipe-hierarchy">
+          3.4.1 Per-SMSP Pipe Hierarchy
+        </h3>
+        <figure class="diagram">
+          <object
+            data="svg/ch03/ch03_smsp_pipe_hierarchy.svg"
+            type="image/svg+xml"
+            aria-label="SM_120 Per-SMSP Execution Pipe Hierarchy: 16 pipes across 10 functional groups"
+          ></object>
+          <figcaption>
+            SM_120 Per-SMSP Execution Pipe Hierarchy — 16 pipes across 10
+            functional groups with measured latency and throughput
+          </figcaption>
+        </figure>
+        <p>
+          [source: <code>doc/sm_120_pipe_arch.md</code>,
+          <code>S22/case_5-12</code>]
+        </p>
+        <h3
+          class="sub-title"
+          id="3-4-2-complete-sass-opcode-to-pipe-routing-table"
+        >
+          3.4.2 Complete SASS Opcode to Pipe Routing Table
+        </h3>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>SASS Opcode</th>
+                <th>PTX Source</th>
+                <th>NCU Pipe</th>
+                <th>Sub-pipe</th>
+                <th style="text-align: center">Latency</th>
+                <th style="text-align: center">Issue Rate</th>
+                <th>Source</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>FFMA</td>
+                <td>fma.rn.f32</td>
+                <td>fma</td>
+                <td>--</td>
+                <td style="text-align: center">4</td>
+                <td style="text-align: center">1.08</td>
+                <td><code>S22/case_13</code></td>
+              </tr>
+              <tr>
+                <td>FMUL</td>
+                <td>mul.rn.f32</td>
+                <td>fma</td>
+                <td>--</td>
+                <td style="text-align: center">4</td>
+                <td style="text-align: center">1.08</td>
+                <td><code>S5/case_23</code></td>
+              </tr>
+              <tr>
+                <td>FADD</td>
+                <td>add.rn.f32</td>
+                <td>fmalite</td>
+                <td>--</td>
+                <td style="text-align: center">4</td>
+                <td style="text-align: center">1.08</td>
+                <td><code>S22/case_35</code></td>
+              </tr>
+              <tr>
+                <td>HFMA2</td>
+                <td>fma.rn.f16x2</td>
+                <td>fmalite</td>
+                <td>--</td>
+                <td style="text-align: center">4</td>
+                <td style="text-align: center">2.02</td>
+                <td><code>S5/case_39</code></td>
+              </tr>
+              <tr>
+                <td>HFMA2.BF16_V2</td>
+                <td>fma.rn.bf16x2</td>
+                <td>fmalite</td>
+                <td>--</td>
+                <td style="text-align: center">4</td>
+                <td style="text-align: center">2.02</td>
+                <td><code>S5/case_41</code></td>
+              </tr>
+              <tr>
+                <td>FMNMX</td>
+                <td>min/max.f32</td>
+                <td>fmaheavy</td>
+                <td>fmaheavy</td>
+                <td style="text-align: center">5</td>
+                <td style="text-align: center">1.43</td>
+                <td><code>S22/case_36</code></td>
+              </tr>
+              <tr>
+                <td>FSEL</td>
+                <td>selp.f32</td>
+                <td>fmaheavy</td>
+                <td>fmaheavy</td>
+                <td style="text-align: center">5</td>
+                <td style="text-align: center">--</td>
+                <td><code>S6/case_14</code></td>
+              </tr>
+              <tr>
+                <td>SEL</td>
+                <td>selp.b32</td>
+                <td>fmaheavy</td>
+                <td>fmaheavy</td>
+                <td style="text-align: center">5</td>
+                <td style="text-align: center">--</td>
+                <td><code>S6/case_14</code></td>
+              </tr>
+              <tr>
+                <td>SHF</td>
+                <td>shl/shr/shf.b32</td>
+                <td>fmaheavy</td>
+                <td>fmaheavy</td>
+                <td style="text-align: center">4</td>
+                <td style="text-align: center">2.0</td>
+                <td><code>S6/case_6</code></td>
+              </tr>
+              <tr>
+                <td>PRMT</td>
+                <td>prmt.b32</td>
+                <td>fmaheavy</td>
+                <td>fmaheavy</td>
+                <td style="text-align: center">4</td>
+                <td style="text-align: center">2.0</td>
+                <td><code>S6/case_11</code></td>
+              </tr>
+              <tr>
+                <td>IADD3</td>
+                <td>add.u32</td>
+                <td>alu</td>
+                <td>--</td>
+                <td style="text-align: center">2</td>
+                <td style="text-align: center">1.0</td>
+                <td><code>S4/case_1</code></td>
+              </tr>
+              <tr>
+                <td>IADD</td>
+                <td>(C++ add)</td>
+                <td>alu</td>
+                <td>--</td>
+                <td style="text-align: center">5</td>
+                <td style="text-align: center">--</td>
+                <td><code>S12/case_17</code></td>
+              </tr>
+              <tr>
+                <td>IMAD</td>
+                <td>mad.lo.u32</td>
+                <td>fma+fmaheavy</td>
+                <td>--</td>
+                <td style="text-align: center">4</td>
+                <td style="text-align: center">2.0</td>
+                <td><code>S4/case_3</code></td>
+              </tr>
+              <tr>
+                <td>LOP3.LUT</td>
+                <td>and/or/xor.b32</td>
+                <td>alu</td>
+                <td>--</td>
+                <td style="text-align: center">4</td>
+                <td style="text-align: center">1.0</td>
+                <td><code>S6/case_1</code></td>
+              </tr>
+              <tr>
+                <td>ISETP</td>
+                <td>setp.u32</td>
+                <td>alu</td>
+                <td>--</td>
+                <td style="text-align: center">5</td>
+                <td style="text-align: center">--</td>
+                <td><code>S6/case_13</code></td>
+              </tr>
+              <tr>
+                <td>IDP.4A</td>
+                <td>dp4a</td>
+                <td>fmaheavy</td>
+                <td>--</td>
+                <td style="text-align: center">4</td>
+                <td style="text-align: center">2.0</td>
+                <td><code>S4/case_11</code></td>
+              </tr>
+              <tr>
+                <td>VIADD.16x2</td>
+                <td>add.u16x2</td>
+                <td>alu (V-pipe)</td>
+                <td>--</td>
+                <td style="text-align: center">5</td>
+                <td style="text-align: center">~1.0</td>
+                <td><code>S4/case_17</code></td>
+              </tr>
+              <tr>
+                <td>VIMNMX</td>
+                <td>min/max.u32/s32</td>
+                <td>fmaheavy</td>
+                <td>fmaheavy</td>
+                <td style="text-align: center">5</td>
+                <td style="text-align: center">--</td>
+                <td><code>S6/case_15</code></td>
+              </tr>
+              <tr>
+                <td>IMAD.WIDE</td>
+                <td>mul.lo.u64</td>
+                <td>alu+aluheavy+fmaheavy</td>
+                <td>--</td>
+                <td style="text-align: center">13</td>
+                <td style="text-align: center">--</td>
+                <td><code>S22/case_38</code></td>
+              </tr>
+              <tr>
+                <td>MUFU.RCP</td>
+                <td>rcp.approx.f32</td>
+                <td>xu</td>
+                <td>--</td>
+                <td style="text-align: center">44</td>
+                <td style="text-align: center">8.43</td>
+                <td><code>S22/case_15</code></td>
+              </tr>
+              <tr>
+                <td>MUFU.EX2</td>
+                <td>ex2.approx.f32</td>
+                <td>xu</td>
+                <td>--</td>
+                <td style="text-align: center">18</td>
+                <td style="text-align: center">4.0</td>
+                <td><code>S5/case_83</code></td>
+              </tr>
+              <tr>
+                <td>MUFU.SIN</td>
+                <td>sin.approx.f32</td>
+                <td>xu</td>
+                <td>--</td>
+                <td style="text-align: center">18.1</td>
+                <td style="text-align: center">8</td>
+                <td><code>S26/case_43</code></td>
+              </tr>
+              <tr>
+                <td>MUFU.TANH</td>
+                <td>tanh.approx.f32</td>
+                <td>xu</td>
+                <td>--</td>
+                <td style="text-align: center">18</td>
+                <td style="text-align: center">--</td>
+                <td><code>S5/case_83</code></td>
+              </tr>
+              <tr>
+                <td>DFMA</td>
+                <td>fma.rn.f64</td>
+                <td>fp64</td>
+                <td>op_fp64</td>
+                <td style="text-align: center">64</td>
+                <td style="text-align: center">64.0</td>
+                <td><code>S5/case_48</code></td>
+              </tr>
+              <tr>
+                <td>DMMA</td>
+                <td>mma.sync.f64</td>
+                <td>fp64</td>
+                <td>op_dmma</td>
+                <td style="text-align: center">579</td>
+                <td style="text-align: center">579</td>
+                <td><code>S9/case_104</code></td>
+              </tr>
+              <tr>
+                <td>HMMA.16816</td>
+                <td>mma.sync.f16</td>
+                <td>tensor</td>
+                <td>hmma</td>
+                <td style="text-align: center">29</td>
+                <td style="text-align: center">15.88</td>
+                <td><code>S9/case_1</code></td>
+              </tr>
+              <tr>
+                <td>QMMA.16832</td>
+                <td>mma.sync.e4m3</td>
+                <td>tensor</td>
+                <td>hmma</td>
+                <td style="text-align: center">29</td>
+                <td style="text-align: center">15.88</td>
+                <td><code>S9/case_35</code></td>
+              </tr>
+              <tr>
+                <td>QMMA.SF.16832</td>
+                <td>mma.sync.mxf8</td>
+                <td>tensor</td>
+                <td>hmma</td>
+                <td style="text-align: center">29</td>
+                <td style="text-align: center">15.88</td>
+                <td><code>S9/case_48</code></td>
+              </tr>
+              <tr>
+                <td>OMMA.SF.16864</td>
+                <td>mma.sync.mxf4</td>
+                <td>tensor</td>
+                <td>hmma</td>
+                <td style="text-align: center">29</td>
+                <td style="text-align: center">15.59</td>
+                <td><code>S9/case_55</code></td>
+              </tr>
+              <tr>
+                <td>IMMA.16832</td>
+                <td>mma.sync.s8</td>
+                <td>tensor</td>
+                <td>imma</td>
+                <td style="text-align: center">27</td>
+                <td style="text-align: center">6.55</td>
+                <td><code>S9/case_101</code></td>
+              </tr>
+              <tr>
+                <td>HMMA.SP</td>
+                <td>mma.sp.sync</td>
+                <td>tensor</td>
+                <td>hmma</td>
+                <td style="text-align: center">29</td>
+                <td style="text-align: center">15.88</td>
+                <td><code>S9/case_80</code></td>
+              </tr>
+              <tr>
+                <td>LDG.E</td>
+                <td>ld.global</td>
+                <td>lsu</td>
+                <td>lg_cmd_read</td>
+                <td style="text-align: center">45(L1)</td>
+                <td style="text-align: center">2.27</td>
+                <td><code>S8/case_11</code></td>
+              </tr>
+              <tr>
+                <td>STG.E</td>
+                <td>st.global</td>
+                <td>lsu</td>
+                <td>lg_cmd_write</td>
+                <td style="text-align: center">6(f&amp;f)</td>
+                <td style="text-align: center">5.85</td>
+                <td><code>S8/case_31</code></td>
+              </tr>
+              <tr>
+                <td>LDS</td>
+                <td>ld.shared</td>
+                <td>lsu</td>
+                <td>shared_cmd</td>
+                <td style="text-align: center">34</td>
+                <td style="text-align: center">4.0</td>
+                <td><code>S8/case_16</code></td>
+              </tr>
+              <tr>
+                <td>STS</td>
+                <td>st.shared</td>
+                <td>lsu</td>
+                <td>shared_cmd</td>
+                <td style="text-align: center">4</td>
+                <td style="text-align: center">4.0</td>
+                <td><code>S8/case_33</code></td>
+              </tr>
+              <tr>
+                <td>LDSM.M88</td>
+                <td>ldmatrix.x4</td>
+                <td>lsu</td>
+                <td>lg_cmd_read</td>
+                <td style="text-align: center">49</td>
+                <td style="text-align: center">1.68</td>
+                <td><code>S8/case_103</code></td>
+              </tr>
+              <tr>
+                <td>STSM</td>
+                <td>stmatrix.x4</td>
+                <td>lsu</td>
+                <td>shared_cmd</td>
+                <td style="text-align: center">10</td>
+                <td style="text-align: center">16.0</td>
+                <td><code>S8/case_104</code></td>
+              </tr>
+              <tr>
+                <td>ATOM.E.ADD</td>
+                <td>atom.global.add</td>
+                <td>lsu</td>
+                <td>lg_cmd_atom</td>
+                <td style="text-align: center">378</td>
+                <td style="text-align: center">31.9</td>
+                <td><code>S8/case_40</code></td>
+              </tr>
+              <tr>
+                <td>REDG.E.ADD</td>
+                <td>red.global.add</td>
+                <td>lsu</td>
+                <td>lg_cmd_atom</td>
+                <td style="text-align: center">2(f&amp;f)</td>
+                <td style="text-align: center">10.3</td>
+                <td><code>S8/case_111</code></td>
+              </tr>
+              <tr>
+                <td>SHFL</td>
+                <td>shfl.sync</td>
+                <td>dedicated</td>
+                <td>--</td>
+                <td style="text-align: center">29</td>
+                <td style="text-align: center">4.6</td>
+                <td><code>S6/case_20</code></td>
+              </tr>
+              <tr>
+                <td>VOTE</td>
+                <td>vote.sync</td>
+                <td>dedicated</td>
+                <td>--</td>
+                <td style="text-align: center">18</td>
+                <td style="text-align: center">2.0</td>
+                <td><code>S7/case_6</code></td>
+              </tr>
+              <tr>
+                <td>REDUX</td>
+                <td>redux.sync</td>
+                <td>alu</td>
+                <td>--</td>
+                <td style="text-align: center">45</td>
+                <td style="text-align: center">--</td>
+                <td><code>S7/case_8</code></td>
+              </tr>
+              <tr>
+                <td>ELECT</td>
+                <td>elect.sync</td>
+                <td>dedicated</td>
+                <td>--</td>
+                <td style="text-align: center">6</td>
+                <td style="text-align: center">--</td>
+                <td><code>S7/case_13</code></td>
+              </tr>
+              <tr>
+                <td>BRA</td>
+                <td>bra</td>
+                <td>cbu</td>
+                <td>--</td>
+                <td style="text-align: center">6(taken)</td>
+                <td style="text-align: center">--</td>
+                <td><code>S7/case_12</code></td>
+              </tr>
+              <tr>
+                <td>EXIT</td>
+                <td>exit</td>
+                <td>cbu</td>
+                <td>--</td>
+                <td style="text-align: center">--</td>
+                <td style="text-align: center">--</td>
+                <td><code>S22/case_31</code></td>
+              </tr>
+              <tr>
+                <td>UTMALDG</td>
+                <td>cp.async.bulk.tensor</td>
+                <td>tma</td>
+                <td>--</td>
+                <td style="text-align: center">479</td>
+                <td style="text-align: center">148</td>
+                <td><code>S22/case_40</code></td>
+              </tr>
+              <tr>
+                <td>F2FP</td>
+                <td>cvt narrow (FP8/FP6/FP4/MX)</td>
+                <td>fmaheavy</td>
+                <td>--</td>
+                <td style="text-align: center">4-23</td>
+                <td style="text-align: center">0.5</td>
+                <td><code>S6/case_29</code></td>
+              </tr>
+              <tr>
+                <td>F2F</td>
+                <td>cvt.f32.f16 etc.</td>
+                <td>fmaheavy</td>
+                <td>--</td>
+                <td style="text-align: center">7.5</td>
+                <td style="text-align: center">--</td>
+                <td><code>S6/case_9</code></td>
+              </tr>
+              <tr>
+                <td>UIADD3</td>
+                <td>(compiler uniform)</td>
+                <td>uniform</td>
+                <td>--</td>
+                <td style="text-align: center">--</td>
+                <td style="text-align: center">free</td>
+                <td><code>S22/case_42</code></td>
+              </tr>
+              <tr>
+                <td>S2UR/CS2UR</td>
+                <td>S2R to UR path</td>
+                <td>uniform</td>
+                <td>--</td>
+                <td style="text-align: center">2-34</td>
+                <td style="text-align: center">2.01</td>
+                <td><code>S12/case_19</code></td>
+              </tr>
+              <tr>
+                <td>NANOSLEEP</td>
+                <td>nanosleep</td>
+                <td>cbu</td>
+                <td>--</td>
+                <td style="text-align: center">79+</td>
+                <td style="text-align: center">--</td>
+                <td><code>S7/case_23</code></td>
+              </tr>
+              <tr>
+                <td>BAR.SYNC</td>
+                <td>bar.sync</td>
+                <td>cbu</td>
+                <td>--</td>
+                <td style="text-align: center">1-16</td>
+                <td style="text-align: center">--</td>
+                <td><code>S7/case_1</code></td>
+              </tr>
+              <tr>
+                <td>DEPBAR.LE</td>
+                <td>(SB counter wait)</td>
+                <td>cbu</td>
+                <td>--</td>
+                <td style="text-align: center">5</td>
+                <td style="text-align: center">--</td>
+                <td><code>S7/case_26</code></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <h3 class="sub-title" id="3-4-3-complete-pairwise-co-issue-matrix">
+          3.4.3 Complete Pairwise Co-Issue Matrix
+        </h3>
+        <figure class="diagram">
+          <object
+            data="svg/ch03/ch03_coissue_matrix.svg"
+            type="image/svg+xml"
+            aria-label="SM_120 Complete Pairwise Co-Issue Matrix: heatmap of pipe-pair overlap with measured overhead percentages"
+          ></object>
+          <figcaption>
+            SM_120 Pairwise Co-Issue Matrix — heatmap showing measured overhead
+            for all pipe combinations (green=full overlap, yellow=partial,
+            red=significant penalty), multi-way mix results, and engineering
+            optimization rules. [source: S22, S26, S11]
+          </figcaption>
+        </figure>
+        <p>
+          Measured switching penalty (% overhead) for all profiled pipe pairs.
+          <code>0%</code> indicates full overlap; higher percentages indicate
+          resource contention.
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Pipe A x Pipe B</th>
+                <th style="text-align: center">Overhead</th>
+                <th style="text-align: center">Overlap Quality</th>
+                <th>Mechanism</th>
+                <th>Source</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>FMA + ALU</td>
+                <td style="text-align: center">8.3%</td>
+                <td style="text-align: center">shared slot</td>
+                <td>Shared issue slot, separate backends</td>
+                <td><code>S22/case_19</code></td>
+              </tr>
+              <tr>
+                <td>FMA + XU</td>
+                <td style="text-align: center">~0%</td>
+                <td style="text-align: center">full</td>
+                <td>
+                  Independent pipes; overlap=0.9996 (re-measured); prior 132%
+                  from <span class="cite">[S22/case_20]</span> was
+                  per-instruction-rate artifact, not pipe contention
+                </td>
+                <td><code>S26/case_28</code></td>
+              </tr>
+              <tr>
+                <td>FMA + LSU</td>
+                <td style="text-align: center">0%</td>
+                <td style="text-align: center">full</td>
+                <td>Independent pipes, FMA free during LDS</td>
+                <td><code>S22/case_21</code></td>
+              </tr>
+              <tr>
+                <td>FMA + Tensor</td>
+                <td style="text-align: center">2.4%</td>
+                <td style="text-align: center">near-full</td>
+                <td>FFMA free during 29-cyc MMA stall</td>
+                <td><code>S22/case_23</code></td>
+              </tr>
+              <tr>
+                <td>FMA + FP64</td>
+                <td style="text-align: center">0.4%</td>
+                <td style="text-align: center">full</td>
+                <td>Separate P0/P1 pipes</td>
+                <td><code>S22/case_48</code></td>
+              </tr>
+              <tr>
+                <td>FMA + TEX</td>
+                <td style="text-align: center">10%</td>
+                <td style="text-align: center">partial</td>
+                <td>TEX addr calc contends on FMA sub-pipe</td>
+                <td><code>S22/case_49</code></td>
+              </tr>
+              <tr>
+                <td>FMA + TMA</td>
+                <td style="text-align: center">0%</td>
+                <td style="text-align: center">full</td>
+                <td>Independent, scheduler benefits from diversity</td>
+                <td><code>S22/case_53</code></td>
+              </tr>
+              <tr>
+                <td>FMA + Uniform</td>
+                <td style="text-align: center">0%</td>
+                <td style="text-align: center">full</td>
+                <td>Uniform dispatch is free alongside vector</td>
+                <td><code>S22/case_51</code></td>
+              </tr>
+              <tr>
+                <td>ALU + XU</td>
+                <td style="text-align: center">143%</td>
+                <td style="text-align: center">XU dominates</td>
+                <td>Same mechanism as FMA+XU</td>
+                <td><code>S22/case_44</code></td>
+              </tr>
+              <tr>
+                <td>ALU + LSU</td>
+                <td style="text-align: center">0.17%</td>
+                <td style="text-align: center">near-full</td>
+                <td>Normalization error in original</td>
+                <td><code>S26/case_29</code></td>
+              </tr>
+              <tr>
+                <td>ALU + Tensor</td>
+                <td style="text-align: center">2.2%</td>
+                <td style="text-align: center">near-full</td>
+                <td>ALU hidden in MMA stall</td>
+                <td><code>S22/case_45</code></td>
+              </tr>
+              <tr>
+                <td>ALU + Uniform</td>
+                <td style="text-align: center">0%</td>
+                <td style="text-align: center">shared</td>
+                <td>Both lower to pipe_alu</td>
+                <td><code>S22/case_52</code></td>
+              </tr>
+              <tr>
+                <td>XU + LSU</td>
+                <td style="text-align: center">0%</td>
+                <td style="text-align: center">full</td>
+                <td>Independent pipes</td>
+                <td><code>S22/case_46</code></td>
+              </tr>
+              <tr>
+                <td>XU + Tensor</td>
+                <td style="text-align: center">0%</td>
+                <td style="text-align: center">full</td>
+                <td>MUFU 100% free during MMA stalls</td>
+                <td><code>S22/case_50</code></td>
+              </tr>
+              <tr>
+                <td>LSU + Tensor</td>
+                <td style="text-align: center">17.4%</td>
+                <td style="text-align: center">partial</td>
+                <td>LDS consumer (FADD) contends with HMMA writeback</td>
+                <td><code>S22/case_47</code></td>
+              </tr>
+              <tr>
+                <td>FP64 + LSU</td>
+                <td style="text-align: center">0%</td>
+                <td style="text-align: center">full</td>
+                <td>Separate P1/P3 pipes</td>
+                <td><code>S5/case_72</code></td>
+              </tr>
+              <tr>
+                <td>HMMA + IMMA</td>
+                <td style="text-align: center">0.71%</td>
+                <td style="text-align: center">near-full</td>
+                <td>Tensor sub-pipes co-issue</td>
+                <td><code>S26/case_31</code></td>
+              </tr>
+              <tr>
+                <td>SFU + SMEM</td>
+                <td style="text-align: center">0.77%</td>
+                <td style="text-align: center">near-full</td>
+                <td>Independent pipes</td>
+                <td><code>S26/case_32</code></td>
+              </tr>
+              <tr>
+                <td>ALU + SMEM</td>
+                <td style="text-align: center">-0.10%</td>
+                <td style="text-align: center">full</td>
+                <td>Independent pipes, slight measurement noise</td>
+                <td><code>S26/case_33</code></td>
+              </tr>
+              <tr>
+                <td>Tensor + DSMEM</td>
+                <td style="text-align: center">0%</td>
+                <td style="text-align: center">full</td>
+                <td>DSMEM co-issues 100% free</td>
+                <td><code>S9/case_122</code></td>
+              </tr>
+              <tr>
+                <td>3-way: FMA+ALU+XU</td>
+                <td style="text-align: center">0% (TC-dominated)</td>
+                <td style="text-align: center">MMA masks all</td>
+                <td>At 4:1 MMA:other ratio, others free</td>
+                <td><code>S22/case_54</code></td>
+              </tr>
+              <tr>
+                <td>3-way: IMAD+IADD3+FFMA</td>
+                <td style="text-align: center">0.1%</td>
+                <td style="text-align: center">99.9% overlap</td>
+                <td>U-datapath + V-pipe + Unified</td>
+                <td><code>S11/case_86</code></td>
+              </tr>
+              <tr>
+                <td>3-way: TC+V-pipe+LSU</td>
+                <td style="text-align: center">27.5% penalty</td>
+                <td style="text-align: center">72.5% overlap</td>
+                <td>LDS FADD contention</td>
+                <td><code>S11/case_87</code></td>
+              </tr>
+              <tr>
+                <td>3-way: SFU+FMA+LSU</td>
+                <td style="text-align: center">0.2%</td>
+                <td style="text-align: center">99.8% overlap</td>
+                <td>All 3 independent</td>
+                <td><code>S11/case_88</code></td>
+              </tr>
+              <tr>
+                <td>4-way: FMA+ALU+XU+LSU</td>
+                <td style="text-align: center">32.2%</td>
+                <td style="text-align: center">LDS dominates</td>
+                <td>Multi-pipe switching + LDS consume stalls</td>
+                <td><code>S22/case_24</code></td>
+              </tr>
+              <tr>
+                <td>5-way: FMA+ALU+XU+LSU+TC</td>
+                <td style="text-align: center">0% (TC dominates)</td>
+                <td style="text-align: center">MMA masks all</td>
+                <td>TC 29-cyc window absorbs everything</td>
+                <td><code>S22/case_54</code></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          <strong>Cross-SMSP behavior</strong>: 4 warps on different SMSPs show
+          &lt;0.2% intra-pipe-type variance and 0% cross-pipe contention -- each
+          SMSP has fully independent pipe backends. [source:
+          <code>S22/case_27-28</code>]
+        </p>
+        <p>
+          <strong>Agent rule for throughput estimation</strong>: For a mixed
+          instruction stream, compute
+          <code>T_total = max(T_pipe_i) x (1 + sum(switching_penalty_i))</code>
+          using this matrix. When TC dominates (&gt;80% of cycles), all other
+          pipes are effectively free (0% overhead up to 7 MUFU per HMMA).
+        </p>
+        <h3
+          class="sub-title"
+          id="3-4-4-instruction-group-to-pipe-switching-penalty-model"
+        >
+          3.4.4 Instruction Group to Pipe Switching Penalty Model
+        </h3>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th style="text-align: center">Group Size</th>
+                <th>Strategy</th>
+                <th style="text-align: center">Penalty</th>
+                <th>Source</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="text-align: center">1 (alternate every insn)</td>
+                <td>Finest interleaving</td>
+                <td style="text-align: center">0% (optimal)</td>
+                <td><code>S22/case_26</code></td>
+              </tr>
+              <tr>
+                <td style="text-align: center">2 (pairs)</td>
+                <td>--</td>
+                <td style="text-align: center">0%</td>
+                <td><code>S22/case_26</code></td>
+              </tr>
+              <tr>
+                <td style="text-align: center">4</td>
+                <td>--</td>
+                <td style="text-align: center">0%</td>
+                <td><code>S22/case_26</code></td>
+              </tr>
+              <tr>
+                <td style="text-align: center">8 (batches)</td>
+                <td>Coarse interleaving</td>
+                <td style="text-align: center">0%</td>
+                <td><code>S22/case_26</code></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          <strong>Finding</strong>: Finer interleaving is always better or equal
+          -- no switching penalty to amortize on SM_120. The 8.3% FMA+ALU
+          penalty is from shared issue slot contention, not switching cost.
+          [source: <code>S22/case_26</code>]
+        </p>
+        <h3
+          class="sub-title"
+          id="3-4-5-microarchitectural-analysis-of-co-issue-constraints"
+        >
+          3.4.5 Microarchitectural Analysis of Co-Issue Constraints
+        </h3>
+        <p>
+          The co-issue matrix reveals that SM_120's 16 named pipes are NOT 16
+          fully independent execution ports. Rather, they share dispatch and
+          write-back resources in a structured hierarchy. Three distinct
+          constraint mechanisms emerge from the data:
+        </p>
+        <p>
+          <strong
+            >Constraint 1 — LSU + Tensor consume-path contention (17.4%
+            overhead)</strong
+          >
+        </p>
+        <p>
+          This is the single most important structural hazard for GEMM/attention
+          kernel optimization. The data reveals that the LSU pipe itself is
+          fully independent from the Tensor pipe —
+          <code>ldmatrix + MMA</code> shows 0% overhead (Case 11.7/106). The
+          17.4% penalty only appears when LDS results must be consumed via
+          FADD/FFMA (Case 22/47).
+        </p>
+        <figure class="diagram">
+          <object
+            data="svg/ch03/ch03_s06_flow.svg"
+            type="image/svg+xml"
+            aria-label="SM_120 LDSM vs LDS+Consume Co-Issue Constraint: two data paths from shared memory to TensorCore with RF write port contention analysis"
+          ></object>
+          <figcaption>
+            LDSM vs LDS+Consume — the critical GEMM co-issue hazard. Left (Path
+            A): ldmatrix writes matrix fragments directly to RF, HMMA reads them
+            — 0% overhead, LSU and TC pipes fully parallel. Right (Path B): LDS
+            writes scalar to RF, FADD consumes it, FADD and HMMA compete for the
+            same RF write port — 17.4% overhead from serialization. [source:
+            S22/case_47, S11/case_106]
+          </figcaption>
+        </figure>
+        <p>
+          The diagram above decomposes the single most important structural
+          hazard on SM_120 for GEMM and attention kernel optimization. The key
+          insight is that the 17.4% LSU+Tensor overhead is <em>not</em> caused
+          by contention between the LSU pipe and the Tensor pipe — those are
+          fully independent hardware units. Instead, the bottleneck arises from
+          the <strong>consume path</strong>: how LDS results are processed after
+          they arrive in the register file.
+        </p>
+        <p>
+          <strong>Path A (LDSM → HMMA, 0% overhead)</strong>: The
+          <code>ldmatrix.sync.x4</code> instruction (SASS:
+          <code>LDSM.16x8.M88</code>) loads 4×32-bit matrix fragments from
+          shared memory and writes them directly into consecutive registers
+          (e.g., R4–R7). These registers are then read by
+          <code>HMMA.16816.F32</code> as source operands. Crucially, no FMA-pipe
+          instruction ever touches this data — the entire flow stays within LSU
+          (load) → RF (buffer) → TC (consume). The RF write port used by LDSM
+          and the one used by HMMA's accumulator writeback are architecturally
+          distinct, so zero serialization occurs.
+        </p>
+        <p>
+          <strong>Path B (LDS → FADD → HMMA, 17.4% overhead)</strong>: When
+          shared memory values must be accumulated (e.g., softmax partial sums,
+          quantization scale factors), the typical pattern is
+          <code>LDS R10, [addr]</code> followed by
+          <code>FADD R11, R11, R10</code> (accumulate). The FADD instruction
+          executes on the FMA pipe and writes its result through the FMA pipe's
+          RF write port. Simultaneously, if an HMMA instruction is in flight,
+          its 4×FP32 accumulator writeback also needs the same RF write port.
+          When both FADD and HMMA attempt to write back in the same cycle, the
+          hardware must serialize one — creating a +1 cycle stall per conflict.
+          Over 512 LDS operations interleaved with 64 HMMA operations, this
+          accumulates to 325 cycles (17.4% of the 1863-cycle TC-only baseline).
+        </p>
+        <p>
+          <strong>Production kernel design rule</strong>: Use
+          <code>ldmatrix</code> (LDSM) for <em>all</em> shared memory → TC
+          operand feeding in the MMA mainloop. This includes A-tile loads,
+          B-tile loads, and any data that feeds directly into
+          <code>mma.sync</code> operands. Reserve the LDS+FADD pattern for
+          non-TC paths where TensorCore is idle — for example, epilogue scale
+          factor loading after the MMA chain completes, or RMSNorm accumulation
+          in a separate warp-specialization phase. By segregating the two
+          patterns, the kernel achieves the 0%-overhead ideal (LDSM path) for
+          the critical MMA throughput loop.
+        </p>
+        <p>
+          <strong
+            >Constraint 2 — Per-instruction-rate artifact: NOT pipe contention
+            [RESOLVED 2026-06-10]</strong
+          >
+        </p>
+        <p>
+          An earlier reading (<span class="cite">[S22/case_20]</span>) reported
+          a "132% overhead" for FMA+XU mixing by comparing per-instruction cycle
+          costs of a mixed stream (4 FFMA + 4 MUFU.EX2 + 4 MUL) against an
+          FFMA-only stream. The 2.51 vs 1.08 cyc/inst gap was misinterpreted as
+          pipe-switching/dispatch overhead; case_20's own analysis correctly
+          notes the gap is "<strong
+            >dominated by MUFU.EX2 pipeline latency, not merely a pipe-switching
+            cost</strong
+          >" — dividing total cycles by total instruction count without
+          normalizing for MUFU's 4-cyc vs FFMA's 1-cyc inherent latency produces
+          inflated apparent "overhead".
+        </p>
+        <p>
+          The re-measurement (<span class="cite">[S26/case_28]</span>) using the
+          overlap formulation <code>overlap = (A + B − MIX) / min(A, B)</code>:
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Stream</th>
+                <th style="text-align: right">Cycles</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>A: FFMA-only chain (2048 ops)</td>
+                <td style="text-align: right">8,189</td>
+              </tr>
+              <tr>
+                <td>B: MUFU.RCP-only chain (2048)</td>
+                <td style="text-align: right">90,108</td>
+              </tr>
+              <tr>
+                <td>MIX: interleaved (2048 + 2048)</td>
+                <td style="text-align: right">90,111</td>
+              </tr>
+              <tr>
+                <td><strong>Overlap</strong></td>
+                <td style="text-align: right"><strong>0.9996</strong></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          <code>MIX ≈ max(A, B)</code> confirms the entire FFMA chain hides
+          within the longer MUFU chain — FMA and XU pipes execute fully in
+          parallel with <strong>0% structural contention</strong>. Ch13 §13.x
+          and Ch15 KF-coissue use the same
+          <code>1.00 / S26/case_28</code> baseline.
+        </p>
+        <p>
+          The MUFU multi-instruction SASS expansion (rcp ≈ 7 insns, sin ≈ 5,
+          tanh ≈ 3; see §5.2.5) <strong>does</strong> raise per-PTX-op effective
+          latency, but those internal ops execute on the XU pipe itself — they
+          do <strong>not</strong> consume FMA-pipe issue slots, as case_28
+          conclusively shows.
+        </p>
+        <p>
+          <strong>Open follow-up</strong>: The matrix row "ALU + XU = 143%"
+          (<span class="cite">[S22/case_44]</span>) at §3.4.3 is suspected to be
+          the same per-instruction-rate artifact and has
+          <strong>not</strong> yet been re-measured with the overlap
+          methodology; treat as [SPECULATIVE] pending a case_28-style
+          cross-check.
+        </p>
+        <p>
+          <strong
+            >Constraint 3 — Single-issue dispatch ceiling (fundamental
+            limit)</strong
+          >
+        </p>
+        <p>
+          The per-SMSP IPC ceiling of ~1.0 (Case 22/02) means all co-issue
+          benefits come from <strong>pipe-level parallelism</strong> (different
+          pipes executing in parallel AFTER dispatch), not from dispatch-level
+          superscalar behavior. The single-issue model creates a "dispatch tax"
+          that scales with total instruction count regardless of pipe diversity.
+        </p>
+        <p>
+          For a MMA-dominated mainloop with 29-cycle MMA latency and 1 insn/cyc
+          dispatch rate, up to 27 non-MMA instructions can be dispatched during
+          one MMA's execution window. This is sufficient for typical GEMM
+          epilogues: 256 FFMA (for bias+activation) add only 41 cycles (2.2%) to
+          a 1842-cycle HMMA chain (Case 22/23). The MMA window is large enough
+          to absorb virtually any reasonable epilogue computation.
+        </p>
+        <h3 class="sub-title" id="3-4-6-multi-warp-throughput-scaling-model">
+          3.4.6 Multi-Warp Throughput Scaling Model
+        </h3>
+        <figure class="diagram">
+          <object
+            data="svg/ch03/ch03_warp_scaling.svg"
+            type="image/svg+xml"
+            aria-label="SM_120 Multi-Warp Throughput Scaling Model: three-phase scaling from latency-bound to SM saturation with 4-SMSP architecture"
+          ></object>
+          <figcaption>
+            SM_120 Multi-Warp Throughput Scaling — aggregate IPC curve showing
+            three phases (linear 1–4W, sub-core saturation 5–16W, SM recovery
+            17–48W), per-warp IPC decline, and 4-SMSP static warp binding
+            architecture. [source: S22/case_55, S11/case_33]
+          </figcaption>
+        </figure>
+        <p>
+          INT (IMAD) throughput scaling (Case 55) reveals the warp-level
+          parallelism model:
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th style="text-align: center">Warps</th>
+                <th style="text-align: center">Per-warp IPC</th>
+                <th style="text-align: center">Aggregate IPC</th>
+                <th>Regime</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="text-align: center">1</td>
+                <td style="text-align: center">0.247</td>
+                <td style="text-align: center">0.25</td>
+                <td>Latency-bound (IMAD 4-cyc dep chain)</td>
+              </tr>
+              <tr>
+                <td style="text-align: center">4</td>
+                <td style="text-align: center">0.246</td>
+                <td style="text-align: center">0.99</td>
+                <td>Linear scaling (1 warp/SC)</td>
+              </tr>
+              <tr>
+                <td style="text-align: center">8</td>
+                <td style="text-align: center">0.240</td>
+                <td style="text-align: center">1.92</td>
+                <td>SC saturation onset</td>
+              </tr>
+              <tr>
+                <td style="text-align: center">12</td>
+                <td style="text-align: center">0.171</td>
+                <td style="text-align: center">2.05</td>
+                <td>Diminishing returns</td>
+              </tr>
+              <tr>
+                <td style="text-align: center">32</td>
+                <td style="text-align: center">0.077</td>
+                <td style="text-align: center">2.46</td>
+                <td>Near-plateau per-SC</td>
+              </tr>
+              <tr>
+                <td style="text-align: center">48</td>
+                <td style="text-align: center">0.077</td>
+                <td style="text-align: center">3.69</td>
+                <td>Cross-SC scaling recovers aggregate</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p><strong>Three phases of scaling</strong>:</p>
+        <ol>
+          <li>
+            <strong>Linear (1-4W)</strong>: Each additional warp provides +0.25
+            aggregate IPC by filling dependency stall cycles on its sub-core.
+            Perfect scaling until 1 warp per SC.
+          </li>
+          <li>
+            <strong>Sub-core saturation (5-16W)</strong>: Per-warp IPC drops as
+            multiple warps contend for the same SC's single issue slot.
+            Aggregate IPC still grows but sub-linearly.
+          </li>
+          <li>
+            <strong>SM saturation (17-48W)</strong>: Per-warp IPC plateaus at
+            the throughput-limited floor. Aggregate IPC grows only by activating
+            additional sub-cores.
+          </li>
+        </ol>
+        <p>
+          The ILP-4 INT throughput at 1 warp (0.25 IPC = 4 cyc/op) is
+          latency-limited, not throughput-limited: the IMAD pipeline depth is 2
+          (4 cyc latency / 2 cyc issue interval), but ILP=4 within the I-buffer
+          provides sufficient overlap to approach 1 op/cycle throughput per SC
+          (0.99 IPC at 4 warps).
+        </p>
+        <hr />
+        <h2
+          class="ch-title"
+          id="3-5-hybrid-dependence-tracking-the-two-mechanism-model"
+        >
+          3.5 Hybrid Dependence Tracking: The Two-Mechanism Model
+        </h2>
+        <p>
+          SM_120 employs a fundamentally different dependence-resolution
+          architecture than textbook out-of-order processors. Instead of a
+          unified hardware scoreboard that tracks ALL producer-consumer
+          relationships, SM_120 splits dependence management into two parallel
+          mechanisms with distinct correctness semantics.
+        </p>
+        <h3
+          class="sub-title"
+          id="3-5-1-mechanism-1-stall-counter-fixed-latency-instructions"
+        >
+          3.5.1 Mechanism 1: Stall Counter (Fixed-Latency Instructions)
+        </h3>
+        <p>
+          The 4-bit stall counter [108:105] encodes the minimum cycles before
+          the scheduler re-issues the SAME warp. CuAssembler binary-patching
+          experiments (Case 11.8.2, patching 511 IADD3 instructions) reveal the
+          exact behavioral semantics:
+        </p>
+        <figure class="diagram">
+          <object
+            data="svg/ch03/ch03_s07_flow.svg"
+            type="image/svg+xml"
+            aria-label="SM_120 Stall Counter Behavioral Regimes: three modes of the 4-bit stall field with correctness implications"
+          ></object>
+          <figcaption>
+            SM_120 Stall Counter Behavioral Regimes — the 4-bit stall field
+            [108:105] has three distinct modes: stall=0 (HW fallback, 17×
+            penalty), 1≤stall&lt;latency (silent data corruption), and
+            stall≥latency (correct, 1:1 linear). Includes pipeline timeline and
+            x86 comparison. [source: S11/case_128-136]
+          </figcaption>
+        </figure>
+        <p>
+          The stall counter represents SM_120's most radical departure from
+          conventional processor design. Unlike x86 or ARM out-of-order cores
+          where hardware interlocks guarantee correctness regardless of
+          instruction scheduling, SM_120 places
+          <strong>absolute, unconditional trust in the compiler</strong> for
+          fixed-latency instruction dependence resolution. The diagram above
+          visualizes the three behavioral regimes discovered through CuAssembler
+          binary patching of 511 IADD3 instructions:
+        </p>
+        <p>
+          <strong>Regime 1 (stall=0): Hardware Safety Fallback</strong> — When
+          the stall field is zero, the hardware interprets this as "the compiler
+          cannot determine the latency" and activates full dependency tracking
+          via the hardware scoreboard. This is always <em>correct</em> but
+          catastrophically slow: 34.055 cyc/insn for IADD3 vs the optimal 2.008
+          cyc/insn — a 17× penalty. In production ptxas output, stall=0 is never
+          emitted for analyzable instructions; it exists solely as a
+          conservative escape hatch for pathological code where static latency
+          analysis fails. The counter-intuitive semantics (0 = "maximum delay")
+          arise because zero triggers the special HW fallback path rather than
+          representing a numeric delay.
+        </p>
+        <p>
+          <strong
+            >Regime 2 (1 ≤ stall &lt; latency): Silent Data Corruption</strong
+          >
+          — This is the dangerous regime that distinguishes SM_120 from all
+          x86/ARM designs. If the stall counter is set too low (e.g., stall=1 on
+          a 4-cycle FFMA), the consumer instruction issues before the producer's
+          result reaches the register file. The consumer reads
+          <em>whatever value was previously in that register</em> — a stale
+          result from an earlier instruction. There is no trap, no exception, no
+          error flag; <code>cudaGetLastError()</code> returns
+          <code>cudaSuccess</code>. The corruption is silent and deterministic
+          (reproducible across runs), making it extremely difficult to diagnose
+          without knowledge of the stall counter mechanism. This regime is
+          reachable only via CuAssembler SASS patching; ptxas never generates
+          incorrect stall values for deterministic-latency instructions.
+        </p>
+        <p>
+          <strong>Regime 3 (stall ≥ latency): Correct Operation</strong> — The
+          stall counter delays same-warp re-issue by exactly N cycles with
+          perfect 1:1 linearity (no saturation, no rounding). At the boundary
+          (stall = exact latency), the producer's result becomes available in
+          the register file on the precise cycle the consumer reads it. Beyond
+          the boundary (stall &gt; latency), the extra delay wastes cycles but
+          produces correct results. The ptxas compiler always targets the exact
+          boundary to minimize wasted cycles while ensuring correctness.
+        </p>
+        <p>
+          <strong>Architectural significance of the trust model</strong>: The
+          stall counter is a <strong>correctness requirement</strong>, not a
+          performance hint. This is fundamentally different from x86's hardware
+          interlocks, where wrong scheduling merely reduces throughput. On
+          SM_120, wrong scheduling produces
+          <strong>wrong results silently</strong>. This design eliminates the
+          area cost of per-instruction dependency checking (no CAM lookup per
+          source operand, no bypass detection logic) at the cost of placing
+          absolute trust in the compiler. The area savings are substantial: a
+          full hardware scoreboard for 48 warps × 256 registers would require
+          ~48K comparator entries, while the 4-bit counter costs only 4 bits per
+          warp per SMSP.
+        </p>
+        <h3
+          class="sub-title"
+          id="3-5-2-mechanism-2-scoreboard-counters-variable-latency-instructions"
+        >
+          3.5.2 Mechanism 2: Scoreboard Counters (Variable-Latency Instructions)
+        </h3>
+        <figure class="diagram">
+          <object
+            data="svg/ch03/ch03_scoreboard_system.svg"
+            type="image/svg+xml"
+            aria-label="SM_120 Scoreboard Counter System: 6 HW counters per warp with dual-regime exhaustion cliff"
+          ></object>
+          <figcaption>
+            SM_120 Scoreboard Counter System — 6 HW counters per warp tracking
+            variable-latency operations, with producer-consumer protocol and
+            dual-regime exhaustion cliff (44.8× at N=6 for L1, 2× at N=12 for
+            L2). [source: S11/case_44, S12/case_24]
+          </figcaption>
+        </figure>
+        <p>
+          The scoreboard system handles all operations whose completion time
+          cannot be predicted at compile time — primarily memory loads (LDG,
+          LDS, LDSM), TMA transfers, and cp.async operations. Unlike the stall
+          counter which encodes a fixed delay, each scoreboard counter acts as a
+          binary semaphore: the producer increments it on dispatch, the memory
+          subsystem decrements it on completion (with 0-cycle visibility delay),
+          and any consumer instruction with the matching
+          <code>WaitBarrier</code> bit set remains blocked until the counter
+          reaches zero.
+        </p>
+        <p>
+          The most critical performance characteristic of this system is the
+          <strong>SB exhaustion cliff</strong> — a catastrophic throughput
+          collapse when the number of outstanding variable-latency operations
+          exceeds the available SB counters. SM_120 exhibits two distinct cliff
+          profiles depending on ptxas's encoding strategy: for L1-cached short
+          loads (1 LDG per SB), the cliff hits at N=5→6 with a 44.8× stall; for
+          L2-forced long loads (counter-mode encoding), ptxas packs multiple
+          loads into shared SB counters via DEPBAR.LE batch waits, extending the
+          effective window to N=10-11 before a gentler 2× cliff at N=12. Both
+          regimes are real and reproducible — the difference is entirely in
+          ptxas's compile-time encoding decision.
+        </p>
+        <p>
+          For instructions whose latency cannot be known at compile time (LDG,
+          LDSM, TMA, cp.async), SM_120 provides 6 hardware scoreboard counters
+          (SB0-SB5) per warp, dynamically allocated by ptxas:
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Property</th>
+                <th>Value</th>
+                <th>Source</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Counter pool</td>
+                <td>6 per warp (SB0-SB5)</td>
+                <td><span class="cite">[S12/case_23]</span></td>
+              </tr>
+              <tr>
+                <td>Allocation</td>
+                <td>
+                  Dynamic by ptxas (same instruction type can get different SB
+                  IDs)
+                </td>
+                <td><span class="cite">[S12/case_23]</span></td>
+              </tr>
+              <tr>
+                <td>Typical assignment</td>
+                <td>LDG: SB3-4; LDS: SB0-1</td>
+                <td><span class="cite">[S13/case_12]</span></td>
+              </tr>
+              <tr>
+                <td>Parallel operation</td>
+                <td>All 6 counters operate simultaneously</td>
+                <td><span class="cite">[S12/case_23]</span></td>
+              </tr>
+              <tr>
+                <td>Exhaustion cliff</td>
+                <td>
+                  <strong>N=5→6</strong> outstanding (5 fully-overlapping SB):
+                  17→761 cyc (44.8× stall, L1-cached)
+                </td>
+                <td><span class="cite">[S11/case_44]</span></td>
+              </tr>
+              <tr>
+                <td>Effective cliff (L2-forced)</td>
+                <td>
+                  <strong>N=10-11 → 12</strong>: 358→726 cyc (~2× via SB counter
+                  sharing)
+                </td>
+                <td><span class="cite">[S12/case_24]</span></td>
+              </tr>
+              <tr>
+                <td>Consumer wait</td>
+                <td>6-bit bitmask in WaitBarrier field [121:116]</td>
+                <td><span class="cite">[S13/case_12]</span></td>
+              </tr>
+              <tr>
+                <td>Visibility delay</td>
+                <td>0 cycles (counter decrements on completion)</td>
+                <td><span class="cite">[S11/case_89]</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p><strong>Control word encoding for SB</strong>:</p>
+        <pre><code>  Producer instruction (e.g., LDG):
+    WrBarrier[112:110] = SB_ID (0-5)  → &quot;I will signal this counter when done&quot;
+
+  Consumer instruction (e.g., FFMA that uses the loaded value):
+    WaitBarrier[121:116] = (1 &lt;&lt; SB_ID) → &quot;Wait for this SB before issuing me&quot;
+
+  Multiple consumers can wait on the same SB (shared mask).
+  A producer can reuse an SB ID once the prior user has been consumed.
+  Serial chain of 3 LDSM → only 2 counters needed (reuse after consumption).</code></pre>
+        <p>
+          <strong>The SB exhaustion cliff — two regimes coexist</strong>
+          [RESOLVED 2026-06-11]: SM_120's SB system exhibits two distinct cliff
+          points depending on memory-access latency regime, both real and
+          reproducible:
+        </p>
+        <p>
+          <strong
+            >Regime A — short-latency / L1-cached (<span class="cite"
+              >[S11/case_44]</span
+            >, 1 LDG → 1 SB encoding)</strong
+          >
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th style="text-align: center">N loads</th>
+                <th style="text-align: center">Cycles</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="text-align: center">2-5</td>
+                <td style="text-align: center">17</td>
+                <td>
+                  <strong>Flat</strong> — all loads fully overlap (5 SB slots
+                  available, SB0 reserved)
+                </td>
+              </tr>
+              <tr>
+                <td style="text-align: center">6</td>
+                <td style="text-align: center">761</td>
+                <td>
+                  <strong>44.8× cliff</strong> — 6th LDG must wait for SB0 to
+                  free
+                </td>
+              </tr>
+              <tr>
+                <td style="text-align: center">7-9</td>
+                <td style="text-align: center">~870</td>
+                <td>Plateau — batch-of-5 serialization</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          <strong
+            >Regime B — long-latency / L2-forced (<span class="cite"
+              >[S12/case_24]</span
+            >, ptxas counter mode, multiple LDG share 1 SB)</strong
+          >
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th style="text-align: center">N loads</th>
+                <th style="text-align: center">Cycles</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="text-align: center">2-10</td>
+                <td style="text-align: center">358-391</td>
+                <td>Flat (counter arithmetic packs ~10-11 LDG into 6 SB)</td>
+              </tr>
+              <tr>
+                <td style="text-align: center">12</td>
+                <td style="text-align: center">726</td>
+                <td><strong>2× cliff</strong> — SB-counter range exhausted</td>
+              </tr>
+              <tr>
+                <td style="text-align: center">14-16</td>
+                <td style="text-align: center">749-752</td>
+                <td>2× plateau (serialized in SB-sized batches)</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          <strong>Why the cliff point differs</strong>: ptxas inspects the
+          access latency profile and emits two different SB encodings:
+        </p>
+        <ul>
+          <li>
+            <strong>L1-cached short loads</strong> → 1-load-per-SB encoding.
+            Each LDG gets its own WrBarrier; consumer's WaitBarrier targets a
+            single SB ID. With 6 SB slots, only 5 can fully overlap (SB0
+            typically held by descriptor-loop), giving the
+            <strong>N=5→6 cliff at 44.8×</strong>.
+          </li>
+          <li>
+            <strong>L2-forced long loads</strong> → counter-mode SB encoding.
+            ptxas issues multiple LDG per SB and uses DEPBAR.LE for batch-style
+            waits, extending the effective tracking window to ~10-11 outstanding
+            loads. The cliff shifts to <strong>N=10-11 → 12</strong> but is only
+            ~2× because the counter mode also halves the SB-decrement frequency.
+          </li>
+        </ul>
+        <p>
+          <strong>Combined view — LSU queue + SB system</strong>: The 12-13 deep
+          LSU queue (Section 3.3.1) is consistent with both regimes — the MSHR
+          can hold 12-13 requests in flight, the SB system can track 5-6
+          (1-LDG-per-SB) or ~10-11 (counter-mode) before serialization, and the
+          combination allows extremely high memory-level parallelism per warp.
+        </p>
+        <h3
+          class="sub-title"
+          id="3-5-3-yield-bit-inverted-semantics-and-latency-hiding-control"
+        >
+          3.5.3 Yield Bit: Inverted Semantics and Latency Hiding Control
+        </h3>
+        <figure class="diagram">
+          <object
+            data="svg/ch03/ch03_yield_bit.svg"
+            type="image/svg+xml"
+            aria-label="SM_120 Yield Bit Inverted Semantics: yield=0 releases slot, yield=1 retains slot, interaction with stall counter"
+          ></object>
+          <figcaption>
+            SM_120 Yield Bit Semantics — inverted: yield=0 releases the
+            scheduler slot (enables latency hiding), yield=1 retains it (greedy
+            dispatch). Includes yield×stall interaction matrix and pathological
+            stall=0+yield=0 case analysis. [source: S11/case_142-148]
+          </figcaption>
+        </figure>
+        <p>
+          The yield bit [109] controls whether the warp scheduler should
+          consider switching to another eligible warp after dispatching the
+          current instruction. Its semantics are <strong>inverted</strong>
+          relative to the naive interpretation: yield=0 means "yield this slot
+          to other warps" (release), while yield=1 means "do not yield, keep
+          dispatching from me" (retain). This inverted encoding was confirmed by
+          CuAssembler binary patching of 4232 FFMA instructions across a full
+          yield×stall×warp-count test matrix (Case 142).
+        </p>
+        <p>
+          The most important behavioral finding is that the yield bit
+          <strong>only has observable effect when stall=0</strong> (the hardware
+          scoreboard fallback mode). When the stall counter is set correctly
+          (stall ≥ instruction latency), it already prevents same- warp re-issue
+          for the required number of cycles — making the yield hint redundant.
+          The dangerous combination is stall=0 + yield=0: this creates a
+          pathological state where the hardware scoreboard activates (adding ~34
+          cyc/insn overhead) AND the scheduler refuses to switch warps,
+          resulting in 2169 cycles
+          <em>regardless of how many warps are available</em>. Even 32 warps
+          cannot hide the latency because the scheduler is locked onto the
+          stalled warp.
+        </p>
+        <p>
+          The yield bit has <strong>inverted semantics</strong> on SM_120,
+          confirmed by comprehensive CuAssembler patching (Case 142):
+        </p>
+        <pre><code>  SM_120 Yield Bit Semantics (CuAssembler-Verified)
+  ═══════════════════════════════════════════════════
+
+  yield = 0: YIELD the warp&#x27;s scheduler slot
+             → Allows other warps to fill pipeline bubbles
+             → Enables latency hiding via warp interleaving
+             → BLOCKS same-warp consecutive dispatch
+
+  yield = 1: NO YIELD (retain the scheduler slot)
+             → Warp keeps dispatching from its own instruction stream
+             → Greedy single-warp execution
+             → BLOCKS latency hiding for memory-bound code
+
+  CRITICAL: This is OPPOSITE to the naive interpretation where
+  &quot;yield=1&quot; would mean &quot;yield control to another warp&quot;</code></pre>
+        <p>
+          <strong>The yield bit only matters when stall=0</strong> (hardware
+          scoreboard mode). When stall ≥ instruction latency, the stall counter
+          already prevents re-issue, making the yield bit irrelevant. The
+          critical scenario is stall=0 + yield=0: this completely blocks latency
+          hiding even with 32 warps available, because the scheduler keeps
+          trying to dispatch from the stalled warp instead of switching.
+        </p>
+        <p>
+          <strong>Measured yield impact</strong> (Case 142, 4232 FFMA
+          instructions patched):
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Configuration</th>
+                <th style="text-align: center">1 warp</th>
+                <th style="text-align: center">8 warps</th>
+                <th style="text-align: center">32 warps</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>stall=4, yield=0</td>
+                <td style="text-align: center">251 cyc</td>
+                <td style="text-align: center">251 cyc</td>
+                <td style="text-align: center">251 cyc</td>
+              </tr>
+              <tr>
+                <td>stall=4, yield=1</td>
+                <td style="text-align: center">250 cyc</td>
+                <td style="text-align: center">250 cyc</td>
+                <td style="text-align: center">250 cyc</td>
+              </tr>
+              <tr>
+                <td>stall=0, yield=0</td>
+                <td style="text-align: center"><strong>2169 cyc</strong></td>
+                <td style="text-align: center"><strong>2169 cyc</strong></td>
+                <td style="text-align: center"><strong>2169 cyc</strong></td>
+              </tr>
+              <tr>
+                <td>stall=0, yield=1</td>
+                <td style="text-align: center">2017 cyc</td>
+                <td style="text-align: center">128 cyc</td>
+                <td style="text-align: center"><strong>128 cyc</strong></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          The stall=0 + yield=0 row demonstrates the pathological case: 2169 cyc
+          CONSTANT regardless of warp count — the hardware scoreboard's
+          per-instruction overhead dominates, and no latency hiding occurs
+          because the scheduler never switches to a waiting warp.
+        </p>
+        <p>
+          <strong>ptxas default policy</strong>: yield=1 (no yield) on ALU
+          instructions (greedy same-warp dispatch for throughput), yield=0 at
+          barriers and EXIT (release slot for synchronization). This is the
+          optimal policy for most workloads.
+        </p>
+        <h3 class="sub-title" id="3-5-4-interaction-between-the-two-mechanisms">
+          3.5.4 Interaction Between the Two Mechanisms
+        </h3>
+        <figure class="diagram">
+          <object
+            data="svg/ch03/ch03_two_mechanism.svg"
+            type="image/svg+xml"
+            aria-label="SM_120 Two-Mechanism Interaction: stall counter AND scoreboard must both clear before instruction issues"
+          ></object>
+          <figcaption>
+            SM_120 Two-Mechanism Interaction — parallel AND gate logic for issue
+            eligibility, with concrete LDG→ALU→FFMA scheduling example and
+            silicon efficiency comparison (41 bits/warp vs ~48K CAM entries).
+            [source: S11/case_77, S13/case_12]
+          </figcaption>
+        </figure>
+        <p>
+          The diagram above shows how SM_120's two dependence-tracking
+          mechanisms cooperate as a parallel AND gate: the stall counter
+          provides a <em>minimum delay floor</em> (ensuring fixed-latency
+          producers complete before consumers read), while the scoreboard
+          counters provide a <em>variable-latency completion gate</em>
+          (ensuring memory operations finish before dependent computation
+          proceeds). Both conditions must simultaneously be TRUE for the
+          scheduler to mark a warp as eligible for issue. If either gate fails,
+          the warp remains blocked and the scheduler moves to the next candidate
+          warp in its CGGTY priority queue.
+        </p>
+        <p>
+          The concrete example illustrates the typical GEMM scheduling pattern:
+          an LDG producer fires with stall=1 (fire-and-forget, SB3 tracks it),
+          followed by 3 independent ALU instructions that fill the latency
+          window (each with stall=1, no WaitBarrier). When the FFMA consumer
+          arrives, it encounters BOTH mechanisms: the WaitBarrier bitmask
+          (0b001000) blocks it until SB3 reaches zero (LDG complete), and once
+          issued, its own stall=4 field gates downstream consumers via the
+          fixed-latency path. This demonstrates how a single instruction can be
+          <em>both</em> an SB consumer (waiting for LDG) and a stall-counter
+          producer (gating its own dependents) — the two mechanisms compose
+          naturally without interference.
+        </p>
+        <p>
+          The stall counter and SB counters operate in parallel with a simple
+          priority rule:
+        </p>
+        <pre><code>  Issue condition:
+    warp_eligible = (stall_counter == 0) AND (wait_mask &amp; active_SB == 0)
+
+  Both must be satisfied: the stall counter provides a minimum delay floor,
+  while the SB provides a variable-latency completion gate.
+
+  Typical scheduling pattern for an LDG → FFMA consumer:
+
+    LDG R5, [R2]      ; WrBarrier=SB3, stall=1 (issue next insn after 1 cyc)
+    ... (3 independent ALU ops, stall=1 each) ...
+    FFMA R7, R5, R6   ; WaitBarrier=0b001000 (wait SB3), stall=4
+
+  The LDG issues with stall=1, allowing subsequent independent instructions
+  to issue quickly. The FFMA consumer waits for SB3 completion (variable-
+  latency gate) AND then uses stall=4 for its own consumers (fixed-latency).</code></pre>
+        <p>
+          This two-mechanism design is remarkably efficient in silicon: only 6×6
+          = 36 bits of SB state + 4 bits of stall + 1 bit of yield per warp,
+          versus the hundreds of bits a full scoreboard would require. It
+          achieves correctness comparable to hardware interlocks while consuming
+          a fraction of the die area.
+        </p>
+        <hr />
+        <h2 class="ch-title" id="3-6-key-insights">3.6 Key Insights</h2>
+        <h3
+          class="sub-title"
+          id="ki-3-1-unified-intfp-pipeline-with-separate-backends----not-true-dual-issue"
+        >
+          KI-3.1: Unified INT/FP Pipeline with Separate Backends -- Not True
+          Dual-Issue
+        </h3>
+        <figure class="diagram">
+          <object
+            data="svg/ch03/ch03_ki31.svg"
+            type="image/svg+xml"
+            aria-label="KI-3.1: Single issue port feeds separate backends"
+          ></object>
+          <figcaption>
+            KI-3.1 — Single issue port + separate backends: no per-warp
+            dual-issue, full multi-warp overlap via interleaving.
+          </figcaption>
+        </figure>
+        <p>
+          <strong>Empirical Evidence</strong>: INT32+FP32 interleaving shows
+          MIX/MAX=1.000 with zero throughput gain over max(INT,FP). Yet they do
+          NOT block each other when independent -- FP32 and INT32 fully overlap
+          at multi-warp level. [source: <code>S4/case_5</code>,
+          <code>S11/case_101</code>]
+        </p>
+        <p>
+          <strong>Theoretical Analysis</strong>: SM_120 has a shared issue slot
+          per SMSP feeding separate execution backends. Independent INT/FP
+          streams overlap via warp interleaving but serialize within a single
+          warp. Expected behavior: no single-warp dual-issue but full multi-warp
+          parallelism.
+        </p>
+        <p>
+          <strong>Microarchitecture Speculation</strong> [Confidence: H]: The
+          FMA group (pipe_fma, pipe_fmalite, pipe_fmaheavy) shares a single
+          dispatch port that can only accept one instruction per cycle. The
+          separate backends execute concurrently once dispatched, but the issue
+          port is the bottleneck. This is architecturally simpler than true
+          dual-issue (no second decoder, no dependency check between issue
+          slots) while still achieving high throughput via warp-level
+          parallelism. Patent US20230289189A1 Section 3.2 (Fig. 4) and
+          US11768686 Section 5.1 describe this single-issue sub-core model.
+        </p>
+        <p>
+          <strong>Implication for Optimization</strong>: Do not expect INT+FP
+          "free" co-issue within a single warp. Instead, ensure sufficient warp
+          occupancy (&gt;=4 warps per SMSP) to overlap INT and FP streams across
+          warps. Kernel designs that rely on per-warp INT+FP co-issue (common on
+          AMD RDNA) will not see benefits on SM_120.
+        </p>
+        <hr />
+        <h3 class="sub-title" id="ki-3-2--reuse-bits-are-functionally-active">
+          KI-3.2: .reuse Bits Are Functionally Active — RFC Still Operational on
+          SM_120
+        </h3>
+        <figure class="diagram">
+          <object
+            data="svg/ch03/ch03_ki32.svg"
+            type="image/svg+xml"
+            aria-label="KI-3.2: .reuse bits active on ALU, no-op on TC"
+          ></object>
+          <figcaption>
+            KI-3.2 — .reuse bits: +85% throughput for ALU pipes (RFC caching),
+            true no-op for TensorCore.
+          </figcaption>
+        </figure>
+        <p>
+          <strong>Empirical Evidence (Corrected)</strong>: Cross-gen
+          verification on SM_89 and SM_120 using correct bit positions [60:58]
+          of the upper 64-bit control word demonstrates .reuse is
+          <strong>functionally active</strong> on both architectures. SM_89:
+          +126% (2.26×) in ILP=8; SM_120: +85% (1.85×) in ILP=8. Both show 0%
+          delta in latency-bound dep chains (stall=4). [source:
+          <code>S11/case_155</code>, SM_120 server1 ILP=8 verification]
+        </p>
+        <p>
+          <strong>Microarchitecture Interpretation</strong> [Confidence: H]: The
+          RFC remains functional on SM_120 for ALU pipes and provides
+          significant throughput benefit in ILP-rich code. In latency-bound dep
+          chains (stall≥4), .reuse provides no benefit. For TC instructions
+          (HMMA/QMMA/OMMA.SF), the pipeline uses an independent operand fetch
+          mechanism — ptxas never sets .reuse bits on TC instructions
+          (confirmed: 456 HMMA all have bits [60:58]=000), and forcing them to
+          111 produces 0% delta. Patent US11336476 describes the enhanced
+          operand collector — it absorbs bank conflicts but the RFC caching
+          mechanism remains active for ALU pipes only.
+        </p>
+        <p>
+          <strong>Implication for Optimization</strong>: .reuse bits ARE
+          performance-critical for throughput-bound ALU (FFMA) code on SM_120.
+          ptxas correctly sets these bits in ILP-rich regions. For
+          CuAssembler-based SASS optimization, preserving .reuse bits on ALU
+          instructions is essential — clearing them causes up to 85% throughput
+          loss. For TC instructions, .reuse bits are irrelevant (never set, no
+          effect).
+        </p>
+        <hr />
+        <h3
+          class="sub-title"
+          id="ki-3-3-10-of-15-pipe-pairs-achieve-2-2-switching-overhead"
+        >
+          KI-3.3: 10 of 15 Pipe Pairs Achieve &lt;=2.2% Switching Overhead
+        </h3>
+        <figure class="diagram">
+          <object
+            data="svg/ch03/ch03_ki33.svg"
+            type="image/svg+xml"
+            aria-label="KI-3.3: 10/15 pipe pairs co-issue with 29-cyc MMA window"
+          ></object>
+          <figcaption>
+            KI-3.3 — 10/15 pipe pairs at ≤2.2% overhead; 29-cycle MMA window
+            absorbs all epilogue computation.
+          </figcaption>
+        </figure>
+        <p>
+          <strong>Empirical Evidence</strong>: FMA+TC=2.4%, ALU+TC=2.2%,
+          FMA+LSU=0%, ALU+LSU=0%, XU+LSU=0%, FMA+FP64=0.4%, FMA+TMA=0%,
+          Tensor+XU=0%. Only XU-involved (132-143%) and LSU+Tensor (17.4%) show
+          significant overhead. [source: <code>S22/case_19-53</code>]
+        </p>
+        <p>
+          <strong>Theoretical Analysis</strong>: The 29-cycle MMA execution
+          window provides ample time for other pipes to execute without
+          contention. At IPC=1, up to 27 non-MMA instructions can issue during
+          one MMA. The XU penalty comes from micro-op decomposition (MUFU
+          requires multiple internal cycles that occupy the issue slot), not
+          from switching. The LSU+Tensor penalty arises from LDS consumer
+          instructions (FADD after ldmatrix) that contend with HMMA writeback to
+          the register file.
+        </p>
+        <p>
+          <strong>Microarchitecture Speculation</strong> [Confidence: H]: Each
+          SMSP has physically independent execution backends connected to a
+          shared issue port via a pipe-selection mux. The mux settles in &lt;1
+          cycle, making switching penalty zero. The observed overheads are from
+          structural hazards (shared RF write port for LSU+TC, XU occupying
+          issue slot for multi-cycle) rather than switching cost.
+        </p>
+        <p>
+          <strong>Implication for Optimization</strong>: In TC-dominated kernels
+          (&gt;80% of cycles in MMA), all non-TC computation (epilogue FFMA,
+          address calculation, data conversion) is effectively free. The only
+          pairs to avoid co-scheduling are: (1) XU-heavy sequences alongside
+          FMA/ALU (use MMA stall window for MUFU instead), and (2) ldmatrix
+          immediately followed by TC -- separate them by &gt;=2 independent
+          instructions.
+        </p>
+        <hr />
+        <h3
+          class="sub-title"
+          id="ki-3-4-finer-instruction-interleaving-always-better----0-switching-penalty"
+        >
+          KI-3.4: Finer Instruction Interleaving Always Better -- 0% Switching
+          Penalty
+        </h3>
+        <figure class="diagram">
+          <object
+            data="svg/ch03/ch03_ki34.svg"
+            type="image/svg+xml"
+            aria-label="KI-3.4: Zero switching penalty at any group size"
+          ></object>
+          <figcaption>
+            KI-3.4 — 0% switching penalty at all group sizes (1/2/4/8); pipe mux
+            settles in &lt;1 cycle.
+          </figcaption>
+        </figure>
+        <p>
+          <strong>Empirical Evidence</strong>: Switching overhead does NOT
+          increase with interleave granularity (group=1 same as group=8). The
+          8.3% FMA+ALU penalty is from shared issue slot contention, not
+          switching cost. [source: <code>S22/case_26</code>]
+        </p>
+        <p>
+          <strong>Theoretical Analysis</strong>: If switching cost existed,
+          fine-grained interleaving (alternating every instruction) would show
+          higher overhead than coarse batching. The uniform 0% penalty across
+          all group sizes confirms the mux model.
+        </p>
+        <p>
+          <strong>Microarchitecture Speculation</strong> [Confidence: H]: The
+          pipe selection mux settles within 1 cycle; no pipeline flush or
+          reconfiguration is needed when switching between pipe targets.
+        </p>
+        <p>
+          <strong>Implication for Optimization</strong>: Instruction scheduling
+          should prioritize dependency satisfaction and latency hiding over
+          grouping same-pipe instructions. ptxas already does this effectively.
+          For manual SASS optimization, interleave different pipe types freely
+          without penalty concerns.
+        </p>
+        <hr />
+        <h3
+          class="sub-title"
+          id="ki-3-5-memory-pipe-queue-depth-unexpectedly-large-12-13-not-5"
+        >
+          KI-3.5: Memory Pipe Queue Depth Unexpectedly Large (12-13, Not 5)
+        </h3>
+        <figure class="diagram">
+          <object
+            data="svg/ch03/ch03_ki35.svg"
+            type="image/svg+xml"
+            aria-label="KI-3.5: Memory pipe queue depth 12-13"
+          ></object>
+          <figcaption>
+            KI-3.5 — MSHR queue depth 12-13 (2x generational scaling); software
+            prefetch counterproductive.
+          </figcaption>
+        </figure>
+        <p>
+          <strong>Empirical Evidence</strong>: LDG queue stall cliff at N=14 (2
+          to 984 cyc); effective depth 12-13. Exceeds Ampere's reported ~5.
+          Memory-Level Parallelism (MLP) approximately 5.3x from N=1 to N=16.
+          [source: <code>S11/case_97</code>, <code>S11/case_41</code>]
+        </p>
+        <p>
+          <strong>Theoretical Analysis</strong>: With L2 latency of 354 cycles
+          and an issue rate of 2.27 cyc/LDG, a queue depth of 12-13 provides
+          effective MLP of 354/(354/13) = 13x theoretical. Measured 5.3x
+          accounts for cache misses and pipeline stalls.
+        </p>
+        <p>
+          <strong>Microarchitecture Speculation</strong> [Confidence: H]:
+          SM_120's LSU has a deeper miss-status holding register (MSHR) or
+          equivalent request buffer than prior generations. This may be enabled
+          by the larger L2 (96 MB) which can absorb more outstanding requests
+          without thrashing. The 6 SB counters can track at most 6 independent
+          variable-latency ops per warp, so the 12-13 queue depth is shared
+          across all warps on an SMSP.
+        </p>
+        <p>
+          <strong>Implication for Optimization</strong>: Software prefetch is
+          counterproductive (see Chapter 2, KI-2.4) because the hardware can
+          already sustain 12-13 outstanding loads. Kernels should instead focus
+          on ensuring that loads are issued early enough (via instruction
+          reordering) to fill the queue, rather than adding explicit prefetch
+          instructions that compete for issue slots.
+        </p>
+        <hr />
+        <h3
+          class="sub-title"
+          id="ki-3-6-the-1-issue-per-cycle-model-creates-a-dispatch-tax-that-ilp-cannot-avoid"
+        >
+          KI-3.6: The 1-Issue-Per-Cycle Model Creates a "Dispatch Tax" That ILP
+          Cannot Avoid
+        </h3>
+        <figure class="diagram">
+          <object
+            data="svg/ch03/ch03_ki36.svg"
+            type="image/svg+xml"
+            aria-label="KI-3.6: Dispatch tax from loop control overhead"
+          ></object>
+          <figcaption>
+            KI-3.6 — IPC=0.92 (not 1.0) because BRA/ISETP consume the same issue
+            slot; unrolling fixes it at I-cache cost.
+          </figcaption>
+        </figure>
+        <p>
+          <strong>Empirical Evidence</strong>: FFMA IPC=0.92 (not 1.0) even at
+          ILP=16 with zero dependencies. The 8% dispatch tax is from loop
+          control (BRA/ISETP) consuming the same single issue slot. 4-SMSP
+          aggregate IPC=3.66 (not 4.0). [source: <code>S22/case_2-4</code>,
+          <code>S11/case_15</code>]
+        </p>
+        <p>
+          <strong>Theoretical Analysis</strong>: With 29 cyc MMA latency and
+          15.88 cyc/mma throughput, pipeline depth = 29/15.88 = 1.83. Only 1.83
+          MMA can be in flight per SMSP. The remaining 27.17 cycles of the MMA
+          window are available for non-MMA instructions. At IPC=1 dispatch rate,
+          up to 27 non-MMA instructions can be dispatched per MMA cycle -- more
+          than sufficient for typical GEMM epilogues (256 FFMA = 0.25 cyc/FFMA
+          alongside MMA, per Section 4.7).
+        </p>
+        <p>
+          <strong>Microarchitecture Speculation</strong> [Confidence: H]: The
+          single-issue model is a deliberate area/power optimization -- removing
+          the second decoder, dependency checker, and issue port saves
+          significant silicon while warp-level parallelism (4 SMSPs x 12 warps
+          each = 48 warps) provides aggregate throughput.
+        </p>
+        <p>
+          <strong>Implication for Optimization</strong>: Kernel optimization
+          should focus on reducing TOTAL instruction count (including control
+          flow overhead) rather than pipe-specific throughput. ptxas loop
+          unrolling directly eliminates BRA/ISETP overhead at the cost of
+          I-cache pressure (cliff at 8-16KB per Chapter 7). The optimal unroll
+          factor balances dispatch tax reduction against I-cache miss penalty.
+        </p>
+        <hr />
+        <h3
+          class="sub-title"
+          id="ki-3-7-register-file-has-2-banks-r2-with-1-cyc-conflict-fully-hidden-by-ptxas"
+        >
+          KI-3.7: Register File Has 2 Banks (R%2) with +1 cyc Conflict — Fully
+          Hidden by ptxas
+        </h3>
+        <figure class="diagram">
+          <object
+            data="svg/ch03/ch03_ki37.svg"
+            type="image/svg+xml"
+            aria-label="KI-3.7: 2-bank RF with three-tier operand delivery"
+          ></object>
+          <figcaption>
+            KI-3.7 — 2-bank RF (R%2) with three-tier delivery: RFC(0-cyc) →
+            mixed-parity(0-cyc) → conflict(+1-cyc, never in production).
+          </figcaption>
+        </figure>
+        <p>
+          <strong>Empirical Evidence</strong>: CuAssembler SASS binary patching
+          of 3,520 FFMA instructions across 22 register configurations proves
+          SM_120 has 2 RF banks (bank = R%2, even/odd parity). All-even or
+          all-odd source operands cost 3.034 cyc/FFMA (+1.0 cyc penalty). Mixed
+          parity costs 2.038 cyc/FFMA (baseline). BUT: PTX-level tests show zero
+          delta because ptxas always assigns mixed-parity operands. This
+          contradicts Huerta 2025's 4-bank (R%4) model. [source:
+          <code>S12/case_1 (retest)</code>, <code>S11/case_46</code>,
+          <code>S11/case_149-156</code>]
+        </p>
+        <p>
+          <strong>Theoretical Analysis</strong>: The RF has 2 read ports per
+          bank. Reading 3 operands from the same bank requires ceil(3/2) = 2
+          read cycles, adding +1 cycle. Mixed parity allows max(ceil(2/2),
+          ceil(1/2)) = 1 cycle, no penalty. The RFC (≥24 entries per warp)
+          provides an additional bypass path that allows 1.342 cyc/FFMA when
+          .reuse bits are active (34% faster than conflict-free-no-reuse at
+          2.038 cyc).
+        </p>
+        <p>
+          <strong>Microarchitecture Model</strong> [Confidence: H]: SM_120's
+          operand delivery is a three-tier system: (1) RFC hit → 0 cycles added,
+          (2) RF read with mixed parity → 0 cycles added, (3) RF read with
+          all-same parity → +1 cycle. ptxas guarantees Tier 1 or Tier 2 for all
+          production code, making Tier 3 unreachable without SASS binary
+          patching. The system-level result is zero observable penalty despite
+          the simpler (2-bank, 2-port) RF hardware. This is a remarkable example
+          of hardware-software co-design.
+        </p>
+        <p>
+          <strong>Implication for Optimization</strong>: For CuAssembler-based
+          optimization on SM_120, register bank avoidance is irrelevant FOR
+          NORMAL CODE (ptxas handles it). For SASS binary patching, maintain
+          mixed-parity operand assignments or the +1 cyc penalty manifests. The
+          optimization headroom from manual SASS patching is LIMITED to: (1)
+          stall counter adjustment (+6.1% for HMMA chains), (2) SB counter
+          grouping (+3 cyc savings), and (3) yield bit manipulation. The .reuse
+          bits are confirmed no-ops for TC instructions only (ALU .reuse remains
+          functional at +85%).
+        </p>
+        <hr />
+        <h2
+          class="ch-title"
+          id="3-7-caqr-framework-cpi-decomposition-and-huerta-cross-validation-section-25"
+        >
+          3.7 CAQR Framework: CPI Decomposition and Huerta Cross-Validation
+          (Section 25)
+        </h2>
+        <h3 class="sub-title" id="3-7-1-formal-cpi-decomposition-caqr-3-10">
+          3.7.1 Formal CPI Decomposition (CAQR §3.10)
+        </h3>
+        <p>
+          CAQR decomposes CPI as:
+          <code>CPI = CPI_ideal + CPI_structural + CPI_data + CPI_control</code>
+        </p>
+        <p>
+          Section 25 Cases 7-9 measure each component for the FFMA pipeline:
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Component</th>
+                <th style="text-align: center">Value (cyc)</th>
+                <th style="text-align: center">Fraction</th>
+                <th>CAQR Category</th>
+                <th>Source</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>CPI_total (ILP=1)</td>
+                <td style="text-align: center">3.97</td>
+                <td style="text-align: center">100%</td>
+                <td>—</td>
+                <td><span class="cite">[S25/case_7]</span></td>
+              </tr>
+              <tr>
+                <td>CPI_ideal (ILP=4 throughput)</td>
+                <td style="text-align: center">1.05</td>
+                <td style="text-align: center">26.5%</td>
+                <td>Ideal</td>
+                <td><span class="cite">[S25/case_7]</span></td>
+              </tr>
+              <tr>
+                <td>CPI_RAW (data hazard)</td>
+                <td style="text-align: center"><strong>2.92</strong></td>
+                <td style="text-align: center"><strong>73.5%</strong></td>
+                <td>Data: RAW</td>
+                <td><span class="cite">[S25/case_7]</span></td>
+              </tr>
+              <tr>
+                <td>CPI_control (loop BRA overhead)</td>
+                <td style="text-align: center"><strong>0.325</strong></td>
+                <td style="text-align: center">22.6% of looped</td>
+                <td>Control</td>
+                <td><span class="cite">[S25/case_8]</span></td>
+              </tr>
+              <tr>
+                <td>CPI_WAW (write-after-write)</td>
+                <td style="text-align: center"><strong>0.00</strong></td>
+                <td style="text-align: center">0%</td>
+                <td>Data: WAW (compiler-eliminated)</td>
+                <td><span class="cite">[S25/case_9]</span></td>
+              </tr>
+              <tr>
+                <td>CPI_structural (residual at ILP=4)</td>
+                <td style="text-align: center">~0.05</td>
+                <td style="text-align: center">~5%</td>
+                <td>Structural</td>
+                <td><span class="cite">[S25/case_7]</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          <strong>Key finding</strong>: The RAW data hazard dominates at 73.5%
+          of total CPI at ILP=1. This is fully hidden at ILP=4 (CPI drops from
+          3.97 to 1.05). WAW hazards are non-existent because ptxas serializes
+          all WAW patterns into RAW chains at compile time — SM_120 has
+          <strong>no hardware WAW detection</strong>.
+        </p>
+        <p>
+          <strong>WAR hazards</strong>: WAR hazards impose 0 additional cycles
+          of overhead on SM_120 (<span class="cite">[S26/case_51]</span>). The
+          stall counter mechanism handles WAR identically to no-hazard cases.
+          Store-to-load forwarding is operative at 4.79 cyc latency (<span
+            class="cite"
+            >[S26/case_52]</span
+          >), confirming a hardware store buffer.
+        </p>
+        <h3
+          class="sub-title"
+          id="3-7-2-gemm-mainloop-cpi-breakdown-caqr-gpu-performance-equation"
+        >
+          3.7.2 GEMM Mainloop CPI Breakdown (CAQR GPU Performance Equation)
+        </h3>
+        <p>
+          The full CPI breakdown for a production cuBLAS BF16 GEMM kernel (Case
+          10):
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Pipe</th>
+                <th style="text-align: center">Instructions</th>
+                <th style="text-align: center">Fraction</th>
+                <th style="text-align: center">CPI Contribution</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Tensor (MMA)</td>
+                <td style="text-align: center">268M</td>
+                <td style="text-align: center">58.4%</td>
+                <td style="text-align: center">5.57</td>
+              </tr>
+              <tr>
+                <td>LSU</td>
+                <td style="text-align: center">70M</td>
+                <td style="text-align: center">15.3%</td>
+                <td style="text-align: center">1.46</td>
+              </tr>
+              <tr>
+                <td>Uniform</td>
+                <td style="text-align: center">63M</td>
+                <td style="text-align: center">13.8%</td>
+                <td style="text-align: center">1.32</td>
+              </tr>
+              <tr>
+                <td>ALU</td>
+                <td style="text-align: center">17M</td>
+                <td style="text-align: center">3.6%</td>
+                <td style="text-align: center">0.34</td>
+              </tr>
+              <tr>
+                <td>FMA</td>
+                <td style="text-align: center">3M</td>
+                <td style="text-align: center">0.7%</td>
+                <td style="text-align: center">0.07</td>
+              </tr>
+              <tr>
+                <td>Other</td>
+                <td style="text-align: center">38M</td>
+                <td style="text-align: center">8.2%</td>
+                <td style="text-align: center">0.78</td>
+              </tr>
+              <tr>
+                <td><strong>Total</strong></td>
+                <td style="text-align: center"><strong>460M</strong></td>
+                <td style="text-align: center"><strong>100%</strong></td>
+                <td style="text-align: center"><strong>CPI = 9.53</strong></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          <strong>GPU Performance Equation validation</strong>:
+          <code
+            >Kernel_time = Total_insns × CPI / N_SMSP = 460M × 9.53 / 440 ≈
+            9.95M cyc</code
+          >
+          → at 2.5 GHz = 3.98 ms. Measured: ~4.0 ms for M=N=K=4096.
+          <strong>✓ Validated within 1%.</strong>
+        </p>
+        <h3
+          class="sub-title"
+          id="3-7-3-huerta-et-al--cross-validation-table-sm_120-vs-ampere"
+        >
+          3.7.3 Huerta et al. Cross-Validation Table (SM_120 vs Ampere)
+        </h3>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Feature</th>
+                <th>Huerta (Ampere RTX A6000)</th>
+                <th>SM_120 (Blackwell RTX PRO 5000)</th>
+                <th>Change</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>RF banks</td>
+                <td>2 (R%2 parity)</td>
+                <td>2 (R%2 parity)</td>
+                <td>Same</td>
+              </tr>
+              <tr>
+                <td>Scheduler policy</td>
+                <td>CGGTY</td>
+                <td>CGGTY</td>
+                <td>Same (<span class="cite">[S25/case_26]</span>)</td>
+              </tr>
+              <tr>
+                <td>I-buffer depth</td>
+                <td>3 entries</td>
+                <td>~4 entries</td>
+                <td>+1 entry</td>
+              </tr>
+              <tr>
+                <td>.reuse bits</td>
+                <td>Functional (RFC hit/miss)</td>
+                <td><strong>ALU: active (+85%); TC: no-op</strong></td>
+                <td><strong>Partial change (TC only)</strong></td>
+              </tr>
+              <tr>
+                <td>OC/Allocate stage</td>
+                <td>+1-2 cyc bank conflict</td>
+                <td><strong>0 cyc</strong> (absorbed)</td>
+                <td><strong>Major change</strong></td>
+              </tr>
+              <tr>
+                <td>Smem queue depth</td>
+                <td>5 entries</td>
+                <td><strong>≥16 entries</strong></td>
+                <td>
+                  <strong>≥3.2× deeper</strong> (<span class="cite"
+                    >[S25/case_28]</span
+                  >)
+                </td>
+              </tr>
+              <tr>
+                <td>LDG latency (L1)</td>
+                <td>200-256 cyc (likely L2)</td>
+                <td>44 cyc</td>
+                <td>Different cache level</td>
+              </tr>
+              <tr>
+                <td>LDS latency</td>
+                <td>18-26 cyc</td>
+                <td>34 cyc</td>
+                <td>SM_120 slower (+31-89%)</td>
+              </tr>
+              <tr>
+                <td>Dependence area</td>
+                <td>0.09% RF (41 bits/warp)</td>
+                <td>0.07% RF (41 bits/warp)</td>
+                <td>Same mechanism</td>
+              </tr>
+              <tr>
+                <td>Area savings vs scoreboard</td>
+                <td>—</td>
+                <td><strong>387×</strong></td>
+                <td><span class="cite">[S25/case_30]</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>[source: S25/cases_26-30]</p>
+        <hr />
+        <h2 class="ch-title" id="3-8-summary">3.8 Summary</h2>
+        <p>
+          The SM_120 microarchitecture represents an evolution toward
+          simplicity-at-scale: a single-issue sub-core model with 16 pipes, zero
+          bank-conflict overhead, and deep memory queues. The key architectural
+          insight is that warp-level parallelism (48 warps across 4 SMSPs)
+          substitutes for instruction-level complexity (dual-issue, OoO). This
+          makes occupancy and warp diversity the primary performance levers,
+          while traditional SASS-level optimizations (.reuse, bank avoidance)
+          are rendered obsolete by the redesigned operand collector.
+        </p>
+
+        <footer class="page-footer">
+          <div class="foot-grid">
+            <div>
+              <strong>SM_120 / GB202 Blackwell</strong> · Microarchitecture
+              Analysis &amp; Reference · 2026
+            </div>
+            <div>1542 microbenchmark cases · 26 sections · ~13,400 lines</div>
+            <div class="foot-accent">
+              RTX PRO 5000 72GB · CUDA 13.3 · Data source: test_results/SM_120/
+            </div>
+          </div>
+        </footer>
+      </main>
+      <aside class="toc-right">
+        <h4>Chapter Navigation</h4>
+        <a href="#3-0-sub-core-smsp-block-diagram"
+          >3.0 Sub-Core (SMSP) Block Diagram</a
+        >
+        <a href="#3-1-execution-pipeline-taxonomy"
+          >3.1 Execution Pipeline Taxonomy</a
+        >
+        <a href="#3-2-128-bit-instruction-encoding"
+          >3.2 128-bit Instruction Encoding</a
+        >
+        <a class="sub" href="#3-2-1-full-128-bit-instruction-layout"
+          >3.2.1 Instruction Layout &amp; Control Code</a
+        >
+        <a class="sub" href="#3-2-2-control-code-semantic-summary"
+          >3.2.2 Control Code Semantic Summary</a
+        >
+        <a
+          class="sub"
+          href="#3-2-3-control-code-behavioral-rules-cuassembler-verified"
+          >3.2.3 Control Code Behavioral Rules (CuAssembler-Verified)</a
+        >
+        <a href="#3-3-sm-dispatch-model">3.3 SM Dispatch Model</a>
+        <a
+          class="sub"
+          href="#3-3-1-microarchitectural-analysis-of-the-dispatch-model"
+          >3.3.1 Microarchitectural Analysis of the Dispatch Model</a
+        >
+        <a
+          class="sub"
+          href="#3-3-2-register-file-and-operand-delivery-architecture"
+          >3.3.2 Register File and Operand Delivery Architecture</a
+        >
+        <a
+          class="sub"
+          href="#3-3-3-warp-scheduling-policy-hybrid-gto-with-static-binding"
+          >3.3.3 Warp Scheduling Policy: Hybrid GTO with Static Binding</a
+        >
+        <a
+          class="sub"
+          href="#3-3-4-instruction-fetch-architecture-two-level-i-cache-with-streaming-prefetch"
+          >3.3.4 Instruction Fetch Architecture: Two-Level I-Cache with
+          Streaming Prefetch</a
+        >
+        <a href="#3-4-pipe-hierarchy-and-co-issue-architecture"
+          >3.4 Pipe Hierarchy and Co-Issue Architecture</a
+        >
+        <a class="sub" href="#3-4-1-per-smsp-pipe-hierarchy"
+          >3.4.1 Per-SMSP Pipe Hierarchy</a
+        >
+        <a class="sub" href="#3-4-2-complete-sass-opcode-to-pipe-routing-table"
+          >3.4.2 Complete SASS Opcode to Pipe Routing Table</a
+        >
+        <a class="sub" href="#3-4-3-complete-pairwise-co-issue-matrix"
+          >3.4.3 Complete Pairwise Co-Issue Matrix</a
+        >
+        <a
+          class="sub"
+          href="#3-4-4-instruction-group-to-pipe-switching-penalty-model"
+          >3.4.4 Instruction Group to Pipe Switching Penalty Model</a
+        >
+        <a
+          class="sub"
+          href="#3-4-5-microarchitectural-analysis-of-co-issue-constraints"
+          >3.4.5 Microarchitectural Analysis of Co-Issue Constraints</a
+        >
+        <a class="sub" href="#3-4-6-multi-warp-throughput-scaling-model"
+          >3.4.6 Multi-Warp Throughput Scaling Model</a
+        >
+        <a href="#3-5-hybrid-dependence-tracking-the-two-mechanism-model"
+          >3.5 Hybrid Dependence Tracking: The Two-Mechanism Model</a
+        >
+        <a
+          class="sub"
+          href="#3-5-1-mechanism-1-stall-counter-fixed-latency-instructions"
+          >3.5.1 Mechanism 1: Stall Counter (Fixed-Latency Instructions)</a
+        >
+        <a
+          class="sub"
+          href="#3-5-2-mechanism-2-scoreboard-counters-variable-latency-instructions"
+          >3.5.2 Mechanism 2: Scoreboard Counters (Variable-Latency
+          Instructions)</a
+        >
+        <a
+          class="sub"
+          href="#3-5-3-yield-bit-inverted-semantics-and-latency-hiding-control"
+          >3.5.3 Yield Bit: Inverted Semantics and Latency Hiding Control</a
+        >
+        <a class="sub" href="#3-5-4-interaction-between-the-two-mechanisms"
+          >3.5.4 Interaction Between the Two Mechanisms</a
+        >
+        <a href="#3-6-key-insights">3.6 Key Insights</a>
+        <a
+          class="sub"
+          href="#ki-3-1-unified-intfp-pipeline-with-separate-backends----not-true-dual-issue"
+          >KI-3.1: Unified INT/FP Pipeline with Separate Backends -- Not True
+          Dual-Issue</a
+        >
+        <a class="sub" href="#ki-3-2--reuse-bits-are-functionally-active"
+          >KI-3.2: .reuse Bits Are Functionally Active — RFC Still Operational
+          on SM_120</a
+        >
+        <a
+          class="sub"
+          href="#ki-3-3-10-of-15-pipe-pairs-achieve-2-2-switching-overhead"
+          >KI-3.3: 10 of 15 Pipe Pairs Achieve &amp;lt;=2.2% Switching
+          Overhead</a
+        >
+        <a
+          class="sub"
+          href="#ki-3-4-finer-instruction-interleaving-always-better----0-switching-penalty"
+          >KI-3.4: Finer Instruction Interleaving Always Better -- 0% Switching
+          Penalty</a
+        >
+        <a
+          class="sub"
+          href="#ki-3-5-memory-pipe-queue-depth-unexpectedly-large-12-13-not-5"
+          >KI-3.5: Memory Pipe Queue Depth Unexpectedly Large (12-13, Not 5)</a
+        >
+        <a
+          class="sub"
+          href="#ki-3-6-the-1-issue-per-cycle-model-creates-a-dispatch-tax-that-ilp-cannot-avoid"
+          >KI-3.6: The 1-Issue-Per-Cycle Model Creates a &quot;Dispatch
+          Tax&quot; That ILP Cannot Avoid</a
+        >
+        <a
+          class="sub"
+          href="#ki-3-7-register-file-has-2-banks-r2-with-1-cyc-conflict-fully-hidden-by-ptxas"
+          >KI-3.7: Register File Has 2 Banks (R%2) with +1 cyc Conflict — Fully
+          Hidden by ptxas</a
+        >
+        <a
+          href="#3-7-caqr-framework-cpi-decomposition-and-huerta-cross-validation-section-25"
+          >3.7 CAQR Framework: CPI Decomposition and Huerta Cross-Validation
+          (Section 25)</a
+        >
+        <a class="sub" href="#3-7-1-formal-cpi-decomposition-caqr-3-10"
+          >3.7.1 Formal CPI Decomposition (CAQR §3.10)</a
+        >
+        <a
+          class="sub"
+          href="#3-7-2-gemm-mainloop-cpi-breakdown-caqr-gpu-performance-equation"
+          >3.7.2 GEMM Mainloop CPI Breakdown (CAQR GPU Performance Equation)</a
+        >
+        <a
+          class="sub"
+          href="#3-7-3-huerta-et-al--cross-validation-table-sm_120-vs-ampere"
+          >3.7.3 Huerta et al. Cross-Validation Table (SM_120 vs Ampere)</a
+        >
+        <a href="#3-8-summary">3.8 Summary</a>
+      </aside>
+    </div>
+    <script
+      defer
+      src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"
+      integrity="sha384-7zkQWkzuo3B5mTepMUcHkMB5jZaolc2xDwL6VFqjFALcbeS9Ggm/Yr2r3Dy4lfFg"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      defer
+      src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+      integrity="sha384-43gviWU0YVjaDtb/GhzOouOXtZMP/7XUzwPTstBeZFe/+rCMvRwr4yROQP43s0Xk"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      defer
+      src="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/lib/highlight.min.js"
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (window.renderMathInElement) {
+          renderMathInElement(document.body, {
+            delimiters: [
+              { left: "$$", right: "$$", display: true },
+              { left: "$", right: "$", display: false },
+            ],
+            throwOnError: false,
+          });
+        }
+        if (window.hljs) {
+          document
+            .querySelectorAll("pre code[class^='language-']")
+            .forEach(function (el) {
+              try {
+                hljs.highlightElement(el);
+              } catch (e) {}
+            });
+        }
+      });
+    </script>
+    <script src="assets/js/toc.js" defer></script>
+  </body>
+</html>

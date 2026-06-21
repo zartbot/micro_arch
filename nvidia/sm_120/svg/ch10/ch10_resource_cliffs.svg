@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 820" role="img"
+     aria-label="System-Level Resource Cliff Severity Chart — Log-Scale Penalty with Tier Classification">
+  <rect width="2080" height="820" fill="#ffffff"/>
+
+  <!-- Title -->
+  <text x="36" y="32" style="font:600 15px 'Fraunces',serif;fill:#0b1220">System-Level Resource Cliff Severity Chart</text>
+  <text x="36" y="52" style="font:italic 11px 'Fraunces',serif;fill:#5b6679">Log-scale penalty factor (1x to 15,000x) with three-tier classification: Catastrophic / Severe / Moderate</text>
+
+  <!-- Legend -->
+  <rect x="700" y="18" width="16" height="12" rx="2" fill="#fecaca"/>
+  <text x="720" y="28" style="font:500 10px 'JetBrains Mono',monospace;fill:#0b1220">Tier 1: Catastrophic (100x+)</text>
+  <rect x="700" y="34" width="16" height="12" rx="2" fill="#fed7aa"/>
+  <text x="720" y="44" style="font:500 10px 'JetBrains Mono',monospace;fill:#0b1220">Tier 2: Severe (5-100x)</text>
+  <rect x="700" y="50" width="16" height="12" rx="2" fill="#fef08a"/>
+  <text x="720" y="60" style="font:500 10px 'JetBrains Mono',monospace;fill:#0b1220">Tier 3: Moderate (1-5x)</text>
+
+  <!-- Chart area: x=200..1040, y=72..620 -->
+  <!-- Log axis: 1x=200, 10x=410, 100x=620, 1000x=830, 10000x=1040 -->
+  <!-- Scale: log10(penalty) * 210 + 200 -->
+
+  <!-- Grid lines -->
+  <line x1="200" y1="72" x2="200" y2="620" stroke="#e6e4da" stroke-width="0.5"/>
+  <line x1="410" y1="72" x2="410" y2="620" stroke="#e6e4da" stroke-width="0.5"/>
+  <line x1="620" y1="72" x2="620" y2="620" stroke="#e6e4da" stroke-width="0.5"/>
+  <line x1="830" y1="72" x2="830" y2="620" stroke="#e6e4da" stroke-width="0.5"/>
+  <line x1="1040" y1="72" x2="1040" y2="620" stroke="#e6e4da" stroke-width="0.5"/>
+
+  <!-- Axis labels -->
+  <text x="200" y="640" style="font:500 9px 'JetBrains Mono',monospace;fill:#5b6679" text-anchor="middle">1x</text>
+  <text x="410" y="640" style="font:500 9px 'JetBrains Mono',monospace;fill:#5b6679" text-anchor="middle">10x</text>
+  <text x="620" y="640" style="font:500 9px 'JetBrains Mono',monospace;fill:#5b6679" text-anchor="middle">100x</text>
+  <text x="830" y="640" style="font:500 9px 'JetBrains Mono',monospace;fill:#5b6679" text-anchor="middle">1,000x</text>
+  <text x="1040" y="640" style="font:500 9px 'JetBrains Mono',monospace;fill:#5b6679" text-anchor="middle">10,000x</text>
+  <text x="620" y="658" style="font:600 11px 'Fraunces',serif;fill:#0b1220" text-anchor="middle">Performance Penalty Factor (log scale)</text>
+
+  <!-- Tier background bands -->
+  <rect x="620" y="72" width="420" height="548" fill="#fef2f2" opacity="0.3"/>
+  <rect x="347" y="72" width="273" height="548" fill="#fff7ed" opacity="0.3"/>
+  <rect x="200" y="72" width="147" height="548" fill="#fefce8" opacity="0.3"/>
+
+  <!-- Bars sorted by penalty (top = worst) -->
+  <!-- Bar height=38, gap=8, total 12 bars -->
+
+  <!-- 1. Cross-PCIe atomicCAS: 15,000x → log10(15000)=4.176 → x=200+4.176*210=1077 width=877 -->
+  <text x="195" y="98" style="font:500 10px 'JetBrains Mono',monospace;fill:#0b1220" text-anchor="end">Cross-PCIe CAS</text>
+  <rect x="200" y="82" width="817" height="28" rx="4" fill="#e11d48"/>
+  <text x="1022" y="100" style="font:700 11px 'JetBrains Mono',monospace;fill:#e11d48">15,000x</text>
+
+  <!-- 2. cudaFree sync: 244x → log10(244)=2.387 → width=501 -->
+  <text x="195" y="144" style="font:500 10px 'JetBrains Mono',monospace;fill:#0b1220" text-anchor="end">cudaFree (sync)</text>
+  <rect x="200" y="128" width="501" height="28" rx="4" fill="#e11d48"/>
+  <text x="706" y="146" style="font:700 11px 'JetBrains Mono',monospace;fill:#e11d48">244x</text>
+
+  <!-- 3. DSMEM vs L2 sync: 26x → log10(26)=1.415 → width=297 -->
+  <text x="195" y="190" style="font:500 10px 'JetBrains Mono',monospace;fill:#0b1220" text-anchor="end">L2 sync vs DSMEM</text>
+  <rect x="200" y="174" width="297" height="28" rx="4" fill="#ea580c"/>
+  <text x="502" y="192" style="font:700 11px 'JetBrains Mono',monospace;fill:#ea580c">26x</text>
+
+  <!-- 4. Kernel launch cold: 20x → log10(20)=1.301 → width=273 -->
+  <text x="195" y="236" style="font:500 10px 'JetBrains Mono',monospace;fill:#0b1220" text-anchor="end">Kernel cold launch</text>
+  <rect x="200" y="220" width="273" height="28" rx="4" fill="#ea580c"/>
+  <text x="478" y="238" style="font:700 11px 'JetBrains Mono',monospace;fill:#ea580c">20x</text>
+
+  <!-- 5. NCCL vs custom AR: 14x → log10(14)=1.146 → width=241 -->
+  <text x="195" y="282" style="font:500 10px 'JetBrains Mono',monospace;fill:#0b1220" text-anchor="end">Custom AllReduce</text>
+  <rect x="200" y="266" width="241" height="28" rx="4" fill="#ea580c"/>
+  <text x="446" y="284" style="font:700 11px 'JetBrains Mono',monospace;fill:#ea580c">14x</text>
+
+  <!-- 6. BAR aperture: 7.8x → log10(7.8)=0.892 → width=187 -->
+  <text x="195" y="328" style="font:500 10px 'JetBrains Mono',monospace;fill:#0b1220" text-anchor="end">BAR exhaustion</text>
+  <rect x="200" y="312" width="187" height="28" rx="4" fill="#ea580c"/>
+  <text x="392" y="330" style="font:700 11px 'JetBrains Mono',monospace;fill:#ea580c">7.8x</text>
+  <text x="392" y="344" style="font:italic 8px 'JetBrains Mono',monospace;fill:#e11d48">SILENT!</text>
+
+  <!-- 7. GDDR7 bank group: 6.3x → log10(6.3)=0.799 → width=168 -->
+  <text x="195" y="374" style="font:500 10px 'JetBrains Mono',monospace;fill:#0b1220" text-anchor="end">GDDR7 bank conflict</text>
+  <rect x="200" y="358" width="168" height="28" rx="4" fill="#ea580c"/>
+  <text x="373" y="376" style="font:700 11px 'JetBrains Mono',monospace;fill:#ea580c">6.3x</text>
+
+  <!-- 8. UVM no-prefetch: 4.9x → log10(4.9)=0.690 → width=145 -->
+  <text x="195" y="420" style="font:500 10px 'JetBrains Mono',monospace;fill:#0b1220" text-anchor="end">UVM no-prefetch</text>
+  <rect x="200" y="404" width="145" height="28" rx="4" fill="#ca8a04"/>
+  <text x="350" y="422" style="font:700 11px 'JetBrains Mono',monospace;fill:#ca8a04">4.9x</text>
+
+  <!-- 9. Tail effect (worst): ~2x → log10(2)=0.301 → width=63 -->
+  <text x="195" y="466" style="font:500 10px 'JetBrains Mono',monospace;fill:#0b1220" text-anchor="end">Tail effect (R=1)</text>
+  <rect x="200" y="450" width="63" height="28" rx="4" fill="#ca8a04"/>
+  <text x="268" y="468" style="font:700 11px 'JetBrains Mono',monospace;fill:#ca8a04">~2x</text>
+
+  <!-- 10. Pageable memory: 1.6x → log10(1.6)=0.204 → width=43 -->
+  <text x="195" y="512" style="font:500 10px 'JetBrains Mono',monospace;fill:#0b1220" text-anchor="end">Pageable memory</text>
+  <rect x="200" y="496" width="43" height="28" rx="4" fill="#ca8a04"/>
+  <text x="248" y="514" style="font:700 11px 'JetBrains Mono',monospace;fill:#ca8a04">1.6x</text>
+
+  <!-- 11. P2P 3→4 cliff: 1.3x → log10(1.3)=0.114 → width=24 -->
+  <text x="195" y="558" style="font:500 10px 'JetBrains Mono',monospace;fill:#0b1220" text-anchor="end">P2P cross-NUMA</text>
+  <rect x="200" y="542" width="24" height="28" rx="4" fill="#ca8a04"/>
+  <text x="229" y="560" style="font:700 11px 'JetBrains Mono',monospace;fill:#ca8a04">1.3x</text>
+
+  <!-- 12. PCIe ramp (not a cliff but a ramp): shown as gradient -->
+  <text x="195" y="604" style="font:500 10px 'JetBrains Mono',monospace;fill:#0b1220" text-anchor="end">PCIe BW ramp</text>
+  <rect x="200" y="588" width="120" height="28" rx="4" fill="#d9f99d" stroke="#76b900" stroke-width="0.8"/>
+  <text x="270" y="606" style="font:600 10px 'JetBrains Mono',monospace;fill:#76b900" text-anchor="middle">gradual</text>
+
+  <!-- ═══════════════ BOTTOM: Tier Summary Panel ═══════════════ -->
+  <rect x="40" y="670" width="1000" height="136" rx="8" fill="#fcfbf6" stroke="#e6e4da" stroke-width="1"/>
+  <line x1="373" y1="680" x2="373" y2="796" stroke="#e6e4da" stroke-width="0.8"/>
+  <line x1="706" y1="680" x2="706" y2="796" stroke="#e6e4da" stroke-width="0.8"/>
+
+  <!-- Tier 1 -->
+  <rect x="56" y="680" width="12" height="12" rx="2" fill="#e11d48"/>
+  <text x="74" y="691" style="font:600 11px 'Fraunces',serif;fill:#e11d48">Tier 1: Catastrophic (100x+)</text>
+  <text x="60" y="710" style="font:500 10px 'JetBrains Mono',monospace;fill:#0b1220">Cross-PCIe CAS: 15,000x</text>
+  <text x="60" y="726" style="font:500 10px 'JetBrains Mono',monospace;fill:#0b1220">cudaFree sync: 244x</text>
+  <text x="60" y="746" style="font:italic 9px 'JetBrains Mono',monospace;fill:#e11d48">Both are SILENT failures</text>
+  <text x="60" y="762" style="font:italic 9px 'JetBrains Mono',monospace;fill:#5b6679">Action: Eliminate from all code paths</text>
+
+  <!-- Tier 2 -->
+  <rect x="389" y="680" width="12" height="12" rx="2" fill="#ea580c"/>
+  <text x="407" y="691" style="font:600 11px 'Fraunces',serif;fill:#ea580c">Tier 2: Severe (5-100x)</text>
+  <text x="393" y="710" style="font:500 10px 'JetBrains Mono',monospace;fill:#0b1220">L2 sync barrier: 26x</text>
+  <text x="393" y="726" style="font:500 10px 'JetBrains Mono',monospace;fill:#0b1220">Cold kernel launch: 20x</text>
+  <text x="393" y="742" style="font:500 10px 'JetBrains Mono',monospace;fill:#0b1220">Custom AllReduce: 14x</text>
+  <text x="393" y="758" style="font:500 10px 'JetBrains Mono',monospace;fill:#0b1220">BAR exhaustion: 7.8x (silent!)</text>
+  <text x="393" y="774" style="font:500 10px 'JetBrains Mono',monospace;fill:#0b1220">GDDR7 bank group: 6.3x</text>
+  <text x="393" y="792" style="font:italic 9px 'JetBrains Mono',monospace;fill:#5b6679">Action: Architecture-level fix required</text>
+
+  <!-- Tier 3 -->
+  <rect x="722" y="680" width="12" height="12" rx="2" fill="#ca8a04"/>
+  <text x="740" y="691" style="font:600 11px 'Fraunces',serif;fill:#ca8a04">Tier 3: Moderate (1-5x)</text>
+  <text x="726" y="710" style="font:500 10px 'JetBrains Mono',monospace;fill:#0b1220">UVM no-prefetch: 4.9x</text>
+  <text x="726" y="726" style="font:500 10px 'JetBrains Mono',monospace;fill:#0b1220">Tail effect: ~2x worst-case</text>
+  <text x="726" y="742" style="font:500 10px 'JetBrains Mono',monospace;fill:#0b1220">Pageable memory: 1.6x</text>
+  <text x="726" y="758" style="font:500 10px 'JetBrains Mono',monospace;fill:#0b1220">P2P cross-NUMA: 1.3x</text>
+  <text x="726" y="778" style="font:italic 9px 'JetBrains Mono',monospace;fill:#5b6679">Action: Best-practice compliance</text>
+  <text x="726" y="792" style="font:italic 9px 'JetBrains Mono',monospace;fill:#5b6679">eliminates most of these</text>
+</svg>

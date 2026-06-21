@@ -1,0 +1,221 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 800" role="img"
+     aria-label="SM_120 Stall Counter Behavioral Regimes: three modes of the 4-bit stall field with correctness implications">
+  <defs>
+    <marker id="ar" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto">
+      <path d="M0,0 L7,3.5 L0,7 Z" fill="#5b6679"/>
+    </marker>
+    <marker id="ar-green" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto">
+      <path d="M0,0 L7,3.5 L0,7 Z" fill="#16a34a"/>
+    </marker>
+    <marker id="ar-red" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto">
+      <path d="M0,0 L7,3.5 L0,7 Z" fill="#dc2626"/>
+    </marker>
+    <linearGradient id="safeG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FEF3C7"/><stop offset="1" stop-color="#FFFBEB"/>
+    </linearGradient>
+    <linearGradient id="dangerG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FEE2E2"/><stop offset="1" stop-color="#FEF2F2"/>
+    </linearGradient>
+    <linearGradient id="correctG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#DCFCE7"/><stop offset="1" stop-color="#F0FDF4"/>
+    </linearGradient>
+    <style><![CDATA[
+      .ttl{font:600 15px "Fraunces",serif;fill:#0b1220}
+      .sub{font:italic 11.5px "Fraunces",serif;fill:#5b6679}
+      .sect{font:600 13px "Fraunces",serif}
+      .lbl{font:600 11.5px "JetBrains Mono",monospace}
+      .lbl-sm{font:500 10px "JetBrains Mono",monospace;fill:#5b6679}
+      .desc{font:500 10px "JetBrains Mono",monospace;fill:#5b6679}
+      .badge{font:600 9.5px "JetBrains Mono",monospace}
+      .note{font:500 9.5px "JetBrains Mono",monospace;fill:#8e97a5}
+      .warn{font:600 10px "JetBrains Mono",monospace;fill:#dc2626}
+      .safe{font:600 10px "JetBrains Mono",monospace;fill:#16a34a}
+      .zone-t{font:600 12px "Fraunces",serif}
+      .big-num{font:700 18px "JetBrains Mono",monospace}
+    ]]></style>
+  </defs>
+
+  <rect width="1080" height="800" fill="#ffffff"/>
+
+  <!-- Title -->
+  <text x="36" y="32" class="ttl">Stall Counter Behavioral Regimes — The Compiler-Trusted Scheduling Model</text>
+  <text x="36" y="52" class="sub">4-bit stall[108:105] has THREE distinct behavioral modes; wrong values cause silent corruption, not stalls [S11/case_128-136, CuAssembler-verified]</text>
+
+  <!-- ═══════ THREE REGIME CARDS ═══════ -->
+
+  <!-- Regime 1: stall=0 (HW fallback) -->
+  <g transform="translate(30, 76)">
+    <rect x="0" y="0" width="330" height="280" rx="12" fill="url(#safeG)" stroke="#b45309" stroke-width="1.2"/>
+    <rect x="10" y="8" width="100" height="22" rx="10" fill="#b45309" opacity="0.15"/>
+    <text x="60" y="23" class="badge" fill="#92400e" text-anchor="middle">REGIME 1</text>
+    <text x="120" y="23" class="zone-t" fill="#92400e">stall = 0</text>
+
+    <text x="14" y="48" class="lbl" fill="#92400e">"I don't know the latency"</text>
+    <text x="14" y="66" class="lbl-sm">Hardware activates full dependency tracking</text>
+
+    <!-- Visual: stall=0 value box -->
+    <g transform="translate(14, 80)">
+      <rect x="0" y="0" width="60" height="32" rx="6" fill="#ffffff" stroke="#b45309" stroke-width="1.2"/>
+      <text x="30" y="20" class="big-num" fill="#92400e" text-anchor="middle">0</text>
+      <text x="72" y="12" class="desc">stall bits [108:105]</text>
+      <text x="72" y="28" class="note">triggers HW scoreboard fallback</text>
+    </g>
+
+    <!-- Measured impact -->
+    <g transform="translate(14, 126)">
+      <rect x="0" y="0" width="300" height="72" rx="6" fill="#ffffff" stroke="#b45309" stroke-width="0.6"/>
+      <text x="10" y="16" class="badge" fill="#92400e">Measured (IADD3 dep chain):</text>
+      <text x="10" y="36" class="warn">34.055 cyc/insn (stall=0, HW fallback)</text>
+      <text x="10" y="52" class="safe">2.008 cyc/insn (stall=2, correct)</text>
+      <text x="10" y="66" class="lbl" fill="#92400e">17× performance penalty!</text>
+    </g>
+
+    <!-- Key insight -->
+    <g transform="translate(14, 212)">
+      <rect x="0" y="0" width="300" height="52" rx="6" fill="#92400e" opacity="0.06" stroke="#b45309" stroke-width="0.5"/>
+      <text x="10" y="18" class="badge" fill="#92400e">CRITICAL INSIGHT:</text>
+      <text x="10" y="34" class="lbl-sm">stall=0 is NOT "no stall" —</text>
+      <text x="10" y="48" class="lbl-sm">it means "MAXIMUM stall" (HW fallback)</text>
+    </g>
+  </g>
+
+  <!-- Regime 2: 1 ≤ stall < latency (SILENT CORRUPTION) -->
+  <g transform="translate(380, 76)">
+    <rect x="0" y="0" width="330" height="280" rx="12" fill="url(#dangerG)" stroke="#dc2626" stroke-width="1.5"/>
+    <rect x="10" y="8" width="100" height="22" rx="10" fill="#dc2626" opacity="0.15"/>
+    <text x="60" y="23" class="badge" fill="#dc2626" text-anchor="middle">REGIME 2</text>
+    <text x="120" y="23" class="zone-t" fill="#dc2626">1 ≤ stall &lt; latency</text>
+
+    <text x="14" y="48" class="lbl" fill="#991b1b">SILENT DATA CORRUPTION</text>
+    <text x="14" y="66" class="lbl-sm">Consumer reads STALE register value — no trap!</text>
+
+    <!-- Visual: stall too small -->
+    <g transform="translate(14, 80)">
+      <rect x="0" y="0" width="60" height="32" rx="6" fill="#ffffff" stroke="#dc2626" stroke-width="1.5"/>
+      <text x="30" y="20" class="big-num" fill="#dc2626" text-anchor="middle">1</text>
+      <text x="72" y="12" class="desc">stall=1, but FFMA needs 4 cycles</text>
+      <text x="72" y="28" class="warn">consumer issues after only 1 cycle!</text>
+    </g>
+
+    <!-- Example -->
+    <g transform="translate(14, 126)">
+      <rect x="0" y="0" width="300" height="88" rx="6" fill="#ffffff" stroke="#dc2626" stroke-width="0.6"/>
+      <text x="10" y="16" class="badge" fill="#dc2626">Example (FFMA chain, stall=1):</text>
+      <text x="10" y="36" class="lbl-sm">FFMA R5, R2, R3, R4   ; produces R5</text>
+      <text x="10" y="50" class="lbl-sm">FFMA R6, R5, R3, R4   ; reads R5 after 1 cyc</text>
+      <text x="10" y="68" class="warn">Result: R5 = 127.0 (stale, 2 insns ago)</text>
+      <text x="10" y="82" class="warn">Expected: R5 = 511.0 (correct)</text>
+    </g>
+
+    <!-- No safety net -->
+    <g transform="translate(14, 228)">
+      <rect x="0" y="0" width="300" height="36" rx="6" fill="#dc2626" opacity="0.06" stroke="#dc2626" stroke-width="0.5"/>
+      <text x="10" y="14" class="warn">No trap · No exception · cudaSuccess</text>
+      <text x="10" y="30" class="lbl-sm">HW TRUSTS compiler unconditionally</text>
+    </g>
+  </g>
+
+  <!-- Regime 3: stall ≥ latency (Correct) -->
+  <g transform="translate(730, 76)">
+    <rect x="0" y="0" width="320" height="280" rx="12" fill="url(#correctG)" stroke="#16a34a" stroke-width="1.2"/>
+    <rect x="10" y="8" width="100" height="22" rx="10" fill="#16a34a" opacity="0.15"/>
+    <text x="60" y="23" class="badge" fill="#16a34a" text-anchor="middle">REGIME 3</text>
+    <text x="120" y="23" class="zone-t" fill="#166534">stall ≥ latency</text>
+
+    <text x="14" y="48" class="lbl" fill="#166534">Correct — Stall-Bounded</text>
+    <text x="14" y="66" class="lbl-sm">Exact N-cycle delay, 1:1 linear mapping</text>
+
+    <!-- Visual: correct stall -->
+    <g transform="translate(14, 80)">
+      <rect x="0" y="0" width="60" height="32" rx="6" fill="#ffffff" stroke="#16a34a" stroke-width="1.2"/>
+      <text x="30" y="20" class="big-num" fill="#16a34a" text-anchor="middle">4</text>
+      <text x="72" y="12" class="desc">stall=4 for FFMA (4-cyc latency)</text>
+      <text x="72" y="28" class="safe">result available at boundary</text>
+    </g>
+
+    <!-- Timing examples -->
+    <g transform="translate(14, 126)">
+      <rect x="0" y="0" width="292" height="88" rx="6" fill="#ffffff" stroke="#16a34a" stroke-width="0.6"/>
+      <text x="10" y="16" class="badge" fill="#16a34a">Measured (exact 1:1 linear):</text>
+      <text x="10" y="36" class="lbl-sm">stall=1 → 1 cycle delay (insufficient!)</text>
+      <text x="10" y="50" class="lbl-sm">stall=4 → 4 cycles (= FFMA latency, correct)</text>
+      <text x="10" y="64" class="lbl-sm">stall=8 → 8 cycles (over-stall, wastes 4)</text>
+      <text x="10" y="82" class="safe">stall=15 → 15 cycles (max, no saturation)</text>
+    </g>
+
+    <!-- ptxas behavior -->
+    <g transform="translate(14, 228)">
+      <rect x="0" y="0" width="292" height="36" rx="6" fill="#16a34a" opacity="0.06" stroke="#16a34a" stroke-width="0.5"/>
+      <text x="10" y="14" class="safe">ptxas always sets stall = exact latency</text>
+      <text x="10" y="30" class="note">Never over-stalls; never under-stalls</text>
+    </g>
+  </g>
+
+  <!-- ═══════ BOTTOM: Timeline Diagram ═══════ -->
+  <g transform="translate(30, 380)">
+    <rect x="0" y="0" width="1020" height="200" rx="12" fill="#f8fafc" stroke="#334155" stroke-width="1"/>
+    <text x="16" y="24" class="sect" fill="#334155">Pipeline Timeline — FFMA Dep Chain (4-cycle latency)</text>
+    <text x="16" y="42" class="desc">How the stall counter gates instruction re-issue timing for the same warp</text>
+
+    <!-- Timeline axis -->
+    <g transform="translate(30, 60)">
+      <line x1="0" y1="0" x2="940" y2="0" stroke="#e2e8f0" stroke-width="1"/>
+      <!-- Cycle markers -->
+      <text x="0" y="-8" class="badge" fill="#64748b">cyc 0</text>
+      <text x="120" y="-8" class="badge" fill="#64748b">cyc 1</text>
+      <text x="240" y="-8" class="badge" fill="#64748b">cyc 2</text>
+      <text x="360" y="-8" class="badge" fill="#64748b">cyc 3</text>
+      <text x="480" y="-8" class="badge" fill="#64748b">cyc 4</text>
+      <text x="600" y="-8" class="badge" fill="#64748b">cyc 5</text>
+
+      <!-- Producer: FFMA issues at cycle 0 -->
+      <rect x="0" y="10" width="480" height="24" rx="4" fill="#6d28d9" opacity="0.15" stroke="#6d28d9" stroke-width="0.8"/>
+      <text x="8" y="26" class="badge" fill="#6d28d9">FFMA R5, R2, R3, R4 — executing (4 cycles)</text>
+      <text x="490" y="26" class="safe">R5 valid ✓</text>
+
+      <!-- Stall=4: consumer issues at cycle 4 (correct) -->
+      <rect x="480" y="44" width="120" height="24" rx="4" fill="#16a34a" opacity="0.15" stroke="#16a34a" stroke-width="0.8"/>
+      <text x="488" y="60" class="badge" fill="#16a34a">Consumer (stall=4)</text>
+      <text x="610" y="60" class="safe">reads valid R5 ✓</text>
+
+      <!-- Stall=1: consumer issues at cycle 1 (WRONG) -->
+      <rect x="120" y="80" width="120" height="24" rx="4" fill="#dc2626" opacity="0.15" stroke="#dc2626" stroke-width="1"/>
+      <text x="128" y="96" class="badge" fill="#dc2626">Consumer (stall=1)</text>
+      <text x="250" y="96" class="warn">reads STALE R5 ✗</text>
+
+      <!-- Stall=0: HW fallback, issues very late -->
+      <rect x="0" y="116" width="940" height="24" rx="4" fill="#b45309" opacity="0.08" stroke="#b45309" stroke-width="0.6"/>
+      <text x="8" y="132" class="badge" fill="#92400e">stall=0: HW scoreboard fallback — waits ~34 cycles for full dependency resolution</text>
+    </g>
+  </g>
+
+  <!-- ═══════ BOTTOM: Comparison with x86 ═══════ -->
+  <g transform="translate(30, 600)">
+    <rect x="0" y="0" width="1020" height="170" rx="12" fill="#EDE7FB" stroke="#6d28d9" stroke-width="0.8"/>
+    <text x="16" y="24" class="sect" fill="#6d28d9">Architectural Comparison: SM_120 vs x86 Dependency Handling</text>
+
+    <g transform="translate(16, 46)">
+      <!-- SM_120 column -->
+      <rect x="0" y="0" width="480" height="106" rx="8" fill="#ffffff" stroke="#6d28d9" stroke-width="0.6"/>
+      <text x="12" y="18" class="lbl" fill="#6d28d9">SM_120 (Compiler-Trusted)</text>
+      <text x="12" y="38" class="lbl-sm">• Wrong stall → SILENT wrong results</text>
+      <text x="12" y="54" class="lbl-sm">• No HW interlocks (no CAM, no bypass detect)</text>
+      <text x="12" y="70" class="lbl-sm">• Area cost: 4 bits/warp/SMSP (trivial)</text>
+      <text x="12" y="86" class="lbl-sm">• 48 warps × 4 bits = 192 bits total/SM</text>
+      <text x="12" y="100" class="safe">Trade: silicon simplicity for compiler correctness</text>
+
+      <!-- x86 column -->
+      <rect x="500" y="0" width="480" height="106" rx="8" fill="#ffffff" stroke="#64748b" stroke-width="0.6"/>
+      <text x="512" y="18" class="lbl" fill="#334155">x86 OoO (Hardware Interlocked)</text>
+      <text x="512" y="38" class="lbl-sm">• Wrong schedule → stalls (never corruption)</text>
+      <text x="512" y="54" class="lbl-sm">• Full CAM scoreboard per register</text>
+      <text x="512" y="70" class="lbl-sm">• Area cost: ~48K comparator entries for SM_120 scale</text>
+      <text x="512" y="86" class="lbl-sm">• (48 warps × 256 regs × 4 sources)</text>
+      <text x="512" y="100" class="note">Trade: silicon complexity for correctness guarantee</text>
+    </g>
+  </g>
+
+  <!-- Source -->
+  <text x="36" y="790" class="note">[source: S11/case_128-136 (stall sweep), S11/case_132-135 (corruption proof), CuAssembler binary patch of 511 IADD3 instructions]</text>
+</svg>

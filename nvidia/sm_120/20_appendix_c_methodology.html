@@ -1,0 +1,1588 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>
+      Appendix C — Measurement Methodology · SM_120 Microarch Reference
+    </title>
+    <link rel="stylesheet" href="assets/css/style.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css"
+      integrity="sha384-nB0miv6/jRmo5UMMR1wu3Gz6NLsoTkbqJghGIsx//Rlm+ZU03BU6SQNC66uf4l5+"
+      crossorigin="anonymous"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/styles/atom-one-light.min.css"
+    />
+    <style>
+      /* protect non-color overrides over hljs theme */
+      pre code.hljs {
+        background: transparent !important;
+        padding: 0 !important;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="shell">
+      <aside class="toc">
+        <a class="toc-back" href="index.html">← Index</a>
+        <div class="toc-brand">
+          SM_120 <span class="accent">GB202</span> · <em>Microarch</em>
+        </div>
+        <span class="toc-tag">FINAL REPORT · 2026</span>
+        <h4>All Chapters</h4>
+        <a href="01_architecture_overview.html">01 · Architecture Overview</a>
+        <a href="02_memory_subsystem.html">02 · Memory Subsystem</a>
+        <a href="03_sm_microarchitecture.html">03 · SM Microarchitecture</a>
+        <a href="04_tensorcore_architecture.html"
+          >04 · TensorCore Architecture</a
+        >
+        <a href="05_instruction_level_characterization.html"
+          >05 · Instruction-Level Characterization</a
+        >
+        <a href="06_on_chip_network_async.html"
+          >06 · On-Chip Network &amp; Async</a
+        >
+        <a href="07_warp_scheduler_control.html"
+          >07 · Warp Scheduler &amp; Control</a
+        >
+        <a href="08_workload_analysis.html">08 · Workload Analysis</a>
+        <a href="09_power_thermal_efficiency.html"
+          >09 · Power, Thermal &amp; Efficiency</a
+        >
+        <a href="10_system_level_multi_gpu.html"
+          >10 · System-Level &amp; Multi-GPU</a
+        >
+        <a href="11_optimization_guidance.html">11 · Optimization Guidance</a>
+        <a href="12_ptxas_compiler_behavior.html"
+          >12 · ptxas Compiler Behavior</a
+        >
+        <a href="13_unified_performance_model.html"
+          >13 · Unified Performance Model</a
+        >
+        <a href="14_sm100_to_sm120_porting_guide.html"
+          >14 · SM_100 → SM_120 Porting Guide</a
+        >
+        <a href="15_agent_ground_truth.html">15 · Agent Ground Truth</a>
+        <a href="16_open_questions.html">16 · Open Questions</a>
+        <a href="17_cross_reference_map.html">17 · Cross-Reference Map</a>
+        <a href="18_appendix_a_test_coverage.html"
+          >18 · Appendix A — Test Coverage</a
+        >
+        <a href="19_appendix_b_machine_readable.html"
+          >19 · Appendix B — Machine-Readable Parameters</a
+        >
+        <a
+          href="20_appendix_c_methodology.html"
+          style="font-weight: 600; color: var(--ink)"
+          >20 · Appendix C — Measurement Methodology</a
+        >
+      </aside>
+      <main class="content">
+        <header class="hero">
+          <div class="hero-eyebrow">
+            <span class="pulse"></span>APPENDIX 20 · SM_120 · GB202 BLACKWELL
+          </div>
+          <h1 class="hero-title">Appendix C — Measurement Methodology</h1>
+          <p class="lede">
+            This appendix documents the measurement framework, timing
+            methodology, known artifact sources, mitigation strategies, and
+            per-chapter data confidence levels for the SM_120 microbenchmark
+            campaign. All measurements follow the methodology established in
+            Section 1 (Methodology Calibration) and validated across 1504 test
+            cases. Understanding the measurement infrastructure is essential for
+            interpreting results and assessing confidence bounds.
+          </p>
+        </header>
+
+        <h2 class="ch-title" id="c-1-measurement-framework">
+          C.1 Measurement Framework
+        </h2>
+        <h3 class="sub-title" id="timing-infrastructure">
+          Timing Infrastructure
+        </h3>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Component</th>
+                <th>Implementation</th>
+                <th>Notes</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Clock source</td>
+                <td><code>%clock64</code> register (64-bit cycle counter)</td>
+                <td>Per-SM, monotonic</td>
+              </tr>
+              <tr>
+                <td>Start read</td>
+                <td><code>CS2UR</code> (Clock-to-Uniform-Register)</td>
+                <td>Minimizes pipeline perturbation</td>
+              </tr>
+              <tr>
+                <td>End read</td>
+                <td><code>CS2R</code> (Clock-to-Standard-Register)</td>
+                <td>Standard RF path</td>
+              </tr>
+              <tr>
+                <td>Overhead</td>
+                <td>3 cycles (empty-region baseline)</td>
+                <td>Subtracted from all measurements</td>
+              </tr>
+              <tr>
+                <td>Resolution</td>
+                <td>1 cycle at GPU clock frequency</td>
+                <td>~0.39 ns at 2572 MHz boost</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          <strong>Source</strong>:
+          <code>section_1/01_clock64_overhead_calibration_260606_014930</code>
+        </p>
+        <h3 class="sub-title" id="dual-path-clock-read-sm_120-specific">
+          Dual-Path Clock Read (SM_120 Specific)
+        </h3>
+        <p>
+          SM_120 supports two clock read paths with different pipeline insertion
+          points:
+        </p>
+        <pre><code>CS2UR %clock64, %ur_start    // Uniform RF — lower perturbation for start
+... measured region ...
+CS2R  %clock64, %r_end       // Standard RF — conventional for end</code></pre>
+        <p>
+          This dual-path approach minimizes measurement overhead to exactly 3
+          cycles, verified against known-latency instruction sequences.
+        </p>
+        <h3 class="sub-title" id="iteration-protocol">Iteration Protocol</h3>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Parameter</th>
+                <th>Value</th>
+                <th>Rationale</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Warmup iterations</td>
+                <td>100+</td>
+                <td>Eliminates I-cache cold misses, TLB fills, JIT effects</td>
+              </tr>
+              <tr>
+                <td>Measured iterations</td>
+                <td>1000+</td>
+                <td>Statistical significance at &lt;0.5% stddev</td>
+              </tr>
+              <tr>
+                <td>Reported statistics</td>
+                <td>Median, Mean, Stddev</td>
+                <td>Median robust to outliers; mean for averaging</td>
+              </tr>
+              <tr>
+                <td>Outlier handling</td>
+                <td>None (report raw)</td>
+                <td>Outliers may indicate real microarchitectural events</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <h3 class="sub-title" id="warp-control-strategy">
+          Warp Control Strategy
+        </h3>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Mode</th>
+                <th>Configuration</th>
+                <th>Use Case</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Single-warp</td>
+                <td>1 block, 32 threads</td>
+                <td>Latency measurement (no scheduling noise)</td>
+              </tr>
+              <tr>
+                <td>Multi-warp sweep</td>
+                <td>1 block, 32-1536 threads</td>
+                <td>Throughput saturation characterization</td>
+              </tr>
+              <tr>
+                <td>Multi-block</td>
+                <td>Variable blocks, 32 threads each</td>
+                <td>Cross-SM and scaling tests</td>
+              </tr>
+              <tr>
+                <td>Full-chip</td>
+                <td>Occupancy-saturating</td>
+                <td>Peak throughput validation</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <h3 class="sub-title" id="anti-dead-code-elimination-anti-dce">
+          Anti-Dead-Code-Elimination (Anti-DCE)
+        </h3>
+        <p>
+          <strong>Problem</strong>: <code>ptxas</code> aggressively eliminates
+          code with no observable side effects, even through
+          <code>asm volatile</code> barriers.
+        </p>
+        <p><strong>Solution</strong>: Global memory store sink pattern:</p>
+        <pre><code class="language-cuda">// Anti-DCE: result stored to global memory
+__global__ void kernel(uint32_t* sink, ...) {
+    uint32_t result = 0;
+    // ... measurement region ...
+    sink[threadIdx.x] = result;  // Prevents DCE of entire chain
+}</code></pre>
+        <p>
+          <strong>Verification</strong>: <code>asm volatile</code> alone is
+          insufficient on SM*120 — ptxas still eliminates chains if the output
+          register has no downstream consumer reaching a store. [Source:
+          <code>section_21/21.2_15_volatile_vs_asm_260608*\*</code>]
+        </p>
+        <h3 class="sub-title" id="clock-pinning">Clock Pinning</h3>
+        <pre><code class="language-bash"># Pin GPU clock to boost frequency (eliminates DVFS drift)
+nvidia-smi -lgc 2572,2572
+
+# Verification: &lt;0.3% drift over 60-second measurement windows</code></pre>
+        <p>
+          <strong>Source</strong>:
+          <code>section_3/08_clock_frequency_stability_260606_104041</code>
+        </p>
+        <h3 class="sub-title" id="sass-verification">SASS Verification</h3>
+        <p>Every test case includes pre-measurement SASS verification:</p>
+        <pre><code class="language-bash"># Extract SASS to verify instruction count and structure
+cuobjdump --dump-sass &lt;binary&gt; | grep -c &quot;&lt;target_instruction&gt;&quot;</code></pre>
+        <p>This ensures:</p>
+        <ol>
+          <li>The compiler did not eliminate the measured instruction chain</li>
+          <li>
+            No unexpected instructions were inserted (spills, moves, etc.)
+          </li>
+          <li>The dependency structure matches the intended measurement</li>
+        </ol>
+        <hr />
+        <h2 class="ch-title" id="c-2-known-artifact-sources">
+          C.2 Known Artifact Sources
+        </h2>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Artifact</th>
+                <th>Impact</th>
+                <th>Mitigation</th>
+                <th>Residual Uncertainty</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>ptxas reordering (max distance=20 instructions)</td>
+                <td>
+                  Alters dependency chain structure; may break intended dep
+                  chains
+                </td>
+                <td>Inline asm + volatile + global store sink</td>
+                <td>+/- 1-2 cycles</td>
+              </tr>
+              <tr>
+                <td>ptxas constant folding</td>
+                <td>
+                  Eliminates entire computation chains when inputs are
+                  compile-time constants
+                </td>
+                <td>Pass all values as kernel arguments (runtime values)</td>
+                <td>Eliminated</td>
+              </tr>
+              <tr>
+                <td>DVFS frequency drift</td>
+                <td>
+                  Frequency changes during long measurement windows invalidate
+                  cycle counts
+                </td>
+                <td>
+                  <code>nvidia-smi -lgc</code> clock pinning; verified &lt;0.3%
+                  drift
+                </td>
+                <td>&lt;0.3%</td>
+              </tr>
+              <tr>
+                <td><code>%clock64</code> pipeline overhead</td>
+                <td>
+                  Clock read consumes a pipeline slot and introduces 3-cycle
+                  measurement overhead
+                </td>
+                <td>Empty-region subtraction (measured 3-cycle baseline)</td>
+                <td>+/- 2 cycles</td>
+              </tr>
+              <tr>
+                <td>L1 I-cache cold miss</td>
+                <td>
+                  First execution of a code path incurs I-cache fill latency
+                </td>
+                <td>100+ warmup iterations before measurement window</td>
+                <td>Eliminated</td>
+              </tr>
+              <tr>
+                <td>L1 D-cache warmup</td>
+                <td>First data access incurs cold miss</td>
+                <td>100+ warmup iterations with same access pattern</td>
+                <td>Eliminated</td>
+              </tr>
+              <tr>
+                <td>Dead Code Elimination (DCE)</td>
+                <td>
+                  Compiler removes computations with no visible side effect
+                </td>
+                <td>
+                  Global store sink (<code>st.global.b32</code>) on all computed
+                  values
+                </td>
+                <td>Eliminated</td>
+              </tr>
+              <tr>
+                <td>Scoreboard stall noise</td>
+                <td>
+                  Scoreboard wait instructions may overlap with prior operation
+                  latency
+                </td>
+                <td>Long dependency chain amortization (100+ ops in chain)</td>
+                <td>+/- 1 cycle</td>
+              </tr>
+              <tr>
+                <td>Single-warp measurement bias</td>
+                <td>
+                  Single-warp tests cannot trigger throughput bottlenecks or
+                  inter-warp contention
+                </td>
+                <td>
+                  Separate latency tests (single-warp) and throughput tests
+                  (multi-warp)
+                </td>
+                <td>N/A (by design)</td>
+              </tr>
+              <tr>
+                <td>Register bank conflict</td>
+                <td>Operand collector conflicts could add latency</td>
+                <td>
+                  Operand collector masks conflicts (measured 0-cycle penalty)
+                </td>
+                <td>Eliminated on SM_120</td>
+              </tr>
+              <tr>
+                <td>TLB miss</td>
+                <td>
+                  Large working sets may trigger TLB misses during measurement
+                </td>
+                <td>
+                  Pre-touch all pages during warmup; use huge pages where
+                  possible
+                </td>
+                <td>&lt;1 cycle (rare)</td>
+              </tr>
+              <tr>
+                <td>Instruction cache aliasing</td>
+                <td>
+                  Large code footprints may evict measured code from I-cache
+                </td>
+                <td>
+                  Keep measurement kernels compact (&lt;1 KB instruction
+                  footprint)
+                </td>
+                <td>Eliminated</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          <strong>Primary source references</strong>:
+          <code>section_21/21.2_09-18_ptxas_compiler_*</code>,
+          <code>section_1/01-04_methodology_*</code>
+        </p>
+        <hr />
+        <h2 class="ch-title" id="c-3-ptxas-compiler-behavior-catalog">
+          C.3 ptxas Compiler Behavior Catalog
+        </h2>
+        <p>
+          The following ptxas behaviors were identified and characterized during
+          the campaign:
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Behavior</th>
+                <th>Description</th>
+                <th>Impact on Measurement</th>
+                <th>Mitigation</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Instruction reordering</td>
+                <td>
+                  Moves independent instructions up to 20 slots from source
+                  position
+                </td>
+                <td>Can break intended dependency chains</td>
+                <td>Verify SASS matches intent</td>
+              </tr>
+              <tr>
+                <td>Constant folding</td>
+                <td>Eliminates chains with compile-time-known inputs</td>
+                <td>Removes entire measurement region</td>
+                <td>Runtime kernel arguments</td>
+              </tr>
+              <tr>
+                <td>Dead code elimination</td>
+                <td>Removes code with no side effects</td>
+                <td>Removes measurement target</td>
+                <td>Global store sink</td>
+              </tr>
+              <tr>
+                <td>Register coalescing</td>
+                <td>Merges register moves into consumer instructions</td>
+                <td>May alter measured latency</td>
+                <td>Verify via SASS inspection</td>
+              </tr>
+              <tr>
+                <td>Stall count assignment</td>
+                <td>
+                  Assigns stall counts per instruction based on dependency
+                  analysis
+                </td>
+                <td>Generally near-optimal (0% overhead measured)</td>
+                <td>Trust ptxas for production code</td>
+              </tr>
+              <tr>
+                <td>Loop unrolling</td>
+                <td>Unrolls small loops</td>
+                <td>May change instruction mix</td>
+                <td>Explicit <code>#pragma unroll</code> control</td>
+              </tr>
+              <tr>
+                <td>Predication insertion</td>
+                <td>Converts short branches to predicated code</td>
+                <td>Alters control flow measurement</td>
+                <td>Use <code>asm goto</code> for explicit branches</td>
+              </tr>
+              <tr>
+                <td>spill/fill insertion</td>
+                <td>
+                  Adds memory operations when register pressure exceeds
+                  threshold
+                </td>
+                <td>Contaminates ALU latency measurements</td>
+                <td>Keep register usage below spill threshold</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <hr />
+        <h2 class="ch-title" id="c-4-per-chapter-data-confidence-assessment">
+          C.4 Per-Chapter Data Confidence Assessment
+        </h2>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Chapter</th>
+                <th>Primary Data Type</th>
+                <th>Typical Stddev</th>
+                <th>Confidence Level</th>
+                <th>Key Assumption</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>§1 (Architecture)</td>
+                <td>Feature probes (binary)</td>
+                <td>0%</td>
+                <td>Absolute</td>
+                <td>Compiler accepts/rejects correctly</td>
+              </tr>
+              <tr>
+                <td>§2 (Memory)</td>
+                <td>Pointer-chase latency</td>
+                <td>&lt;1%</td>
+                <td>Very High</td>
+                <td>No TLB/prefetcher interference</td>
+              </tr>
+              <tr>
+                <td>§3 (SM/Instruction)</td>
+                <td>Dep-chain cycle counts</td>
+                <td>&lt;0.5%</td>
+                <td>Very High</td>
+                <td>SASS verified, no reordering</td>
+              </tr>
+              <tr>
+                <td>§4 (TensorCore)</td>
+                <td>MMA throughput (TFLOPS)</td>
+                <td>&lt;2%</td>
+                <td>High</td>
+                <td>Steady-state pipeline, clocks stable</td>
+              </tr>
+              <tr>
+                <td>§5 (Instruction catalog)</td>
+                <td>Latency/throughput per op</td>
+                <td>&lt;0.5%</td>
+                <td>Very High</td>
+                <td>Single-warp isolation</td>
+              </tr>
+              <tr>
+                <td>§6 (On-chip network)</td>
+                <td>TMA/DSMEM latency</td>
+                <td>5-10%</td>
+                <td>Medium</td>
+                <td>Includes setup and teardown overhead</td>
+              </tr>
+              <tr>
+                <td>§7 (Scheduler)</td>
+                <td>Dispatch pattern inference</td>
+                <td>&lt;1%</td>
+                <td>High</td>
+                <td>CuAssembler-verified dispatch</td>
+              </tr>
+              <tr>
+                <td>§8 (Workload)</td>
+                <td>Wall-clock cuBLAS</td>
+                <td>&lt;5%</td>
+                <td>High</td>
+                <td>Library-version-dependent</td>
+              </tr>
+              <tr>
+                <td>§9 (Power)</td>
+                <td>nvidia-smi power sampling</td>
+                <td>&lt;3%</td>
+                <td>Medium-High</td>
+                <td>Sampling granularity ~100 ms</td>
+              </tr>
+              <tr>
+                <td>§10 (System)</td>
+                <td>PCIe throughput</td>
+                <td>&lt;1%</td>
+                <td>Very High</td>
+                <td>Pinned memory, warm path</td>
+              </tr>
+              <tr>
+                <td>§11 (Optimization)</td>
+                <td>Derived from prior chapters</td>
+                <td>Inherited</td>
+                <td>High</td>
+                <td>Assumes chapter data correctness</td>
+              </tr>
+              <tr>
+                <td>§12 (ptxas)</td>
+                <td>SASS diff analysis</td>
+                <td>0%</td>
+                <td>Absolute</td>
+                <td>Deterministic compiler</td>
+              </tr>
+              <tr>
+                <td>§13 (Model)</td>
+                <td>Multi-source synthesis</td>
+                <td>N/A</td>
+                <td>High</td>
+                <td>Model validated against measured</td>
+              </tr>
+              <tr>
+                <td>§14 (Porting)</td>
+                <td>Feature matrix (binary)</td>
+                <td>0%</td>
+                <td>Absolute</td>
+                <td>Compiler behavior is ground truth</td>
+              </tr>
+              <tr>
+                <td>§15 (Agent)</td>
+                <td>Decision tree validation</td>
+                <td>&lt;2%</td>
+                <td>High</td>
+                <td>Validated against full dataset</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <h3 class="sub-title" id="confidence-level-definitions">
+          Confidence Level Definitions
+        </h3>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Level</th>
+                <th>Definition</th>
+                <th>Typical Stddev</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Absolute</td>
+                <td>Binary fact (present/absent), deterministic</td>
+                <td>0%</td>
+              </tr>
+              <tr>
+                <td>Very High</td>
+                <td>Cycle-precise measurement, highly reproducible</td>
+                <td>&lt;1%</td>
+              </tr>
+              <tr>
+                <td>High</td>
+                <td>Reproducible within small variance</td>
+                <td>1-5%</td>
+              </tr>
+              <tr>
+                <td>Medium-High</td>
+                <td>
+                  Reproducible, but measurement includes non-target overhead
+                </td>
+                <td>3-10%</td>
+              </tr>
+              <tr>
+                <td>Medium</td>
+                <td>
+                  Meaningful but includes significant systematic uncertainty
+                </td>
+                <td>5-15%</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <hr />
+        <h2 class="ch-title" id="c-5-cross-validation-protocol">
+          C.5 Cross-Validation Protocol
+        </h2>
+        <p>
+          High-confidence conclusions require agreement from at least two
+          independent measurement approaches:
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Validation Type</th>
+                <th>Method A</th>
+                <th>Method B</th>
+                <th>Agreement Criterion</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Instruction latency</td>
+                <td>PTX dep-chain timing</td>
+                <td>NCU pipeline utilization</td>
+                <td>Within 1 cycle</td>
+              </tr>
+              <tr>
+                <td>Memory bandwidth</td>
+                <td>Streaming kernel BW</td>
+                <td>NCU DRAM throughput counter</td>
+                <td>Within 5%</td>
+              </tr>
+              <tr>
+                <td>Cache capacity</td>
+                <td>Working-set cliff detection</td>
+                <td>NCU hit-rate monitoring</td>
+                <td>Same cliff point</td>
+              </tr>
+              <tr>
+                <td>Feature presence</td>
+                <td>ptxas compilation success</td>
+                <td>SASS opcode in binary</td>
+                <td>Both agree</td>
+              </tr>
+              <tr>
+                <td>Throughput</td>
+                <td>Multi-warp saturation curve</td>
+                <td>NCU pipe utilization %</td>
+                <td>Within 3%</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <h3 class="sub-title" id="cross-validation-results">
+          Cross-Validation Results
+        </h3>
+        <p>Of 28 key findings in this report:</p>
+        <ul>
+          <li>
+            <strong>19</strong> are multi-source validated (agreement within
+            criteria above)
+          </li>
+          <li>
+            <strong>9</strong> are single-source (no contradiction from other
+            data, but only one measurement approach used)
+          </li>
+          <li>
+            <strong>0</strong> have unresolved contradictions between sources
+          </li>
+        </ul>
+        <p>
+          The single unresolved measurement conflict (L1 capacity: 48 vs. 96 KB)
+          is documented as OQ-1 in Chapter 16 and both values are reported with
+          their respective measurement conditions.
+        </p>
+        <hr />
+        <h2 class="ch-title" id="c-6-environmental-controls">
+          C.6 Environmental Controls
+        </h2>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Control</th>
+                <th>Implementation</th>
+                <th>Verification</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Exclusive GPU access</td>
+                <td>No concurrent processes during measurement</td>
+                <td><code>nvidia-smi</code> process check before each run</td>
+              </tr>
+              <tr>
+                <td>Fixed clock frequency</td>
+                <td><code>nvidia-smi -lgc 2572,2572</code></td>
+                <td>Clock monitor in measurement loop</td>
+              </tr>
+              <tr>
+                <td>Thermal stability</td>
+                <td>Wait for temperature stabilization before measurement</td>
+                <td>Temperature logged; all data at &lt;55C</td>
+              </tr>
+              <tr>
+                <td>Driver consistency</td>
+                <td>Same driver version throughout campaign</td>
+                <td>Recorded in test metadata</td>
+              </tr>
+              <tr>
+                <td>Memory state</td>
+                <td>Clear L2 between unrelated tests</td>
+                <td>Flush kernel between test groups</td>
+              </tr>
+              <tr>
+                <td>OS noise</td>
+                <td>Minimize background processes</td>
+                <td>Repeat measurements confirm &lt;0.5% variance</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <hr />
+        <h2 class="ch-title" id="c-7-limitations-and-scope">
+          C.7 Limitations and Scope
+        </h2>
+        <h3 class="sub-title" id="what-this-methodology-can-measure">
+          What This Methodology Can Measure
+        </h3>
+        <ul>
+          <li>
+            Instruction latency (cycle-precise for single-issue operations)
+          </li>
+          <li>Pipeline throughput (operations per cycle at saturation)</li>
+          <li>Memory hierarchy latency and bandwidth</li>
+          <li>Synchronization costs</li>
+          <li>Feature presence/absence</li>
+          <li>Power consumption (at nvidia-smi sampling granularity)</li>
+        </ul>
+        <h3 class="sub-title" id="what-this-methodology-cannot-measure">
+          What This Methodology Cannot Measure
+        </h3>
+        <ul>
+          <li>Sub-cycle timing (e.g., intra-pipeline-stage details)</li>
+          <li>
+            Internal microarchitectural state (e.g., reservation station
+            occupancy)
+          </li>
+          <li>Hardware event counters not exposed by NCU</li>
+          <li>Die-level physical layout or routing</li>
+          <li>Fuse configuration or disabled-but-present hardware</li>
+          <li>Exact transistor-level implementation of functional units</li>
+        </ul>
+        <h3 class="sub-title" id="measurement-uncertainty-budget">
+          Measurement Uncertainty Budget
+        </h3>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Source</th>
+                <th>Contribution</th>
+                <th>Cumulative</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Clock read overhead (subtracted)</td>
+                <td>+/- 0.5 cyc</td>
+                <td>0.5 cyc</td>
+              </tr>
+              <tr>
+                <td>Scoreboard noise</td>
+                <td>+/- 0.5 cyc</td>
+                <td>1.0 cyc</td>
+              </tr>
+              <tr>
+                <td>DVFS residual</td>
+                <td>+/- 0.3%</td>
+                <td>1.0 cyc + 0.3%</td>
+              </tr>
+              <tr>
+                <td>ptxas instruction insertion</td>
+                <td>0 (SASS verified)</td>
+                <td>1.0 cyc + 0.3%</td>
+              </tr>
+              <tr>
+                <td>Statistical noise (1000 iters)</td>
+                <td>&lt;0.1 cyc</td>
+                <td>~1 cyc + 0.3%</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          <strong>Total measurement uncertainty</strong>: +/- 1-2 cycles for
+          latency measurements; +/- 0.5% for throughput measurements at
+          saturation.
+        </p>
+        <h3
+          class="sub-title"
+          id="c-7-1-retested-cases-canonical-timestamp-selection"
+        >
+          C.7.1 Retested Cases (Canonical Timestamp Selection)
+        </h3>
+        <p>
+          A small number of S25 cases were re-run multiple times to refine
+          measurement methodology. Only the <strong>latest timestamp</strong> is
+          canonical; earlier timestamps are retained as artifact-trail.
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Case</th>
+                <th>Timestamps (oldest → newest)</th>
+                <th>Canonical</th>
+                <th>Retest Reason</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>S25/case_6</code> (CPI structural hazard)</td>
+                <td>260610_151417 → 260610_162500 → 260610_165439</td>
+                <td>
+                  <strong><code>260610_165439</code></strong>
+                </td>
+                <td>
+                  (1) The 151417 run used a too-short measurement window
+                  producing high CV in the IADD3 hazard latency; (2) the 162500
+                  retest expanded the window but used the legacy 76-cyc DRAM
+                  stall pattern that was later attributed to a sparse-lane mask
+                  artifact (analogous to the FP64 EU dichotomy, see §5.2.7); (3)
+                  the 165439 retest applied all-lane workload + matched stall
+                  windows and produced the canonical CPI breakdown cited in Ch3
+                  §3.6 / Ch12.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          When citing <code>S25/case_6</code> data, always use the
+          <code>260610_165439</code> timestamped report; the earlier two are
+          kept on disk for audit reproducibility but should not be quoted as
+          authoritative.
+        </p>
+        <hr />
+        <h2 class="ch-title" id="c-8-notation-conventions">
+          C.8 Notation Conventions
+        </h2>
+        <p>
+          The following typography rules are applied throughout the report
+          (Chapters 0–20) to keep numeric units, identifiers, and citations
+          machine-parseable.
+        </p>
+        <h3 class="sub-title" id="c-8-1-cycle-unit">C.8.1 Cycle Unit</h3>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Token</th>
+                <th>When to use</th>
+                <th>Example</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>cyc</code> (lowercase abbreviation)</td>
+                <td>
+                  All inline numeric measurements, tables, plots, and
+                  machine-readable JSON
+                </td>
+                <td>
+                  <code>44 cyc</code>, <code>latency = 29 cyc</code>,
+                  <code>cyc/op = 4.0</code>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <code>cycle</code> / <code>cycles</code> (lowercase noun)
+                </td>
+                <td>English prose where the word reads as a noun</td>
+                <td>"the cycle counter", "600 cycles below the threshold"</td>
+              </tr>
+              <tr>
+                <td><code>Cycle</code> / <code>Cycles</code> (Title Case)</td>
+                <td>
+                  <strong>Only</strong> as a column header in a table or as the
+                  first word of a section heading
+                </td>
+                <td>
+                  <code>\| ... \| Cycles \| ... \|</code>, "### Cycle Budgeting"
+                </td>
+              </tr>
+              <tr>
+                <td><code>Cyc</code> (Title Case abbreviation)</td>
+                <td>
+                  <strong>Only</strong> as a compact column header (e.g.
+                  <code>Cyc/Op</code>); never inline
+                </td>
+                <td><code>\| Min Cyc \| Cyc/Op \|</code></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          <strong>Forbidden</strong>: ALL-CAPS
+          <code>CYC</code>/<code>CYCLE</code>; mixed forms like
+          <code>Cycle/op</code> (use <code>cyc/op</code>); attaching
+          <code>s</code> to the abbreviation (use <code>cyc</code>, never
+          <code>cycs</code>).
+        </p>
+        <h3 class="sub-title" id="c-8-1-1-rounding-convention-for-cycle-counts">
+          C.8.1.1 Rounding Convention for Cycle Counts
+        </h3>
+        <p>
+          Measured cycle values are reported using the following rounding rule:
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Precision regime</th>
+                <th>Rule</th>
+                <th>Examples</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Inline narrative / Quick Reference / KI titles</td>
+                <td>
+                  <strong>Round to nearest integer</strong> when the fractional
+                  part is <code>≤ 0.5%</code> of the integer value (e.g. 63.99 →
+                  64; 28.95 → 29; 33.89 → 34)
+                </td>
+                <td>"DFMA = 64 cyc", "shfl = 29 cyc", "smem = 34 cyc"</td>
+              </tr>
+              <tr>
+                <td>Detailed measurement tables / S§ raw-data tables / AppB</td>
+                <td>
+                  <strong>Preserve 2 decimal places</strong> when fractional
+                  precision matters for downstream models (e.g. throughput
+                  formulas, ILP saturation curves)
+                </td>
+                <td>
+                  <code>63.99 cyc</code>, <code>28.95 cyc</code>,
+                  <code>33.89 cyc</code>
+                </td>
+              </tr>
+              <tr>
+                <td>Chapter narrative when cross-referencing both</td>
+                <td>
+                  Cite the integer form first, then disclose the precise value
+                  parenthetically
+                </td>
+                <td>
+                  "DFMA latency 64 cyc (precisely 63.99 cyc,
+                  <span class="cite">[S5/case_48]</span>)"
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          The two forms are <strong>not</strong> in conflict; the choice depends
+          on whether the consumer is a human reader (integer is clearer) or a
+          performance model (fractional preserves R²). Cross-chapter
+          discrepancies that fall within the rounding band are not bugs.
+        </p>
+        <h3 class="sub-title" id="c-8-2-other-numeric-units">
+          C.8.2 Other Numeric Units
+        </h3>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Quantity</th>
+                <th>Canonical form</th>
+                <th>Notes</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Bytes</td>
+                <td>
+                  <code>B</code>, <code>KB</code>, <code>MB</code>,
+                  <code>GB</code>, <code>TB</code>
+                </td>
+                <td>
+                  Binary (1 KB = 1024 B) for capacity; decimal (1 GB/s = 10⁹
+                  B/s) for bandwidth
+                </td>
+              </tr>
+              <tr>
+                <td>Bandwidth</td>
+                <td>
+                  <code>GB/s</code>, <code>B/cyc</code>, <code>B/cyc/warp</code>
+                </td>
+                <td>Spell out per-something with <code>/</code></td>
+              </tr>
+              <tr>
+                <td>Throughput</td>
+                <td>
+                  <code>op/cyc</code>, <code>cyc/op</code>,
+                  <code>cyc/mma</code>, <code>TFLOPS</code>, <code>TOPS</code>
+                </td>
+                <td>TFLOPS = 10¹² FLOP/s</td>
+              </tr>
+              <tr>
+                <td>Time</td>
+                <td>
+                  <code>ns</code>, <code>μs</code> (Unicode) or
+                  <code>us</code> (ASCII)
+                </td>
+                <td>Either accepted; do not mix within one chapter</td>
+              </tr>
+              <tr>
+                <td>Frequency</td>
+                <td><code>MHz</code>, <code>GHz</code></td>
+                <td>Always uppercase</td>
+              </tr>
+              <tr>
+                <td>Counts</td>
+                <td>
+                  <code>4 SMs</code>, <code>12 SMSPs</code>,
+                  <code>1542 cases</code>
+                </td>
+                <td>Plural with <code>s</code> (no apostrophe)</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <h3 class="sub-title" id="c-8-3-identifier-style">
+          C.8.3 Identifier Style
+        </h3>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Element</th>
+                <th>Style</th>
+                <th>Example</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Test data sources</td>
+                <td>
+                  <code>S&lt;section&gt;/case_&lt;n&gt;</code> (lowercase
+                  <code>case_</code>, underscore)
+                </td>
+                <td><code>S8/case_2</code>, <code>S26/case_7-9</code></td>
+              </tr>
+              <tr>
+                <td>SASS opcodes</td>
+                <td>UPPERCASE with <code>.</code> qualifiers</td>
+                <td>
+                  <code>HMMA.16816.F32</code>, <code>LDG.E.128.STRONG.CTA</code>
+                </td>
+              </tr>
+              <tr>
+                <td>PTX instructions</td>
+                <td>lowercase with <code>.</code> qualifiers</td>
+                <td>
+                  <code>mma.sync.aligned</code>,
+                  <code>cp.async.cg.shared.global</code>
+                </td>
+              </tr>
+              <tr>
+                <td>Pipe names</td>
+                <td>
+                  lowercase <code>pipe_*</code> for NCU metrics; capitalized in
+                  prose
+                </td>
+                <td><code>pipe_fma</code> / "FMA pipe"</td>
+              </tr>
+              <tr>
+                <td>Chapter section refs</td>
+                <td><code>§N.M.K</code> (section sign + arabic numerals)</td>
+                <td><code>§5.2.7</code>, <code>§3.4.3</code></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <hr />
+        <h2 class="ch-title" id="c-9-cross-chapter-identifier-systems-ki-kf-oq">
+          C.9 Cross-Chapter Identifier Systems (KI / KF / OQ)
+        </h2>
+        <p>
+          Three distinct identifier prefixes coexist across the report. They are
+          <strong>not interchangeable</strong> — each serves a different
+          purpose. This section provides the canonical legend.
+        </p>
+        <h3 class="sub-title" id="c-9-1-legend">C.9.1 Legend</h3>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Prefix</th>
+                <th>Stands for</th>
+                <th>Granularity</th>
+                <th>Home chapter(s)</th>
+                <th style="text-align: right">Typical count</th>
+                <th>Numbering scheme</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>KI-</strong></td>
+                <td><strong>Key Insight</strong></td>
+                <td>Per-chapter narrative takeaway (interpretive)</td>
+                <td>Ch00 through Ch11 (one block per chapter)</td>
+                <td style="text-align: right">6–10 per chapter, ~80 total</td>
+                <td>
+                  <code>KI-&lt;chapter&gt;.&lt;seq&gt;</code> (e.g.
+                  <code>KI-9.5</code>)
+                </td>
+              </tr>
+              <tr>
+                <td><strong>KF-</strong></td>
+                <td><strong>Key Finding</strong></td>
+                <td>Cross-cutting measured fact (atomic, machine-citable)</td>
+                <td>
+                  Ch17 §17.1 (master table); referenced by Ch15, Ch00, Ch19
+                </td>
+                <td style="text-align: right">
+                  28 total, numbered globally <code>KF-01 … KF-28</code>
+                </td>
+                <td><code>KF-&lt;gg&gt;</code> zero-padded global</td>
+              </tr>
+              <tr>
+                <td><strong>OQ-</strong></td>
+                <td><strong>Open Question</strong></td>
+                <td>
+                  Hardware/architectural question that needed targeted follow-up
+                  experiments to resolve
+                </td>
+                <td>Ch16 (master catalog); referenced by Ch02, Ch05, Ch15</td>
+                <td style="text-align: right">
+                  9 total (<code>OQ-1 … OQ-9</code>), 7 RESOLVED + 2 BLOCKED
+                </td>
+                <td><code>OQ-&lt;n&gt;</code> (no padding)</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <h3 class="sub-title" id="c-9-2-relationship">C.9.2 Relationship</h3>
+        <pre><code>                Measurement (S&lt;X&gt;/case_&lt;n&gt;)
+                          │
+          ┌───────────┼───────────┐
+          ▼                ▼               ▼
+        KF-&lt;gg&gt;          KI-&lt;ch&gt;.&lt;n&gt;      OQ-&lt;n&gt;
+     (atomic fact)    (chapter insight)  (was it answered?)
+     [Ch17 table]     [Ch00-Ch11 prose]  [Ch16 catalog]</code></pre>
+        <ul>
+          <li>
+            <strong>KF ⇒ KI</strong>: A KI typically aggregates one or more KFs
+            into a narrative claim. Example: <code>KI-3.1</code> ("4 SMSPs,
+            single-issue") aggregates <code>KF-01</code> and <code>KF-07</code>.
+          </li>
+          <li>
+            <strong>OQ ⇒ KF / KI</strong>: An OQ becomes either a new KF/KI
+            (when resolved) or a <code>[BLOCKED]</code> entry (when not testable
+            on SM_120). Example: <code>OQ-3</code> was resolved into the FP64-EU
+            sections of <code>§5.2.4 / §5.2.7</code> and reflected in
+            <code>KI-5.x</code>.
+          </li>
+          <li>
+            <strong>KF id stability</strong>: KF numbers are immutable once
+            assigned (Ch17 is the registry). KI numbers re-number freely
+            per-chapter revision.
+          </li>
+        </ul>
+        <h3 class="sub-title" id="c-9-3-where-to-look">C.9.3 Where to Look</h3>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>If you want to find...</th>
+                <th>Go to</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>The atomic measured fact behind a claim</td>
+                <td>
+                  <code>Ch17 §17.1</code> (KF table) → follow
+                  <code>S&lt;X&gt;/case_&lt;n&gt;</code> citation to
+                  <code>test_results/SM_120/section_X/report/</code>
+                </td>
+              </tr>
+              <tr>
+                <td>The narrative argument for an insight</td>
+                <td>
+                  <code>KI-&lt;ch&gt;.&lt;n&gt;</code> in the corresponding main
+                  chapter (Ch00–Ch11)
+                </td>
+              </tr>
+              <tr>
+                <td>Whether a hardware question was answered</td>
+                <td>
+                  <code>Ch16</code> (OQ catalog) — each OQ has status
+                  <code>[RESOLVED]</code> / <code>[BLOCKED]</code> plus
+                  follow-up section pointer
+                </td>
+              </tr>
+              <tr>
+                <td>Machine-readable export</td>
+                <td>
+                  <code>Ch19 §19.x</code> (JSON), parameters keyed by KF id when
+                  possible
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <hr />
+        <h2
+          class="ch-title"
+          id="c-10-presentation-conventions-s-01-s-02-resolved-2026-06-11"
+        >
+          C.10 Presentation Conventions (S-01 / S-02 RESOLVED 2026-06-11)
+        </h2>
+        <p>
+          This section captures cross-cutting presentation rules for
+          cross-references, table numbering, and confidence tagging —
+          acknowledging known structural inconsistencies in the v1 draft and
+          codifying the target convention. Full reformatting of all 13,400+
+          lines of narrative is <strong>deferred</strong> as a separate refactor
+          task; new content from 2026-06-11 onward follows these rules.
+        </p>
+        <h3 class="sub-title" id="c-10-1-cross-reference-hyperlinks-s-01">
+          C.10.1 Cross-Reference Hyperlinks (S-01)
+        </h3>
+        <p>
+          <strong>Current state</strong>: Most section/chapter cross-references
+          in the narrative are plain text (e.g. "see §5.2.5") rather than
+          Markdown hyperlinks.
+        </p>
+        <p><strong>Target convention</strong> (applied to all new content):</p>
+        <ul>
+          <li>
+            In-chapter section refs:
+            <code>[§N.M.K](#section-anchor)</code> Markdown anchor link to
+            chapter heading.
+          </li>
+          <li>
+            Cross-chapter refs:
+            <code
+              >[Ch{N} §N.M.K](file:///…/N_chapter_title.md#section-anchor)</code
+            >
+            absolute file URL link.
+          </li>
+          <li>
+            KI/KF/OQ refs: <code>[KI-{chapter}.{seq}](#ki-N-M)</code>,
+            <code>[KF-{nn}](file:///…/17_cross_reference_map.md#kf-NN)</code>.
+          </li>
+          <li>
+            Plain text refs are tolerated in legacy content but flagged for
+            refactor in <code>final_reports/comments/comment_v1.md</code> S-01.
+          </li>
+        </ul>
+        <p>
+          <strong>Rationale</strong>: Qoder/VS Code Markdown previewer + GitHub
+          renderer both support clickable anchor links. Preserving plain-text
+          refs in legacy chapters avoids the 13,400-line cost of mass conversion
+          while still providing modern UX for new readers.
+        </p>
+        <h3 class="sub-title" id="c-10-2-table-numbering-s-01">
+          C.10.2 Table Numbering (S-01)
+        </h3>
+        <p>
+          <strong>Current state</strong>: Mixed conventions — "Table 1.1"
+          (chapter.seq), "Table 1" (sequential), unnumbered captions, and ad-hoc
+          bold labels ("<strong>Table 8.8</strong>").
+        </p>
+        <p>
+          <strong>Target convention</strong>:
+          <code>**Table {chapter}.{seq}: {Title}**</code> zero-padded sequence
+          within chapter (e.g.
+          <code>Table 8.8: Multi-Precision Roofline Parameters</code>).
+          Inline-rendered tables without a caption are tolerated for short
+          auxiliary tables (≤5 rows). Anchored refs use
+          <code>Table-{chapter}-{seq}</code> slug.
+        </p>
+        <h3 class="sub-title" id="c-10-3-identifier-unification-s-01">
+          C.10.3 Identifier Unification (S-01)
+        </h3>
+        <p>
+          <strong>Current state</strong>: KI, KF, OQ coexist with different
+          scopes (see §C.9). Some readers find the per-chapter KI numbering
+          confusing when a chapter is renumbered.
+        </p>
+        <p>
+          <strong>Decision</strong>: KI / KF / OQ remain as
+          <strong>separate</strong> identifier systems with distinct semantics
+          (per §C.9). They are <strong>not</strong> unified, because each serves
+          a different purpose:
+        </p>
+        <ul>
+          <li>
+            KI = chapter-internal narrative aggregation (re-numbered with
+            chapter revisions)
+          </li>
+          <li>KF = global, immutable atomic facts (master registry in Ch17)</li>
+          <li>OQ = hardware questions with resolution status (Ch16 catalog)</li>
+        </ul>
+        <p>
+          A forced unification would lose the per-chapter mnemonic value of
+          <code>KI-9.5</code> ("§9 insight 5") and break Ch17
+          <code>KF-NN</code> stability. The mapping documented in §C.9.2 is
+          sufficient.
+        </p>
+        <h3 class="sub-title" id="c-10-4-confidence-tag-standardization-s-02">
+          C.10.4 Confidence Tag Standardization (S-02)
+        </h3>
+        <p>
+          <strong>Current state</strong>: <code>[SPECULATIVE]</code> (binary)
+          and <code>[Confidence: M/H/L]</code> (graded) coexist; some claims
+          have one, some both, some neither.
+        </p>
+        <p><strong>Target convention</strong>:</p>
+        <ul>
+          <li>
+            All speculative claims <strong>MUST</strong> carry both tags:
+            <code>[SPECULATIVE, confidence: M]</code> (or H/L).
+          </li>
+          <li>
+            <code>[SPECULATIVE]</code> alone is shorthand for
+            <code>[SPECULATIVE, confidence: M]</code> and should be expanded
+            inline whenever the claim is the table cell anchor (not just
+            narrative).
+          </li>
+          <li>Confidence levels:</li>
+          <li>
+            <strong>H</strong> (High): published vendor docs / first-party
+            measurement extrapolation with strong physical grounding (e.g.
+            SM_100 28.1 TFLOPS/SM derived from 3712 / 132).
+          </li>
+          <li>
+            <strong>M</strong> (Medium): cross-generation extrapolation,
+            qualitative model, single-source measurement.
+          </li>
+          <li>
+            <strong>L</strong> (Low): open speculation, no measurement support,
+            contradicts at least one observation.
+          </li>
+        </ul>
+        <p><strong>Examples corrected in v1</strong>:</p>
+        <ul>
+          <li>
+            Ch1 §1.1.1 ASCII diagram "~120 SM slots" →
+            <code
+              >[SPECULATIVE, confidence: M; see §1.1.2 harvesting model]</code
+            >
+            (m-19 RESOLVED 2026-06-11)
+          </li>
+          <li>
+            Ch14 §14.4.2 NVLink barrier <code>~200 cyc</code> /
+            <code>~150 cyc</code> rows → <code>[SPECULATIVE]</code> with
+            footnote citing B200 docs as derivation source (m-17 RESOLVED
+            2026-06-11; confidence: M).
+          </li>
+        </ul>
+        <h3 class="sub-title" id="c-10-5-deferred-refactor-list">
+          C.10.5 Deferred Refactor List
+        </h3>
+        <p>
+          The following structural cleanups are
+          <strong>acknowledged but deferred</strong> to a future bulk-refactor
+          pass:
+        </p>
+        <ol>
+          <li>
+            <strong>Mass cross-reference linkification</strong> (S-01): convert
+            ~3000+ plain-text <code>§N.M.K</code> refs to Markdown anchors.
+          </li>
+          <li>
+            <strong>Table caption normalization</strong> (S-01): re-caption ~50
+            unnumbered or non-standard tables.
+          </li>
+          <li>
+            <strong>Confidence tag back-fill</strong> (S-02): scan all
+            <code>[SPECULATIVE]</code> occurrences and add explicit
+            <code>confidence: H/M/L</code> where missing.
+          </li>
+        </ol>
+        <p>
+          These are tracked in
+          <code>final_reports/comments/comment_v1.md</code> as
+          <code>[✅ ACKNOWLEDGED — DEFERRED]</code> items.
+        </p>
+
+        <footer class="page-footer">
+          <div class="foot-grid">
+            <div>
+              <strong>SM_120 / GB202 Blackwell</strong> · Microarchitecture
+              Analysis &amp; Reference · 2026
+            </div>
+            <div>1542 microbenchmark cases · 26 sections · ~13,400 lines</div>
+            <div class="foot-accent">
+              RTX PRO 5000 72GB · CUDA 13.3 · Data source: test_results/SM_120/
+            </div>
+          </div>
+        </footer>
+      </main>
+      <aside class="toc-right">
+        <h4>Chapter Navigation</h4>
+        <a href="#c-1-measurement-framework">C.1 Measurement Framework</a>
+        <a class="sub" href="#timing-infrastructure">Timing Infrastructure</a>
+        <a class="sub" href="#dual-path-clock-read-sm_120-specific"
+          >Dual-Path Clock Read (SM_120 Specific)</a
+        >
+        <a class="sub" href="#iteration-protocol">Iteration Protocol</a>
+        <a class="sub" href="#warp-control-strategy">Warp Control Strategy</a>
+        <a class="sub" href="#anti-dead-code-elimination-anti-dce"
+          >Anti-Dead-Code-Elimination (Anti-DCE)</a
+        >
+        <a class="sub" href="#clock-pinning">Clock Pinning</a>
+        <a class="sub" href="#sass-verification">SASS Verification</a>
+        <a href="#c-2-known-artifact-sources">C.2 Known Artifact Sources</a>
+        <a href="#c-3-ptxas-compiler-behavior-catalog"
+          >C.3 ptxas Compiler Behavior Catalog</a
+        >
+        <a href="#c-4-per-chapter-data-confidence-assessment"
+          >C.4 Per-Chapter Data Confidence Assessment</a
+        >
+        <a class="sub" href="#confidence-level-definitions"
+          >Confidence Level Definitions</a
+        >
+        <a href="#c-5-cross-validation-protocol"
+          >C.5 Cross-Validation Protocol</a
+        >
+        <a class="sub" href="#cross-validation-results"
+          >Cross-Validation Results</a
+        >
+        <a href="#c-6-environmental-controls">C.6 Environmental Controls</a>
+        <a href="#c-7-limitations-and-scope">C.7 Limitations and Scope</a>
+        <a class="sub" href="#what-this-methodology-can-measure"
+          >What This Methodology Can Measure</a
+        >
+        <a class="sub" href="#what-this-methodology-cannot-measure"
+          >What This Methodology Cannot Measure</a
+        >
+        <a class="sub" href="#measurement-uncertainty-budget"
+          >Measurement Uncertainty Budget</a
+        >
+        <a
+          class="sub"
+          href="#c-7-1-retested-cases-canonical-timestamp-selection"
+          >C.7.1 Retested Cases (Canonical Timestamp Selection)</a
+        >
+        <a href="#c-8-notation-conventions">C.8 Notation Conventions</a>
+        <a class="sub" href="#c-8-1-cycle-unit">C.8.1 Cycle Unit</a>
+        <a class="sub" href="#c-8-1-1-rounding-convention-for-cycle-counts"
+          >C.8.1.1 Rounding Convention for Cycle Counts</a
+        >
+        <a class="sub" href="#c-8-2-other-numeric-units"
+          >C.8.2 Other Numeric Units</a
+        >
+        <a class="sub" href="#c-8-3-identifier-style">C.8.3 Identifier Style</a>
+        <a href="#c-9-cross-chapter-identifier-systems-ki-kf-oq"
+          >C.9 Cross-Chapter Identifier Systems (KI / KF / OQ)</a
+        >
+        <a class="sub" href="#c-9-1-legend">C.9.1 Legend</a>
+        <a class="sub" href="#c-9-2-relationship">C.9.2 Relationship</a>
+        <a class="sub" href="#c-9-3-where-to-look">C.9.3 Where to Look</a>
+        <a href="#c-10-presentation-conventions-s-01-s-02-resolved-2026-06-11"
+          >C.10 Presentation Conventions (S-01 / S-02 RESOLVED 2026-06-11)</a
+        >
+        <a class="sub" href="#c-10-1-cross-reference-hyperlinks-s-01"
+          >C.10.1 Cross-Reference Hyperlinks (S-01)</a
+        >
+        <a class="sub" href="#c-10-2-table-numbering-s-01"
+          >C.10.2 Table Numbering (S-01)</a
+        >
+        <a class="sub" href="#c-10-3-identifier-unification-s-01"
+          >C.10.3 Identifier Unification (S-01)</a
+        >
+        <a class="sub" href="#c-10-4-confidence-tag-standardization-s-02"
+          >C.10.4 Confidence Tag Standardization (S-02)</a
+        >
+        <a class="sub" href="#c-10-5-deferred-refactor-list"
+          >C.10.5 Deferred Refactor List</a
+        >
+      </aside>
+    </div>
+    <script
+      defer
+      src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"
+      integrity="sha384-7zkQWkzuo3B5mTepMUcHkMB5jZaolc2xDwL6VFqjFALcbeS9Ggm/Yr2r3Dy4lfFg"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      defer
+      src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+      integrity="sha384-43gviWU0YVjaDtb/GhzOouOXtZMP/7XUzwPTstBeZFe/+rCMvRwr4yROQP43s0Xk"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      defer
+      src="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/lib/highlight.min.js"
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (window.renderMathInElement) {
+          renderMathInElement(document.body, {
+            delimiters: [
+              { left: "$$", right: "$$", display: true },
+              { left: "$", right: "$", display: false },
+            ],
+            throwOnError: false,
+          });
+        }
+        if (window.hljs) {
+          document
+            .querySelectorAll("pre code[class^='language-']")
+            .forEach(function (el) {
+              try {
+                hljs.highlightElement(el);
+              } catch (e) {}
+            });
+        }
+      });
+    </script>
+    <script src="assets/js/toc.js" defer></script>
+  </body>
+</html>

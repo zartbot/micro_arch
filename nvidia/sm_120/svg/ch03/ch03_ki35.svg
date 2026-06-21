@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 300" role="img"
+     aria-label="KI-3.5: Memory pipe queue depth 12-13, far exceeding prior architectures">
+  <defs>
+    <style><![CDATA[
+      .ttl{font:600 14px "Fraunces",serif;fill:#0b1220}
+      .sub{font:italic 11px "Fraunces",serif;fill:#5b6679}
+      .lbl{font:600 11px "JetBrains Mono",monospace}
+      .lbl-sm{font:500 10px "JetBrains Mono",monospace;fill:#5b6679}
+      .badge{font:600 9.5px "JetBrains Mono",monospace}
+      .note{font:500 9px "JetBrains Mono",monospace;fill:#8e97a5}
+      .safe{font:600 10px "JetBrains Mono",monospace;fill:#16a34a}
+      .warn{font:600 10px "JetBrains Mono",monospace;fill:#dc2626}
+      .big{font:700 16px "JetBrains Mono",monospace}
+    ]]></style>
+  </defs>
+  <rect width="1080" height="300" fill="#ffffff"/>
+  <text x="36" y="28" class="ttl">KI-3.5: Memory Pipe Queue Depth Unexpectedly Large (12-13, Not 5)</text>
+  <text x="36" y="46" class="sub">MSHR cliff at N=14 (2→984 cyc, 492x). Software prefetch is counterproductive — HW sustains 12-13 outstanding loads. [S11/case_97]</text>
+
+  <!-- Left: cliff visualization -->
+  <g transform="translate(40, 66)">
+    <rect x="0" y="0" width="560" height="210" rx="10" fill="#f8fafc" stroke="#334155" stroke-width="0.8"/>
+    <text x="12" y="20" class="lbl" fill="#334155">LDG Latency vs Outstanding Load Count (N)</text>
+
+    <g transform="translate(20, 40)">
+      <!-- Flat region -->
+      <rect x="0" y="0" width="300" height="24" rx="4" fill="#DCFCE7" stroke="#16a34a" stroke-width="0.6"/>
+      <text x="150" y="16" class="safe" text-anchor="middle">N=1..12: 2 cyc (issue cost only, all overlap)</text>
+
+      <!-- Transition -->
+      <rect x="0" y="30" width="340" height="20" rx="4" fill="#FEF3C7" stroke="#b45309" stroke-width="0.5"/>
+      <text x="170" y="44" class="badge" fill="#92400e" text-anchor="middle">N=13: transition zone</text>
+
+      <!-- Cliff -->
+      <rect x="0" y="56" width="520" height="24" rx="4" fill="#FEE2E2" stroke="#dc2626" stroke-width="0.8"/>
+      <text x="260" y="72" class="warn" text-anchor="middle">N=14: 984 cyc (492x increase!) — MSHR FULL</text>
+
+      <rect x="0" y="86" width="520" height="20" rx="4" fill="#FEE2E2" stroke="#dc2626" stroke-width="0.4"/>
+      <text x="260" y="100" class="lbl-sm" text-anchor="middle">N=16: 1065 cyc (serialized behind queue)</text>
+    </g>
+
+    <!-- Generational -->
+    <g transform="translate(20, 165)">
+      <text x="0" y="0" class="lbl" fill="#334155">Generational Scaling:</text>
+      <rect x="0" y="8" width="80" height="18" rx="3" fill="#94a3b8" opacity="0.2" stroke="#64748b" stroke-width="0.5"/>
+      <text x="40" y="20" class="badge" fill="#64748b" text-anchor="middle">5-6</text>
+      <text x="90" y="20" class="note">SM_89 (Ada)</text>
+
+      <rect x="160" y="8" width="110" height="18" rx="3" fill="#a78bfa" opacity="0.2" stroke="#7c3aed" stroke-width="0.5"/>
+      <text x="215" y="20" class="badge" fill="#6d28d9" text-anchor="middle">~8</text>
+      <text x="280" y="20" class="note">SM_90 (Hopper)</text>
+
+      <rect x="360" y="8" width="135" height="18" rx="3" fill="#16a34a" opacity="0.15" stroke="#16a34a" stroke-width="0.8"/>
+      <text x="427" y="23" class="big" fill="#16a34a" text-anchor="middle">12-13</text>
+      <text x="500" y="20" class="safe">SM_120</text>
+    </g>
+  </g>
+
+  <!-- Right: implication -->
+  <g transform="translate(620, 66)">
+    <rect x="0" y="0" width="420" height="210" rx="10" fill="#DCFCE7" stroke="#16a34a" stroke-width="0.8"/>
+    <text x="12" y="20" class="lbl" fill="#16a34a">Optimization Implication</text>
+    <text x="12" y="44" class="warn">Software prefetch is COUNTERPRODUCTIVE:</text>
+    <text x="12" y="62" class="lbl-sm">• HW already sustains 12-13 outstanding loads</text>
+    <text x="12" y="78" class="lbl-sm">• Prefetch instructions compete for issue slots</text>
+    <text x="12" y="94" class="lbl-sm">• Net effect: fewer useful insns dispatched/cycle</text>
+
+    <text x="12" y="120" class="safe">Instead, focus on:</text>
+    <text x="12" y="138" class="lbl-sm">• Issue loads early (instruction reordering)</text>
+    <text x="12" y="154" class="lbl-sm">• Fill queue to capacity (12-13 in-flight)</text>
+    <text x="12" y="170" class="lbl-sm">• Let MSHR handle MLP automatically</text>
+
+    <text x="12" y="196" class="note">MLP bandwidth: (12.5 × 128B) / 354 cyc = 4.5 B/cyc per warp</text>
+  </g>
+</svg>

@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 360" role="img"
+     aria-label="KI-3.1: Single issue port feeds separate FMA/ALU/XU backends — no dual-issue within a warp">
+  <defs>
+    <marker id="ar" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#5b6679"/></marker>
+    <style><![CDATA[
+      .ttl{font:600 14px "Fraunces",serif;fill:#0b1220}
+      .sub{font:italic 11px "Fraunces",serif;fill:#5b6679}
+      .lbl{font:600 11px "JetBrains Mono",monospace}
+      .lbl-sm{font:500 10px "JetBrains Mono",monospace;fill:#5b6679}
+      .badge{font:600 9.5px "JetBrains Mono",monospace}
+      .note{font:500 9px "JetBrains Mono",monospace;fill:#8e97a5}
+      .safe{font:600 10px "JetBrains Mono",monospace;fill:#16a34a}
+      .warn{font:600 10px "JetBrains Mono",monospace;fill:#dc2626}
+    ]]></style>
+  </defs>
+  <rect width="1080" height="360" fill="#ffffff"/>
+  <text x="36" y="28" class="ttl">KI-3.1: Unified Issue Port + Separate Backends — Not True Dual-Issue</text>
+  <text x="36" y="46" class="sub">Single warp: INT+FP serialize (MIX/MAX=1.0). Multi-warp: full overlap via warp interleaving. [S4/case_5, S11/case_101]</text>
+
+  <!-- Architecture: shared issue port → separate backends -->
+  <g transform="translate(40, 66)">
+    <rect x="0" y="0" width="480" height="270" rx="10" fill="#f8fafc" stroke="#334155" stroke-width="0.8"/>
+    <text x="12" y="20" class="lbl" fill="#334155">SMSP Dispatch Architecture</text>
+
+    <!-- Issue port -->
+    <rect x="160" y="36" width="160" height="36" rx="6" fill="#FEE2E2" stroke="#dc2626" stroke-width="1"/>
+    <text x="240" y="52" class="lbl" fill="#dc2626" text-anchor="middle">Single Issue Port</text>
+    <text x="240" y="66" class="note" text-anchor="middle">1 insn/cycle (bottleneck)</text>
+
+    <!-- Fan-out arrows -->
+    <line x1="200" y1="72" x2="80" y2="100" stroke="#5b6679" stroke-width="1" marker-end="url(#ar)"/>
+    <line x1="240" y1="72" x2="240" y2="100" stroke="#5b6679" stroke-width="1" marker-end="url(#ar)"/>
+    <line x1="280" y1="72" x2="400" y2="100" stroke="#5b6679" stroke-width="1" marker-end="url(#ar)"/>
+
+    <!-- Backends -->
+    <rect x="20" y="104" width="120" height="40" rx="6" fill="#DCFCE7" stroke="#16a34a" stroke-width="0.8"/>
+    <text x="80" y="120" class="lbl" fill="#16a34a" text-anchor="middle">FMA pipe</text>
+    <text x="80" y="136" class="note" text-anchor="middle">FFMA, FMUL</text>
+
+    <rect x="180" y="104" width="120" height="40" rx="6" fill="#DBEAFE" stroke="#2563eb" stroke-width="0.8"/>
+    <text x="240" y="120" class="lbl" fill="#2563eb" text-anchor="middle">ALU pipe</text>
+    <text x="240" y="136" class="note" text-anchor="middle">IADD3, LOP3</text>
+
+    <rect x="340" y="104" width="120" height="40" rx="6" fill="#F3E8FF" stroke="#6d28d9" stroke-width="0.8"/>
+    <text x="400" y="120" class="lbl" fill="#6d28d9" text-anchor="middle">XU pipe</text>
+    <text x="400" y="136" class="note" text-anchor="middle">MUFU.*</text>
+
+    <!-- Key point -->
+    <rect x="20" y="160" width="440" height="44" rx="6" fill="#FEF3C7" stroke="#b45309" stroke-width="0.6"/>
+    <text x="32" y="178" class="warn">Single warp: INT+FP serialize at issue port (MIX/MAX=1.000)</text>
+    <text x="32" y="196" class="safe">Multi-warp (≥4W): different warps feed different backends in parallel</text>
+
+    <!-- Implication -->
+    <rect x="20" y="216" width="440" height="36" rx="6" fill="#EDE7FB" stroke="#6d28d9" stroke-width="0.5"/>
+    <text x="32" y="232" class="lbl-sm">Optimization: ensure ≥4 warps/SMSP for INT+FP overlap.</text>
+    <text x="32" y="246" class="lbl-sm">Do NOT expect per-warp INT+FP co-issue (unlike AMD RDNA).</text>
+  </g>
+
+  <!-- Right: comparison diagram -->
+  <g transform="translate(560, 66)">
+    <rect x="0" y="0" width="480" height="270" rx="10" fill="#f8fafc" stroke="#334155" stroke-width="0.8"/>
+    <text x="12" y="20" class="lbl" fill="#334155">Single-Warp vs Multi-Warp Behavior</text>
+
+    <!-- Single warp: serial -->
+    <g transform="translate(20, 40)">
+      <text x="0" y="0" class="badge" fill="#dc2626">1 WARP (serial):</text>
+      <rect x="0" y="8" width="100" height="20" rx="3" fill="#DCFCE7" stroke="#16a34a" stroke-width="0.5"/>
+      <text x="50" y="22" class="note" text-anchor="middle">FFMA</text>
+      <rect x="104" y="8" width="100" height="20" rx="3" fill="#DBEAFE" stroke="#2563eb" stroke-width="0.5"/>
+      <text x="154" y="22" class="note" text-anchor="middle">IADD3</text>
+      <rect x="208" y="8" width="100" height="20" rx="3" fill="#DCFCE7" stroke="#16a34a" stroke-width="0.5"/>
+      <text x="258" y="22" class="note" text-anchor="middle">FFMA</text>
+      <rect x="312" y="8" width="100" height="20" rx="3" fill="#DBEAFE" stroke="#2563eb" stroke-width="0.5"/>
+      <text x="362" y="22" class="note" text-anchor="middle">IADD3</text>
+      <text x="420" y="22" class="note">→ time</text>
+      <text x="0" y="44" class="warn">T = sum(INT, FP) — no speedup</text>
+    </g>
+
+    <!-- Multi warp: parallel -->
+    <g transform="translate(20, 110)">
+      <text x="0" y="0" class="badge" fill="#16a34a">4 WARPS (parallel):</text>
+      <rect x="0" y="8" width="200" height="18" rx="3" fill="#DCFCE7" stroke="#16a34a" stroke-width="0.5"/>
+      <text x="100" y="20" class="note" text-anchor="middle">W0: FFMA FFMA FFMA FFMA</text>
+      <rect x="0" y="30" width="200" height="18" rx="3" fill="#DBEAFE" stroke="#2563eb" stroke-width="0.5"/>
+      <text x="100" y="42" class="note" text-anchor="middle">W1: IADD3 IADD3 IADD3</text>
+      <rect x="0" y="52" width="200" height="18" rx="3" fill="#DCFCE7" stroke="#16a34a" stroke-width="0.5"/>
+      <text x="100" y="64" class="note" text-anchor="middle">W2: FFMA FFMA FFMA FFMA</text>
+      <rect x="0" y="74" width="200" height="18" rx="3" fill="#DBEAFE" stroke="#2563eb" stroke-width="0.5"/>
+      <text x="100" y="86" class="note" text-anchor="middle">W3: IADD3 IADD3 IADD3</text>
+      <text x="210" y="52" class="safe">T = max(INT, FP)</text>
+      <text x="210" y="68" class="safe">full overlap!</text>
+    </g>
+
+    <!-- Summary -->
+    <g transform="translate(20, 220)">
+      <rect x="0" y="0" width="440" height="32" rx="6" fill="#16a34a" opacity="0.06" stroke="#16a34a" stroke-width="0.5"/>
+      <text x="12" y="20" class="safe">Warp-level parallelism substitutes for instruction-level dual-issue</text>
+    </g>
+  </g>
+</svg>

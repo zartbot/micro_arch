@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 110" role="img"
+     aria-label="KI-2.4: Software prefetch adds 55-85% overhead — HW prefetcher sufficient on SM_120">
+  <defs><style><![CDATA[
+    .ttl{font:600 13px "Fraunces",serif;fill:#0b1220}.lbl{font:600 11px "JetBrains Mono",monospace;fill:#2a3548}.lbl-sm{font:500 10px "JetBrains Mono",monospace;fill:#5b6679}.num{font:700 15px "JetBrains Mono",monospace}.stage{font:600 10px "JetBrains Mono",monospace;fill:#fff}.insight{font:600 10.5px "IBM Plex Sans",sans-serif;fill:#9f1239}
+  ]]></style></defs>
+  <rect width="1080" height="110" fill="#ffffff"/>
+  <text x="36" y="22" class="ttl">KI-2.4: Software Prefetch Is HARMFUL on SM_120 — HW Prefetcher Already Optimal</text>
+  <g transform="translate(36,36)">
+    <rect width="320" height="40" rx="6" fill="#F0FDF4" stroke="#059669" stroke-width="1"/>
+    <text x="15" y="16" class="lbl" fill="#065F46">Without SW prefetch</text>
+    <text x="15" y="32" class="num" fill="#059669">128 cyc/op (baseline)</text>
+  </g>
+  <g transform="translate(380,36)">
+    <rect width="320" height="40" rx="6" fill="#FEF2F2" stroke="#DC2626" stroke-width="1"/>
+    <text x="15" y="16" class="lbl" fill="#DC2626">With SW prefetch</text>
+    <text x="15" y="32" class="num" fill="#DC2626">198 cyc/op (+55% SLOWER)</text>
+  </g>
+  <g transform="translate(724,36)">
+    <rect width="320" height="40" rx="6" fill="#FFFBEB" stroke="#D97706" stroke-width="1"/>
+    <text x="15" y="16" class="lbl" fill="#92400E">Root cause</text>
+    <text x="15" y="32" class="lbl-sm">Prefetch wastes 2.27 cyc/issue LSU slots</text>
+  </g>
+  <g transform="translate(36,86)">
+    <text x="0" y="14" class="insight">ACTION: Remove ALL __builtin_prefetch / prefetch.global.L1 from SM_120 kernels. The HW stream prefetcher is already optimal.</text>
+  </g>
+</svg>

@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 560" role="img" aria-label="Pageable Transfer Pipeline — Driver-Mediated Pin-on-Demand">
+  <defs>
+    <style><![CDATA[
+      .ttl{font:600 15px "Fraunces",serif;fill:#0b1220}
+      .sub{font:italic 11px "Fraunces",serif;fill:#5b6679}
+      .step-lbl{font:600 11px "JetBrains Mono",monospace;fill:#0b1220}
+      .step-desc{font:500 9px "JetBrains Mono",monospace;fill:#5b6679}
+      .regime-ttl{font:600 12px "Fraunces",serif;fill:#0b1220}
+      .regime-val{font:700 16px "Fraunces",serif;fill:#0b1220;letter-spacing:-0.02em}
+      .regime-desc{font:500 9px "JetBrains Mono",monospace;fill:#5b6679}
+      .arrow-lbl{font:600 9px "JetBrains Mono",monospace;fill:#5b6679}
+    ]]></style>
+    <marker id="arr" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#5b6679"/>
+    </marker>
+    <marker id="arr-r" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#dc2626"/>
+    </marker>
+    <marker id="arr-a" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#b45309"/>
+    </marker>
+    <marker id="arr-g" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#047857"/>
+    </marker>
+  </defs>
+
+  <rect width="1080" height="560" fill="#ffffff"/>
+
+  <!-- Title -->
+  <text x="36" y="28" class="ttl">Pageable Transfer Pipeline — Driver-Mediated Pin-on-Demand</text>
+  <text x="36" y="48" class="sub">CUDA driver stages pageable memory through a pinned bounce buffer — cost varies dramatically with transfer size</text>
+
+  <!-- ===== Top panel: 4-step cycle ===== -->
+  <text x="36" y="78" class="regime-ttl">Per-Chunk Processing Cycle</text>
+
+  <!-- Step 1: Pin -->
+  <rect x="60" y="92" width="180" height="56" rx="10" fill="#fef3c7" stroke="#b45309" stroke-width="0.8"/>
+  <text x="150" y="114" class="step-lbl" text-anchor="middle">① Pin Chunk</text>
+  <text x="150" y="132" class="step-desc" text-anchor="middle">~1.5 us/chunk (4KB pages)</text>
+  <text x="150" y="144" class="step-desc" text-anchor="middle">Lock in host physical mem</text>
+
+  <!-- Arrow 1→2 -->
+  <line x1="240" y1="120" x2="280" y2="120" stroke="#5b6679" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- Step 2: DMA -->
+  <rect x="280" y="92" width="180" height="56" rx="10" fill="#dbeafe" stroke="#1e40af" stroke-width="0.8"/>
+  <text x="370" y="114" class="step-lbl" text-anchor="middle">② DMA Transfer</text>
+  <text x="370" y="132" class="step-desc" text-anchor="middle">Limited by PCIe Gen5</text>
+  <text x="370" y="144" class="step-desc" text-anchor="middle">Bounce buf → GPU GDDR7</text>
+
+  <!-- Arrow 2→3 -->
+  <line x1="460" y1="120" x2="500" y2="120" stroke="#5b6679" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- Step 3: Unpin -->
+  <rect x="500" y="92" width="180" height="56" rx="10" fill="#fef3c7" stroke="#b45309" stroke-width="0.8"/>
+  <text x="590" y="114" class="step-lbl" text-anchor="middle">③ Unpin Chunk</text>
+  <text x="590" y="132" class="step-desc" text-anchor="middle">~0.5 us/chunk</text>
+  <text x="590" y="144" class="step-desc" text-anchor="middle">Release physical pages</text>
+
+  <!-- Arrow 3→4 -->
+  <line x1="680" y1="120" x2="720" y2="120" stroke="#5b6679" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- Step 4: Repeat -->
+  <rect x="720" y="92" width="180" height="56" rx="10" fill="#f3f4f6" stroke="#8e97a5" stroke-width="0.8"/>
+  <text x="810" y="114" class="step-lbl" text-anchor="middle">④ Next Chunk</text>
+  <text x="810" y="132" class="step-desc" text-anchor="middle">Advance pointer</text>
+  <text x="810" y="144" class="step-desc" text-anchor="middle">Repeat until complete</text>
+
+  <!-- Loop-back arrow -->
+  <path d="M 810 92 Q 810 68 150 68 Q 150 68 150 92" fill="none" stroke="#8e97a5" stroke-width="1" stroke-dasharray="4 3" marker-end="url(#arr)"/>
+  <text x="480" y="64" class="arrow-lbl" text-anchor="middle">loop over all chunks</text>
+
+  <!-- ===== Bottom panel: Three size regimes ===== -->
+  <text x="36" y="186" class="regime-ttl">Size-Dependent Behavior</text>
+
+  <!-- Regime 1: Small transfers -->
+  <rect x="36" y="200" width="320" height="180" rx="10" fill="#fee2e2" stroke="#dc2626" stroke-width="0.8"/>
+  <rect x="36" y="200" width="320" height="28" rx="10" fill="#dc2626" opacity="0.1"/>
+  <text x="196" y="219" class="regime-ttl" text-anchor="middle" fill="#dc2626">Small Transfers (&lt; 32 KB)</text>
+  <text x="196" y="252" class="regime-val" text-anchor="middle" fill="#dc2626">193% penalty</text>
+  <text x="196" y="270" class="regime-desc" text-anchor="middle">Fixed per-transfer overhead dominates</text>
+  <text x="196" y="286" class="regime-desc" text-anchor="middle">Per-page pinning cost ~1.5 us</text>
+  <text x="196" y="302" class="regime-desc" text-anchor="middle">amortized over tiny payload</text>
+  <line x1="56" y1="316" x2="336" y2="316" stroke="#dc2626" stroke-width="0.4" opacity="0.3"/>
+  <text x="196" y="334" class="regime-desc" text-anchor="middle" fill="#dc2626">Pageable H2D: 0.73 GB/s at 4KB</text>
+  <text x="196" y="350" class="regime-desc" text-anchor="middle" fill="#dc2626">vs Pinned H2D: 0.57 GB/s</text>
+  <text x="196" y="366" class="regime-desc" text-anchor="middle" fill="#5b6679">(pageable "wins" only because</text>
+  <text x="196" y="376" class="regime-desc" text-anchor="middle" fill="#5b6679">both are latency-bound)</text>
+
+  <!-- Regime 2: Medium transfers -->
+  <rect x="376" y="200" width="320" height="180" rx="10" fill="#fef3c7" stroke="#b45309" stroke-width="0.8"/>
+  <rect x="376" y="200" width="320" height="28" rx="10" fill="#b45309" opacity="0.1"/>
+  <text x="536" y="219" class="regime-ttl" text-anchor="middle" fill="#b45309">Medium Transfers (4–16 MB)</text>
+  <text x="536" y="252" class="regime-val" text-anchor="middle" fill="#b45309">12.5% penalty</text>
+  <text x="536" y="270" class="regime-desc" text-anchor="middle">Sweet spot — overhead amortized</text>
+  <text x="536" y="286" class="regime-desc" text-anchor="middle">Staging buffer matches chunk size</text>
+  <text x="536" y="302" class="regime-desc" text-anchor="middle">Pin cost spread across large payload</text>
+  <line x1="396" y1="316" x2="676" y2="316" stroke="#b45309" stroke-width="0.4" opacity="0.3"/>
+  <text x="536" y="334" class="regime-desc" text-anchor="middle" fill="#b45309">Pageable H2D: 49.4 GB/s at 16MB</text>
+  <text x="536" y="350" class="regime-desc" text-anchor="middle" fill="#b45309">vs Pinned H2D: 55.5 GB/s</text>
+  <text x="536" y="366" class="regime-desc" text-anchor="middle" fill="#5b6679">Peak pageable efficiency —</text>
+  <text x="536" y="376" class="regime-desc" text-anchor="middle" fill="#5b6679">only 6.1 GB/s gap</text>
+
+  <!-- Regime 3: Large transfers -->
+  <rect x="716" y="200" width="320" height="180" rx="10" fill="#dbeafe" stroke="#1e40af" stroke-width="0.8"/>
+  <rect x="716" y="200" width="320" height="28" rx="10" fill="#1e40af" opacity="0.1"/>
+  <text x="876" y="219" class="regime-ttl" text-anchor="middle" fill="#1e40af">Large Transfers (64 MB+)</text>
+  <text x="876" y="252" class="regime-val" text-anchor="middle" fill="#1e40af">44–47% penalty</text>
+  <text x="876" y="270" class="regime-desc" text-anchor="middle">Working set exceeds staging buffer</text>
+  <text x="876" y="286" class="regime-desc" text-anchor="middle">TLB pressure from repeated pin/unpin</text>
+  <text x="876" y="302" class="regime-desc" text-anchor="middle">Page table walking: ~3 ns/page</text>
+  <line x1="736" y1="316" x2="1016" y2="316" stroke="#1e40af" stroke-width="0.4" opacity="0.3"/>
+  <text x="876" y="334" class="regime-desc" text-anchor="middle" fill="#1e40af">Pageable H2D: 35.8 GB/s at 1GB</text>
+  <text x="876" y="350" class="regime-desc" text-anchor="middle" fill="#1e40af">vs Pinned H2D: 56.9 GB/s</text>
+  <text x="876" y="366" class="regime-desc" text-anchor="middle" fill="#5b6679">21.1 GB/s gap — non-monotonic</text>
+  <text x="876" y="376" class="regime-desc" text-anchor="middle" fill="#5b6679">degradation from 49.4 GB/s peak</text>
+
+  <!-- Transition arrows between regimes -->
+  <line x1="356" y1="290" x2="376" y2="290" stroke="#dc2626" stroke-width="1.5" marker-end="url(#arr-a)"/>
+  <line x1="696" y1="290" x2="716" y2="290" stroke="#b45309" stroke-width="1.5" marker-end="url(#arr-g)"/>
+
+  <!-- ===== Bottom summary ===== -->
+  <rect x="36" y="400" width="1000" height="70" rx="10" fill="#fcfbf6" stroke="#e6e4da"/>
+  <text x="56" y="424" class="step-lbl">Key insight</text>
+  <text x="56" y="442" class="step-desc">Pageable H2D is non-monotonic: peaks at 49.4 GB/s (16 MB) then degrades to 35.8 GB/s (1 GB) —</text>
+  <text x="56" y="456" class="step-desc">the driver's pin-on-demand staging buffer has a finite working set, and large transfers overflow it, causing TLB thrashing.</text>
+  <text x="56" y="464" class="step-desc"> </text>
+
+  <!-- Source -->
+  <text x="36" y="540" class="sub">[source: S14/case_1,2,9,16]</text>
+
+</svg>

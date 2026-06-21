@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 580" role="img"
+     aria-label="SM_120 roofline — peak TFLOPS vs DRAM bandwidth, crossover AI per precision">
+  <defs>
+    <linearGradient id="memG" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#FFE4E6"/>
+      <stop offset="1" stop-color="#FFEDD5"/>
+    </linearGradient>
+    <linearGradient id="cmpG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#E9F3D2"/>
+      <stop offset="1" stop-color="#FFFFFF"/>
+    </linearGradient>
+    <style><![CDATA[
+      .ttl{font:600 14px "Fraunces",serif;fill:#0b1220}
+      .sub{font:italic 11px "Fraunces",serif;fill:#5b6679}
+      .axis{stroke:#5b6679;stroke-width:1.2;fill:none}
+      .grid{stroke:#e6e4da;stroke-width:0.8;stroke-dasharray:2 3;fill:none}
+      .lbl{font:600 11px "JetBrains Mono",monospace;fill:#2a3548}
+      .lbl-sm{font:500 9.5px "JetBrains Mono",monospace;fill:#5b6679}
+      .axL{font:600 11px "JetBrains Mono",monospace;fill:#5b6679}
+    ]]></style>
+  </defs>
+  <rect width="1080" height="580" fill="#ffffff"/>
+  <text x="36" y="32" class="ttl">Peak TFLOPS vs DRAM Bandwidth · Crossover AI per Precision</text>
+  <text x="36" y="52" class="sub">Log-log axes · DRAM 1231 GB/s measured · all peaks measured @ 2.572 GHz boost</text>
+
+  <!-- Plot area: x [1, 10000], y [1, 2000] log-log -->
+  <!-- Origin at (100, 480), size 880 x 360 -->
+  <g transform="translate(100,80)">
+    <rect x="0" y="0" width="880" height="400" fill="#fcfbf6" stroke="#e6e4da"/>
+    <!-- y-axis -->
+    <line x1="0" y1="0" x2="0" y2="400" class="axis"/>
+    <!-- x-axis -->
+    <line x1="0" y1="400" x2="880" y2="400" class="axis"/>
+    <!-- gridlines (log decades) — x decades at AI = 1,10,100,1000,10000 → x positions 0,220,440,660,880 -->
+    <line x1="220" y1="0" x2="220" y2="400" class="grid"/>
+    <line x1="440" y1="0" x2="440" y2="400" class="grid"/>
+    <line x1="660" y1="0" x2="660" y2="400" class="grid"/>
+    <!-- y decades at TFLOPS = 1, 10, 100, 1000 → y positions 400, 280, 160, 40 -->
+    <line x1="0" y1="280" x2="880" y2="280" class="grid"/>
+    <line x1="0" y1="160" x2="880" y2="160" class="grid"/>
+    <line x1="0" y1="40"  x2="880" y2="40"  class="grid"/>
+    <!-- axis labels -->
+    <text x="-12" y="404" class="axL" text-anchor="end">1</text>
+    <text x="-12" y="284" class="axL" text-anchor="end">10</text>
+    <text x="-12" y="164" class="axL" text-anchor="end">100</text>
+    <text x="-12" y="44"  class="axL" text-anchor="end">1000</text>
+    <text x="0"   y="420" class="axL" text-anchor="middle">1</text>
+    <text x="220" y="420" class="axL" text-anchor="middle">10</text>
+    <text x="440" y="420" class="axL" text-anchor="middle">100</text>
+    <text x="660" y="420" class="axL" text-anchor="middle">1000</text>
+    <text x="880" y="420" class="axL" text-anchor="middle">10000</text>
+    <text x="-44" y="200" class="axL" text-anchor="middle" transform="rotate(-90,-44,200)">Performance · TFLOPS</text>
+    <text x="440" y="448" class="axL" text-anchor="middle">Arithmetic Intensity · FLOP / byte</text>
+
+    <!-- Memory roof line: BW = 1231 GB/s = 1.231 TB/s. P = AI × 1.231 TFLOPS.
+         AI=1 → P=1.231; log10(1.231)=0.0903 → y = 400 - 120*0.0903 = 389.2.
+         Slope: -120/220 px (every decade in AI = +1 decade in P = -120 px in y).
+         Line crosses y=0 (top of plot) at x = 389.2 * 220/120 = 713.5.
+         Endpoint (713.5, 0) ensures the dashed roof passes exactly through the four
+         green crossover dots (FP32 47, FP16 220, FP8 430, MXFP4 869). -->
+    <line x1="0" y1="389.2" x2="713.5" y2="0" stroke="#e11d48" stroke-width="2" stroke-dasharray="6 3" opacity="0.7"/>
+    <text x="60" y="370" class="lbl" fill="#e11d48">Memory roof: 1231 GB/s</text>
+
+    <!-- Compute roofs (horizontal) at peak TFLOPS values; labels left-aligned at x=10 to avoid
+         collision with crossover-dot labels in the right half of the plot -->
+    <!-- y(P) = 400 - 120*log10(P)  -->
+    <!-- FP32 cuda 58 → y = 400 - 120*log10(58) = 400 - 120*1.763 = 188.4 -->
+    <line x1="0" y1="188.4" x2="880" y2="188.4" stroke="#5a8e00" stroke-width="1.5" opacity="0.6"/>
+    <text x="10" y="184" class="lbl-sm" fill="#5a8e00">FP32 CUDA 58 TFLOPS</text>
+    <!-- TF32 129 -->
+    <line x1="0" y1="146.7" x2="880" y2="146.7" stroke="#5a8e00" stroke-width="1.5" opacity="0.7"/>
+    <text x="10" y="142" class="lbl-sm" fill="#5a8e00">TF32 129 TFLOPS</text>
+    <!-- FP16 271 -->
+    <line x1="0" y1="108.0" x2="880" y2="108.0" stroke="#5a8e00" stroke-width="1.8"/>
+    <text x="10" y="104" class="lbl" fill="#5a8e00">FP16/BF16 271 TFLOPS</text>
+    <!-- FP8 529 → y = 400 - 120*log10(529)= 400 - 120*2.723 = 73.2 -->
+    <line x1="0" y1="73.2" x2="880" y2="73.2" stroke="#5a8e00" stroke-width="1.8"/>
+    <text x="10" y="69" class="lbl" fill="#5a8e00">FP8 529 TFLOPS</text>
+    <!-- MXFP4 1069 -->
+    <line x1="0" y1="36.4" x2="880" y2="36.4" stroke="#5a8e00" stroke-width="1.8"/>
+    <text x="10" y="32" class="lbl" fill="#5a8e00">MXFP4 1069 TFLOPS</text>
+
+    <!-- Crossover markers (large dots) -->
+    <!-- AI=220 (FP16 crossover): x=log10(220)*220 ≈ 2.342*220 = 515.3 ; intersect at memory roof y; pos lower of roof and memory line at AI=220 -->
+    <!-- y_mem(220) = 389.2 - 120*log10(220) = 389.2 - 120*2.342 = 108.2 (matches compute roof) -->
+    <circle cx="515" cy="108" r="6" fill="#76b900" stroke="#ffffff" stroke-width="2"/>
+    <text x="525" y="124" class="lbl" fill="#5a8e00">FP16 AI* = 220</text>
+    <!-- AI=430 (FP8): x=log10(430)*220=2.633*220=579.3; y=389.2-120*2.633=73.2 -->
+    <circle cx="579" cy="73" r="6" fill="#76b900" stroke="#ffffff" stroke-width="2"/>
+    <text x="589" y="65" class="lbl" fill="#5a8e00">FP8 AI* = 430</text>
+    <!-- AI=869 (MXFP4): x=log10(869)*220=2.939*220=646.6; y=389.2-120*2.939=36.5 -->
+    <circle cx="647" cy="36" r="6" fill="#76b900" stroke="#ffffff" stroke-width="2"/>
+    <text x="657" y="28" class="lbl" fill="#5a8e00">MXFP4 AI* = 869</text>
+    <!-- AI=47 (FP32 CUDA): x=log10(47)*220=1.672*220=367.8; y=189 -->
+    <circle cx="368" cy="188" r="5" fill="#76b900" stroke="#ffffff" stroke-width="2"/>
+    <text x="378" y="208" class="lbl-sm" fill="#5a8e00">FP32 AI* = 47</text>
+
+    <!-- Region annotations -->
+    <text x="100" y="320" class="lbl-sm" fill="#9a3412">memory-bound</text>
+    <text x="100" y="334" class="lbl-sm" fill="#9a3412">(below memory roof)</text>
+    <text x="700" y="210" class="lbl-sm" fill="#5a8e00">compute-bound</text>
+    <text x="700" y="224" class="lbl-sm" fill="#5a8e00">(at peak)</text>
+  </g>
+
+  <!-- Footer key reference -->
+  <g transform="translate(100,508)">
+    <rect x="0" y="0" width="880" height="48" rx="8" fill="#fcfbf6" stroke="#e6e4da"/>
+    <text x="14" y="20" class="lbl">Crossover AI = Peak_TFLOPS × 1000 / DRAM_BW_GBps  (canonical M-24 unified)</text>
+    <text x="14" y="38" class="lbl-sm">DRAM_BW = 1231 GB/s · Peak FP16 = 271 TFLOPS · FP8 = 529 · MXFP4 = 1069 · FP32 CUDA = 58 · TF32 = 129 · FP64 DFMA = 0.96 TFLOPS</text>
+  </g>
+</svg>

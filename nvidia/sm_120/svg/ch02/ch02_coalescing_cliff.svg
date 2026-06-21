@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 400" role="img"
+     aria-label="L1 coalescing cliff — latency vs stride showing the 2.3x cliff at stride=16 where coalescing window (8 lines) is exceeded">
+  <defs>
+    <marker id="dot" markerWidth="8" markerHeight="8" refX="4" refY="4">
+      <circle cx="4" cy="4" r="3.5" fill="#5a8e00" stroke="#fff" stroke-width="1.5"/>
+    </marker>
+    <marker id="dotR" markerWidth="8" markerHeight="8" refX="4" refY="4">
+      <circle cx="4" cy="4" r="3.5" fill="#e11d48" stroke="#fff" stroke-width="1.5"/>
+    </marker>
+    <style><![CDATA[
+      .ttl{font:600 13px "Fraunces",serif;fill:#0b1220}
+      .sub{font:italic 10.5px "Fraunces",serif;fill:#5b6679}
+      .axL{font:500 10px "JetBrains Mono",monospace;fill:#5b6679}
+      .axT{font:600 10px "JetBrains Mono",monospace;fill:#5b6679;letter-spacing:0.06em}
+      .val{font:600 10px "JetBrains Mono",monospace;fill:#2a3548}
+      .cliff{font:700 11px "JetBrains Mono",monospace;fill:#e11d48}
+      .cliff-sub{font:italic 10px "Fraunces",serif;fill:#9f1239}
+      .zone{font:600 9.5px "JetBrains Mono",monospace;letter-spacing:0.06em}
+      .ann{font:italic 10px "Fraunces",serif;fill:#5b6679}
+    ]]></style>
+  </defs>
+  <rect width="1080" height="400" fill="#ffffff"/>
+  <text x="36" y="28" class="ttl">L1 Coalescing Cliff: Latency vs Stride (Case 180)</text>
+  <text x="36" y="44" class="sub">32-thread warp, 4B/thread load — coalescing window = 8 cache lines; stride ≥ 16 exceeds window, triggering 2-round split</text>
+
+  <!-- Chart area: x=140..920, y=66..310 -->
+  <!-- Y axis: 0-160 cyc. y = 310 - (val/160)*244 -->
+  <!-- X axis: stride 1,2,4,8,16,32 at x = 140, 296, 452, 608, 764, 920 (step=156) -->
+
+  <!-- Background zones -->
+  <!-- Green zone (stride 1-8, within coalescing window) -->
+  <rect x="140" y="66" width="546" height="244" rx="0" fill="#e9f3d2" opacity="0.3"/>
+  <!-- Red zone (stride 16-32, exceeds window) -->
+  <rect x="686" y="66" width="234" height="244" rx="0" fill="#ffe4e6" opacity="0.3"/>
+
+  <!-- Zone labels -->
+  <text x="413" y="82" class="zone" fill="#3d6b00" text-anchor="middle">WITHIN COALESCING WINDOW (≤8 lines)</text>
+  <text x="803" y="82" class="zone" fill="#9f1239" text-anchor="middle">EXCEEDS WINDOW</text>
+
+  <!-- Y axis -->
+  <line x1="140" y1="66" x2="140" y2="310" stroke="#5b6679" stroke-width="1.2"/>
+  <!-- Y gridlines + labels: 0, 40, 80, 120, 160 -->
+  <line x1="140" y1="310" x2="920" y2="310" stroke="#e6e4da" stroke-width="0.8"/>
+  <text x="130" y="314" class="axL" text-anchor="end">0</text>
+  <line x1="140" y1="249" x2="920" y2="249" stroke="#e6e4da" stroke-width="0.8" stroke-dasharray="3 3"/>
+  <text x="130" y="253" class="axL" text-anchor="end">40</text>
+  <line x1="140" y1="188" x2="920" y2="188" stroke="#e6e4da" stroke-width="0.8" stroke-dasharray="3 3"/>
+  <text x="130" y="192" class="axL" text-anchor="end">80</text>
+  <line x1="140" y1="127" x2="920" y2="127" stroke="#e6e4da" stroke-width="0.8" stroke-dasharray="3 3"/>
+  <text x="130" y="131" class="axL" text-anchor="end">120</text>
+  <line x1="140" y1="66" x2="920" y2="66" stroke="#e6e4da" stroke-width="0.8" stroke-dasharray="3 3"/>
+  <text x="130" y="70" class="axL" text-anchor="end">160</text>
+
+  <!-- X axis -->
+  <line x1="140" y1="310" x2="920" y2="310" stroke="#5b6679" stroke-width="1.2"/>
+  <!-- X tick labels -->
+  <text x="140" y="328" class="axL" text-anchor="middle">1</text>
+  <text x="296" y="328" class="axL" text-anchor="middle">2</text>
+  <text x="452" y="328" class="axL" text-anchor="middle">4</text>
+  <text x="608" y="328" class="axL" text-anchor="middle">8</text>
+  <text x="764" y="328" class="axL" text-anchor="middle">16</text>
+  <text x="920" y="328" class="axL" text-anchor="middle">32</text>
+
+  <!-- Axis titles -->
+  <text x="530" y="350" class="axT" text-anchor="middle">Stride (elements, log₂ scale)</text>
+  <text x="60" y="188" class="axT" text-anchor="middle" transform="rotate(-90,60,188)">Latency (cyc/round)</text>
+
+  <!-- Data line: flat region -->
+  <!-- stride 1: (140, 310-(57.5/160)*244) = (140, 222.3) -->
+  <!-- stride 2: (296, 222.3) -->
+  <!-- stride 4: (452, 310-(57.7/160)*244) = (452, 222.0) -->
+  <!-- stride 8: (608, 310-(58.3/160)*244) = (608, 221.1) -->
+  <!-- stride 16: (764, 310-(136/160)*244) = (764, 102.6) -->
+  <!-- stride 32: (920, 310-(144.3/160)*244) = (920, 89.9) -->
+
+  <!-- Line: green segment (flat) -->
+  <polyline points="140,222.3 296,222.3 452,222.0 608,221.1"
+            fill="none" stroke="#5a8e00" stroke-width="2.5"/>
+  <!-- Line: cliff segment (sharp rise) -->
+  <polyline points="608,221.1 764,102.6"
+            fill="none" stroke="#e11d48" stroke-width="3" stroke-dasharray="6 3"/>
+  <!-- Line: red segment (high plateau) -->
+  <polyline points="764,102.6 920,89.9"
+            fill="none" stroke="#e11d48" stroke-width="2.5"/>
+
+  <!-- Data points (green region) -->
+  <circle cx="140" cy="222.3" r="5" fill="#5a8e00" stroke="#fff" stroke-width="1.5"/>
+  <circle cx="296" cy="222.3" r="5" fill="#5a8e00" stroke="#fff" stroke-width="1.5"/>
+  <circle cx="452" cy="222.0" r="5" fill="#5a8e00" stroke="#fff" stroke-width="1.5"/>
+  <circle cx="608" cy="221.1" r="5" fill="#5a8e00" stroke="#fff" stroke-width="1.5"/>
+  <!-- Data points (red region) -->
+  <circle cx="764" cy="102.6" r="6" fill="#e11d48" stroke="#fff" stroke-width="2"/>
+  <circle cx="920" cy="89.9" r="5" fill="#e11d48" stroke="#fff" stroke-width="1.5"/>
+
+  <!-- Value labels -->
+  <text x="140" y="214" class="val" text-anchor="middle">57.5</text>
+  <text x="296" y="214" class="val" text-anchor="middle">57.5</text>
+  <text x="452" y="214" class="val" text-anchor="middle">57.7</text>
+  <text x="608" y="214" class="val" text-anchor="middle">58.3</text>
+  <text x="764" y="94" class="val" text-anchor="middle" fill="#e11d48">136.0</text>
+  <text x="920" y="82" class="val" text-anchor="middle" fill="#e11d48">144.3</text>
+
+  <!-- ═══════════ CLIFF CALLOUT ═══════════ -->
+  <!-- Vertical cliff zone line -->
+  <line x1="686" y1="66" x2="686" y2="310" stroke="#e11d48" stroke-width="1.5" stroke-dasharray="4 3" opacity="0.5"/>
+
+  <!-- Cliff annotation -->
+  <rect x="630" y="140" width="112" height="44" rx="6" fill="#ffe4e6" stroke="#e11d48" stroke-width="1"/>
+  <text x="686" y="157" class="cliff" text-anchor="middle">2.33× CLIFF</text>
+  <text x="696" y="174" class="cliff-sub" text-anchor="middle">8 → 16 lines</text>
+
+  <!-- Arrow from flat to cliff point -->
+  <line x1="640" y1="184" x2="686" y2="160" stroke="#e11d48" stroke-width="0.8" opacity="0.6"/>
+
+  <!-- ═══════════ BOTTOM ANNOTATION ═══════════ -->
+  <rect x="36" y="358" width="1008" height="32" rx="6" fill="#fcfbf6" stroke="#e6e4da"/>
+  <text x="56" y="378" class="ann">Coalescing window = 8 unique cache lines per warp. Strides 1-8 (≤8 lines) merge into 1 transaction (~57.5 cyc); stride ≥16 (≥16 lines) splits into 2 rounds (~136 cyc).</text>
+</svg>

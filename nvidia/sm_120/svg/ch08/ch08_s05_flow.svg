@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 756" role="img" aria-label="8.6.1 Microarchitectural Analysis: Power Gating and the TC/CUDA Efficiency Gap">
+  <defs>
+    <marker id="ar" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto">
+      <path d="M0,0 L7,3.5 L0,7 Z" fill="#5b6679"/>
+    </marker>
+  </defs>
+  <rect width="1080" height="756" fill="#ffffff"/>
+  <text x="36" y="32" style="font:600 14px 'Fraunces',serif;fill:#0b1220">8.6.1 Microarchitectural Analysis: Power Gating and the TC/CUDA Efficiency Gap</text>
+  <text x="36" y="52" style="font:italic 11px 'Fraunces',serif;fill:#5b6679">Semantic visualization of measured microarchitectural behavior</text>
+
+    <g transform="translate(40,86)">
+      <rect x="0" y="0" width="1000" height="64" rx="10" fill="#F4FAE2" stroke="#5a8e00" stroke-width="0.8"/>
+      <text x="20" y="22" style="font:600 12px 'Fraunces',serif;fill:#5a8e00">SM_120 Power Architecture Model (Inferred from Measurements)</text>
+      <text x="20" y="44" style="font:500 10px 'JetBrains Mono',monospace;fill:#5b6679">Power Breakdown (at 2092 MHz, full-chip active): · Static power (idle with context):    48.4 W  (14% TDP)</text>
+    </g>    <line x1="540" y1="150" x2="540" y2="172" stroke="#5b6679" stroke-width="1.2" marker-end="url(#ar)"/>
+    <g transform="translate(40,176)">
+      <rect x="0" y="0" width="1000" height="64" rx="10" fill="#F4FAE2" stroke="#5a8e00" stroke-width="0.8"/>
+      <text x="20" y="22" style="font:600 12px 'Fraunces',serif;fill:#5a8e00">├── GDDR7 memory subsystem         ~20 W</text>
+      <text x="20" y="44" style="font:500 10px 'JetBrains Mono',monospace;fill:#5b6679">├── L2 cache (96 MB SRAM)          ~15 W · └── Clock distribution + I/O       ~13 W</text>
+    </g>    <line x1="540" y1="240" x2="540" y2="262" stroke="#5b6679" stroke-width="1.2" marker-end="url(#ar)"/>
+    <g transform="translate(40,266)">
+      <rect x="0" y="0" width="1000" height="64" rx="10" fill="#F4FAE2" stroke="#5a8e00" stroke-width="0.8"/>
+      <text x="20" y="22" style="font:600 12px 'Fraunces',serif;fill:#5a8e00">Incremental per-GPC (~14 SMs):</text>
+      <text x="20" y="44" style="font:500 10px 'JetBrains Mono',monospace;fill:#5b6679">├── FMA (CUDA cores active):       10.4 W/GPC (0.74 W/SM) · └── MMA (Tensor cores active):      1.6 W/GPC (0.12 W/SM)</text>
+    </g>    <line x1="540" y1="330" x2="540" y2="352" stroke="#5b6679" stroke-width="1.2" marker-end="url(#ar)"/>
+    <g transform="translate(40,356)">
+      <rect x="0" y="0" width="1000" height="64" rx="10" fill="#F4FAE2" stroke="#5a8e00" stroke-width="0.8"/>
+      <text x="20" y="22" style="font:600 12px 'Fraunces',serif;fill:#5a8e00">Full-chip dynamic power:</text>
+      <text x="20" y="44" style="font:500 10px 'JetBrains Mono',monospace;fill:#5b6679">├── FP32 FFMA (110 SM):    94 W delta  → 143 W total · ├── TC FP16 HMMA (110 SM): 60 W delta  → 108 W total</text>
+    </g>    <line x1="540" y1="420" x2="540" y2="442" stroke="#5b6679" stroke-width="1.2" marker-end="url(#ar)"/>
+    <g transform="translate(40,446)">
+      <rect x="0" y="0" width="1000" height="64" rx="10" fill="#F4FAE2" stroke="#5a8e00" stroke-width="0.8"/>
+      <text x="20" y="22" style="font:600 12px 'Fraunces',serif;fill:#5a8e00">├── TC MX-FP4 OMMA.SF:    41 W delta  →  89 W total</text>
+      <text x="20" y="44" style="font:500 10px 'JetBrains Mono',monospace;fill:#5b6679">└── INT32 IMAD (110 SM):  116 W delta  → 164 W total · The TC/CUDA power ratio per SM:</text>
+    </g>    <line x1="540" y1="510" x2="540" y2="532" stroke="#5b6679" stroke-width="1.2" marker-end="url(#ar)"/>
+    <g transform="translate(40,536)">
+      <rect x="0" y="0" width="1000" height="64" rx="10" fill="#F4FAE2" stroke="#5a8e00" stroke-width="0.8"/>
+      <text x="20" y="22" style="font:600 12px 'Fraunces',serif;fill:#5a8e00">MMA: 0.12 W/SM incremental</text>
+      <text x="20" y="44" style="font:500 10px 'JetBrains Mono',monospace;fill:#5b6679">FMA: 0.74 W/SM incremental · Ratio: FMA/MMA = 6.2× more power per SM</text>
+    </g>    <line x1="540" y1="600" x2="540" y2="622" stroke="#5b6679" stroke-width="1.2" marker-end="url(#ar)"/>
+    <g transform="translate(40,626)">
+      <rect x="0" y="0" width="1000" height="64" rx="10" fill="#F4FAE2" stroke="#5a8e00" stroke-width="0.8"/>
+      <text x="20" y="22" style="font:600 12px 'Fraunces',serif;fill:#5a8e00">But TFLOPS ratio:</text>
+      <text x="20" y="44" style="font:500 10px 'JetBrains Mono',monospace;fill:#5b6679">MMA: 235 TFLOPS at 108 W → 2.18 TFLOPS/W</text>
+    </g>
+</svg>

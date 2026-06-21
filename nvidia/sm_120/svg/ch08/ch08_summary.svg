@@ -1,0 +1,318 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 960" font-family="'Inter','Segoe UI',system-ui,sans-serif">
+<defs>
+  <style>
+    .bg{fill:#fcfbf6}
+    .panel{fill:#fff;stroke:#e2dfd8;stroke-width:1.2;rx:10}
+    .panel-accent{fill:#fff;stroke:#e2dfd8;stroke-width:1.2;rx:10}
+    .eyebrow{font-size:9px;font-weight:700;letter-spacing:1.2px;fill:#8b7e6a;text-transform:uppercase}
+    .ch-eyebrow{font-size:10px;font-weight:700;letter-spacing:1.5px;fill:#5a8e00;text-transform:uppercase}
+    .title{font-size:13px;font-weight:700;fill:#1a1a1a}
+    .title-lg{font-size:16px;font-weight:700;fill:#0b1220;letter-spacing:-0.3px}
+    .subtitle{font-size:12px;font-style:italic;fill:#5b6679}
+    .kpi{font-size:22px;font-weight:800;fill:#0b1220;letter-spacing:-0.5px}
+    .kpi-unit{font-size:11px;font-weight:600;fill:#5b6679}
+    .kpi-sm{font-size:16px;font-weight:700;fill:#1a1a1a}
+    .lbl{font-size:10.5px;fill:#444}
+    .lbl-bold{font-size:10.5px;font-weight:700;fill:#1a1a1a}
+    .lbl-mono{font-size:10px;font-family:'JetBrains Mono','Fira Code',monospace;fill:#333}
+    .lbl-sm{font-size:9px;fill:#6b7280}
+    .accent-green{fill:#059669}
+    .accent-red{fill:#dc2626}
+    .accent-blue{fill:#2563eb}
+    .accent-amber{fill:#d97706}
+    .accent-teal{fill:#0891b2}
+    .accent-purple{fill:#7c3aed}
+    .bar-green{fill:#059669;opacity:0.8}
+    .bar-blue{fill:#2563eb;opacity:0.8}
+    .bar-amber{fill:#d97706;opacity:0.8}
+    .bar-red{fill:#dc2626;opacity:0.7}
+    .bar-teal{fill:#0891b2;opacity:0.8}
+    .bar-purple{fill:#7c3aed;opacity:0.75}
+    .divider{stroke:#e2dfd8;stroke-width:0.8}
+    .stripe-green{fill:#ecfdf5;stroke:#a7f3d0;stroke-width:0.8}
+    .stripe-blue{fill:#eff6ff;stroke:#bfdbfe;stroke-width:0.8}
+    .stripe-amber{fill:#fffbeb;stroke:#fde68a;stroke-width:0.8}
+    .stripe-red{fill:#fef2f2;stroke:#fecaca;stroke-width:0.8}
+    .stripe-teal{fill:#f0fdfa;stroke:#99f6e4;stroke-width:0.8}
+    .stripe-purple{fill:#f5f3ff;stroke:#ddd6fe;stroke-width:0.8}
+    .insight-bg{fill:#f0fdf4;stroke:#86efac;stroke-width:1;rx:8}
+    .tag{font-size:8.5px;font-weight:700;letter-spacing:0.8px;text-transform:uppercase}
+  </style>
+</defs>
+
+<!-- Background -->
+<rect width="1280" height="960" class="bg"/>
+
+<!-- Header -->
+<rect x="30" y="18" width="4" height="52" rx="2" fill="#5a8e00"/>
+<text x="46" y="38" class="ch-eyebrow">CHAPTER 08 · SM_120 / GB202 BLACKWELL</text>
+<text x="46" y="58" class="title-lg" font-size="20">Workload Analysis — Executive Summary</text>
+<text x="46" y="74" class="subtitle">588-shape GEMM sweep · FlashAttention decomposition · GEMV decode · Power efficiency · Multi-precision roofline</text>
+
+<!-- ═══ ROW 1: Three headline KPI cards ═══ -->
+<!-- KPI 1: Peak Compute -->
+<rect x="30" y="92" width="390" height="82" class="panel"/>
+<rect x="30" y="92" width="390" height="4" rx="10" fill="#059669" opacity="0.8"/>
+<text x="50" y="116" class="eyebrow" style="fill:#059669">PEAK COMPUTE (MXFP4)</text>
+<text x="50" y="148" class="kpi" style="fill:#059669">1077</text>
+<text x="135" y="148" class="kpi-unit">TFLOPS</text>
+<text x="135" y="163" class="lbl-sm">100.6% theoretical · CUTLASS 256×128×128</text>
+<text x="340" y="130" class="kpi-sm" style="fill:#059669">×4.0</text>
+<text x="340" y="145" class="lbl-sm">vs FP16 peak</text>
+<text x="340" y="163" class="lbl-mono" style="font-size:9px;fill:#666">S9/case_136</text>
+
+<!-- KPI 2: DRAM BW -->
+<rect x="440" y="92" width="390" height="82" class="panel"/>
+<rect x="440" y="92" width="390" height="4" rx="10" fill="#2563eb" opacity="0.8"/>
+<text x="460" y="116" class="eyebrow" style="fill:#2563eb">DRAM BANDWIDTH (GEMV)</text>
+<text x="460" y="148" class="kpi" style="fill:#2563eb">879</text>
+<text x="532" y="148" class="kpi-unit">GB/s</text>
+<text x="532" y="163" class="lbl-sm">98% of peak · N≥8192 saturated</text>
+<text x="710" y="130" class="kpi-sm" style="fill:#2563eb">96 MB</text>
+<text x="710" y="145" class="lbl-sm">L2 sweet spot</text>
+<text x="710" y="163" class="lbl-mono" style="font-size:9px;fill:#666">S21/case_54</text>
+
+<!-- KPI 3: Energy Efficiency -->
+<rect x="850" y="92" width="400" height="82" class="panel"/>
+<rect x="850" y="92" width="400" height="4" rx="10" fill="#d97706" opacity="0.8"/>
+<text x="870" y="116" class="eyebrow" style="fill:#d97706">ENERGY EFFICIENCY (MXFP4)</text>
+<text x="870" y="148" class="kpi" style="fill:#d97706">12.0</text>
+<text x="938" y="148" class="kpi-unit">TFLOPS/W</text>
+<text x="938" y="163" class="lbl-sm">29.3× FP32 FFMA · 89 W total chip</text>
+<text x="1120" y="130" class="kpi-sm" style="fill:#d97706">5.3×</text>
+<text x="1120" y="145" class="lbl-sm">TC/CUDA gap</text>
+<text x="1120" y="163" class="lbl-mono" style="font-size:9px;fill:#666">S20/case_5-17</text>
+
+<!-- ═══ ROW 2: Six section panels (2×3 grid) ═══ -->
+
+<!-- Panel 1: §8.1 Compute-Bound GEMM -->
+<rect x="30" y="192" width="400" height="230" class="panel"/>
+<rect x="30" y="192" width="400" height="28" rx="10" class="stripe-green"/>
+<text x="50" y="211" class="tag" style="fill:#059669">§8.1 COMPUTE-BOUND: GEMM</text>
+
+<!-- Mini bar chart: precision peaks -->
+<text x="50" y="238" class="lbl-bold">588-Shape Sweep (18 lib×prec combos)</text>
+
+<text x="50" y="258" class="lbl-mono" style="font-size:9px">MXFP4</text>
+<rect x="105" y="248" width="270" height="12" rx="2" class="bar-green"/>
+<text x="380" y="258" class="lbl-mono" style="font-size:9px">1077T</text>
+
+<text x="50" y="276" class="lbl-mono" style="font-size:9px">FP8</text>
+<rect x="105" y="266" width="138" height="12" rx="2" class="bar-green" style="opacity:0.65"/>
+<text x="248" y="276" class="lbl-mono" style="font-size:9px">551T</text>
+
+<text x="50" y="294" class="lbl-mono" style="font-size:9px">BF16</text>
+<rect x="105" y="284" width="67" height="12" rx="2" class="bar-green" style="opacity:0.5"/>
+<text x="177" y="294" class="lbl-mono" style="font-size:9px">271T</text>
+
+<text x="50" y="312" class="lbl-mono" style="font-size:9px">TF32</text>
+<rect x="105" y="302" width="32" height="12" rx="2" class="bar-green" style="opacity:0.4"/>
+<text x="142" y="312" class="lbl-mono" style="font-size:9px">126T</text>
+
+<line x1="45" y1="324" x2="415" y2="324" class="divider"/>
+<text x="50" y="340" class="lbl">• M=3072 universally optimal (wave quant)</text>
+<text x="50" y="356" class="lbl">• 3-stage pipeline 1.92× speedup, 34% sync</text>
+<text x="50" y="372" class="lbl">• Sparse 2:4 max 1.45× (never reaches 2×)</text>
+<text x="50" y="388" class="lbl">• Grouped MXFP4: 96.9% eff, 588/588 coverage</text>
+<text x="50" y="408" class="lbl-sm">Cases 128-145, 18 library/precision · [S9, S19]</text>
+
+<!-- Panel 2: §8.2 Memory-Bound GEMV -->
+<rect x="440" y="192" width="400" height="230" class="panel"/>
+<rect x="440" y="192" width="400" height="28" rx="10" class="stripe-blue"/>
+<text x="460" y="211" class="tag" style="fill:#2563eb">§8.2 MEMORY-BOUND: GEMV &amp; DECODE</text>
+
+<text x="460" y="238" class="lbl-bold">Three GEMV Regimes</text>
+
+<!-- Three regime blocks -->
+<rect x="460" y="248" width="120" height="44" rx="4" fill="#dbeafe" stroke="#93c5fd"/>
+<text x="520" y="264" text-anchor="middle" class="lbl-mono" style="font-size:9px;fill:#1e40af">Launch-limited</text>
+<text x="520" y="280" text-anchor="middle" class="lbl-sm">N≤512, &lt;25%BW</text>
+
+<rect x="588" y="248" width="120" height="44" rx="4" fill="#bfdbfe" stroke="#60a5fa"/>
+<text x="648" y="264" text-anchor="middle" class="lbl-mono" style="font-size:9px;fill:#1e40af">L2-cached</text>
+<text x="648" y="280" text-anchor="middle" class="lbl-sm">N≤4096, 2-3×BW</text>
+
+<rect x="716" y="248" width="108" height="44" rx="4" fill="#93c5fd" stroke="#3b82f6"/>
+<text x="770" y="264" text-anchor="middle" class="lbl-mono" style="font-size:9px;fill:#fff">DRAM-saturated</text>
+<text x="770" y="280" text-anchor="middle" class="lbl-sm" style="fill:#fff">N≥8192, 98%</text>
+
+<line x1="455" y1="304" x2="825" y2="304" class="divider"/>
+<text x="460" y="322" class="lbl">• L2 amplification: INT8=3.2×, FP16=2.1×</text>
+<text x="460" y="338" class="lbl">• BF16 &gt; FP16 by 25% (kernel difference)</text>
+<text x="460" y="354" class="lbl">• INT4 quant = 2.38× faster than FP16</text>
+<text x="460" y="370" class="lbl">• Batch amortizes: 212→3.3 µs/token (1→64)</text>
+<text x="460" y="386" class="lbl">• Prefill→decode transition: ~5 µs (free)</text>
+<text x="460" y="408" class="lbl-sm">W4/W8 quantization justified by L2 caching · [S19, S21]</text>
+
+<!-- Panel 3: §8.3 Mixed Attention -->
+<rect x="850" y="192" width="400" height="230" class="panel"/>
+<rect x="850" y="192" width="400" height="28" rx="10" class="stripe-amber"/>
+<text x="870" y="211" class="tag" style="fill:#d97706">§8.3 MIXED: ATTENTION &amp; SOFTMAX</text>
+
+<text x="870" y="238" class="lbl-bold">FlashAttention Bottleneck (d=128)</text>
+
+<!-- Pie-like decomposition as stacked bar -->
+<rect x="870" y="248" width="132" height="16" rx="2" fill="#d97706" opacity="0.9"/>
+<text x="936" y="260" text-anchor="middle" class="lbl-mono" style="font-size:8px;fill:#fff">Q×K^T 45%</text>
+
+<rect x="1002" y="248" width="72" height="16" rx="2" fill="#f59e0b" opacity="0.8"/>
+<text x="1038" y="260" text-anchor="middle" class="lbl-mono" style="font-size:8px;fill:#fff">soft 25%</text>
+
+<rect x="1074" y="248" width="72" height="16" rx="2" fill="#fbbf24" opacity="0.8"/>
+<text x="1110" y="260" text-anchor="middle" class="lbl-mono" style="font-size:8px">S×V 25%</text>
+
+<rect x="1146" y="248" width="30" height="16" rx="2" fill="#fde68a"/>
+<text x="1161" y="260" text-anchor="middle" class="lbl-mono" style="font-size:7px">5%</text>
+
+<!-- Key insight -->
+<rect x="870" y="274" width="360" height="30" rx="5" fill="#fef3c7" stroke="#f59e0b" stroke-width="0.8"/>
+<text x="880" y="293" class="lbl-bold" style="fill:#92400e">Softmax = 0% overhead (SFU co-issues 100% free with TC)</text>
+
+<line x1="865" y1="314" x2="1235" y2="314" class="divider"/>
+<text x="870" y="332" class="lbl">• Thin-K bottleneck: K=128 → 8 MMA chain, 46%</text>
+<text x="870" y="348" class="lbl">• Score×V: 61% (larger effective K)</text>
+<text x="870" y="364" class="lbl">• Fast-math gains 0% (already free pipe)</text>
+<text x="870" y="380" class="lbl">• Causal mask (selp): 0 cyc; additive: +41%</text>
+<text x="870" y="396" class="lbl">• Structural cap from head_dim, not SW</text>
+<text x="870" y="408" class="lbl-sm">Optimization target = thin-K GEMM, not softmax · [S19, S5]</text>
+
+<!-- ═══ ROW 3: Three more panels ═══ -->
+
+<!-- Panel 4: §8.4 Sync-Bound -->
+<rect x="30" y="440" width="400" height="200" class="panel"/>
+<rect x="30" y="440" width="400" height="28" rx="10" class="stripe-purple"/>
+<text x="50" y="459" class="tag" style="fill:#7c3aed">§8.4 SYNC-BOUND: CLUSTER &amp; DSMEM</text>
+
+<text x="50" y="486" class="lbl-bold">Sync Overhead by Pattern</text>
+
+<text x="50" y="506" class="lbl-mono" style="font-size:9px">DeepGemm</text>
+<rect x="150" y="496" width="82" height="12" rx="2" class="bar-purple"/>
+<text x="236" y="506" class="lbl-mono" style="font-size:9px">12-21%</text>
+
+<text x="50" y="524" class="lbl-mono" style="font-size:9px">FlashAttn</text>
+<rect x="150" y="514" width="76" height="12" rx="2" class="bar-purple" style="opacity:0.7"/>
+<text x="230" y="524" class="lbl-mono" style="font-size:9px">19%</text>
+
+<text x="50" y="542" class="lbl-mono" style="font-size:9px">MoE dispatch</text>
+<rect x="150" y="532" width="20" height="12" rx="2" class="bar-purple" style="opacity:0.5"/>
+<text x="174" y="542" class="lbl-mono" style="font-size:9px">~5%</text>
+
+<line x1="45" y1="556" x2="415" y2="556" class="divider"/>
+<text x="50" y="574" class="lbl">• DSMEM pipeline 3.5× faster than L2 path</text>
+<text x="50" y="590" class="lbl">• Persistent kernel: +166 cyc/tile transition</text>
+<text x="50" y="606" class="lbl">• Sync ∝ 1/compute — double compute halves %</text>
+<text x="50" y="626" class="lbl-sm">Cluster barrier dominates FA sync budget · [S23, S17]</text>
+
+<!-- Panel 5: §8.5 Roofline -->
+<rect x="440" y="440" width="400" height="200" class="panel"/>
+<rect x="440" y="440" width="400" height="28" rx="10" class="stripe-teal"/>
+<text x="460" y="459" class="tag" style="fill:#0891b2">§8.5 MULTI-PRECISION ROOFLINE</text>
+
+<text x="460" y="486" class="lbl-bold">Crossover AI* Ladder (FLOP/byte)</text>
+
+<!-- Crossover ladder as horizontal bars -->
+<text x="460" y="506" class="lbl-mono" style="font-size:9px">MXFP4</text>
+<rect x="520" y="496" width="260" height="12" rx="2" class="bar-teal"/>
+<text x="784" y="506" class="lbl-mono" style="font-size:9px">869</text>
+
+<text x="460" y="522" class="lbl-mono" style="font-size:9px">FP8</text>
+<rect x="520" y="512" width="129" height="12" rx="2" class="bar-teal" style="opacity:0.75"/>
+<text x="653" y="522" class="lbl-mono" style="font-size:9px">430</text>
+
+<text x="460" y="538" class="lbl-mono" style="font-size:9px">FP16</text>
+<rect x="520" y="528" width="66" height="12" rx="2" class="bar-teal" style="opacity:0.6"/>
+<text x="590" y="538" class="lbl-mono" style="font-size:9px">220</text>
+
+<text x="460" y="554" class="lbl-mono" style="font-size:9px">FP32</text>
+<rect x="520" y="544" width="14" height="12" rx="2" class="bar-teal" style="opacity:0.4"/>
+<text x="538" y="554" class="lbl-mono" style="font-size:9px">47</text>
+
+<line x1="455" y1="566" x2="825" y2="566" class="divider"/>
+<text x="460" y="584" class="lbl">• 3 classes: compute / memory / mixed-thin</text>
+<text x="460" y="600" class="lbl">• Attention paradox: AI=50 but TC-limited</text>
+<text x="460" y="616" class="lbl">• DRAM BW: 1231 GB/s measured (86.8% spec)</text>
+<text x="460" y="626" class="lbl-sm">Unified AI* ladder: Ch8/Ch13/Ch15 · [S19/case_25, AppB]</text>
+
+<!-- Panel 6: §8.6 Power & DVFS -->
+<rect x="850" y="440" width="400" height="200" class="panel"/>
+<rect x="850" y="440" width="400" height="28" rx="10" class="stripe-red"/>
+<text x="870" y="459" class="tag" style="fill:#dc2626">§8.6 POWER, THERMAL &amp; DVFS</text>
+
+<text x="870" y="486" class="lbl-bold">TFLOPS/W by Precision</text>
+
+<!-- Efficiency dots/bars -->
+<text x="870" y="506" class="lbl-mono" style="font-size:9px">MXFP4</text>
+<rect x="940" y="496" width="240" height="12" rx="2" fill="#dc2626" opacity="0.8"/>
+<text x="1184" y="506" class="lbl-mono" style="font-size:9px">12.0</text>
+
+<text x="870" y="522" class="lbl-mono" style="font-size:9px">FP8</text>
+<rect x="940" y="512" width="96" height="12" rx="2" fill="#dc2626" opacity="0.6"/>
+<text x="1040" y="522" class="lbl-mono" style="font-size:9px">4.81</text>
+
+<text x="870" y="538" class="lbl-mono" style="font-size:9px">FP16 TC</text>
+<rect x="940" y="528" width="44" height="12" rx="2" fill="#dc2626" opacity="0.45"/>
+<text x="988" y="538" class="lbl-mono" style="font-size:9px">2.18</text>
+
+<text x="870" y="554" class="lbl-mono" style="font-size:9px">FP32 FMA</text>
+<rect x="940" y="544" width="8" height="12" rx="2" fill="#dc2626" opacity="0.3"/>
+<text x="954" y="554" class="lbl-mono" style="font-size:9px">0.41</text>
+
+<line x1="865" y1="566" x2="1235" y2="566" class="divider"/>
+<text x="870" y="584" class="lbl">• DVFS linear 574–2606 MHz (no clock wall)</text>
+<text x="870" y="600" class="lbl">• GPC granularity power gating (not per-SM)</text>
+<text x="870" y="616" class="lbl">• Max 53°C — 39°C below thermal limit</text>
+<text x="870" y="626" class="lbl-sm">TC paradoxically cooler than CUDA cores · [S20]</text>
+
+<!-- ═══ ROW 4: Key Insights strip ═══ -->
+<rect x="30" y="658" width="1220" height="150" class="insight-bg"/>
+<text x="52" y="682" class="tag" style="fill:#059669;font-size:10px">KEY ARCHITECTURAL INSIGHTS</text>
+
+<!-- Two columns of insights -->
+<g transform="translate(52,696)">
+  <circle cx="5" cy="8" r="3" fill="#059669"/>
+  <text x="16" y="12" class="lbl" style="font-size:11px"><tspan font-weight="700">Softmax is architecturally free</tspan> — MUFU.EX2 co-issues 100% with TC (XU+Tensor = 0% overhead)</text>
+
+  <circle cx="5" cy="32" r="3" fill="#059669"/>
+  <text x="16" y="36" class="lbl" style="font-size:11px"><tspan font-weight="700">FlashAttention capped by head_dim</tspan> — K=128 → 8-MMA chain → 46% TC eff (structural, not SW)</text>
+
+  <circle cx="5" cy="56" r="3" fill="#059669"/>
+  <text x="16" y="60" class="lbl" style="font-size:11px"><tspan font-weight="700">M=3072 universally optimal</tspan> — divides by 128-tile (24) and 256-tile (12), perfect wave quantization at 110 SM</text>
+
+  <circle cx="5" cy="80" r="3" fill="#059669"/>
+  <text x="16" y="84" class="lbl" style="font-size:11px"><tspan font-weight="700">Weight quantization wins via L2 caching</tspan> — INT8 3.2× bandwidth amplification, not faster compute</text>
+
+  <circle cx="5" cy="104" r="3" fill="#059669"/>
+  <text x="16" y="108" class="lbl" style="font-size:11px"><tspan font-weight="700">Each precision halving ≈ doubles TFLOPS/W</tspan> — FP32(0.41) → FP16(2.18) → FP8(4.81) → FP4(12.0)</text>
+</g>
+
+<!-- ═══ ROW 5: Optimization Decision Strip ═══ -->
+<rect x="30" y="816" width="1220" height="124" class="panel"/>
+<text x="52" y="840" class="tag" style="fill:#1a1a1a;font-size:10px">OPTIMIZATION DECISION FRAMEWORK</text>
+
+<!-- Four decision boxes -->
+<rect x="52" y="854" width="270" height="70" rx="6" fill="#ecfdf5" stroke="#6ee7b7"/>
+<text x="60" y="872" class="lbl-bold" style="fill:#065f46">Compute-Bound (AI &gt; crossover)</text>
+<text x="60" y="890" class="lbl" style="font-size:9.5px">→ Lower precision (MXFP4 = 4× FP16)</text>
+<text x="60" y="906" class="lbl" style="font-size:9.5px">→ Maximize ILP (4+ output tiles)</text>
+<text x="60" y="920" class="lbl" style="font-size:9.5px">→ Target M=3072 for peak wave quant</text>
+
+<rect x="340" y="854" width="270" height="70" rx="6" fill="#eff6ff" stroke="#93c5fd"/>
+<text x="348" y="872" class="lbl-bold" style="fill:#1e40af">Memory-Bound (AI &lt; crossover)</text>
+<text x="348" y="890" class="lbl" style="font-size:9.5px">→ Weight quantization (W4/W8 for L2)</text>
+<text x="348" y="906" class="lbl" style="font-size:9.5px">→ Batch aggregation (linear scaling)</text>
+<text x="348" y="920" class="lbl" style="font-size:9.5px">→ BF16 over FP16 (+25% at same cost)</text>
+
+<rect x="628" y="854" width="270" height="70" rx="6" fill="#fffbeb" stroke="#fcd34d"/>
+<text x="636" y="872" class="lbl-bold" style="fill:#92400e">Mixed / Thin-K (attention)</text>
+<text x="636" y="890" class="lbl" style="font-size:9.5px">→ Maximize tile M×N (not K)</text>
+<text x="636" y="906" class="lbl" style="font-size:9.5px">→ Skip softmax fast-math (zero gain)</text>
+<text x="636" y="920" class="lbl" style="font-size:9.5px">→ Use selp mask (0 cyc vs +41%)</text>
+
+<rect x="916" y="854" width="270" height="70" rx="6" fill="#f5f3ff" stroke="#c4b5fd"/>
+<text x="924" y="872" class="lbl-bold" style="fill:#5b21b6">Sync-Bound (pipeline)</text>
+<text x="924" y="890" class="lbl" style="font-size:9.5px">→ Maximize compute/sync ratio</text>
+<text x="924" y="906" class="lbl" style="font-size:9.5px">→ 3-stage pipeline (4th +5.5% only)</text>
+<text x="924" y="920" class="lbl" style="font-size:9.5px">→ DSMEM 3.5× faster than L2 path</text>
+
+</svg>

@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 520" role="img"
+     aria-label="SM_120 TensorCore Feeding Pipeline — ldmatrix/stmatrix latency, throughput, and dual-pipe independence">
+  <defs>
+    <linearGradient id="lsuG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#DBEAFE"/><stop offset="1" stop-color="#EFF6FF"/>
+    </linearGradient>
+    <linearGradient id="tcG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FEF3C7"/><stop offset="1" stop-color="#FFFBEB"/>
+    </linearGradient>
+    <linearGradient id="rfG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#D1FAE5"/><stop offset="1" stop-color="#ECFDF5"/>
+    </linearGradient>
+    <linearGradient id="smemG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#F3E8FF"/><stop offset="1" stop-color="#FAF5FF"/>
+    </linearGradient>
+    <marker id="arr" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#374151"/>
+    </marker>
+    <marker id="arrB" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2563EB"/>
+    </marker>
+    <marker id="arrO" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#D97706"/>
+    </marker>
+    <style><![CDATA[
+      .ttl{font:600 15px "Fraunces",serif;fill:#0b1220}
+      .sub{font:italic 11px "Fraunces",serif;fill:#5b6679}
+      .lbl{font:600 11px "JetBrains Mono",monospace;fill:#2a3548}
+      .lbl-sm{font:500 10px "JetBrains Mono",monospace;fill:#5b6679}
+      .num{font:700 13px "JetBrains Mono",monospace}
+      .num-lg{font:700 16px "JetBrains Mono",monospace}
+      .stage{font:600 10px "JetBrains Mono",monospace;fill:#fff}
+      .sect{font:600 12px "Fraunces",serif;fill:#374151}
+      .badge-txt{font:700 10px "JetBrains Mono",monospace;fill:#fff}
+      .insight{font:600 10.5px "IBM Plex Sans",sans-serif;fill:#9f1239}
+    ]]></style>
+  </defs>
+  <rect width="1080" height="520" fill="#ffffff"/>
+
+  <!-- Title -->
+  <text x="36" y="28" class="ttl">TensorCore Feeding Pipeline — ldmatrix / MMA / stmatrix Dual-Pipe Architecture</text>
+  <text x="36" y="46" class="sub">LSU pipe (ldmatrix/stmatrix) and TC pipe (HMMA) operate fully independently; ldmatrix adds 0.3% overhead to MMA throughput</text>
+
+  <!-- ═══════════ TOP: PIPELINE OVERVIEW ═══════════ -->
+  <!-- Shared Memory -->
+  <g transform="translate(36,70)">
+    <rect width="160" height="110" rx="12" fill="url(#smemG)" stroke="#7C3AED" stroke-width="1.2"/>
+    <rect x="10" y="8" width="130" height="16" rx="4" fill="#7C3AED"/>
+    <text x="75" y="20" class="stage" text-anchor="middle">SHARED MEMORY</text>
+    <text x="80" y="44" class="lbl" text-anchor="middle">100 KB SRAM</text>
+    <text x="80" y="60" class="lbl-sm" text-anchor="middle">32 banks × 4B</text>
+    <text x="80" y="80" class="num" fill="#7C3AED" text-anchor="middle">30.2 B/cyc</text>
+    <text x="80" y="96" class="lbl-sm" text-anchor="middle">(per warp, b128)</text>
+  </g>
+
+  <!-- Arrow: smem → LSU pipe -->
+  <line x1="200" y1="125" x2="246" y2="125" stroke="#2563EB" stroke-width="2" marker-end="url(#arrB)"/>
+  <text x="223" y="116" class="lbl-sm" text-anchor="middle">ldmatrix</text>
+
+  <!-- LSU Pipe Box -->
+  <g transform="translate(250,70)">
+    <rect width="230" height="110" rx="12" fill="url(#lsuG)" stroke="#2563EB" stroke-width="1.5"/>
+    <rect x="10" y="8" width="80" height="16" rx="4" fill="#2563EB"/>
+    <text x="50" y="20" class="stage" text-anchor="middle">LSU PIPE</text>
+    <text x="120" y="38" class="lbl" text-anchor="middle">ldmatrix.x4 (LDSM.16.M88.4)</text>
+    <text x="120" y="58" class="num" fill="#1D4ED8" text-anchor="middle">Latency: 32.9 cyc</text>
+    <text x="120" y="76" class="num" fill="#1D4ED8" text-anchor="middle">Throughput: 1.68 cyc/op</text>
+    <text x="120" y="94" class="lbl-sm" text-anchor="middle">76.2 B/cyc peak (128B/warp per op)</text>
+  </g>
+
+  <!-- Arrow: LSU → RF -->
+  <line x1="484" y1="125" x2="520" y2="125" stroke="#059669" stroke-width="2" marker-end="url(#arr)"/>
+
+  <!-- Register File -->
+  <g transform="translate(524,70)">
+    <rect width="160" height="110" rx="12" fill="url(#rfG)" stroke="#059669" stroke-width="1.5"/>
+    <rect x="10" y="8" width="120" height="16" rx="4" fill="#059669"/>
+    <text x="70" y="20" class="stage" text-anchor="middle">REGISTER FILE</text>
+    <text x="80" y="44" class="lbl" text-anchor="middle">256 KB / SM</text>
+    <text x="80" y="62" class="lbl-sm" text-anchor="middle">255 regs/thread</text>
+    <text x="80" y="82" class="num" fill="#065F46" text-anchor="middle">80.3 B/cyc → TC</text>
+    <text x="80" y="98" class="lbl-sm" text-anchor="middle">(operand staging)</text>
+  </g>
+
+  <!-- Arrow: RF → TC pipe -->
+  <line x1="688" y1="125" x2="724" y2="125" stroke="#D97706" stroke-width="2" marker-end="url(#arrO)"/>
+
+  <!-- TC Pipe Box -->
+  <g transform="translate(728,70)">
+    <rect width="240" height="110" rx="12" fill="url(#tcG)" stroke="#D97706" stroke-width="1.5"/>
+    <rect x="10" y="8" width="70" height="16" rx="4" fill="#D97706"/>
+    <text x="45" y="20" class="stage" text-anchor="middle">TC PIPE</text>
+    <text x="120" y="38" class="lbl" text-anchor="middle">HMMA.16816.F16 (m16n8k16)</text>
+    <text x="120" y="58" class="num" fill="#92400E" text-anchor="middle">Latency: 29 cyc</text>
+    <text x="120" y="76" class="num" fill="#92400E" text-anchor="middle">Throughput: 15.88 cyc/op</text>
+    <text x="120" y="94" class="lbl-sm" text-anchor="middle">4096 FLOPs/op = 0.613 TOPS/warp</text>
+  </g>
+
+  <!-- Return arrow: RF → smem (stmatrix) -->
+  <path d="M 604,184 L 604,210 L 116,210 L 116,184" fill="none" stroke="#DC2626" stroke-width="1.5" stroke-dasharray="5 3" marker-end="url(#arr)"/>
+  <text x="360" y="226" class="lbl" text-anchor="middle" fill="#DC2626">stmatrix.x4: 15.99 cyc/op (9.5× slower than ldmatrix)</text>
+
+  <!-- ═══════════ MIDDLE: KEY METRICS COMPARISON ═══════════ -->
+  <text x="36" y="264" class="sect">LATENCY &amp; THROUGHPUT COMPARISON — ldmatrix Width Scaling</text>
+
+  <!-- ldmatrix.x1 -->
+  <g transform="translate(36,280)">
+    <rect width="240" height="65" rx="8" fill="#EFF6FF" stroke="#BFDBFE" stroke-width="1"/>
+    <text x="15" y="18" class="lbl">ldmatrix.x1</text>
+    <text x="15" y="36" class="lbl-sm">4B/thread · 128B/warp</text>
+    <rect x="15" y="44" width="60" height="14" rx="3" fill="#2563EB"/>
+    <text x="45" y="55" class="badge-txt" text-anchor="middle">27.1 cyc</text>
+    <text x="90" y="55" class="lbl-sm">latency</text>
+    <text x="155" y="18" class="num" fill="#2563EB">5.29</text>
+    <text x="155" y="36" class="lbl-sm">cyc/op (ILP=1)</text>
+  </g>
+
+  <!-- ldmatrix.x2 -->
+  <g transform="translate(286,280)">
+    <rect width="240" height="65" rx="8" fill="#EFF6FF" stroke="#BFDBFE" stroke-width="1"/>
+    <text x="15" y="18" class="lbl">ldmatrix.x2</text>
+    <text x="15" y="36" class="lbl-sm">8B/thread · 256B/warp</text>
+    <rect x="15" y="44" width="60" height="14" rx="3" fill="#2563EB"/>
+    <text x="45" y="55" class="badge-txt" text-anchor="middle">30.0 cyc</text>
+    <text x="90" y="55" class="lbl-sm">latency</text>
+    <text x="155" y="18" class="num" fill="#2563EB">2.85</text>
+    <text x="155" y="36" class="lbl-sm">cyc/op (ILP=2)</text>
+  </g>
+
+  <!-- ldmatrix.x4 -->
+  <g transform="translate(536,280)">
+    <rect width="240" height="65" rx="8" fill="#DBEAFE" stroke="#2563EB" stroke-width="1.5"/>
+    <text x="15" y="18" class="lbl">ldmatrix.x4 ★ OPTIMAL</text>
+    <text x="15" y="36" class="lbl-sm">16B/thread · 128B/warp</text>
+    <rect x="15" y="44" width="60" height="14" rx="3" fill="#1D4ED8"/>
+    <text x="45" y="55" class="badge-txt" text-anchor="middle">32.9 cyc</text>
+    <text x="90" y="55" class="lbl-sm">latency</text>
+    <text x="155" y="18" class="num-lg" fill="#1D4ED8">1.68</text>
+    <text x="155" y="36" class="lbl-sm">cyc/op (ILP=8)</text>
+  </g>
+
+  <!-- stmatrix.x4 -->
+  <g transform="translate(786,280)">
+    <rect width="240" height="65" rx="8" fill="#FEF2F2" stroke="#FECACA" stroke-width="1"/>
+    <text x="15" y="18" class="lbl">stmatrix.x4</text>
+    <text x="15" y="36" class="lbl-sm">16B/thread · 128B/warp</text>
+    <rect x="15" y="44" width="60" height="14" rx="3" fill="#DC2626"/>
+    <text x="45" y="55" class="badge-txt" text-anchor="middle">~40 cyc</text>
+    <text x="90" y="55" class="lbl-sm">latency</text>
+    <text x="155" y="18" class="num" fill="#DC2626">15.99</text>
+    <text x="155" y="36" class="lbl-sm">cyc/op</text>
+  </g>
+
+  <!-- ═══════════ BOTTOM: LITTLE'S LAW + KEY INSIGHT ═══════════ -->
+  <text x="36" y="378" class="sect">LITTLE'S LAW: Pipeline Depth = Latency / Throughput</text>
+
+  <!-- Little's Law visual -->
+  <g transform="translate(36,394)">
+    <rect width="480" height="80" rx="10" fill="#FFFBEB" stroke="#D97706" stroke-width="1"/>
+    <text x="20" y="20" class="lbl" fill="#92400E">ldmatrix.x4 pipeline depth:</text>
+    <text x="20" y="44" class="num-lg" fill="#92400E">32.9 cyc / 1.68 cyc/op = 19.6 slots</text>
+    <text x="20" y="64" class="lbl-sm">→ Need ≥4 independent ldmatrix ops in-flight to sustain 76.2 B/cyc peak</text>
+  </g>
+
+  <!-- MMA pipeline -->
+  <g transform="translate(540,394)">
+    <rect width="480" height="80" rx="10" fill="#FEF3C7" stroke="#D97706" stroke-width="1"/>
+    <text x="20" y="20" class="lbl" fill="#92400E">MMA pipeline depth:</text>
+    <text x="20" y="44" class="num-lg" fill="#92400E">29 cyc / 15.88 cyc/op = 1.83 slots</text>
+    <text x="20" y="64" class="lbl-sm">→ Only 2 accumulator chains needed for 97% peak TC throughput</text>
+  </g>
+
+  <!-- Critical insight box -->
+  <g transform="translate(36,488)">
+    <rect width="1008" height="24" rx="5" fill="#F0FDF4" stroke="#059669" stroke-width="0.8"/>
+    <text x="20" y="16" class="insight">CRITICAL: ldmatrix + MMA are on separate pipes → 4 ldmatrix per MMA adds only 0.09 cyc (0.3%) overhead [S9/case_154]</text>
+  </g>
+</svg>

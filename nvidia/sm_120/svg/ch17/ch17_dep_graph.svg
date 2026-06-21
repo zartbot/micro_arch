@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 760" role="img"
+     aria-label="Report chapter dependency graph: methodology → architecture → memory/SM/TC → instruction → on-chip → scheduler/workload/power → system → optimization/ptxas/model">
+  <defs>
+    <linearGradient id="rootG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0b1220"/><stop offset="1" stop-color="#2a3548"/>
+    </linearGradient>
+    <linearGradient id="archG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#E9F3D2"/><stop offset="1" stop-color="#F4FAE2"/>
+    </linearGradient>
+    <linearGradient id="memG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFE4E6"/><stop offset="1" stop-color="#FFF1F2"/>
+    </linearGradient>
+    <linearGradient id="smG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#E0E7FF"/><stop offset="1" stop-color="#EEF2FF"/>
+    </linearGradient>
+    <linearGradient id="tcG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FEF3C7"/><stop offset="1" stop-color="#FFFBEB"/>
+    </linearGradient>
+    <linearGradient id="netG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#EDE7FB"/><stop offset="1" stop-color="#F5F1FF"/>
+    </linearGradient>
+    <linearGradient id="optG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#D1FAE5"/><stop offset="1" stop-color="#ECFDF5"/>
+    </linearGradient>
+    <marker id="arr" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto">
+      <path d="M0,0 L7,3.5 L0,7 Z" fill="#8e97a5"/>
+    </marker>
+    <style><![CDATA[
+      .ttl{font:600 14px "Fraunces",serif;fill:#0b1220}
+      .sub{font:italic 11.5px "Fraunces",serif;fill:#5b6679}
+      .nlbl{font:600 12px "Fraunces",serif;fill:#0b1220}
+      .nsub{font:500 9.5px "JetBrains Mono",monospace;fill:#5b6679}
+      .nbl-w{font:600 12px "Fraunces",serif;fill:#ffffff}
+      .nsub-w{font:500 9.5px "JetBrains Mono",monospace;fill:#cbd5e1}
+      .layer{font:600 10.5px "JetBrains Mono",monospace;fill:#8e97a5;letter-spacing:0.16em;text-transform:uppercase}
+    ]]></style>
+  </defs>
+  <rect width="1080" height="760" fill="#ffffff"/>
+  <text x="36" y="32" class="ttl">§17.3 Report Chapter Dependency Graph</text>
+  <text x="36" y="52" class="sub">Methodology underpins everything · architecture explains memory / SM / TC primitives · all converge on system-level system / optimization layers</text>
+
+  <!-- L0: Methodology root -->
+  <text x="36" y="86" class="layer">Layer 0 · Methodology</text>
+  <g transform="translate(440,98)">
+    <rect x="0" y="0" width="200" height="56" rx="10" fill="url(#rootG)"/>
+    <text x="100" y="24" class="nbl-w" text-anchor="middle">§20 Methodology</text>
+    <text x="100" y="42" class="nsub-w" text-anchor="middle">timing · anti-DCE · SASS verify</text>
+  </g>
+  <line x1="540" y1="154" x2="540" y2="180" stroke="#8e97a5" stroke-width="1.2" marker-end="url(#arr)"/>
+
+  <!-- L1: Architecture overview -->
+  <text x="36" y="180" class="layer">Layer 1 · Architecture overview</text>
+  <g transform="translate(440,188)">
+    <rect x="0" y="0" width="200" height="56" rx="10" fill="url(#archG)" stroke="#5a8e00"/>
+    <text x="100" y="24" class="nlbl" text-anchor="middle" fill="#5a8e00">§1 Arch. Overview</text>
+    <text x="100" y="42" class="nsub" text-anchor="middle" fill="#5a8e00">topology · SMSP · pipes · features</text>
+  </g>
+
+  <!-- L2: 3 primitives — Memory / SM / TC -->
+  <text x="36" y="266" class="layer">Layer 2 · Subsystem primitives</text>
+  <g transform="translate(80,278)">
+    <rect x="0" y="0" width="270" height="56" rx="10" fill="url(#memG)" stroke="#e11d48"/>
+    <text x="135" y="24" class="nlbl" text-anchor="middle" fill="#9f1239">§2 Memory Subsystem</text>
+    <text x="135" y="42" class="nsub" text-anchor="middle" fill="#9f1239">L1 / SMEM / L2 / GDDR7 / DSMEM</text>
+  </g>
+  <g transform="translate(405,278)">
+    <rect x="0" y="0" width="270" height="56" rx="10" fill="url(#smG)" stroke="#1e40af"/>
+    <text x="135" y="24" class="nlbl" text-anchor="middle" fill="#1e40af">§3 SM Microarch</text>
+    <text x="135" y="42" class="nsub" text-anchor="middle" fill="#1e40af">16 pipes · 2-bank RF · CGGTY</text>
+  </g>
+  <g transform="translate(730,278)">
+    <rect x="0" y="0" width="270" height="56" rx="10" fill="url(#tcG)" stroke="#b45309"/>
+    <text x="135" y="24" class="nlbl" text-anchor="middle" fill="#92400e">§4 TensorCore</text>
+    <text x="135" y="42" class="nsub" text-anchor="middle" fill="#92400e">HMMA / IMMA · MX block-scale</text>
+  </g>
+  <!-- arrows §1 → §2 §3 §4 -->
+  <line x1="490" y1="244" x2="215" y2="278" stroke="#8e97a5" stroke-width="1" marker-end="url(#arr)" opacity="0.7"/>
+  <line x1="540" y1="244" x2="540" y2="278" stroke="#8e97a5" stroke-width="1" marker-end="url(#arr)" opacity="0.7"/>
+  <line x1="590" y1="244" x2="865" y2="278" stroke="#8e97a5" stroke-width="1" marker-end="url(#arr)" opacity="0.7"/>
+
+  <!-- L3: Instruction-Level (merge primitives) -->
+  <g transform="translate(390,366)">
+    <rect x="0" y="0" width="300" height="56" rx="10" fill="url(#smG)" stroke="#1e40af" stroke-width="0.8" opacity="0.95"/>
+    <text x="150" y="24" class="nlbl" text-anchor="middle" fill="#1e40af">§5 Instruction-Level</text>
+    <text x="150" y="42" class="nsub" text-anchor="middle" fill="#1e40af">FMA / ALU / SFU / FP64 catalog · co-issue</text>
+  </g>
+  <line x1="200" y1="334" x2="430" y2="366" stroke="#8e97a5" stroke-width="1" marker-end="url(#arr)" opacity="0.6"/>
+  <line x1="540" y1="334" x2="540" y2="366" stroke="#8e97a5" stroke-width="1" marker-end="url(#arr)" opacity="0.6"/>
+  <line x1="880" y1="334" x2="650" y2="366" stroke="#8e97a5" stroke-width="1" marker-end="url(#arr)" opacity="0.6"/>
+
+  <!-- L4: On-chip network & async (consolidates) -->
+  <g transform="translate(340,448)">
+    <rect x="0" y="0" width="400" height="56" rx="10" fill="url(#netG)" stroke="#6d28d9"/>
+    <text x="200" y="24" class="nlbl" text-anchor="middle" fill="#6d28d9">§6 On-Chip Network &amp; Async</text>
+    <text x="200" y="42" class="nsub" text-anchor="middle" fill="#6d28d9">TMA · cluster · DSMEM fabric · 3-stage pipeline</text>
+  </g>
+  <line x1="540" y1="422" x2="540" y2="448" stroke="#8e97a5" stroke-width="1" marker-end="url(#arr)" opacity="0.7"/>
+
+  <!-- L5: 3 control/workload/power chapters -->
+  <g transform="translate(80,532)">
+    <rect x="0" y="0" width="270" height="56" rx="10" fill="url(#smG)" stroke="#1e40af"/>
+    <text x="135" y="24" class="nlbl" text-anchor="middle" fill="#1e40af">§7 Scheduler &amp; Control</text>
+    <text x="135" y="42" class="nsub" text-anchor="middle" fill="#1e40af">CGGTY · stall · I-cache · divergence</text>
+  </g>
+  <g transform="translate(405,532)">
+    <rect x="0" y="0" width="270" height="56" rx="10" fill="url(#archG)" stroke="#5a8e00"/>
+    <text x="135" y="24" class="nlbl" text-anchor="middle" fill="#5a8e00">§8 Workload Analysis</text>
+    <text x="135" y="42" class="nsub" text-anchor="middle" fill="#5a8e00">588-shape GEMM · FA · GEMV · MoE</text>
+  </g>
+  <g transform="translate(730,532)">
+    <rect x="0" y="0" width="270" height="56" rx="10" fill="url(#tcG)" stroke="#b45309"/>
+    <text x="135" y="24" class="nlbl" text-anchor="middle" fill="#92400e">§9 Power &amp; Efficiency</text>
+    <text x="135" y="42" class="nsub" text-anchor="middle" fill="#92400e">DVFS · TFLOPS/W · thermal</text>
+  </g>
+  <line x1="440" y1="504" x2="215" y2="532" stroke="#8e97a5" stroke-width="1" marker-end="url(#arr)" opacity="0.7"/>
+  <line x1="540" y1="504" x2="540" y2="532" stroke="#8e97a5" stroke-width="1" marker-end="url(#arr)" opacity="0.7"/>
+  <line x1="640" y1="504" x2="865" y2="532" stroke="#8e97a5" stroke-width="1" marker-end="url(#arr)" opacity="0.7"/>
+
+  <!-- L6: System level -->
+  <g transform="translate(340,612)">
+    <rect x="0" y="0" width="400" height="50" rx="10" fill="url(#netG)" stroke="#6d28d9"/>
+    <text x="200" y="20" class="nlbl" text-anchor="middle" fill="#6d28d9">§10 System-Level &amp; Multi-GPU</text>
+    <text x="200" y="38" class="nsub" text-anchor="middle" fill="#6d28d9">PCIe · launch · CTA scheduling</text>
+  </g>
+  <line x1="215" y1="588" x2="430" y2="612" stroke="#8e97a5" stroke-width="1" marker-end="url(#arr)" opacity="0.6"/>
+  <line x1="540" y1="588" x2="540" y2="612" stroke="#8e97a5" stroke-width="1" marker-end="url(#arr)" opacity="0.6"/>
+  <line x1="865" y1="588" x2="650" y2="612" stroke="#8e97a5" stroke-width="1" marker-end="url(#arr)" opacity="0.6"/>
+
+  <!-- L7: 3 final synthesis -->
+  <g transform="translate(80,684)">
+    <rect x="0" y="0" width="270" height="56" rx="10" fill="url(#optG)" stroke="#047857"/>
+    <text x="135" y="24" class="nlbl" text-anchor="middle" fill="#047857">§11 Optimization Guidance</text>
+    <text x="135" y="42" class="nsub" text-anchor="middle" fill="#047857">CUTLASS / DeepGeMM / FlashInfer</text>
+  </g>
+  <g transform="translate(405,684)">
+    <rect x="0" y="0" width="270" height="56" rx="10" fill="url(#optG)" stroke="#047857"/>
+    <text x="135" y="24" class="nlbl" text-anchor="middle" fill="#047857">§12 ptxas / CuAssembler</text>
+    <text x="135" y="42" class="nsub" text-anchor="middle" fill="#047857">stall HW · 6-pass · +6.1 % MMA</text>
+  </g>
+  <g transform="translate(730,684)">
+    <rect x="0" y="0" width="270" height="56" rx="10" fill="url(#optG)" stroke="#047857"/>
+    <text x="135" y="24" class="nlbl" text-anchor="middle" fill="#047857">§13 Performance Model</text>
+    <text x="135" y="42" class="nsub" text-anchor="middle" fill="#047857">roofline · multi-resource · examples</text>
+  </g>
+  <line x1="440" y1="662" x2="215" y2="684" stroke="#8e97a5" stroke-width="1" marker-end="url(#arr)" opacity="0.7"/>
+  <line x1="540" y1="662" x2="540" y2="684" stroke="#8e97a5" stroke-width="1" marker-end="url(#arr)" opacity="0.7"/>
+  <line x1="640" y1="662" x2="865" y2="684" stroke="#8e97a5" stroke-width="1" marker-end="url(#arr)" opacity="0.7"/>
+
+  <text x="36" y="358" class="layer">Layer 3</text>
+  <text x="36" y="440" class="layer">Layer 4</text>
+  <text x="36" y="524" class="layer">Layer 5</text>
+  <text x="36" y="604" class="layer">Layer 6</text>
+  <text x="36" y="676" class="layer">Layer 7 · Synthesis</text>
+</svg>

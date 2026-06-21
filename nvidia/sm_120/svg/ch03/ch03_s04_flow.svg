@@ -1,0 +1,262 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 860" role="img"
+     aria-label="SM_120 Three-Tier Operand Delivery System: RFC ≥24 entries, 2-bank RF, and generational scaling">
+  <defs>
+    <marker id="ar" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto">
+      <path d="M0,0 L7,3.5 L0,7 Z" fill="#5b6679"/>
+    </marker>
+    <marker id="ar-green" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto">
+      <path d="M0,0 L7,3.5 L0,7 Z" fill="#16a34a"/>
+    </marker>
+    <marker id="ar-blue" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto">
+      <path d="M0,0 L7,3.5 L0,7 Z" fill="#2563eb"/>
+    </marker>
+    <marker id="ar-red" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto">
+      <path d="M0,0 L7,3.5 L0,7 Z" fill="#dc2626"/>
+    </marker>
+    <marker id="ar-purple" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto">
+      <path d="M0,0 L7,3.5 L0,7 Z" fill="#6d28d9"/>
+    </marker>
+    <linearGradient id="rfcG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#DCFCE7"/><stop offset="1" stop-color="#F0FDF4"/>
+    </linearGradient>
+    <linearGradient id="rfG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#DBEAFE"/><stop offset="1" stop-color="#EFF6FF"/>
+    </linearGradient>
+    <linearGradient id="conflG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FEE2E2"/><stop offset="1" stop-color="#FEF2F2"/>
+    </linearGradient>
+    <linearGradient id="ocG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#F3E8FF"/><stop offset="1" stop-color="#FAF5FF"/>
+    </linearGradient>
+    <style><![CDATA[
+      .ttl{font:600 15px "Fraunces",serif;fill:#0b1220}
+      .sub{font:italic 11.5px "Fraunces",serif;fill:#5b6679}
+      .sect{font:600 13px "Fraunces",serif}
+      .lbl{font:600 11.5px "JetBrains Mono",monospace}
+      .lbl-sm{font:500 10px "JetBrains Mono",monospace;fill:#5b6679}
+      .desc{font:500 10px "JetBrains Mono",monospace;fill:#5b6679}
+      .badge{font:600 9.5px "JetBrains Mono",monospace}
+      .big-num{font:700 20px "JetBrains Mono",monospace}
+      .med-num{font:700 14px "JetBrains Mono",monospace}
+      .note{font:500 9.5px "JetBrains Mono",monospace;fill:#8e97a5}
+      .warn{font:600 10px "JetBrains Mono",monospace;fill:#dc2626}
+      .warn2{font:600 9px "JetBrains Mono",monospace;fill:#dc2626}
+      .safe{font:600 10px "JetBrains Mono",monospace;fill:#16a34a}
+      .safe2{font:600 9px "JetBrains Mono",monospace;fill:#16a34a}
+      .zone-t{font:600 12px "Fraunces",serif}
+    ]]></style>
+  </defs>
+
+  <rect width="1080" height="860" fill="#ffffff"/>
+
+  <!-- Title -->
+  <text x="36" y="32" class="ttl">SM_120 Three-Tier Operand Delivery System (RFC + 2-Bank RF)</text>
+  <text x="36" y="52" class="sub">≥24-entry Register File Cache eliminates all bank-conflict penalties in production code [S12/case_1, S12/case_6]</text>
+
+  <!-- ═══════ LEFT: Three-Tier Architecture Diagram ═══════ -->
+  <g transform="translate(30, 76)">
+    <rect x="0" y="0" width="540" height="460" rx="12" fill="#f8fafc" stroke="#334155" stroke-width="1"/>
+    <text x="16" y="24" class="sect" fill="#334155">Operand Read Path (per instruction issue)</text>
+    <text x="16" y="42" class="desc">Instruction needs 3 source operands → OC queries in priority order</text>
+
+    <!-- Source: Instruction decode -->
+    <g transform="translate(140, 58)">
+      <rect x="-20" y="0" width="320" height="38" rx="8" fill="#f1f5f9" stroke="#64748b" stroke-width="0.8"/>
+      <text x="140" y="16" class="lbl" fill="#334155" text-anchor="middle">Instruction Decode</text>
+      <text x="140" y="32" class="note" text-anchor="middle">FFMA R5, R2, R3, R7 → need src0=R2, src1=R3, src2=R7</text>
+    </g>
+
+    <!-- Arrow down -->
+    <line x1="280" y1="100" x2="280" y2="118" stroke="#5b6679" stroke-width="1.2" marker-end="url(#ar)"/>
+
+    <!-- Tier 1: RFC -->
+    <g transform="translate(30, 122)">
+      <rect x="0" y="0" width="480" height="90" rx="10" fill="url(#rfcG)" stroke="#16a34a" stroke-width="1.2"/>
+      <rect x="12" y="8" width="90" height="22" rx="10" fill="#16a34a" opacity="0.15"/>
+      <text x="57" y="23" class="badge" fill="#16a34a" text-anchor="middle">TIER 1</text>
+      <text x="112" y="23" class="zone-t" fill="#16a34a">Register File Cache (RFC) — 0-cycle hit</text>
+
+      <text x="20" y="46" class="lbl-sm">• ≥24 entries per warp (no cliff detected up to 24 distinct registers)</text>
+      <text x="20" y="62" class="lbl-sm">• .reuse bit [125:122] = 1 → operand cached for next access</text>
+      <text x="20" y="78" class="safe">Result: 1.342 cyc/FFMA (ptxas-optimized, +85% ILP throughput)</text>
+    </g>
+
+    <!-- Arrow down with "miss" label -->
+    <line x1="280" y1="216" x2="280" y2="240" stroke="#5b6679" stroke-width="1.2" marker-end="url(#ar)"/>
+    <text x="292" y="232" class="note">RFC miss ↓</text>
+
+    <!-- Tier 2: RF Normal -->
+    <g transform="translate(30, 244)">
+      <rect x="0" y="0" width="480" height="90" rx="10" fill="url(#rfG)" stroke="#2563eb" stroke-width="1.2"/>
+      <rect x="12" y="8" width="90" height="22" rx="10" fill="#2563eb" opacity="0.12"/>
+      <text x="57" y="23" class="badge" fill="#2563eb" text-anchor="middle">TIER 2</text>
+      <text x="112" y="23" class="zone-t" fill="#1d4ed8">RF Read, Mixed Parity — 1-cycle read</text>
+
+      <text x="20" y="46" class="lbl-sm">• Operands from both banks (E+O): 2 ports serve 2-3 reads in 1 cycle</text>
+      <text x="20" y="62" class="lbl-sm">• ptxas parity-aware allocator GUARANTEES this path for all compiled code</text>
+      <text x="20" y="78" class="lbl" fill="#2563eb">Result: 2.038 cyc/FFMA (conflict-free, no .reuse)</text>
+    </g>
+
+    <!-- Arrow down with "conflict" label -->
+    <line x1="280" y1="338" x2="280" y2="362" stroke="#dc2626" stroke-width="1.2" marker-end="url(#ar-red)"/>
+    <text x="292" y="354" class="warn">bank conflict ↓</text>
+
+    <!-- Tier 3: RF Conflict -->
+    <g transform="translate(30, 366)">
+      <rect x="0" y="0" width="480" height="76" rx="10" fill="url(#conflG)" stroke="#dc2626" stroke-width="1"/>
+      <rect x="12" y="8" width="90" height="22" rx="10" fill="#dc2626" opacity="0.12"/>
+      <text x="57" y="23" class="badge" fill="#dc2626" text-anchor="middle">TIER 3</text>
+      <text x="112" y="23" class="zone-t" fill="#dc2626">RF Conflict, Same Parity — 2-cycle read (+1 penalty)</text>
+
+      <text x="20" y="46" class="lbl-sm">• All 3 operands in same bank: ceil(3/2) = 2 read phases needed</text>
+      <text x="20" y="62" class="warn2">Result: 3.034 cyc/FFMA — ONLY via CuAssembler SASS patching (never in production)</text>
+    </g>
+  </g>
+
+  <!-- ═══════ RIGHT TOP: RFC Capacity Sweep ═══════ -->
+  <g transform="translate(590, 76)">
+    <rect x="0" y="0" width="460" height="240" rx="12" fill="#f8fafc" stroke="#334155" stroke-width="1"/>
+    <text x="16" y="24" class="sect" fill="#334155">RFC Capacity Sweep — No Cliff Detected [S12/case_6]</text>
+    <text x="16" y="42" class="desc">Distinct register count vs latency (cyc/FFMA dep chain)</text>
+
+    <!-- Mini bar chart -->
+    <g transform="translate(24, 58)">
+      <!-- Bars for each measurement -->
+      <rect x="0" y="0" width="30" height="22" rx="3" fill="#16a34a" opacity="0.3" stroke="#16a34a" stroke-width="0.5"/>
+      <text x="15" y="15" class="badge" fill="#16a34a" text-anchor="middle">1</text>
+      <rect x="42" y="0" width="30" height="22" rx="3" fill="#16a34a" opacity="0.3" stroke="#16a34a" stroke-width="0.5"/>
+      <text x="57" y="15" class="badge" fill="#16a34a" text-anchor="middle">4</text>
+      <rect x="84" y="0" width="30" height="22" rx="3" fill="#16a34a" opacity="0.3" stroke="#16a34a" stroke-width="0.5"/>
+      <text x="99" y="15" class="badge" fill="#16a34a" text-anchor="middle">8</text>
+      <rect x="126" y="0" width="30" height="22" rx="3" fill="#16a34a" opacity="0.3" stroke="#16a34a" stroke-width="0.5"/>
+      <text x="141" y="15" class="badge" fill="#16a34a" text-anchor="middle">12</text>
+      <rect x="168" y="0" width="30" height="22" rx="3" fill="#16a34a" opacity="0.3" stroke="#16a34a" stroke-width="0.5"/>
+      <text x="183" y="15" class="badge" fill="#16a34a" text-anchor="middle">16</text>
+      <rect x="210" y="0" width="30" height="22" rx="3" fill="#16a34a" opacity="0.3" stroke="#16a34a" stroke-width="0.5"/>
+      <text x="225" y="15" class="badge" fill="#16a34a" text-anchor="middle">20</text>
+      <rect x="252" y="0" width="30" height="22" rx="3" fill="#16a34a" opacity="0.3" stroke="#16a34a" stroke-width="0.5"/>
+      <text x="267" y="15" class="badge" fill="#16a34a" text-anchor="middle">24</text>
+
+      <!-- Flat line showing no cliff -->
+      <line x1="15" y1="34" x2="267" y2="34" stroke="#16a34a" stroke-width="2" stroke-dasharray="none"/>
+      <text x="290" y="38" class="safe">← all 4.984 cyc (flat!)</text>
+
+      <!-- Label -->
+      <text x="0" y="56" class="note">distinct registers per chain →</text>
+    </g>
+
+    <!-- Generational comparison -->
+    <g transform="translate(24, 126)">
+      <text x="0" y="0" class="lbl" fill="#334155">Generational RFC Depth Comparison:</text>
+
+      <!-- SM_70 -->
+      <rect x="0" y="14" width="68" height="22" rx="4" fill="#94a3b8" opacity="0.2" stroke="#64748b" stroke-width="0.6"/>
+      <text x="34" y="29" class="badge" fill="#64748b" text-anchor="middle">~8</text>
+      <text x="78" y="29" class="desc">SM_70 (Volta) — cliff at 8 registers</text>
+
+      <!-- SM_80 -->
+      <rect x="0" y="42" width="110" height="22" rx="4" fill="#a78bfa" opacity="0.2" stroke="#7c3aed" stroke-width="0.6"/>
+      <text x="55" y="57" class="badge" fill="#6d28d9" text-anchor="middle">8–16</text>
+      <text x="120" y="57" class="desc">SM_80 (Ampere) — cliff at 16 registers</text>
+
+      <!-- SM_120 (highlighted) -->
+      <rect x="0" y="70" width="180" height="26" rx="4" fill="#16a34a" opacity="0.15" stroke="#16a34a" stroke-width="1.2"/>
+      <text x="90" y="87" class="med-num" fill="#16a34a" text-anchor="middle">≥ 24</text>
+      <text x="192" y="87" class="safe">SM_120 (Blackwell) — NO cliff detected</text>
+    </g>
+  </g>
+
+  <!-- ═══════ RIGHT BOTTOM: .reuse Bit Interaction ═══════ -->
+  <g transform="translate(590, 332)">
+    <rect x="0" y="0" width="460" height="204" rx="12" fill="url(#ocG)" stroke="#6d28d9" stroke-width="0.8"/>
+    <text x="16" y="24" class="sect" fill="#6d28d9">How .reuse Bits Drive RFC Caching</text>
+
+    <!-- Flow: instruction → reuse check → cache/bypass -->
+    <g transform="translate(20, 46)">
+      <!-- Instruction with reuse bits -->
+      <rect x="0" y="0" width="260" height="42" rx="6" fill="#ffffff" stroke="#6d28d9" stroke-width="0.8"/>
+      <text x="8" y="16" class="badge" fill="#6d28d9">FFMA R5, R2, R3, R7</text>
+      <text x="8" y="34" class="note">reuse[125:122] = 0b1010</text>
+
+      <!-- Arrow right -->
+      <line x1="260" y1="21" x2="284" y2="21" stroke="#6d28d9" stroke-width="1" marker-end="url(#ar-purple)"/>
+
+      <!-- Decode result -->
+      <rect x="288" y="0" width="148" height="42" rx="6" fill="#ffffff" stroke="#6d28d9" stroke-width="0.8"/>
+      <text x="296" y="16" class="badge" fill="#6d28d9">src0(R2): cache</text>
+      <text x="296" y="34" class="badge" fill="#8e97a5">src1(R3): no-cache</text>
+    </g>
+
+    <!-- Next cycle -->
+    <g transform="translate(20, 100)">
+      <text x="0" y="0" class="lbl-sm">Next instruction also uses R2:</text>
+
+      <rect x="0" y="10" width="200" height="30" rx="6" fill="url(#rfcG)" stroke="#16a34a" stroke-width="0.8"/>
+      <text x="8" y="28" class="safe">R2 → RFC HIT (0-cycle)</text>
+
+      <rect x="220" y="10" width="200" height="30" rx="6" fill="url(#rfG)" stroke="#2563eb" stroke-width="0.8"/>
+      <text x="228" y="28" class="lbl" fill="#2563eb">R3 → RF read (1-cycle)</text>
+    </g>
+
+    <!-- Impact summary -->
+    <g transform="translate(20, 156)">
+      <rect x="0" y="0" width="416" height="32" rx="6" fill="#16a34a" opacity="0.08" stroke="#16a34a" stroke-width="0.6"/>
+      <text x="12" y="14" class="lbl" fill="#16a34a">ILP-rich code (stall=1, many independent ops):</text>
+      <text x="12" y="28" class="safe2">RFC eliminates RF reads → effective throughput +85% vs no-.reuse baseline</text>
+    </g>
+  </g>
+
+  <!-- ═══════ BOTTOM: Summary Strip ═══════ -->
+  <g transform="translate(30, 556)">
+    <rect x="0" y="0" width="1020" height="140" rx="12" fill="#f8fafc" stroke="#334155" stroke-width="1"/>
+    <text x="16" y="24" class="sect" fill="#334155">Complete Operand Delivery Timing Model (measured via CuAssembler patching)</text>
+
+    <!-- Three columns with measured values -->
+    <g transform="translate(20, 44)">
+      <!-- Tier 1 -->
+      <rect x="0" y="0" width="300" height="80" rx="8" fill="url(#rfcG)" stroke="#16a34a" stroke-width="0.8"/>
+      <text x="150" y="18" class="zone-t" fill="#16a34a" text-anchor="middle">Production (ptxas + .reuse)</text>
+      <text x="150" y="40" class="big-num" fill="#16a34a" text-anchor="middle">1.342 cyc</text>
+      <text x="150" y="58" class="desc" text-anchor="middle">RFC hits + parity allocation</text>
+      <text x="150" y="70" class="note" text-anchor="middle">34% faster than conflict-free baseline</text>
+
+      <!-- Tier 2 -->
+      <rect x="320" y="0" width="300" height="80" rx="8" fill="url(#rfG)" stroke="#2563eb" stroke-width="0.8"/>
+      <text x="470" y="18" class="zone-t" fill="#1d4ed8" text-anchor="middle">Mixed Parity (no .reuse)</text>
+      <text x="470" y="40" class="big-num" fill="#2563eb" text-anchor="middle">2.038 cyc</text>
+      <text x="470" y="58" class="desc" text-anchor="middle">RF reads only, no bank conflicts</text>
+      <text x="470" y="70" class="note" text-anchor="middle">baseline for conflict-free comparison</text>
+
+      <!-- Tier 3 -->
+      <rect x="640" y="0" width="350" height="80" rx="8" fill="url(#conflG)" stroke="#dc2626" stroke-width="0.8"/>
+      <text x="820" y="18" class="zone-t" fill="#dc2626" text-anchor="middle">All-Same-Bank (CuAssembler-forced)</text>
+      <text x="820" y="40" class="big-num" fill="#dc2626" text-anchor="middle">3.034 cyc</text>
+      <text x="820" y="58" class="desc" text-anchor="middle">+1.0 cyc bank-conflict penalty</text>
+      <text x="820" y="70" class="warn" text-anchor="middle">NEVER occurs in production — proof of HW behavior only</text>
+    </g>
+  </g>
+
+  <!-- ═══════ VERY BOTTOM: Key Insight ═══════ -->
+  <g transform="translate(30, 706)">
+    <rect x="0" y="0" width="1020" height="120" rx="12" fill="#EDE7FB" stroke="#6d28d9" stroke-width="0.8"/>
+    <text x="16" y="24" class="sect" fill="#6d28d9">Why This Architecture Works — Hardware-Software Co-Design</text>
+
+    <g transform="translate(20, 44)">
+      <text x="0" y="0" class="lbl" fill="#334155">Problem:</text>
+      <text x="80" y="0" class="lbl-sm">2-bank RF has a structural hazard when 3 source operands share the same parity bank.</text>
+
+      <text x="0" y="24" class="lbl" fill="#334155">HW Solution:</text>
+      <text x="100" y="24" class="lbl-sm">≥24-entry RFC (3× larger than SM_80) absorbs repeated reads with 0-cycle latency.</text>
+
+      <text x="0" y="48" class="lbl" fill="#334155">SW Solution:</text>
+      <text x="100" y="48" class="lbl-sm">ptxas parity-aware register allocator ensures all compiled code uses mixed-parity operand sets.</text>
+
+      <text x="0" y="72" class="lbl" fill="#334155">Net Effect:</text>
+      <text x="100" y="72" class="safe">Zero observable penalty at application level. A simpler 2-bank RF saves silicon while compiler hides all conflicts.</text>
+    </g>
+  </g>
+
+  <!-- Source -->
+  <text x="36" y="848" class="note">[source: S12/case_1 (3520 FFMA patched), S12/case_6 (RFC sweep), S11/case_46, S11/case_149-156]</text>
+</svg>

@@ -1,0 +1,258 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 820" role="img"
+     aria-label="§ 7.9.3 ILP × TLP Iso-Throughput Contours — FFMA throughput matrix, iso-lines, 8-warp anomaly">
+  <defs>
+    <style><![CDATA[
+      .eyebrow { font: 600 11px "JetBrains Mono", monospace; letter-spacing: 0.16em; text-transform: uppercase }
+      .title   { font: 500 24px "Fraunces", serif; fill: #0b1220; letter-spacing: -0.02em }
+      .sub     { font: italic 12px "Fraunces", serif; fill: #5b6679 }
+      .panel-n { font: 700 11px "JetBrains Mono", monospace; letter-spacing: 0.08em }
+      .panel-sub { font: italic 11px "Fraunces", serif; fill: #5b6679 }
+      .lbl-sm  { font: 500 9px "JetBrains Mono", monospace; fill: #5b6679; letter-spacing: 0.05em; text-transform: uppercase }
+      .lbl     { font: 500 11px "IBM Plex Sans", sans-serif; fill: #2a3548 }
+      .lbl-mono{ font: 500 10px "JetBrains Mono", monospace; fill: #2a3548 }
+      .lbl-mono-em { font: 700 10px "JetBrains Mono", monospace; fill: #0b1220 }
+      .lbl-w   { font: 600 10px "IBM Plex Sans", sans-serif; fill: #ffffff }
+      .lbl-w-mono { font: 500 9px "JetBrains Mono", monospace; fill: #ffffff }
+      .big-num { font: 700 22px "Fraunces", serif; letter-spacing: -0.02em }
+      .cell-val{ font: 700 14px "JetBrains Mono", monospace; text-anchor: middle }
+      .axis-h  { font: 700 11px "JetBrains Mono", monospace; fill: #0b1220; text-anchor: middle }
+      .axis-v  { font: 700 11px "JetBrains Mono", monospace; fill: #0b1220; text-anchor: end }
+    ]]></style>
+  </defs>
+
+  <rect width="1280" height="820" fill="#fcfbf6"/>
+
+  <!-- ============ Header ============ -->
+  <g transform="translate(40,32)">
+    <rect x="0" y="0" width="3" height="80" fill="#7c3aed"/>
+    <text x="16" y="30" class="title">SM_120 FFMA Throughput Matrix — ILP Dominates Over Occupancy</text>
+    <text x="16" y="54" class="sub">ops/cyc per thread · ILP=4 achieves 92% peak with a single warp · 8-warp anomaly at W=6-8</text>
+    <text x="16" y="72" class="lbl-sm">Source: [S11/case_122] [S21/case_53] [S26/case_53,55]</text>
+  </g>
+
+  <!-- ============ A: Heatmap matrix ============ -->
+  <g transform="translate(40,134)">
+    <rect x="0" y="0" width="760" height="440" rx="10" fill="#ffffff" stroke="#e6e4da"/>
+    <rect x="0" y="0" width="760" height="3" rx="10" fill="#7c3aed"/>
+    <text x="14" y="22" class="panel-n" fill="#7c3aed">A · THROUGHPUT HEATMAP (ops/cyc per thread)</text>
+    <text x="14" y="38" class="panel-sub">Color intensity = throughput fraction of peak · asterisk = anomaly</text>
+
+    <!-- Axis labels -->
+    <text x="400" y="62" class="axis-h" fill="#7c3aed" font-size="12">Warps / SM →</text>
+    <text x="90" y="220" class="axis-v" fill="#7c3aed" font-size="12" transform="rotate(-90,60,240)">ILP →</text>
+
+    <!-- Column headers (Warps) -->
+    <g transform="translate(130,72)">
+      <text x="0"   y="0" class="axis-h">1W</text>
+      <text x="130" y="0" class="axis-h">4W</text>
+      <text x="260" y="0" class="axis-h">8W</text>
+      <text x="390" y="0" class="axis-h">16W</text>
+      <text x="520" y="0" class="axis-h">32W</text>
+    </g>
+
+    <!-- Row headers (ILP) -->
+    <g transform="translate(80,116)">
+      <text x="0" y="0" class="axis-v">ILP=1</text>
+      <text x="0" y="80" class="axis-v">ILP=2</text>
+      <text x="0" y="160" class="axis-v">ILP=4</text>
+      <text x="0" y="240" class="axis-v">ILP=8</text>
+    </g>
+
+    <!-- Heatmap cells: ILP=1 row (0.25 ops/cyc = 25% → light) -->
+    <g transform="translate(90,88)">
+      <!-- ILP=1 -->
+      <rect x="0"   y="0" width="110" height="56" rx="6" fill="#f3e8ff" stroke="#d8b4fe"/>
+      <text x="55"  y="32" class="cell-val" fill="#7c3aed">0.25</text>
+      <text x="55"  y="48" class="lbl-sm" fill="#7c3aed" text-anchor="middle">25%</text>
+
+      <rect x="130" y="0" width="110" height="56" rx="6" fill="#f3e8ff" stroke="#d8b4fe"/>
+      <text x="185" y="32" class="cell-val" fill="#7c3aed">0.25</text>
+      <text x="185" y="48" class="lbl-sm" fill="#7c3aed" text-anchor="middle">25%</text>
+
+      <rect x="260" y="0" width="110" height="56" rx="6" fill="#f3e8ff" stroke="#d8b4fe"/>
+      <text x="315" y="32" class="cell-val" fill="#7c3aed">0.25</text>
+      <text x="315" y="48" class="lbl-sm" fill="#7c3aed" text-anchor="middle">25%</text>
+
+      <rect x="390" y="0" width="110" height="56" rx="6" fill="#f3e8ff" stroke="#d8b4fe"/>
+      <text x="445" y="32" class="cell-val" fill="#7c3aed">0.25</text>
+      <text x="445" y="48" class="lbl-sm" fill="#7c3aed" text-anchor="middle">25%</text>
+
+      <rect x="520" y="0" width="110" height="56" rx="6" fill="#f3e8ff" stroke="#d8b4fe"/>
+      <text x="575" y="32" class="cell-val" fill="#7c3aed">0.25</text>
+      <text x="575" y="48" class="lbl-sm" fill="#7c3aed" text-anchor="middle">25%</text>
+
+      <!-- ILP=2 -->
+      <rect x="0"   y="80" width="110" height="56" rx="6" fill="#e9d5ff" stroke="#c084fc"/>
+      <text x="55"  y="112" class="cell-val" fill="#7c3aed">0.50</text>
+      <text x="55"  y="128" class="lbl-sm" fill="#7c3aed" text-anchor="middle">50%</text>
+
+      <rect x="130" y="80" width="110" height="56" rx="6" fill="#e9d5ff" stroke="#c084fc"/>
+      <text x="185" y="112" class="cell-val" fill="#7c3aed">0.50</text>
+      <text x="185" y="128" class="lbl-sm" fill="#7c3aed" text-anchor="middle">50%</text>
+
+      <rect x="260" y="80" width="110" height="56" rx="6" fill="#e9d5ff" stroke="#c084fc"/>
+      <text x="315" y="112" class="cell-val" fill="#7c3aed">0.50</text>
+      <text x="315" y="128" class="lbl-sm" fill="#7c3aed" text-anchor="middle">50%</text>
+
+      <rect x="390" y="80" width="110" height="56" rx="6" fill="#e9d5ff" stroke="#c084fc"/>
+      <text x="445" y="112" class="cell-val" fill="#7c3aed">0.50</text>
+      <text x="445" y="128" class="lbl-sm" fill="#7c3aed" text-anchor="middle">50%</text>
+
+      <rect x="520" y="80" width="110" height="56" rx="6" fill="#e9d5ff" stroke="#c084fc"/>
+      <text x="575" y="112" class="cell-val" fill="#7c3aed">0.50</text>
+      <text x="575" y="128" class="lbl-sm" fill="#7c3aed" text-anchor="middle">50%</text>
+
+      <!-- ILP=4 -->
+      <rect x="0"   y="160" width="110" height="56" rx="6" fill="#a78bfa" stroke="#7c3aed"/>
+      <text x="55"  y="192" class="cell-val" fill="#ffffff">0.92</text>
+      <text x="55"  y="208" class="lbl-sm" fill="#ffffff" text-anchor="middle">92%</text>
+
+      <rect x="130" y="160" width="110" height="56" rx="6" fill="#a78bfa" stroke="#7c3aed"/>
+      <text x="185" y="192" class="cell-val" fill="#ffffff">0.92</text>
+      <text x="185" y="208" class="lbl-sm" fill="#ffffff" text-anchor="middle">92%</text>
+
+      <!-- 8W anomaly cell -->
+      <rect x="260" y="160" width="110" height="56" rx="6" fill="#dc2626" stroke="#991b1b"/>
+      <text x="315" y="192" class="cell-val" fill="#ffffff">0.52*</text>
+      <text x="315" y="208" class="lbl-sm" fill="#fecaca" text-anchor="middle">ANOMALY</text>
+
+      <rect x="390" y="160" width="110" height="56" rx="6" fill="#7c3aed" stroke="#5b21b6"/>
+      <text x="445" y="192" class="cell-val" fill="#ffffff">1.00</text>
+      <text x="445" y="208" class="lbl-sm" fill="#e9d5ff" text-anchor="middle">PEAK</text>
+
+      <rect x="520" y="160" width="110" height="56" rx="6" fill="#7c3aed" stroke="#5b21b6"/>
+      <text x="575" y="192" class="cell-val" fill="#ffffff">1.00</text>
+      <text x="575" y="208" class="lbl-sm" fill="#e9d5ff" text-anchor="middle">PEAK</text>
+
+      <!-- ILP=8 -->
+      <rect x="0"   y="240" width="110" height="56" rx="6" fill="#a78bfa" stroke="#7c3aed"/>
+      <text x="55"  y="272" class="cell-val" fill="#ffffff">0.92</text>
+      <text x="55"  y="288" class="lbl-sm" fill="#ffffff" text-anchor="middle">92%</text>
+
+      <rect x="130" y="240" width="110" height="56" rx="6" fill="#a78bfa" stroke="#7c3aed"/>
+      <text x="185" y="272" class="cell-val" fill="#ffffff">0.92</text>
+      <text x="185" y="288" class="lbl-sm" fill="#ffffff" text-anchor="middle">92%</text>
+
+      <!-- 8W anomaly cell -->
+      <rect x="260" y="240" width="110" height="56" rx="6" fill="#dc2626" stroke="#991b1b"/>
+      <text x="315" y="272" class="cell-val" fill="#ffffff">0.52*</text>
+      <text x="315" y="288" class="lbl-sm" fill="#fecaca" text-anchor="middle">ANOMALY</text>
+
+      <rect x="390" y="240" width="110" height="56" rx="6" fill="#7c3aed" stroke="#5b21b6"/>
+      <text x="445" y="272" class="cell-val" fill="#ffffff">1.00</text>
+      <text x="445" y="288" class="lbl-sm" fill="#e9d5ff" text-anchor="middle">PEAK</text>
+
+      <rect x="520" y="240" width="110" height="56" rx="6" fill="#7c3aed" stroke="#5b21b6"/>
+      <text x="575" y="272" class="cell-val" fill="#ffffff">1.00</text>
+      <text x="575" y="288" class="lbl-sm" fill="#e9d5ff" text-anchor="middle">PEAK</text>
+    </g>
+
+    <!-- Legend -->
+    <g transform="translate(14,400)">
+      <rect x="0" y="0" width="14" height="14" rx="2" fill="#f3e8ff" stroke="#d8b4fe"/>
+      <text x="20" y="12" class="lbl-mono" fill="#5b6679">25%</text>
+      <rect x="60" y="0" width="14" height="14" rx="2" fill="#e9d5ff" stroke="#c084fc"/>
+      <text x="80" y="12" class="lbl-mono" fill="#5b6679">50%</text>
+      <rect x="120" y="0" width="14" height="14" rx="2" fill="#a78bfa" stroke="#7c3aed"/>
+      <text x="140" y="12" class="lbl-mono" fill="#5b6679">92%</text>
+      <rect x="180" y="0" width="14" height="14" rx="2" fill="#7c3aed" stroke="#5b21b6"/>
+      <text x="200" y="12" class="lbl-mono" fill="#5b6679">100%</text>
+      <rect x="250" y="0" width="14" height="14" rx="2" fill="#dc2626" stroke="#991b1b"/>
+      <text x="270" y="12" class="lbl-mono" fill="#dc2626">anomaly</text>
+    </g>
+  </g>
+
+  <!-- ============ B: Iso-throughput lines ============ -->
+  <g transform="translate(820,134)">
+    <rect x="0" y="0" width="420" height="220" rx="10" fill="#ffffff" stroke="#e6e4da"/>
+    <rect x="0" y="0" width="420" height="3" rx="10" fill="#16a34a"/>
+    <text x="14" y="22" class="panel-n" fill="#16a34a">B · ISO-THROUGHPUT EQUIVALENCES</text>
+    <text x="14" y="38" class="panel-sub">Same throughput achievable by different (W, ILP) pairs</text>
+
+    <g transform="translate(14,58)">
+      <rect x="0" y="0" width="392" height="36" rx="4" fill="#f3e8ff" stroke="#d8b4fe"/>
+      <text x="14" y="14" class="lbl-sm" fill="#7c3aed">0.25 OPS/CYC</text>
+      <text x="14" y="28" class="lbl-mono">(1W, ILP=1) = (4W, ILP=1) = (32W, ILP=1)</text>
+
+      <rect x="0" y="44" width="392" height="36" rx="4" fill="#e9d5ff" stroke="#c084fc"/>
+      <text x="14" y="58" class="lbl-sm" fill="#7c3aed">0.50 OPS/CYC</text>
+      <text x="14" y="72" class="lbl-mono">(1W, ILP=2) = (4W, ILP=2) = (32W, ILP=2)</text>
+
+      <rect x="0" y="88" width="392" height="36" rx="4" fill="#ddd6fe" stroke="#a78bfa"/>
+      <text x="14" y="102" class="lbl-sm" fill="#7c3aed">0.92 OPS/CYC — SINGLE-WARP CEILING</text>
+      <text x="14" y="116" class="lbl-mono">(1W, ILP=4) = (4W, ILP=4) = (1W, ILP=8)</text>
+
+      <rect x="0" y="132" width="392" height="36" rx="4" fill="#7c3aed" stroke="#5b21b6"/>
+      <text x="14" y="146" class="lbl-sm" fill="#ffffff">1.00 OPS/CYC — ABSOLUTE PEAK</text>
+      <text x="14" y="160" class="lbl-w-mono">(16W, ILP=4) = (32W, ILP=4) = (16W, ILP=8)</text>
+    </g>
+  </g>
+
+  <!-- ============ C: 8-warp anomaly ============ -->
+  <g transform="translate(820,374)">
+    <rect x="0" y="0" width="420" height="200" rx="10" fill="#ffffff" stroke="#e6e4da"/>
+    <rect x="0" y="0" width="420" height="3" rx="10" fill="#dc2626"/>
+    <text x="14" y="22" class="panel-n" fill="#dc2626">C · 8-WARP ANOMALY</text>
+    <text x="14" y="38" class="panel-sub">W=6-8 with ILP≥4 → 1.84× throughput drop</text>
+
+    <g transform="translate(14,54)">
+      <text x="0" y="0" class="lbl-mono-em" fill="#dc2626">Root cause: SMSP sub-partition contention</text>
+      <text x="0" y="18" class="lbl-mono" fill="#5b6679">When &gt;1 warp shares a sub-partition with deep ILP,</text>
+      <text x="0" y="34" class="lbl-mono" fill="#5b6679">dispatch interleaving creates pipeline bubbles.</text>
+
+      <text x="0" y="58" class="lbl-mono-em" fill="#dc2626">S26/case_53: anomaly onset at W=6 (not W=8)</text>
+      <text x="0" y="76" class="lbl-mono" fill="#5b6679">Sharp 0.922 → 0.501 ops/cyc drop</text>
+
+      <text x="0" y="100" class="lbl-mono-em" fill="#dc2626">S26/case_55: hardware, not scheduling</text>
+      <text x="0" y="118" class="lbl-mono" fill="#5b6679">CuAssembler stall/yield override has no effect</text>
+
+      <rect x="0" y="132" width="392" height="34" rx="4" fill="#fee2e2" stroke="#dc2626"/>
+      <text x="14" y="152" class="lbl-mono-em" fill="#dc2626">⚠ Avoid 6-8 warps/SM with ILP≥4 in production kernels</text>
+    </g>
+  </g>
+
+  <!-- ============ D: Key insight strip ============ -->
+  <g transform="translate(40,594)">
+    <rect x="0" y="5" width="1200" height="196" rx="10" fill="#ffffff" stroke="#e6e4da"/>
+    <rect x="0" y="5" width="1200" height="3" rx="10" fill="#0b1220"/>
+    <text x="14" y="22" class="panel-n" fill="#0b1220">D · THREE CRITICAL OBSERVATIONS</text>
+
+    <g transform="translate(14,44)">
+      <!-- Observation 1 -->
+      <rect x="0" y="0" width="380" height="136" rx="6" fill="#dcfce7" stroke="#16a34a"/>
+      <circle cx="20" cy="20" r="12" fill="#16a34a"/>
+      <text x="20" y="24" class="lbl-w" text-anchor="middle" font-weight="700">1</text>
+      <text x="38" y="24" class="lbl-mono-em" fill="#15803d">ILP=4 saturates compute</text>
+      <text x="14" y="46" class="lbl-mono" fill="#5b6679">1 warp at ILP=4 → 92% of peak.</text>
+      <text x="14" y="62" class="lbl-mono" fill="#5b6679">More warps cannot improve per-warp</text>
+      <text x="14" y="78" class="lbl-mono" fill="#5b6679">compute throughput — only help with</text>
+      <text x="14" y="94" class="lbl-mono" fill="#5b6679">memory latency hiding.</text>
+      <text x="14" y="118" class="lbl-mono-em" fill="#16a34a">→ "ILP-first" architecture</text>
+
+      <!-- Observation 2 -->
+      <rect x="394" y="0" width="380" height="136" rx="6" fill="#dbeafe" stroke="#0369a1"/>
+      <circle cx="414" cy="20" r="12" fill="#0369a1"/>
+      <text x="414" y="24" class="lbl-w" text-anchor="middle" font-weight="700">2</text>
+      <text x="432" y="24" class="lbl-mono-em" fill="#0369a1">2× ILP ≡ 2× warps</text>
+      <text x="408" y="46" class="lbl-mono" fill="#5b6679">Below saturation point:</text>
+      <text x="408" y="62" class="lbl-mono" fill="#5b6679">  (1W, ILP=2) = (2W, ILP=1)</text>
+      <text x="408" y="78" class="lbl-mono" fill="#5b6679">  (2W, ILP=2) = (4W, ILP=1)</text>
+      <text x="408" y="94" class="lbl-mono" fill="#5b6679">Both fill pipeline bubbles from</text>
+      <text x="408" y="110" class="lbl-mono" fill="#5b6679">instruction latency identically.</text>
+      <text x="408" y="130" class="lbl-mono-em" fill="#0369a1">→ ILP is free TLP</text>
+
+      <!-- Observation 3 -->
+      <rect x="788" y="0" width="380" height="136" rx="6" fill="#fee2e2" stroke="#dc2626"/>
+      <circle cx="808" cy="20" r="12" fill="#dc2626"/>
+      <text x="808" y="24" class="lbl-w" text-anchor="middle" font-weight="700">3</text>
+      <text x="826" y="24" class="lbl-mono-em" fill="#dc2626">6-8W anomaly is hardware</text>
+      <text x="802" y="46" class="lbl-mono" fill="#5b6679">At W=6-8 with ILP≥4: throughput</text>
+      <text x="802" y="62" class="lbl-mono" fill="#5b6679">drops 1.84× (0.92 → 0.50 ops/cyc).</text>
+      <text x="802" y="78" class="lbl-mono" fill="#5b6679">Caused by SMSP sub-partition</text>
+      <text x="802" y="94" class="lbl-mono" fill="#5b6679">contention — cannot be mitigated</text>
+      <text x="802" y="110" class="lbl-mono" fill="#5b6679">via CuAssembler control codes.</text>
+      <text x="802" y="130" class="lbl-mono-em" fill="#dc2626">→ Avoid 6-8W with deep ILP</text>
+    </g>
+  </g>
+</svg>

@@ -1,0 +1,200 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 780" role="img" aria-label="6.7.1 Pipeline Stage Decomposition: 1-stage serial, 2-stage double-buffer, 3-stage triple-buffer timing models">
+  <defs>
+    <marker id="ar" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto">
+      <path d="M0,0 L7,3.5 L0,7 Z" fill="#5b6679"/>
+    </marker>
+  </defs>
+  <rect width="1080" height="780" fill="#ffffff"/>
+
+  <!-- Title -->
+  <text x="36" y="28" style="font:600 14px 'Fraunces',serif;fill:#0b1220">6.7.1 Pipeline Stage Decomposition: TMA-Dominated Software Pipelining</text>
+  <text x="36" y="46" style="font:italic 11px 'Fraunces',serif;fill:#5b6679">Case 49 measured: 608 cyc/tile (1-stage) → 322 cyc (2-stage, 1.89×) → 236 cyc (3-stage, 2.58×)</text>
+
+  <!-- ═══════════════ TOP: 1-Stage Serial Decomposition (Gantt-style) ═══════════════ -->
+  <g transform="translate(36,62)">
+    <rect x="0" y="0" width="1006" height="200" rx="10" fill="#fafafa" stroke="#d1d5db" stroke-width="0.8"/>
+    <text x="20" y="22" style="font:700 12px 'Fraunces',serif;fill:#0b1220">1-Stage Serial Pipeline: 608 cyc/tile (all operations sequential)</text>
+
+    <!-- Timeline axis -->
+    <line x1="20" y1="60" x2="980" y2="60" stroke="#e5e7eb" stroke-width="0.8"/>
+    <text x="20" y="52" style="font:500 7px 'JetBrains Mono',monospace;fill:#6b7280">0</text>
+    <text x="970" y="52" style="font:500 7px 'JetBrains Mono',monospace;fill:#6b7280">608 cyc</text>
+
+    <!-- Scale: 608 cyc = 960px, so 1 cyc = 1.578px -->
+    <!-- TMA 2D Load: 0-479, width=756px -->
+    <rect x="20" y="68" width="756" height="38" rx="4" fill="#dc2626" fill-opacity="0.15" stroke="#dc2626" stroke-width="1.2"/>
+    <text x="30" y="84" style="font:700 9px 'JetBrains Mono',monospace;fill:#991b1b">TMA 2D Load (UTMALDG.2D)</text>
+    <text x="30" y="98" style="font:500 8px 'JetBrains Mono',monospace;fill:#374151">descriptor decode + L2 read + smem DMA</text>
+    <text x="700" y="92" style="font:700 11px 'JetBrains Mono',monospace;fill:#dc2626">479 cyc</text>
+
+    <!-- mbarrier Wait: 479-484, width=8px -->
+    <rect x="776" y="68" width="8" height="38" rx="2" fill="#6366f1" stroke="#4f46e5" stroke-width="0.8"/>
+
+    <!-- ldmatrix.x4: 484-517, width=52px -->
+    <rect x="784" y="68" width="52" height="38" rx="4" fill="#1e40af" fill-opacity="0.15" stroke="#1e40af" stroke-width="1"/>
+    <text x="788" y="92" style="font:700 7px 'JetBrains Mono',monospace;fill:#1e40af">ldm</text>
+
+    <!-- MMA: 517-546, width=46px -->
+    <rect x="836" y="68" width="46" height="38" rx="4" fill="#16a34a" fill-opacity="0.15" stroke="#16a34a" stroke-width="1"/>
+    <text x="840" y="92" style="font:700 7px 'JetBrains Mono',monospace;fill:#16a34a">MMA</text>
+
+    <!-- Barrier reinit: 546-608, width=98px -->
+    <rect x="882" y="68" width="98" height="38" rx="4" fill="#d97706" fill-opacity="0.15" stroke="#d97706" stroke-width="1"/>
+    <text x="886" y="92" style="font:700 7px 'JetBrains Mono',monospace;fill:#92400e">barrier</text>
+
+    <!-- Legend row -->
+    <g transform="translate(20,120)">
+      <rect x="0" y="0" width="15" height="12" rx="2" fill="#dc2626" fill-opacity="0.15" stroke="#dc2626" stroke-width="0.8"/>
+      <text x="20" y="10" style="font:600 8px 'JetBrains Mono',monospace;fill:#991b1b">TMA 2D Load: 479 cyc (78.8%)</text>
+
+      <rect x="200" y="0" width="15" height="12" rx="2" fill="#6366f1" stroke="#4f46e5" stroke-width="0.8"/>
+      <text x="220" y="10" style="font:600 8px 'JetBrains Mono',monospace;fill:#4f46e5">mbarrier wait: 5 cyc (0.8%)</text>
+
+      <rect x="400" y="0" width="15" height="12" rx="2" fill="#1e40af" fill-opacity="0.15" stroke="#1e40af" stroke-width="0.8"/>
+      <text x="420" y="10" style="font:600 8px 'JetBrains Mono',monospace;fill:#1e40af">ldmatrix.x4: 33 cyc (5.4%)</text>
+
+      <rect x="600" y="0" width="15" height="12" rx="2" fill="#16a34a" fill-opacity="0.15" stroke="#16a34a" stroke-width="0.8"/>
+      <text x="620" y="10" style="font:600 8px 'JetBrains Mono',monospace;fill:#16a34a">HMMA.16816: 29 cyc (4.8%)</text>
+
+      <rect x="800" y="0" width="15" height="12" rx="2" fill="#d97706" fill-opacity="0.15" stroke="#d97706" stroke-width="0.8"/>
+      <text x="820" y="10" style="font:600 8px 'JetBrains Mono',monospace;fill:#92400e">barrier reinit: 62 cyc (10.2%)</text>
+    </g>
+
+    <!-- Key insight -->
+    <g transform="translate(20,148)">
+      <rect x="0" y="0" width="960" height="36" rx="4" fill="#fef2f2" stroke="#dc2626" stroke-width="0.6"/>
+      <text x="480" y="14" style="font:700 9px 'JetBrains Mono',monospace;fill:#991b1b" text-anchor="middle">TMA dominates 78.8% of serial execution → pipeline overlap MUST target TMA latency hiding</text>
+      <text x="480" y="28" style="font:500 8px 'JetBrains Mono',monospace;fill:#374151" text-anchor="middle">Compute (ldmatrix + MMA) = 62 cyc total — only 10.2% of pipeline. Warp specialization cannot help here.</text>
+    </g>
+  </g>
+
+  <!-- ═══════════════ MIDDLE: 2-Stage and 3-Stage Pipeline Models ═══════════════ -->
+  <g transform="translate(36,280)">
+    <rect x="0" y="0" width="1006" height="280" rx="10" fill="#ffffff" stroke="#d1d5db" stroke-width="0.8"/>
+    <text x="20" y="22" style="font:700 12px 'Fraunces',serif;fill:#0b1220">Multi-Stage Overlap Models: Hiding TMA Latency via Double/Triple Buffering</text>
+
+    <!-- 2-Stage Double Buffer -->
+    <g transform="translate(20,38)">
+      <rect x="0" y="0" width="470" height="225" rx="6" fill="#eff6ff" stroke="#1e40af" stroke-width="0.8"/>
+      <text x="235" y="18" style="font:700 10px 'JetBrains Mono',monospace;fill:#1e40af" text-anchor="middle">2-Stage Double Buffering</text>
+      <text x="235" y="32" style="font:500 8px 'JetBrains Mono',monospace;fill:#6b7280" text-anchor="middle">Measured: 322 cyc/tile (1.89× speedup)</text>
+
+      <!-- Tile i timeline -->
+      <text x="10" y="54" style="font:600 8px 'JetBrains Mono',monospace;fill:#374151">Tile i:</text>
+      <!-- TMA(i) -->
+      <rect x="60" y="44" width="280" height="20" rx="3" fill="#dc2626" fill-opacity="0.12" stroke="#dc2626" stroke-width="0.8"/>
+      <text x="200" y="58" style="font:700 7px 'JetBrains Mono',monospace;fill:#991b1b" text-anchor="middle">TMA(i): 479 cyc</text>
+      <!-- Compute(i) after TMA -->
+      <rect x="340" y="44" width="74" height="20" rx="3" fill="#16a34a" fill-opacity="0.12" stroke="#16a34a" stroke-width="0.8"/>
+      <text x="377" y="58" style="font:700 7px 'JetBrains Mono',monospace;fill:#16a34a" text-anchor="middle">Comp(i)</text>
+
+      <!-- Tile i+1 timeline (overlapped) -->
+      <text x="10" y="82" style="font:600 8px 'JetBrains Mono',monospace;fill:#374151">Tile i+1:</text>
+      <!-- TMA(i+1) starts when Compute(i) starts -->
+      <rect x="340" y="72" width="120" height="20" rx="3" fill="#dc2626" fill-opacity="0.12" stroke="#dc2626" stroke-width="0.8"/>
+      <text x="400" y="86" style="font:700 7px 'JetBrains Mono',monospace;fill:#991b1b" text-anchor="middle">TMA(i+1)...</text>
+
+      <!-- Overlap bracket -->
+      <line x1="340" y1="40" x2="340" y2="96" stroke="#1e40af" stroke-width="1.5" stroke-dasharray="3,2"/>
+      <text x="345" y="104" style="font:600 7px 'JetBrains Mono',monospace;fill:#1e40af">← overlap starts</text>
+
+      <!-- Formula -->
+      <g transform="translate(10,116)">
+        <rect x="0" y="0" width="450" height="52" rx="4" fill="#dbeafe" stroke="#1e40af" stroke-width="0.6"/>
+        <text x="225" y="16" style="font:700 8px 'JetBrains Mono',monospace;fill:#1e40af" text-anchor="middle">Effective/tile = max(TMA, Compute+Barrier)</text>
+        <text x="225" y="32" style="font:500 8px 'JetBrains Mono',monospace;fill:#374151" text-anchor="middle">= max(479, 33+29+62) = max(479, 124) = 479 cyc (theory)</text>
+        <text x="225" y="46" style="font:700 8px 'JetBrains Mono',monospace;fill:#1e40af" text-anchor="middle">Measured: 322 cyc (warmup amortization reduces average)</text>
+      </g>
+
+      <!-- Variance callout -->
+      <g transform="translate(10,178)">
+        <rect x="0" y="0" width="450" height="34" rx="4" fill="#f0fdf4" stroke="#16a34a" stroke-width="0.6"/>
+        <text x="225" y="14" style="font:700 8px 'JetBrains Mono',monospace;fill:#166534" text-anchor="middle">Variance: σ = 1.0 cyc (near-zero jitter)</text>
+        <text x="225" y="28" style="font:500 8px 'JetBrains Mono',monospace;fill:#374151" text-anchor="middle">vs 1-stage σ = 92 cyc — buffer absorbs TMA spikes</text>
+      </g>
+    </g>
+
+    <!-- 3-Stage Triple Buffer -->
+    <g transform="translate(510,38)">
+      <rect x="0" y="0" width="476" height="225" rx="6" fill="#f0fdf4" stroke="#16a34a" stroke-width="0.8"/>
+      <text x="238" y="18" style="font:700 10px 'JetBrains Mono',monospace;fill:#166534" text-anchor="middle">3-Stage Triple Buffering</text>
+      <text x="238" y="32" style="font:500 8px 'JetBrains Mono',monospace;fill:#6b7280" text-anchor="middle">Measured: 236 cyc/tile (2.58× speedup)</text>
+
+      <!-- Three concurrent TMA slots -->
+      <text x="10" y="54" style="font:600 8px 'JetBrains Mono',monospace;fill:#374151">Buf A:</text>
+      <rect x="60" y="44" width="260" height="18" rx="3" fill="#dc2626" fill-opacity="0.12" stroke="#dc2626" stroke-width="0.8"/>
+      <text x="190" y="57" style="font:700 7px 'JetBrains Mono',monospace;fill:#991b1b" text-anchor="middle">TMA(i)</text>
+      <rect x="320" y="44" width="70" height="18" rx="3" fill="#16a34a" fill-opacity="0.12" stroke="#16a34a" stroke-width="0.6"/>
+      <text x="355" y="57" style="font:700 6px 'JetBrains Mono',monospace;fill:#16a34a" text-anchor="middle">Comp(i)</text>
+
+      <text x="10" y="78" style="font:600 8px 'JetBrains Mono',monospace;fill:#374151">Buf B:</text>
+      <rect x="130" y="68" width="260" height="18" rx="3" fill="#dc2626" fill-opacity="0.12" stroke="#dc2626" stroke-width="0.8"/>
+      <text x="260" y="81" style="font:700 7px 'JetBrains Mono',monospace;fill:#991b1b" text-anchor="middle">TMA(i+1)</text>
+      <rect x="390" y="68" width="70" height="18" rx="3" fill="#16a34a" fill-opacity="0.12" stroke="#16a34a" stroke-width="0.6"/>
+      <text x="425" y="81" style="font:700 6px 'JetBrains Mono',monospace;fill:#16a34a" text-anchor="middle">Comp(i+1)</text>
+
+      <text x="10" y="102" style="font:600 8px 'JetBrains Mono',monospace;fill:#374151">Buf C:</text>
+      <rect x="200" y="92" width="260" height="18" rx="3" fill="#dc2626" fill-opacity="0.12" stroke="#dc2626" stroke-width="0.8"/>
+      <text x="330" y="105" style="font:700 7px 'JetBrains Mono',monospace;fill:#991b1b" text-anchor="middle">TMA(i+2)</text>
+
+      <!-- Formula -->
+      <g transform="translate(10,120)">
+        <rect x="0" y="0" width="456" height="52" rx="4" fill="#dcfce7" stroke="#16a34a" stroke-width="0.6"/>
+        <text x="228" y="16" style="font:700 8px 'JetBrains Mono',monospace;fill:#166534" text-anchor="middle">2 TMA loads in flight simultaneously</text>
+        <text x="228" y="32" style="font:500 8px 'JetBrains Mono',monospace;fill:#374151" text-anchor="middle">Effective/tile = max(479/2, 124) = max(240, 124) = 240 cyc</text>
+        <text x="228" y="46" style="font:700 8px 'JetBrains Mono',monospace;fill:#16a34a" text-anchor="middle">Measured: 236 cyc ≈ 240 cyc prediction ✓</text>
+      </g>
+
+      <!-- Smem cost callout -->
+      <g transform="translate(10,182)">
+        <rect x="0" y="0" width="456" height="30" rx="4" fill="#fef3c7" stroke="#d97706" stroke-width="0.6"/>
+        <text x="228" y="12" style="font:700 8px 'JetBrains Mono',monospace;fill:#92400e" text-anchor="middle">Cost: 3× smem buffers (3 × tile_size)</text>
+        <text x="228" y="24" style="font:500 8px 'JetBrains Mono',monospace;fill:#374151" text-anchor="middle">Diminishing returns beyond 3: 4-stage = 2.44× (+5.5% regression)</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- ═══════════════ BOTTOM: Speedup Summary ═══════════════ -->
+  <g transform="translate(36,580)">
+    <rect x="0" y="0" width="1006" height="180" rx="10" fill="#fafafa" stroke="#d1d5db" stroke-width="0.8"/>
+    <text x="20" y="24" style="font:600 12px 'Fraunces',serif;fill:#0b1220">Speedup Scaling: TMA Queue Depth as the Fundamental Limiter</text>
+
+    <!-- Scaling bars -->
+    <g transform="translate(20,44)">
+      <!-- 1-stage -->
+      <text x="0" y="14" style="font:600 9px 'JetBrains Mono',monospace;fill:#374151">1-stage:</text>
+      <rect x="80" y="2" width="408" height="18" rx="3" fill="#dc2626" fill-opacity="0.1" stroke="#dc2626" stroke-width="0.8"/>
+      <text x="400" y="16" style="font:700 9px 'JetBrains Mono',monospace;fill:#dc2626">608 cyc (1.00×)</text>
+      <text x="84" y="14" style="font:500 7px 'JetBrains Mono',monospace;fill:#991b1b">σ = 92 cyc</text>
+
+      <!-- 2-stage -->
+      <text x="0" y="40" style="font:600 9px 'JetBrains Mono',monospace;fill:#374151">2-stage:</text>
+      <rect x="80" y="28" width="192" height="18" rx="3" fill="#1e40af" fill-opacity="0.1" stroke="#1e40af" stroke-width="0.8"/>
+      <text x="274" y="42" style="font:700 9px 'JetBrains Mono',monospace;fill:#1e40af">322 cyc (1.89×)</text>
+      <text x="84" y="40" style="font:500 7px 'JetBrains Mono',monospace;fill:#1e40af">σ = 1.0 cyc</text>
+
+      <!-- 3-stage -->
+      <text x="0" y="66" style="font:600 9px 'JetBrains Mono',monospace;fill:#374151">3-stage:</text>
+      <rect x="80" y="54" width="136" height="18" rx="3" fill="#16a34a" fill-opacity="0.1" stroke="#16a34a" stroke-width="0.8"/>
+      <text x="218" y="68" style="font:700 9px 'JetBrains Mono',monospace;fill:#16a34a">236 cyc (2.58×)</text>
+
+      <!-- 4-stage (regression) -->
+      <text x="0" y="92" style="font:600 9px 'JetBrains Mono',monospace;fill:#374151">4-stage:</text>
+      <rect x="80" y="80" width="149" height="18" rx="3" fill="#d97706" fill-opacity="0.1" stroke="#d97706" stroke-width="0.8"/>
+      <text x="232" y="94" style="font:700 9px 'JetBrains Mono',monospace;fill:#d97706">249 cyc (2.44×) ↑ regression</text>
+    </g>
+
+    <!-- Right: Architecture insight -->
+    <g transform="translate(530,44)">
+      <rect x="0" y="0" width="446" height="120" rx="6" fill="#EEF2FF" stroke="#1e40af" stroke-width="0.8"/>
+      <text x="10" y="18" style="font:700 9px 'JetBrains Mono',monospace;fill:#1e40af">Why 3-stage is optimal on SM_120:</text>
+      <line x1="10" y1="26" x2="436" y2="26" stroke="#c7d2fe" stroke-width="0.6"/>
+      <text x="10" y="44" style="font:500 9px 'JetBrains Mono',monospace;fill:#374151">• TMA queue: ≥32 entries (sufficient for any depth)</text>
+      <text x="10" y="60" style="font:500 9px 'JetBrains Mono',monospace;fill:#374151">• Compute fraction: 124/608 = 20.4% (very small)</text>
+      <text x="10" y="76" style="font:500 9px 'JetBrains Mono',monospace;fill:#374151">• 3-stage: 2 outstanding TMA fills pipeline gap</text>
+      <text x="10" y="92" style="font:500 9px 'JetBrains Mono',monospace;fill:#374151">• 4-stage: shared memory pressure causes bank</text>
+      <text x="10" y="106" style="font:500 9px 'JetBrains Mono',monospace;fill:#374151">  conflicts + mbarrier management overhead grows</text>
+    </g>
+  </g>
+</svg>

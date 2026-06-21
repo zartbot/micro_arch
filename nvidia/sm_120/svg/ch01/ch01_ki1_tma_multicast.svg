@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 480" role="img"
+     aria-label="KI-1.1: TMA Multicast Hardware Absent — SM_100 HW broadcast vs SM_120 SW emulation with 2000-8000× penalty">
+<defs>
+  <marker id="ar" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto">
+    <path d="M0,0 L7,3.5 L0,7 z" fill="#475569"/>
+  </marker>
+  <marker id="arR" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto">
+    <path d="M0,0 L7,3.5 L0,7 z" fill="#dc2626"/>
+  </marker>
+  <marker id="arG" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto">
+    <path d="M0,0 L7,3.5 L0,7 z" fill="#16a34a"/>
+  </marker>
+  <style><![CDATA[
+    .ttl{font:700 14px "Fraunces",serif;fill:#0b1220}
+    .sub{font:italic 11px "Fraunces",serif;fill:#5b6679}
+    .lbl{font:600 11px "JetBrains Mono",monospace;fill:#2a3548}
+    .lbl-sm{font:500 9.5px "JetBrains Mono",monospace;fill:#5b6679}
+    .lbl-xs{font:400 8.5px "JetBrains Mono",monospace;fill:#6b7280}
+    .perf{font:700 10px "JetBrains Mono",monospace;fill:#9f1239}
+    .badge{font:700 9px "JetBrains Mono",monospace;fill:#ffffff}
+    .section{font:600 12px "IBM Plex Sans",sans-serif}
+  ]]></style>
+</defs>
+<rect width="1100" height="480" fill="#ffffff"/>
+<text x="36" y="28" class="ttl">KI-1.1: TMA Multicast — Hardware Broadcast (SM_100) vs Software Emulation (SM_120)</text>
+<text x="36" y="46" class="sub">Source: S10/case_28-32, S16/case_16 · CUTLASS enforces ClusterShape&lt;1,1,1&gt; on SM_120</text>
+
+<!-- === LEFT: SM_100 HW Multicast === -->
+<g transform="translate(36,66)">
+  <rect x="0" y="0" width="480" height="390" rx="10" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.2"/>
+  <rect x="0" y="0" width="480" height="30" rx="10" fill="#16a34a"/>
+  <rect x="0" y="15" width="480" height="15" fill="#16a34a"/>
+  <text x="240" y="20" class="badge" text-anchor="middle">SM_100 (B200) — Hardware TMA Multicast</text>
+
+  <!-- DRAM -->
+  <rect x="180" y="50" width="120" height="36" rx="6" fill="#dbeafe" stroke="#1d4ed8" stroke-width="1"/>
+  <text x="240" y="72" class="lbl" text-anchor="middle" fill="#1d4ed8">DRAM (HBM3e)</text>
+
+  <!-- Single read arrow -->
+  <path d="M240 86 L240 120" stroke="#1d4ed8" stroke-width="2" fill="none" marker-end="url(#ar)"/>
+  <text x="250" y="108" class="lbl-xs">1× read</text>
+
+  <!-- TMA Engine with multicast HW -->
+  <rect x="140" y="124" width="200" height="44" rx="6" fill="#ffffff" stroke="#16a34a" stroke-width="1.2"/>
+  <text x="240" y="144" class="lbl" text-anchor="middle" fill="#15803d">TMA Engine</text>
+  <text x="240" y="160" class="lbl-sm" text-anchor="middle">HW Multicast Steering Logic</text>
+
+  <!-- Broadcast fan-out arrows -->
+  <path d="M190 168 L100 210" stroke="#16a34a" stroke-width="1.5" fill="none" marker-end="url(#arG)"/>
+  <path d="M240 168 L240 210" stroke="#16a34a" stroke-width="1.5" fill="none" marker-end="url(#arG)"/>
+  <path d="M290 168 L380 210" stroke="#16a34a" stroke-width="1.5" fill="none" marker-end="url(#arG)"/>
+  <text x="258" y="194" class="lbl-xs" fill="#16a34a">broadcast</text>
+
+  <!-- CTA shared memories -->
+  <rect x="40" y="214" width="120" height="36" rx="5" fill="#dcfce7" stroke="#16a34a" stroke-width="0.8"/>
+  <text x="100" y="236" class="lbl-sm" text-anchor="middle">CTA 0 SMEM</text>
+  <rect x="180" y="214" width="120" height="36" rx="5" fill="#dcfce7" stroke="#16a34a" stroke-width="0.8"/>
+  <text x="240" y="236" class="lbl-sm" text-anchor="middle">CTA 1 SMEM</text>
+  <rect x="320" y="214" width="120" height="36" rx="5" fill="#dcfce7" stroke="#16a34a" stroke-width="0.8"/>
+  <text x="380" y="236" class="lbl-sm" text-anchor="middle">CTA 2 SMEM</text>
+
+  <!-- Performance metrics -->
+  <rect x="40" y="270" width="400" height="100" rx="6" fill="#f0fdf4" stroke="#bbf7d0" stroke-width="0.8"/>
+  <text x="60" y="292" class="lbl" fill="#15803d">Performance (ClusterShape&lt;2,1,1&gt;):</text>
+  <text x="60" y="312" class="perf">Latency: ~2-4 cycles/byte (unicast TMA)</text>
+  <text x="60" y="330" class="lbl-sm">DRAM BW saved: 50% (A-tile shared between 2 CTAs)</text>
+  <text x="60" y="348" class="lbl-sm">Mechanism: crossbar within TMA unit (US20230289190A1)</text>
+  <text x="60" y="366" class="lbl-sm">CUTLASS default: ClusterShape&lt;2,1,1&gt; or &lt;4,1,1&gt;</text>
+</g>
+
+<!-- === RIGHT: SM_120 SW Emulation === -->
+<g transform="translate(556,66)">
+  <rect x="0" y="0" width="500" height="390" rx="10" fill="#fef2f2" stroke="#dc2626" stroke-width="1.2"/>
+  <rect x="0" y="0" width="500" height="30" rx="10" fill="#dc2626"/>
+  <rect x="0" y="15" width="500" height="15" fill="#dc2626"/>
+  <text x="250" y="20" class="badge" text-anchor="middle">SM_120 (RTX PRO 5000) — Software Emulated Multicast</text>
+
+  <!-- DRAM -->
+  <rect x="190" y="50" width="120" height="36" rx="6" fill="#dbeafe" stroke="#1d4ed8" stroke-width="1"/>
+  <text x="250" y="72" class="lbl" text-anchor="middle" fill="#1d4ed8">DRAM (GDDR7)</text>
+
+  <!-- N× sequential reads -->
+  <path d="M210 86 L110 120" stroke="#dc2626" stroke-width="1.5" fill="none" marker-end="url(#arR)"/>
+  <path d="M250 86 L250 120" stroke="#dc2626" stroke-width="1.5" fill="none" marker-end="url(#arR)"/>
+  <path d="M290 86 L390 120" stroke="#dc2626" stroke-width="1.5" fill="none" marker-end="url(#arR)"/>
+  <text x="270" y="108" class="perf">N× reads!</text>
+
+  <!-- TMA Engine (no multicast) -->
+  <rect x="150" y="124" width="200" height="44" rx="6" fill="#ffffff" stroke="#dc2626" stroke-width="1.2"/>
+  <text x="250" y="144" class="lbl" text-anchor="middle" fill="#991b1b">TMA Engine</text>
+  <text x="250" y="160" class="lbl-sm" text-anchor="middle" fill="#dc2626">CALL.ABS.NOINC (stub)</text>
+
+  <!-- Sequential unicast arrows -->
+  <path d="M200 168 L110 210" stroke="#dc2626" stroke-width="1.2" stroke-dasharray="4 2" fill="none" marker-end="url(#arR)"/>
+  <path d="M250 168 L250 210" stroke="#dc2626" stroke-width="1.2" stroke-dasharray="4 2" fill="none" marker-end="url(#arR)"/>
+  <path d="M300 168 L390 210" stroke="#dc2626" stroke-width="1.2" stroke-dasharray="4 2" fill="none" marker-end="url(#arR)"/>
+  <text x="268" y="204" class="lbl-xs" fill="#dc2626">sequential unicast</text>
+
+  <!-- CTA shared memories -->
+  <rect x="50" y="214" width="120" height="36" rx="5" fill="#fee2e2" stroke="#dc2626" stroke-width="0.8"/>
+  <text x="110" y="236" class="lbl-sm" text-anchor="middle">CTA 0 SMEM</text>
+  <rect x="190" y="214" width="120" height="36" rx="5" fill="#fee2e2" stroke="#dc2626" stroke-width="0.8"/>
+  <text x="250" y="236" class="lbl-sm" text-anchor="middle">CTA 1 SMEM</text>
+  <rect x="330" y="214" width="120" height="36" rx="5" fill="#fee2e2" stroke="#dc2626" stroke-width="0.8"/>
+  <text x="390" y="236" class="lbl-sm" text-anchor="middle">CTA 2 SMEM</text>
+
+  <!-- Performance metrics -->
+  <rect x="40" y="270" width="420" height="100" rx="6" fill="#fef2f2" stroke="#fecaca" stroke-width="0.8"/>
+  <text x="60" y="292" class="lbl" fill="#991b1b">Performance (multicast attempted):</text>
+  <text x="60" y="312" class="perf">Latency: ~4,300 cycles/byte (2000-8000× penalty)</text>
+  <text x="60" y="330" class="lbl-sm">DRAM BW: 0% savings (each CTA loads independently)</text>
+  <text x="60" y="348" class="lbl-sm">Mechanism: N sequential CALL.ABS.NOINC → unicast copies</text>
+  <text x="60" y="366" class="lbl-sm">CUTLASS forced: ClusterShape&lt;1,1,1&gt; (no sharing)</text>
+</g>
+</svg>

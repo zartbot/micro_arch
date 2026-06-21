@@ -1,0 +1,177 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 720" role="img"
+     aria-label="6.5 Cluster Architecture: 2-CTA portable cluster with DSMEM, cluster barrier, L2 and GDDR7">
+  <defs>
+    <linearGradient id="smG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#E9F3D2"/><stop offset="1" stop-color="#F4FAE2"/>
+    </linearGradient>
+    <linearGradient id="l2G" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#E0E7FF"/><stop offset="1" stop-color="#EEF2FF"/>
+    </linearGradient>
+    <linearGradient id="dramG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFEDD5"/><stop offset="1" stop-color="#FFF7ED"/>
+    </linearGradient>
+    <linearGradient id="barG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#EDE7FB"/><stop offset="1" stop-color="#F5F1FF"/>
+    </linearGradient>
+    <linearGradient id="dsmemG" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#EDE7FB"/><stop offset="1" stop-color="#F5F1FF"/>
+    </linearGradient>
+    <marker id="arrGray" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#8e97a5"/>
+    </marker>
+    <marker id="arrViolet" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#6d28d9"/>
+    </marker>
+    <marker id="arrVioletStart" markerWidth="8" markerHeight="8" refX="2" refY="4" orient="auto">
+      <path d="M8,0 L0,4 L8,8 Z" fill="#6d28d9"/>
+    </marker>
+    <style><![CDATA[
+      .ttl{font:600 17px "Fraunces",serif;fill:#0b1220}
+      .sub{font:italic 12px "Fraunces",serif;fill:#5b6679}
+      .lbl{font:600 12.5px "JetBrains Mono",monospace;fill:#0b1220}
+      .lbl-ink{font:600 11.5px "JetBrains Mono",monospace;fill:#2a3548}
+      .lbl-sm{font:500 10.5px "JetBrains Mono",monospace;fill:#5b6679}
+      .num{font:600 18px "Fraunces",serif;fill:#0b1220}
+      .num-sm{font:600 13px "Fraunces",serif;fill:#0b1220}
+      .badge{font:600 10px "JetBrains Mono",monospace;letter-spacing:0.10em}
+      .warn{font:600 11.5px "JetBrains Mono",monospace;fill:#9f1239}
+      .warn-tag{font:600 10.5px "JetBrains Mono",monospace;fill:#fff;letter-spacing:0.12em}
+    ]]></style>
+  </defs>
+
+  <rect width="1100" height="720" fill="#ffffff"/>
+
+  <!-- Title -->
+  <text x="36" y="32" class="ttl">SM_120 Cluster Architecture</text>
+  <text x="36" y="52" class="sub">Portable cluster (2–8 CTAs) · DSMEM fabric · cluster barrier · L2 unified crossbar · GDDR7</text>
+
+  <!-- =================== Cluster outer frame =================== -->
+  <rect x="40" y="64" width="1020" height="396" rx="14"
+        fill="#fcfff4" stroke="#76b900" stroke-width="1.2" stroke-dasharray="4 3"/>
+  <!-- Cluster banner -->
+  <rect x="58" y="56" width="260" height="22" rx="6" fill="#76b900"/>
+  <text x="188" y="71" class="badge" fill="#ffffff" text-anchor="middle">CLUSTER · 2–8 CTAs · PORTABLE MAX 8</text>
+
+  <!-- =================== SM_i (CTA 0) =================== -->
+  <g transform="translate(80, 92)">
+    <rect x="0" y="0" width="380" height="262" rx="12" fill="url(#smG)" stroke="#5a8e00" stroke-width="1"/>
+    <text x="20" y="22" class="lbl" fill="#5a8e00">SM_i  ·  CTA 0</text>
+
+    <!-- Warp Pool + Shared Memory row -->
+    <rect x="20" y="36" width="160" height="60" rx="6" fill="#fff" stroke="#76b900" stroke-width="0.7"/>
+    <text x="100" y="58" class="lbl-ink" fill="#5a8e00" text-anchor="middle">Warp Pool</text>
+    <text x="100" y="78" class="lbl-sm" fill="#5a8e00" text-anchor="middle">48 warps · 4 SMSP</text>
+
+    <rect x="200" y="36" width="160" height="60" rx="6" fill="#fff" stroke="#76b900" stroke-width="0.7"/>
+    <text x="280" y="56" class="lbl-ink" fill="#5a8e00" text-anchor="middle">Shared Memory</text>
+    <text x="280" y="74" class="num-sm" fill="#5a8e00" text-anchor="middle">99 KB · 34 cyc</text>
+    <text x="280" y="89" class="lbl-sm" fill="#5a8e00" text-anchor="middle">DSMEM-mapped</text>
+
+    <!-- L1 Cache -->
+    <rect x="20" y="110" width="340" height="48" rx="6" fill="#fff" stroke="#76b900" stroke-width="0.7"/>
+    <text x="190" y="129" class="lbl-ink" fill="#5a8e00" text-anchor="middle">L1 Cache</text>
+    <text x="190" y="146" class="lbl-sm" fill="#5a8e00" text-anchor="middle">48–96 KB carveout · 44 cyc</text>
+
+    <!-- TMA Engine -->
+    <rect x="20" y="172" width="340" height="78" rx="6" fill="#fff" stroke="#76b900" stroke-width="0.7"/>
+    <text x="190" y="192" class="lbl-ink" fill="#5a8e00" text-anchor="middle">TMA Engine</text>
+    <text x="190" y="212" class="num-sm" fill="#5a8e00" text-anchor="middle">479 cyc · ≥32 in-flight</text>
+    <text x="190" y="230" class="lbl-sm" fill="#5a8e00" text-anchor="middle">descriptor-driven async copy</text>
+    <text x="190" y="244" class="lbl-sm" fill="#5a8e00" text-anchor="middle">issue rate 148 cyc/op</text>
+  </g>
+
+  <!-- =================== SM_j (CTA 1) =================== -->
+  <g transform="translate(640, 92)">
+    <rect x="0" y="0" width="380" height="262" rx="12" fill="url(#smG)" stroke="#5a8e00" stroke-width="1"/>
+    <text x="20" y="22" class="lbl" fill="#5a8e00">SM_j  ·  CTA 1</text>
+
+    <rect x="20" y="36" width="160" height="60" rx="6" fill="#fff" stroke="#76b900" stroke-width="0.7"/>
+    <text x="100" y="58" class="lbl-ink" fill="#5a8e00" text-anchor="middle">Warp Pool</text>
+    <text x="100" y="78" class="lbl-sm" fill="#5a8e00" text-anchor="middle">48 warps · 4 SMSP</text>
+
+    <rect x="200" y="36" width="160" height="60" rx="6" fill="#fff" stroke="#76b900" stroke-width="0.7"/>
+    <text x="280" y="56" class="lbl-ink" fill="#5a8e00" text-anchor="middle">Shared Memory</text>
+    <text x="280" y="74" class="num-sm" fill="#5a8e00" text-anchor="middle">99 KB · 34 cyc</text>
+    <text x="280" y="89" class="lbl-sm" fill="#5a8e00" text-anchor="middle">DSMEM-mapped</text>
+
+    <rect x="20" y="110" width="340" height="48" rx="6" fill="#fff" stroke="#76b900" stroke-width="0.7"/>
+    <text x="190" y="129" class="lbl-ink" fill="#5a8e00" text-anchor="middle">L1 Cache</text>
+    <text x="190" y="146" class="lbl-sm" fill="#5a8e00" text-anchor="middle">48–96 KB carveout · 44 cyc</text>
+
+    <rect x="20" y="172" width="340" height="78" rx="6" fill="#fff" stroke="#76b900" stroke-width="0.7"/>
+    <text x="190" y="192" class="lbl-ink" fill="#5a8e00" text-anchor="middle">TMA Engine</text>
+    <text x="190" y="212" class="num-sm" fill="#5a8e00" text-anchor="middle">479 cyc · ≥32 in-flight</text>
+    <text x="190" y="230" class="lbl-sm" fill="#5a8e00" text-anchor="middle">descriptor-driven async copy</text>
+    <text x="190" y="244" class="lbl-sm" fill="#5a8e00" text-anchor="middle">issue rate 148 cyc/op</text>
+  </g>
+
+  <!-- =================== DSMEM bidirectional channel =================== -->
+  <!-- The channel sits between the two Shared Memory blocks, vertically centered to them (y around 158) -->
+  <g>
+    <rect x="475" y="190" width="150" height="86" rx="14" fill="url(#dsmemG)" stroke="#6d28d9" stroke-width="1"/>
+    <text x="550" y="212" class="lbl" fill="#6d28d9" text-anchor="middle">DSMEM</text>
+    <text x="550" y="230" class="num-sm" fill="#6d28d9" text-anchor="middle">220 cyc RT</text>
+    <text x="550" y="248" class="lbl-sm" fill="#6d28d9" text-anchor="middle">st.async = 6 cyc</text>
+    <text x="550" y="263" class="lbl-sm" fill="#6d28d9" text-anchor="middle">fire-and-forget</text>
+
+    <!-- bidirectional connectors from SM_i Shared Mem to channel and channel to SM_j Shared Mem -->
+    <line x1="460" y1="158" x2="475" y2="220" stroke="#6d28d9" stroke-width="1.5" stroke-dasharray="3 3" opacity="0.55"/>
+    <line x1="640" y1="158" x2="625" y2="220" stroke="#6d28d9" stroke-width="1.5" stroke-dasharray="3 3" opacity="0.55"/>
+    <!-- Horizontal bidirectional arrow through the channel -->
+    <line x1="465" y1="235" x2="635" y2="235"
+          stroke="#6d28d9" stroke-width="2.2"
+          marker-start="url(#arrVioletStart)" marker-end="url(#arrViolet)"/>
+  </g>
+
+  <!-- =================== Cluster Barrier =================== -->
+  <g transform="translate(80, 376)">
+    <rect x="0" y="0" width="940" height="68" rx="10" fill="url(#barG)" stroke="#6d28d9" stroke-width="0.9"/>
+    <text x="20" y="22" class="lbl" fill="#6d28d9">Cluster Barrier  ·  CGAERRBAR HW Arbiter</text>
+    <text x="20" y="42" class="lbl-sm" fill="#6d28d9">barrier.cluster.arrive / wait  —  hardware arbitration with O(1) scaling across 2 / 4 / 8 CTAs</text>
+    <text x="20" y="58" class="lbl-sm" fill="#6d28d9">Full barrier dominated by MEMBAR.ALL.GPU (≈ 77 % of cost)</text>
+
+    <!-- relaxed pill (filled) -->
+    <rect x="660" y="18" width="120" height="22" rx="11" fill="#6d28d9"/>
+    <text x="720" y="33" class="badge" fill="#fff" text-anchor="middle">RELAXED 85 cyc</text>
+    <!-- full pill (outlined) -->
+    <rect x="790" y="18" width="120" height="22" rx="11" fill="#fff" stroke="#6d28d9"/>
+    <text x="850" y="33" class="badge" fill="#6d28d9" text-anchor="middle">FULL 371 cyc</text>
+  </g>
+
+  <!-- Connector lines: SM bottom → Cluster Barrier -->
+  <line x1="270" y1="354" x2="270" y2="376" stroke="#6d28d9" stroke-width="1.4" stroke-dasharray="3 3"/>
+  <line x1="830" y1="354" x2="830" y2="376" stroke="#6d28d9" stroke-width="1.4" stroke-dasharray="3 3"/>
+
+  <!-- =================== TMA Multicast warning =================== -->
+  <g transform="translate(80, 478)">
+    <rect x="0" y="0" width="940" height="44" rx="8" fill="#fff5f7" stroke="#e11d48" stroke-width="1"/>
+    <rect x="0" y="0" width="170" height="44" rx="8" fill="#e11d48"/>
+    <text x="85" y="27" class="warn-tag" text-anchor="middle">TMA MULTICAST</text>
+    <text x="186" y="20" class="warn">NON-FUNCTIONAL on SM_120 — software emulation runs 2 000–8 000× slower than unicast</text>
+    <text x="186" y="36" class="lbl-sm" fill="#9f1239">Workaround: unicast TMA load + DSMEM redistribution across cluster CTAs</text>
+  </g>
+
+  <!-- =================== L2 Cache =================== -->
+  <g transform="translate(40, 542)">
+    <rect x="0" y="0" width="1020" height="76" rx="12" fill="url(#l2G)" stroke="#1e40af" stroke-width="1"/>
+    <text x="20" y="22" class="lbl" fill="#1e40af">L2 Cache  ·  Unified Crossbar</text>
+    <text x="20" y="40" class="lbl-sm" fill="#1e40af">96 MB · 12 partitions (8 MB each) · XOR-hash · 354 cyc latency · 13 768 GB/s aggregate</text>
+    <text x="20" y="58" class="lbl-sm" fill="#1e40af">Inter-SM signaling RT ≈ 941 cyc (uniform, no GPC dependency)</text>
+    <text x="20" y="73" class="lbl-sm" fill="#1e40af">fence.acq_rel:  CTA = 7 cyc  ·  GPU = 285 cyc  ·  SYS = 920 cyc</text>
+  </g>
+
+  <!-- arrows cluster → L2 -->
+  <line x1="270" y1="522" x2="270" y2="542" stroke="#8e97a5" stroke-width="1.5" marker-end="url(#arrGray)"/>
+  <line x1="830" y1="522" x2="830" y2="542" stroke="#8e97a5" stroke-width="1.5" marker-end="url(#arrGray)"/>
+
+  <!-- =================== GDDR7 DRAM =================== -->
+  <g transform="translate(40, 638)">
+    <rect x="0" y="0" width="1020" height="62" rx="12" fill="url(#dramG)" stroke="#ea580c" stroke-width="1"/>
+    <text x="20" y="22" class="lbl" fill="#9a3412">GDDR7 DRAM  ·  72 GB  ·  384-bit bus</text>
+    <text x="20" y="42" class="lbl-sm" fill="#9a3412">359 cyc latency · 1 231 GB/s read · 12 memory controllers · 28 Gbps/pin</text>
+  </g>
+
+  <!-- arrow L2 → GDDR -->
+  <line x1="550" y1="618" x2="550" y2="638" stroke="#8e97a5" stroke-width="1.5" marker-end="url(#arrGray)"/>
+</svg>

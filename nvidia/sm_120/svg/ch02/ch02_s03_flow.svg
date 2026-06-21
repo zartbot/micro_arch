@@ -1,0 +1,221 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 620" role="img"
+     aria-label="SM_120 Three-Domain Coherence Architecture — SM-local, GPU-wide, and system-scope ordering with measured costs">
+  <defs>
+    <marker id="ar" markerWidth="7" markerHeight="6" refX="5" refY="3" orient="auto">
+      <polygon points="0,0 7,3 0,6" fill="#5b6679"/>
+    </marker>
+    <marker id="arG" markerWidth="7" markerHeight="6" refX="5" refY="3" orient="auto">
+      <polygon points="0,0 7,3 0,6" fill="#5a8e00"/>
+    </marker>
+    <marker id="arO" markerWidth="7" markerHeight="6" refX="5" refY="3" orient="auto">
+      <polygon points="0,0 7,3 0,6" fill="#ea580c"/>
+    </marker>
+    <marker id="arR" markerWidth="7" markerHeight="6" refX="5" refY="3" orient="auto">
+      <polygon points="0,0 7,3 0,6" fill="#e11d48"/>
+    </marker>
+    <style><![CDATA[
+      .ttl{font:600 14px "Fraunces",serif;fill:#0b1220}
+      .sub{font:italic 11px "Fraunces",serif;fill:#5b6679}
+      .domain-lbl{font:700 11px "JetBrains Mono",monospace;letter-spacing:0.06em}
+      .comp-lbl{font:600 10.5px "JetBrains Mono",monospace;fill:#2a3548}
+      .comp-desc{font:500 9.5px "JetBrains Mono",monospace;fill:#5b6679}
+      .cost-badge{font:700 11px "JetBrains Mono",monospace;fill:#fff}
+      .cost-sm{font:600 9.5px "JetBrains Mono",monospace}
+      .panel-ttl{font:700 10.5px "JetBrains Mono",monospace;letter-spacing:0.08em;fill:#0b1220}
+      .panel-lbl{font:500 10px "JetBrains Mono",monospace;fill:#5b6679}
+      .panel-val{font:600 11px "JetBrains Mono",monospace}
+      .ann{font:italic 10px "Fraunces",serif;fill:#5b6679}
+    ]]></style>
+  </defs>
+  <rect width="1080" height="620" fill="#ffffff"/>
+  <text x="36" y="30" class="ttl">Three-Domain Coherence Architecture</text>
+  <text x="36" y="48" class="sub">SM_120 implements three physically distinct coherence domains with 40.7x / 3.2x cost cliffs between adjacent scopes</text>
+
+  <!-- ═══════════ SYSTEM SCOPE (outermost) ═══════════ -->
+  <rect x="36" y="60" width="700" height="520" rx="12" fill="#fff5f5" stroke="#e11d48" stroke-width="1.2" stroke-dasharray="6 3"/>
+  <text x="54" y="80" class="domain-lbl" fill="#9f1239">DOMAIN 3 · SYSTEM SCOPE · 920 cyc</text>
+  <text x="54" y="94" class="comp-desc">PCIe-visible: CPU + other GPUs + host DRAM</text>
+
+  <!-- ═══════════ GPU SCOPE (middle) ═══════════ -->
+  <rect x="56" y="106" width="660" height="330" rx="10" fill="#fff7ed" stroke="#ea580c" stroke-width="1.2"/>
+  <text x="74" y="126" class="domain-lbl" fill="#9a3412">DOMAIN 2 · GPU SCOPE · 285 cyc</text>
+  <text x="74" y="140" class="comp-desc">L2-visible to all 110 SMs via GXBAR crossbar</text>
+
+  <!-- ═══════════ SM / CTA SCOPE (innermost) ═══════════ -->
+  <rect x="76" y="152" width="220" height="180" rx="8" fill="#f0fde8" stroke="#5a8e00" stroke-width="1.2"/>
+  <text x="94" y="172" class="domain-lbl" fill="#3d6b00">DOMAIN 1 · CTA</text>
+  <text x="94" y="186" class="comp-desc">SM-local, 7 cyc</text>
+
+  <!-- Store Buffer -->
+  <rect x="110" y="200" width="100" height="32" rx="6" fill="#e9f3d2" stroke="#5a8e00"/>
+  <text x="160" y="220" class="comp-lbl" text-anchor="middle">Store Buffer</text>
+
+  <!-- Arrow down 7 cyc -->
+  <line x1="160" y1="232" x2="160" y2="260" stroke="#5a8e00" stroke-width="1.5" marker-end="url(#arG)"/>
+  <rect x="168" y="238" width="50" height="16" rx="8" fill="#5a8e00"/>
+  <text x="193" y="250" class="cost-badge" text-anchor="middle" font-size="9">7 cyc</text>
+
+  <!-- L1 Coherence Point -->
+  <rect x="96" y="264" width="128" height="32" rx="6" fill="#e9f3d2" stroke="#5a8e00"/>
+  <text x="160" y="278" class="comp-lbl" text-anchor="middle">L1 Coherence</text>
+  <text x="160" y="292" class="comp-desc" text-anchor="middle">Point</text>
+
+  <!-- SC = acq_rel note inside SM box -->
+  <text x="94" y="318" class="cost-sm" fill="#5a8e00">fence.acq_rel = 7</text>
+  <text x="94" y="330" class="cost-sm" fill="#5a8e00">fence.sc = 6 (=free)</text>
+
+  <!-- ═══════════ Other SMs representation ═══════════ -->
+  <!-- SM stack (3 stacked boxes = 110 SMs) -->
+  <rect x="316" y="158" width="52" height="28" rx="4" fill="#f0fde8" stroke="#5a8e00" stroke-width="0.8"/>
+  <text x="342" y="176" class="comp-desc" text-anchor="middle">SM₀</text>
+  <rect x="316" y="192" width="52" height="28" rx="4" fill="#f0fde8" stroke="#5a8e00" stroke-width="0.8"/>
+  <text x="342" y="210" class="comp-desc" text-anchor="middle">SM₁</text>
+  <rect x="316" y="226" width="52" height="28" rx="4" fill="#f0fde8" stroke="#5a8e00" stroke-width="0.8"/>
+  <text x="342" y="244" class="comp-desc" text-anchor="middle">SM₂</text>
+  <text x="342" y="270" class="comp-desc" text-anchor="middle">⋮</text>
+  <rect x="316" y="278" width="52" height="28" rx="4" fill="#f0fde8" stroke="#5a8e00" stroke-width="0.8"/>
+  <text x="342" y="296" class="comp-desc" text-anchor="middle">SM₁₀₉</text>
+
+  <!-- ═══════════ GXBAR crossbar ═══════════ -->
+  <rect x="396" y="152" width="18" height="258" rx="4" fill="#ea580c" opacity="0.15"/>
+  <rect x="398" y="156" width="14" height="250" rx="3" fill="#ea580c" opacity="0.7"/>
+  <text x="405" y="400" class="cost-sm" fill="#9a3412" text-anchor="middle" transform="rotate(-90,405,330)">GXBAR</text>
+
+  <!-- Arrows from SMs to GXBAR -->
+  <line x1="368" y1="172" x2="396" y2="172" stroke="#5b6679" stroke-width="1" marker-end="url(#ar)"/>
+  <line x1="368" y1="206" x2="396" y2="206" stroke="#5b6679" stroke-width="1" marker-end="url(#ar)"/>
+  <line x1="368" y1="240" x2="396" y2="240" stroke="#5b6679" stroke-width="1" marker-end="url(#ar)"/>
+  <line x1="368" y1="292" x2="396" y2="292" stroke="#5b6679" stroke-width="1" marker-end="url(#ar)"/>
+
+  <!-- ═══════════ L2 Cache (12 partitions) ═══════════ -->
+  <rect x="440" y="152" width="266" height="268" rx="8" fill="#ffedd5" stroke="#ea580c" stroke-width="0.8"/>
+  <text x="568" y="172" class="comp-lbl" text-anchor="middle">L2 Cache · 96 MB</text>
+  <text x="568" y="186" class="comp-desc" text-anchor="middle">GPU-scope coherence point</text>
+
+  <!-- 12 partition boxes (2 rows × 6) -->
+  <g>
+    <rect x="452" y="196" width="36" height="24" rx="3" fill="#fde68a" stroke="#92400e" stroke-width="0.6"/>
+    <text x="470" y="212" class="comp-desc" text-anchor="middle">P0</text>
+    <rect x="494" y="196" width="36" height="24" rx="3" fill="#fde68a" stroke="#92400e" stroke-width="0.6"/>
+    <text x="512" y="212" class="comp-desc" text-anchor="middle">P1</text>
+    <rect x="536" y="196" width="36" height="24" rx="3" fill="#fde68a" stroke="#92400e" stroke-width="0.6"/>
+    <text x="554" y="212" class="comp-desc" text-anchor="middle">P2</text>
+    <rect x="578" y="196" width="36" height="24" rx="3" fill="#fde68a" stroke="#92400e" stroke-width="0.6"/>
+    <text x="596" y="212" class="comp-desc" text-anchor="middle">P3</text>
+    <rect x="620" y="196" width="36" height="24" rx="3" fill="#fde68a" stroke="#92400e" stroke-width="0.6"/>
+    <text x="638" y="212" class="comp-desc" text-anchor="middle">P4</text>
+    <rect x="662" y="196" width="36" height="24" rx="3" fill="#fde68a" stroke="#92400e" stroke-width="0.6"/>
+    <text x="680" y="212" class="comp-desc" text-anchor="middle">P5</text>
+    <!-- row 2 -->
+    <rect x="452" y="226" width="36" height="24" rx="3" fill="#fde68a" stroke="#92400e" stroke-width="0.6"/>
+    <text x="470" y="242" class="comp-desc" text-anchor="middle">P6</text>
+    <rect x="494" y="226" width="36" height="24" rx="3" fill="#fde68a" stroke="#92400e" stroke-width="0.6"/>
+    <text x="512" y="242" class="comp-desc" text-anchor="middle">P7</text>
+    <rect x="536" y="226" width="36" height="24" rx="3" fill="#fde68a" stroke="#92400e" stroke-width="0.6"/>
+    <text x="554" y="242" class="comp-desc" text-anchor="middle">P8</text>
+    <rect x="578" y="226" width="36" height="24" rx="3" fill="#fde68a" stroke="#92400e" stroke-width="0.6"/>
+    <text x="596" y="242" class="comp-desc" text-anchor="middle">P9</text>
+    <rect x="620" y="226" width="36" height="24" rx="3" fill="#fde68a" stroke="#92400e" stroke-width="0.6"/>
+    <text x="638" y="242" class="comp-desc" text-anchor="middle">P10</text>
+    <rect x="662" y="226" width="36" height="24" rx="3" fill="#fde68a" stroke="#92400e" stroke-width="0.6"/>
+    <text x="680" y="242" class="comp-desc" text-anchor="middle">P11</text>
+  </g>
+
+  <!-- Arrows GXBAR → L2 -->
+  <line x1="414" y1="210" x2="440" y2="210" stroke="#ea580c" stroke-width="1.5" marker-end="url(#arO)"/>
+  <line x1="414" y1="280" x2="440" y2="280" stroke="#ea580c" stroke-width="1.5" marker-end="url(#arO)"/>
+
+  <!-- 285 cyc cost badge between SM/GXBAR and L2 -->
+  <rect x="450" y="270" width="90" height="20" rx="10" fill="#ea580c"/>
+  <text x="495" y="284" class="cost-badge" text-anchor="middle">285 cyc</text>
+  <text x="450" y="306" class="cost-sm" fill="#9a3412">Drain store buffer</text>
+  <text x="450" y="318" class="cost-sm" fill="#9a3412">+ L2 ack from ALL</text>
+  <text x="450" y="330" class="cost-sm" fill="#9a3412">12 partitions</text>
+
+  <!-- Key latency matches (inside GPU box) -->
+  <text x="450" y="360" class="comp-desc">Latency fingerprint:</text>
+  <text x="450" y="374" class="cost-sm" fill="#9a3412">fence.gpu = 285 cyc</text>
+  <text x="450" y="388" class="cost-sm" fill="#9a3412">L2 hit = 354 cyc (same GXBAR)</text>
+  <text x="450" y="402" class="cost-sm" fill="#9a3412">atom.add = 378 cyc (L2 RMW)</text>
+  <text x="450" y="416" class="ann">All ~300-400 cyc confirms L2 = GPU coherence point</text>
+
+  <!-- ═══════════ PCIe bridge (inside System, outside GPU) ═══════════ -->
+  <!-- Arrow GPU → PCIe -->
+  <line x1="386" y1="426" x2="386" y2="450" stroke="#e11d48" stroke-width="1.5" stroke-dasharray="3 2" marker-end="url(#arR)"/>
+  <rect x="310" y="438" width="80" height="16" rx="8" fill="#e11d48"/>
+  <text x="350" y="450" class="cost-badge" text-anchor="middle" font-size="9">+635 cyc</text>
+
+  <!-- PCIe bridge box -->
+  <rect x="56" y="456" width="660" height="42" rx="8" fill="#ffe4e6" stroke="#e11d48" stroke-width="0.8"/>
+  <text x="386" y="476" class="comp-lbl" text-anchor="middle">PCIe Gen5 Bridge</text>
+  <text x="386" y="490" class="comp-desc" text-anchor="middle">~267 ns ordering round-trip at 2.4 GHz</text>
+
+  <!-- Arrow PCIe → Host -->
+  <line x1="386" y1="498" x2="386" y2="516" stroke="#e11d48" stroke-width="1.2" marker-end="url(#arR)"/>
+
+  <!-- Host box -->
+  <rect x="56" y="520" width="660" height="42" rx="8" fill="#fecdd3" stroke="#e11d48" stroke-width="0.8"/>
+  <text x="386" y="540" class="comp-lbl" text-anchor="middle">Host DRAM / Other GPUs</text>
+  <text x="386" y="554" class="comp-desc" text-anchor="middle">System-scope visibility endpoint</text>
+
+  <!-- Total 920 cyc annotation -->
+  <text x="54" y="574" class="cost-sm" fill="#9f1239">Total: 920 cyc = 285 (GPU drain) + 635 (PCIe round-trip)</text>
+  <text x="54" y="592" class="cost-sm" fill="#9f1239">SYS/GPU ratio = 3.2x (pure PCIe tax)</text>
+
+  <!-- ═══════════ RIGHT PANEL: Cost Summary ═══════════ -->
+  <rect x="760" y="60" width="284" height="320" rx="10" fill="#fcfbf6" stroke="#e6e4da"/>
+  <text x="780" y="84" class="panel-ttl">COST CLIFF SUMMARY</text>
+
+  <!-- Domain 1 → 2 -->
+  <rect x="780" y="98" width="12" height="12" rx="2" fill="#5a8e00"/>
+  <text x="800" y="109" class="panel-lbl">Domain 1 (CTA)</text>
+  <text x="780" y="126" class="panel-val" fill="#5a8e00">7 cyc</text>
+  <text x="830" y="126" class="panel-lbl">fence cost</text>
+
+  <text x="795" y="148" class="cost-sm" fill="#9f1239">↓ 40.7× cliff</text>
+
+  <rect x="780" y="158" width="12" height="12" rx="2" fill="#ea580c"/>
+  <text x="800" y="169" class="panel-lbl">Domain 2 (GPU)</text>
+  <text x="780" y="186" class="panel-val" fill="#ea580c">285 cyc</text>
+  <text x="840" y="186" class="panel-lbl">fence cost</text>
+  <text x="780" y="202" class="panel-val" fill="#c2410c">393 cyc</text>
+  <text x="840" y="202" class="panel-lbl">ld.acquire</text>
+  <text x="780" y="218" class="panel-val" fill="#9a3412">920 cyc</text>
+  <text x="840" y="218" class="panel-lbl">st.release</text>
+
+  <text x="795" y="240" class="cost-sm" fill="#9f1239">↓ 3.2× cliff</text>
+
+  <rect x="780" y="250" width="12" height="12" rx="2" fill="#e11d48"/>
+  <text x="800" y="261" class="panel-lbl">Domain 3 (System)</text>
+  <text x="780" y="278" class="panel-val" fill="#e11d48">920 cyc</text>
+  <text x="840" y="278" class="panel-lbl">fence cost</text>
+  <text x="780" y="294" class="panel-val" fill="#be123c">392 cyc</text>
+  <text x="840" y="294" class="panel-lbl">ld.acquire</text>
+  <text x="780" y="310" class="panel-val" fill="#881337">1320 cyc</text>
+  <text x="846" y="310" class="panel-lbl">st.release</text>
+
+  <!-- Key insight box -->
+  <rect x="780" y="328" width="244" height="36" rx="6" fill="#e9f3d2" stroke="#5a8e00" stroke-width="0.6"/>
+  <text x="790" y="344" class="cost-sm" fill="#3d6b00">SC = acq_rel → zero overhead</text>
+  <text x="790" y="358" class="cost-sm" fill="#3d6b00">for sequential consistency</text>
+
+  <!-- Right panel: What each domain drains -->
+  <rect x="760" y="396" width="284" height="184" rx="10" fill="#fcfbf6" stroke="#e6e4da"/>
+  <text x="780" y="418" class="panel-ttl">WHAT GETS DRAINED</text>
+
+  <text x="780" y="440" class="panel-val" fill="#5a8e00">CTA (7 cyc)</text>
+  <text x="780" y="456" class="panel-lbl">SM store buffer → L1</text>
+  <text x="780" y="468" class="panel-lbl">No inter-SM traffic</text>
+
+  <text x="780" y="492" class="panel-val" fill="#ea580c">GPU (285 cyc)</text>
+  <text x="780" y="508" class="panel-lbl">Store buffer → GXBAR → L2</text>
+  <text x="780" y="520" class="panel-lbl">Wait for ack from 12 L2 slices</text>
+
+  <text x="780" y="544" class="panel-val" fill="#e11d48">SYS (920 cyc)</text>
+  <text x="780" y="560" class="panel-lbl">GPU drain + PCIe coherence</text>
+  <text x="780" y="572" class="panel-lbl">round-trip (~267 ns)</text>
+
+  <!-- Source -->
+  <text x="36" y="612" class="ann">Sources: S8/case_64-71, S8/case_123-125, S8/case_169-170</text>
+</svg>

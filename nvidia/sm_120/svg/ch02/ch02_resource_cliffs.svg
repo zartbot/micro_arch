@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 500" role="img"
+     aria-label="SM_120 Resource Cliff Analysis — penalty magnitudes across 12 resource boundaries sorted by severity">
+  <defs>
+    <linearGradient id="safeG" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#D1FAE5"/><stop offset="1" stop-color="#ECFDF5"/>
+    </linearGradient>
+    <linearGradient id="warnG" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#FEF3C7"/><stop offset="1" stop-color="#FFFBEB"/>
+    </linearGradient>
+    <linearGradient id="dangerG" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#FEE2E2"/><stop offset="1" stop-color="#FEF2F2"/>
+    </linearGradient>
+    <style><![CDATA[
+      .ttl{font:600 15px "Fraunces",serif;fill:#0b1220}
+      .sub{font:italic 11px "Fraunces",serif;fill:#5b6679}
+      .lbl{font:600 11px "JetBrains Mono",monospace;fill:#2a3548}
+      .lbl-sm{font:500 10px "JetBrains Mono",monospace;fill:#5b6679}
+      .num{font:700 13px "JetBrains Mono",monospace}
+      .num-lg{font:700 16px "JetBrains Mono",monospace}
+      .stage{font:600 10px "JetBrains Mono",monospace;fill:#fff}
+      .sect{font:600 12px "Fraunces",serif;fill:#374151}
+      .insight{font:600 10.5px "IBM Plex Sans",sans-serif;fill:#9f1239}
+      .bar-lbl{font:600 9px "JetBrains Mono",monospace;fill:rgba(255,255,255,0.926)}
+      .bar-lbl2{font:600 9px "JetBrains Mono",monospace;fill:#020000}
+    ]]></style>
+  </defs>
+  <rect width="1080" height="500" fill="#ffffff"/>
+
+  <!-- Title -->
+  <text x="36" y="28" class="ttl">SM_120 Resource Cliff Analysis — Performance Penalty Magnitudes (sorted by severity)</text>
+  <text x="36" y="46" class="sub">Horizontal bars show penalty multiplier on log scale; the three most critical cliffs are DRAM random (86.7x), constant divergent (35.9x), and L2 partition camping (11.6x)</text>
+
+  <!-- Legend -->
+  <g transform="translate(750,10)">
+    <rect x="0" y="0" width="12" height="12" rx="2" fill="#059669"/>
+    <text x="16" y="10" class="lbl-sm">Mild (1–3x)</text>
+    <rect x="100" y="0" width="12" height="12" rx="2" fill="#D97706"/>
+    <text x="116" y="10" class="lbl-sm">Moderate (3–10x)</text>
+    <rect x="220" y="0" width="12" height="12" rx="2" fill="#DC2626"/>
+    <text x="236" y="10" class="lbl-sm">Severe (10x+)</text>
+  </g>
+
+  <!-- Y-axis labels and bars -->
+  <g transform="translate(36,60)">
+    <!-- Bar chart area: x=200 to x=1008, log scale from 1x to 100x -->
+    <!-- Grid lines -->
+    <line x1="200" y1="0" x2="200" y2="380" stroke="#E5E7EB" stroke-width="0.5"/>
+    <line x1="400" y1="0" x2="400" y2="380" stroke="#E5E7EB" stroke-width="0.5" stroke-dasharray="3 3"/>
+    <line x1="600" y1="0" x2="600" y2="380" stroke="#E5E7EB" stroke-width="0.5" stroke-dasharray="3 3"/>
+    <line x1="800" y1="0" x2="800" y2="380" stroke="#E5E7EB" stroke-width="0.5" stroke-dasharray="3 3"/>
+    <line x1="1000" y1="0" x2="1000" y2="380" stroke="#E5E7EB" stroke-width="0.5" stroke-dasharray="3 3"/>
+    <!-- Scale labels -->
+    <text x="200" y="395" class="lbl-sm" text-anchor="middle">1x</text>
+    <text x="400" y="395" class="lbl-sm" text-anchor="middle">3x</text>
+    <text x="600" y="395" class="lbl-sm" text-anchor="middle">10x</text>
+    <text x="800" y="395" class="lbl-sm" text-anchor="middle">30x</text>
+    <text x="1000" y="395" class="lbl-sm" text-anchor="middle">100x</text>
+
+    <!-- Row 1: DRAM random (86.7x) — worst -->
+    <text x="195" y="16" class="lbl" text-anchor="end">DRAM random access</text>
+    <rect x="200" y="4" width="780" height="22" rx="4" fill="#DC2626"/>
+    <text x="970" y="19" class="bar-lbl" text-anchor="end">86.7x</text>
+    <text x="208" y="19" class="bar-lbl">858 → 9.9 GB/s</text>
+
+    <!-- Row 2: Constant divergent (35.9x) -->
+    <text x="195" y="46" class="lbl" text-anchor="end">Constant divergent</text>
+    <rect x="200" y="34" width="625" height="22" rx="4" fill="#DC2626"/>
+    <text x="813" y="49" class="bar-lbl" text-anchor="end">35.9x</text>
+    <text x="208" y="49" class="bar-lbl">93 → 3340 cyc</text>
+
+    <!-- Row 3: Smem occupancy 52KB (12x) -->
+    <text x="195" y="76" class="lbl" text-anchor="end">Smem 52+ KB/block</text>
+    <rect x="200" y="64" width="434" height="22" rx="4" fill="#DC2626"/>
+    <text x="622" y="79" class="bar-lbl" text-anchor="end">12x</text>
+    <text x="208" y="79" class="bar-lbl">12 → 1 block/SM</text>
+
+    <!-- Row 4: L2 partition camping (11.6x) -->
+    <text x="195" y="106" class="lbl" text-anchor="end">L2 partition camping</text>
+    <rect x="200" y="94" width="428" height="22" rx="4" fill="#DC2626"/>
+    <text x="616" y="109" class="bar-lbl" text-anchor="end">11.6x</text>
+    <text x="208" y="109" class="bar-lbl">1893 → 163 GB/s (stride=64B)</text>
+
+    <!-- Row 5: L1→L2 memory wall (8.0x) -->
+    <text x="195" y="136" class="lbl" text-anchor="end">L1 → L2 (memory wall)</text>
+    <rect x="200" y="124" width="363" height="22" rx="4" fill="#D97706"/>
+    <text x="551" y="139" class="bar-lbl" text-anchor="end">8.0x</text>
+    <text x="208" y="139" class="bar-lbl">44 → 354 cyc</text>
+
+    <!-- Row 6: Smem occupancy 48KB (6x) -->
+    <text x="195" y="166" class="lbl" text-anchor="end">Smem 48 KB/block</text>
+    <rect x="200" y="154" width="313" height="22" rx="4" fill="#D97706"/>
+    <text x="501" y="169" class="bar-lbl" text-anchor="end">6x</text>
+    <text x="208" y="169" class="bar-lbl">12 → 2 blocks/SM</text>
+
+    <!-- Row 7: DRAM coalescing (5.1x) -->
+    <text x="195" y="196" class="lbl" text-anchor="end">DRAM coalescing</text>
+    <rect x="200" y="184" width="284" height="22" rx="4" fill="#D97706"/>
+    <text x="472" y="199" class="bar-lbl" text-anchor="end">5.1x</text>
+    <text x="208" y="199" class="bar-lbl">858 → 169 GB/s (stride=16)</text>
+
+    <!-- Row 8: L2→DRAM BW (4.17x) -->
+    <text x="195" y="226" class="lbl" text-anchor="end">L2 → DRAM BW</text>
+    <rect x="200" y="214" width="250" height="22" rx="4" fill="#D97706"/>
+    <text x="438" y="229" class="bar-lbl" text-anchor="end">4.17x</text>
+    <text x="208" y="229" class="bar-lbl">5110 → 1227 GB/s</text>
+
+    <!-- Row 9: Bank conflict latency (2.62x) -->
+    <text x="195" y="256" class="lbl" text-anchor="end">Bank conflict (latency)</text>
+    <rect x="200" y="244" width="168" height="22" rx="4" fill="#059669"/>
+    <text x="356" y="259" class="bar-lbl" text-anchor="end">2.62x</text>
+    <text x="208" y="259" class="bar-lbl">38.3 → 100.3 cyc</text>
+
+    <!-- Row 10: Smem warp scaling (1.88x) -->
+    <text x="195" y="286" class="lbl" text-anchor="end">Smem warp scaling</text>
+    <rect x="200" y="274" width="127" height="22" rx="4" fill="#059669"/>
+    <text x="325" y="289" class="bar-lbl" text-anchor="end">1.88x</text>
+    <text x="208" y="289" class="bar-lbl">33.9 → 63.8 cyc</text>
+
+    <!-- Row 11: Bank conflict throughput (1.43x) -->
+    <text x="195" y="316" class="lbl" text-anchor="end">Bank conflict (tput)</text>
+    <rect x="200" y="304" width="72" height="22" rx="4" fill="#059669"/>
+    <text x="300" y="319" class="bar-lbl2" text-anchor="end">1.43x</text>
+    <text x="208" y="319" class="bar-lbl">2.23→3.19</text>
+
+    <!-- Row 12: L2→DRAM latency (1.02x) -->
+    <text x="195" y="346" class="lbl" text-anchor="end">L2 → DRAM latency</text>
+    <rect x="200" y="334" width="4" height="22" rx="2" fill="#059669"/>
+    <text x="212" y="349" class="num" fill="#059669">1.02x</text>
+    <text x="270" y="349" class="lbl-sm">354 → 362 cyc (near-transparent!)</text>
+
+    <!-- Vertical reference line at 1x -->
+    <line x1="200" y1="0" x2="200" y2="380" stroke="#374151" stroke-width="1.5"/>
+  </g>
+
+  <!-- Key insight box -->
+  <g transform="translate(36,462)">
+    <rect width="1008" height="30" rx="5" fill="#F0FDF4" stroke="#059669" stroke-width="0.8"/>
+    <text x="20" y="13" class="insight">THE THREE ACTIONABLE CLIFFS: (1) Keep working set in L1 (&lt;89KB) to avoid 8x wall; (2) Avoid stride=64B to prevent 11.6x L2 camping;</text>
+    <text x="20" y="27" class="lbl-sm">(3) Ensure coalesced access to prevent 86.7x DRAM random penalty. Bank conflicts (1.43x throughput) are the LEAST concerning on SM_120.</text>
+  </g>
+</svg>
